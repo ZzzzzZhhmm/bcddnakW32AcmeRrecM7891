@@ -17,7 +17,6 @@ import json
 import math
 import os
 from pathlib import Path
-import platform
 import re
 import subprocess
 from typing import Any, Mapping, Sequence
@@ -30,7 +29,7 @@ from fastwam.datasets.lerobot.episode_catalog import (
     EpisodeRecord,
 )
 from fastwam.memory.action_contract import ActionSpaceContract
-from fastwam.memory.manifest import sha256_file
+from fastwam.memory.manifest import ManifestError, sha256_file, sha256_path_tree
 from fastwam.memory.train_stats import (
     TRAIN_STATS_FILENAME,
     TRAIN_STATS_MANIFEST_FILENAME,
@@ -160,30 +159,10 @@ def _canonical_json(value: object) -> bytes:
 def _tree_sha256(path: Path) -> tuple[str, int]:
     """Hash a checkpoint file/tree by relative name, size, and file digest."""
 
-    resolved = path.expanduser().resolve()
-    if resolved.is_file():
-        return sha256_file(resolved), 1
-    if not resolved.is_dir():
-        raise FileNotFoundError(resolved)
-    rows: list[dict[str, object]] = []
-    for candidate in sorted(
-        (item for item in resolved.rglob("*") if item.is_file()),
-        key=lambda item: item.relative_to(resolved).as_posix(),
-    ):
-        relative = candidate.relative_to(resolved).as_posix()
-        rows.append(
-            {
-                "path": relative,
-                "size": candidate.stat().st_size,
-                "sha256": sha256_file(candidate),
-            }
-        )
-    if not rows:
-        raise WarmFeaturePrecomputeError(f"checkpoint tree is empty: {resolved}")
-    digest = hashlib.sha256(
-        b"warm.checkpoint-tree.v1\0" + _canonical_json(rows)
-    ).hexdigest()
-    return digest, len(rows)
+    try:
+        return sha256_path_tree(path)
+    except ManifestError as exc:
+        raise WarmFeaturePrecomputeError(str(exc)) from exc
 
 
 def _validate_dataset_roots(
@@ -740,40 +719,15 @@ def _load_processor(data_config: Path, stats_path: Path) -> Any:
 def _runtime_provenance(device: str) -> dict[str, object]:
     """Capture numerical-runtime versions in the encoder cache contract."""
 
-    import numpy as np
-    import torch
-    import torchvision
-    import transformers
+    from fastwam.memory.runtime_fingerprint import (
+        RuntimeFingerprintError,
+        current_encoder_runtime,
+    )
 
-    result: dict[str, object] = {
-        "python": platform.python_version(),
-        "platform": platform.platform(),
-        "numpy": np.__version__,
-        "torch": torch.__version__,
-        "torchvision": torchvision.__version__,
-        "transformers": transformers.__version__,
-        "cuda_runtime": torch.version.cuda,
-        "cudnn": (
-            None
-            if not hasattr(torch.backends, "cudnn")
-            else torch.backends.cudnn.version()
-        ),
-    }
-    if str(device).startswith("cuda"):
-        if not torch.cuda.is_available():
-            raise WarmFeaturePrecomputeError(
-                f"requested CUDA feature device is unavailable: {device}"
-            )
-        try:
-            index = torch.device(device).index
-            index = torch.cuda.current_device() if index is None else index
-            result["cuda_device_name"] = torch.cuda.get_device_name(index)
-            result["cuda_capability"] = list(torch.cuda.get_device_capability(index))
-        except (AssertionError, RuntimeError, ValueError) as exc:
-            raise WarmFeaturePrecomputeError(
-                f"cannot inspect requested CUDA feature device {device!r}"
-            ) from exc
-    return result
+    try:
+        return current_encoder_runtime(device)
+    except RuntimeFingerprintError as exc:
+        raise WarmFeaturePrecomputeError(str(exc)) from exc
 
 
 def _validate_libero_processor(processor: Any) -> str:

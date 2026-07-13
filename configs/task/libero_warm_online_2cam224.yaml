@@ -1,0 +1,27 @@
+# @package _global_
+
+defaults:
+  - override /data: libero_2cam
+  - override /model: warm_source
+  - _self_
+
+# Online rollout uses the exact M2 processor/action layout but does not build a
+# training dataset or read the offline candidate cache.  The source-run
+# contract and base checkpoint are still required to construct the model.
+model:
+  source_policy: fixed_context_top1
+  run_contract_path: ${EVALUATION.warm_online.training_run_contract_path}
+  validation_run_contract_path: ${EVALUATION.warm_online.validation_run_contract_path}
+  base_checkpoint_path: ${EVALUATION.warm_online.base_checkpoint_path}
+  memory_sigma: 0.2
+  mot_checkpoint_mixed_attn: false
+
+data:
+  train:
+    pretrained_norm_stats: ${EVALUATION.dataset_stats_path}
+
+EVALUATION:
+  visualize_future_video: false
+  use_action_ensembler: false
+  warm_online:
+    enabled: true

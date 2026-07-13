@@ -20,6 +20,7 @@ _WARM_EXPORTS = frozenset(
         "WARM_CANDIDATE_MU",
         "WARM_CANDIDATE_SCORE",
         "WARM_ORACLE_CANDIDATE_INDEX",
+        "WARM_QUERY_SPLIT",
     }
 )
 

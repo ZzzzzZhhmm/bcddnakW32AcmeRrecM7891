@@ -67,10 +67,16 @@ evaluate_results/
 
 # Credential information that should never be checked in
 credentials
+credentials.*
+secrets/
+.secrets/
+.netrc
 *.secret
 *.pem
 *.key
 *.token
+*.p12
+*.pfx
 .env.*
 
 # ------------------------ BELOW IS AUTO-GENERATED FOR PYTHON REPOS ------------------------
@@ -278,6 +284,14 @@ artifacts/
 rollouts/
 videos/
 slurm-*.out
+eval/
+evaluations/
+logs/
+lightning_logs/
+mlruns/
+events.out.tfevents*
+*telemetry*.jsonl
+*metrics*.jsonl
 
 # OneLogger
 wandb/

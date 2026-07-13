@@ -238,7 +238,8 @@ spending 5B-model GPU time.
 The Windows workstation runs only deterministic CPU checks:
 
 ```powershell
-Set-Location F:\WARM\code
+if (-not $env:WARM_REPO) { $env:WARM_REPO = "F:\WARM\code" }  # local example
+Set-Location $env:WARM_REPO
 python -m pytest -q
 python -m compileall -q src scripts
 ```

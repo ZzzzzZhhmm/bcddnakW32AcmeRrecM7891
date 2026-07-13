@@ -20,6 +20,39 @@ from .source_contract import (
     SourceRunContractError,
     WarmSourceRunContract,
 )
+from .online_contract import (
+    ONLINE_RETRIEVAL_IMPLEMENTATION,
+    ONLINE_RUN_SCHEMA,
+    ONLINE_RUN_SCHEMA_VERSION,
+    OnlineRunContractError,
+    WarmOnlineRunContract,
+)
+from .online_pair_contract import (
+    ALLOWED_CONFIG_DIFFERENCE_PATHS,
+    ONLINE_PAIR_KIND,
+    ONLINE_PAIR_SCHEMA,
+    ONLINE_PAIR_SCHEMA_VERSION,
+    OnlinePairContractError,
+    WarmOnlinePairContract,
+)
+from .training_attestation import (
+    SHARED_RECIPE_IGNORED_PATHS,
+    TRAINING_ATTESTATION_SCHEMA,
+    TRAINING_ATTESTATION_VERSION,
+    TrainingAttestationError,
+    WarmTrainingAttestation,
+    WarmTrainingRunContext,
+    capture_actual_optimizer_facts,
+    capture_actual_scheduler_chain,
+    capture_training_runtime,
+    clean_git_commit,
+    load_training_attestation,
+    publish_training_attestation,
+    training_attestation_path,
+    training_config_hashes,
+    verify_training_attestation,
+)
+
 __all__ = [
     "NULL_COMPONENT",
     "CandidateMixture",
@@ -37,6 +70,32 @@ __all__ = [
     "SOURCE_RUN_SCHEMA_VERSION",
     "SourceRunContractError",
     "WarmSourceRunContract",
+    "ONLINE_RETRIEVAL_IMPLEMENTATION",
+    "ONLINE_RUN_SCHEMA",
+    "ONLINE_RUN_SCHEMA_VERSION",
+    "OnlineRunContractError",
+    "WarmOnlineRunContract",
+    "ALLOWED_CONFIG_DIFFERENCE_PATHS",
+    "ONLINE_PAIR_KIND",
+    "ONLINE_PAIR_SCHEMA",
+    "ONLINE_PAIR_SCHEMA_VERSION",
+    "OnlinePairContractError",
+    "WarmOnlinePairContract",
+    "SHARED_RECIPE_IGNORED_PATHS",
+    "TRAINING_ATTESTATION_SCHEMA",
+    "TRAINING_ATTESTATION_VERSION",
+    "TrainingAttestationError",
+    "WarmTrainingAttestation",
+    "WarmTrainingRunContext",
+    "capture_actual_optimizer_facts",
+    "capture_actual_scheduler_chain",
+    "capture_training_runtime",
+    "clean_git_commit",
+    "load_training_attestation",
+    "publish_training_attestation",
+    "training_attestation_path",
+    "training_config_hashes",
+    "verify_training_attestation",
 ]
 
 # The Windows source-development environment intentionally need not install the

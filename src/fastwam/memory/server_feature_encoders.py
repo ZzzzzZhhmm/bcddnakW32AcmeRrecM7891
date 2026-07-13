@@ -657,6 +657,23 @@ class DinoV2FactualEncoder:
     def image_size(self) -> tuple[int, int]:
         return self._image_size
 
+    @property
+    def compute_device(self) -> str:
+        """Exact device string bound by the feature-encoder contract."""
+
+        return self._device
+
+    @property
+    def compute_dtype(self) -> str:
+        """Canonical dtype used for the frozen DINO forward pass."""
+
+        if self._torch_dtype is None:
+            return "float32"
+        label = str(self._torch_dtype).strip().lower()
+        if label.startswith("torch."):
+            label = label[6:]
+        return {"float": "float32", "half": "float16"}.get(label, label)
+
     def encode(self, frames: Any, *, batch_size: int = 32) -> DinoFactualFeatures:
         """Encode already-resized factual frames without processor resize/crop."""
 

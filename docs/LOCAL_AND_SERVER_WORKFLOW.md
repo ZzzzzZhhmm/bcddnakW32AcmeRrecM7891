@@ -14,6 +14,9 @@ The local workstation is the authoritative environment for:
 - Python compilation and static source inspection;
 - private Git commits, branches, and review.
 
+The current Windows checkout is `F:\WARM\code`. Keep implementation work on
+the F: drive; do not create a second working copy under Documents for WARM.
+
 Local checks do not claim that the 5B/6B model can be trained or evaluated on
 this machine. GPU-only tests must be explicitly marked and are not silently
 replaced by smaller-model evidence.
@@ -66,14 +69,51 @@ Python/CUDA/PyTorch/driver versions
 random seeds and world size
 ```
 
+Formal WARM training additionally publishes a no-overwrite
+`step_NNNNNN.training.json` beside each `step_NNNNNN.pt`. Never treat weights
+without that trainer-produced attestation as an admissible M2 online
+checkpoint.
+
 Results are accepted only when they can be traced back to this record.
 
 ## Promotion sequence
 
 1. Local CPU tests and compile checks pass.
-2. Push the exact commit to `ZzzzzZhhmm/WARM`.
-3. Pull that commit on the GPU server; never copy an uncommitted working tree.
+2. Fast-forward the exact commit to the private `ZzzzzZhhmm/WARM` `main`
+   branch.
+3. Clone or pull that exact private `main` commit on the GPU server; never
+   copy an uncommitted working tree.
 4. Build or verify external artifacts against their manifests.
 5. Run GPU smoke tests and record the resolved environment.
 6. Run the current milestone's go/no-go experiment.
 7. Return only small summaries/manifests to Git; keep large artifacts external.
+
+For M2.1, step 6 expands to a strict artifact chain:
+
+```text
+policy-specific training checkpoint + attestation
+  -> resolved fixed/null evaluation configs
+  -> fixed/null online-run contracts
+  -> fixed-side per-task online/offline parity report
+  -> fixed/null pair contract
+  -> actual fixed/null rollouts
+  -> pair-result verification report
+```
+
+The online contracts require the exact M1 data config through `--data-config`
+and each exact checkpoint sidecar through `--training-attestation`. The pair
+cannot be published before parity, and formal rollouts cannot start before the
+pair exists. See `docs/M2_ONLINE_RETRIEVAL.md` for commands.
+
+After authenticating the server for the private repository, a fresh checkout
+is intentionally simple:
+
+```bash
+git clone --branch main --single-branch git@github.com:ZzzzzZhhmm/WARM.git
+cd WARM
+git status --porcelain
+git rev-parse HEAD
+```
+
+The status command must print nothing. Record the resulting commit SHA in
+every artifact and experiment manifest.

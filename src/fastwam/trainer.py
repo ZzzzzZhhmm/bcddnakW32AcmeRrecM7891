@@ -6,11 +6,12 @@ import re
 from math import ceil
 from pathlib import Path
 import time
+from uuid import uuid4
 
 import numpy as np
 import torch
 from accelerate import Accelerator
-from omegaconf import DictConfig
+from omegaconf import DictConfig, OmegaConf
 from PIL import Image
 from torch.optim.lr_scheduler import ConstantLR, CosineAnnealingLR, LinearLR, SequentialLR
 from torch.utils.data import DataLoader
@@ -65,7 +66,13 @@ class Wan22Trainer:
         logger.info(
             "Accelerate training: distributed_type=%s zero_stage=%s world_size=%d process_index=%d cfg_mixed_precision=%s accelerator_mixed_precision=%s grad_accum=%d grad_clip=%.4f",
             self.accelerator.distributed_type,
-            self.accelerator.state.deepspeed_plugin.deepspeed_config.get("zero_optimization", {}).get("stage", "unknown"),
+            (
+                getattr(self.accelerator.state, "deepspeed_plugin", None)
+                and self.accelerator.state.deepspeed_plugin.deepspeed_config.get(
+                    "zero_optimization", {}
+                ).get("stage", "unknown")
+            )
+            or "none",
             self.accelerator.num_processes,
             self.accelerator.process_index,
             self.mixed_precision,
@@ -93,8 +100,15 @@ class Wan22Trainer:
         total_train_steps = self._estimate_total_train_steps()
         self.max_steps = total_train_steps
         warmup_steps = int(total_train_steps * 0.05)
+        self.scheduler_type = str(cfg.lr_scheduler_type).strip().lower()
+        self.scheduler_warmup_steps = warmup_steps
+        self.scheduler_min_learning_rate = (
+            self.learning_rate * 0.01
+            if self.scheduler_type == "cosine"
+            else self.learning_rate
+        )
         self.scheduler = self._build_scheduler(
-            scheduler_type=cfg.lr_scheduler_type,
+            scheduler_type=self.scheduler_type,
             total_train_steps=total_train_steps,
             warmup_steps=warmup_steps,
         )
@@ -113,8 +127,16 @@ class Wan22Trainer:
         ensure_dir(self.state_dir)
         ensure_dir(self.eval_dir)
 
+        self._last_training_attestation_path: str | None = None
+
         self.model, self.optimizer, self.train_loader, self.scheduler = self.accelerator.prepare(
             self.model, self.optimizer, self.train_loader, self.scheduler
+        )
+        # Formal provenance must describe the actual objects and distributed
+        # runtime returned by Accelerate/DeepSpeed, not only the pre-prepare
+        # Python recipe.
+        self._warm_training_attestation_context = (
+            self._prepare_warm_training_attestation_context()
         )
         self.optimizer.zero_grad(set_to_none=True)
         self.wandb_run = None
@@ -123,6 +145,65 @@ class Wan22Trainer:
 
         val_size = len(self.val_dataset) if self.val_dataset is not None else len(self.train_dataset)
         logger.info("Train/val dataset size: %d/%d", len(self.train_dataset), val_size)
+
+    def _prepare_warm_training_attestation_context(self):
+        """Create immutable provenance from the actual live trainer state."""
+
+        attested_model = self.accelerator.unwrap_model(self.model)
+        metadata_fn = getattr(
+            attested_model, "training_attestation_metadata", None
+        )
+        if not callable(metadata_fn):
+            return None
+
+        # V1 attests a fresh optimizer/scheduler trajectory from the immutable
+        # FastWAM base.  A resumed optimizer would require a separately bound
+        # parent-attestation chain and must not be mislabeled as this recipe.
+        if self.resume not in (None, "", False):
+            raise ValueError(
+                "formal WARM training attestation v1 requires resume=null"
+            )
+
+        from .models.warm.training_attestation import (
+            WarmTrainingRunContext,
+            capture_actual_optimizer_facts,
+            capture_actual_scheduler_chain,
+            capture_training_runtime,
+        )
+
+        resolved_config = OmegaConf.to_container(self.cfg, resolve=True)
+        if not isinstance(resolved_config, dict):
+            raise TypeError("resolved training config must be a mapping")
+        actual_precision = str(self.accelerator.mixed_precision).strip().lower()
+        if actual_precision != self.mixed_precision:
+            raise ValueError(
+                "Accelerate mixed precision differs from the resolved trainer "
+                f"config: {actual_precision!r} != {self.mixed_precision!r}"
+            )
+        repository_root = Path(__file__).resolve().parents[2]
+        return WarmTrainingRunContext.create(
+            resolved_config=resolved_config,
+            source_metadata=metadata_fn(),
+            root_seed=self.seed,
+            actual_max_steps=self.max_steps,
+            optimizer_facts=capture_actual_optimizer_facts(self.optimizer),
+            scheduler_type=self.scheduler_type,
+            scheduler_warmup_steps=self.scheduler_warmup_steps,
+            scheduler_min_learning_rate=self.scheduler_min_learning_rate,
+            scheduler_wrapper_chain=capture_actual_scheduler_chain(
+                self.scheduler,
+                scheduler_type=self.scheduler_type,
+                total_steps=self.max_steps,
+                warmup_steps=self.scheduler_warmup_steps,
+                minimum_learning_rate=self.scheduler_min_learning_rate,
+            ),
+            per_device_batch_size=self.batch_size,
+            gradient_accumulation_steps=self.gradient_accumulation_steps,
+            world_size=int(self.accelerator.num_processes),
+            mixed_precision=actual_precision,
+            training_runtime=capture_training_runtime(self.accelerator),
+            repository_root=repository_root,
+        )
 
     def _init_wandb(self):
         if not self.wandb_enabled or not self.accelerator.is_main_process:
@@ -641,9 +722,69 @@ class Wan22Trainer:
 
     def _save_weights_checkpoint(self, step_tag: str):
         model = self.accelerator.unwrap_model(self.model)
-        ckpt_path = os.path.join(self.weights_dir, f"{step_tag}.pt")
-        model.save_checkpoint(ckpt_path, optimizer=None, step=self.global_step)
-        return ckpt_path
+        ckpt_path = Path(self.weights_dir) / f"{step_tag}.pt"
+        self._last_training_attestation_path = None
+        context = self._warm_training_attestation_context
+        if context is None:
+            model.save_checkpoint(
+                str(ckpt_path), optimizer=None, step=self.global_step
+            )
+            return str(ckpt_path)
+
+        from .models.warm.training_attestation import (
+            clean_git_commit,
+            publish_training_attestation,
+            training_attestation_path,
+        )
+
+        # Formal WARM checkpoint bytes are staged and atomically replaced.  If
+        # the subsequent attestation cannot be published, neither file remains
+        # under its formal name.
+        if clean_git_commit(context.repository_root) != context.git_commit:
+            raise ValueError(
+                "Git state changed after formal WARM training started"
+            )
+        sidecar_path = training_attestation_path(ckpt_path)
+        occupied = [
+            path
+            for path in (ckpt_path, sidecar_path)
+            if path.exists() or path.is_symlink()
+        ]
+        if occupied:
+            raise FileExistsError(
+                "formal WARM checkpoint publication never replaces an "
+                f"existing weights/attestation path: {occupied}"
+            )
+        temporary = ckpt_path.parent / f".{ckpt_path.name}.{uuid4().hex}.tmp"
+        try:
+            model.save_checkpoint(
+                str(temporary), optimizer=None, step=self.global_step
+            )
+            # Windows requires a writable descriptor for fsync.
+            with temporary.open("r+b") as handle:
+                handle.flush()
+                os.fsync(handle.fileno())
+            if clean_git_commit(context.repository_root) != context.git_commit:
+                raise ValueError(
+                    "Git state changed while the WARM checkpoint was saved"
+                )
+            # Atomic no-replace publication.  os.link fails if another writer
+            # claimed this exact step after the preflight above.
+            os.link(temporary, ckpt_path)
+            temporary.unlink()
+            try:
+                attestation_path, _ = publish_training_attestation(
+                    ckpt_path,
+                    context=context,
+                    actual_global_step=self.global_step,
+                )
+            except Exception:
+                ckpt_path.unlink(missing_ok=True)
+                raise
+            self._last_training_attestation_path = str(attestation_path)
+        finally:
+            temporary.unlink(missing_ok=True)
+        return str(ckpt_path)
 
     def _save_trainer_state(self, state_path: str):
         state_file = os.path.join(state_path, "trainer_state.json")
@@ -678,7 +819,11 @@ class Wan22Trainer:
             self._save_trainer_state(state_path)
         self.accelerator.wait_for_everyone()
 
-        return {"weights_path": ckpt_path, "state_path": state_path}
+        return {
+            "weights_path": ckpt_path,
+            "state_path": state_path,
+            "training_attestation_path": self._last_training_attestation_path,
+        }
 
     def load_training_state(self, state_dir: str):
         state_file = Path(state_dir) / "trainer_state.json"
@@ -775,6 +920,7 @@ class Wan22Trainer:
                         self.scheduler.step()
                     self.optimizer.zero_grad(set_to_none=True)
                     self.global_step += 1
+                    checkpoint_saved_this_step = None
                     global_loss = float(
                         self.accelerator.gather(loss.detach().float().reshape(1)).mean().item()
                     )
@@ -864,6 +1010,7 @@ class Wan22Trainer:
 
                     if self.save_every > 0 and self.global_step % self.save_every == 0:
                         ckpt_info = self.save_checkpoint()
+                        checkpoint_saved_this_step = ckpt_info
                         if self.accelerator.is_main_process:
                             logger.info(
                                 "[ckpt] step=%d weights=%s state=%s",
@@ -873,7 +1020,11 @@ class Wan22Trainer:
                             )
 
                     if self.global_step >= self.max_steps:
-                        ckpt_info = self.save_checkpoint()
+                        ckpt_info = (
+                            checkpoint_saved_this_step
+                            if checkpoint_saved_this_step is not None
+                            else self.save_checkpoint()
+                        )
                         if self.accelerator.is_main_process:
                             logger.info(
                                 "[done] max_steps reached step=%d weights=%s state=%s",

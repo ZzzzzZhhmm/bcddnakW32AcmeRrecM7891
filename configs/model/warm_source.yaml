@@ -17,6 +17,14 @@ memory_sigma: 0.2
 run_contract: null
 run_contract_path: null
 
+# Required for every formal WARM training attestation, even when ``eval_every``
+# is zero.  This must be a distinct warm.source-run-contract built from the
+# catalog-bound dev query corpus and stride-one dev candidate cache; it may not
+# reuse train identities.  Only the live dev dataset/cache paths may remain null
+# while in-training evaluation is disabled.
+validation_run_contract: null
+validation_run_contract_path: null
+
 # Required whenever a run contract is present. Its bytes must match the
 # base_checkpoint_sha256 recorded by that contract before any weights load.
 base_checkpoint_path: null

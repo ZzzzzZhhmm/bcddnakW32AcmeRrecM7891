@@ -1,7 +1,7 @@
 # @package _global_
 
 defaults:
-  - override /data: libero_2cam
+  - override /data: libero_2cam_warm_train_dev
   - override /model: warm_source
   - _self_
 
@@ -26,6 +26,18 @@ data:
       normalization_stats_path: null
       audit_report_path: null
       expected_query_corpus_sha256: null
+    val:
+      # Must be built independently from the catalog's dev episodes at raw
+      # stride one.  Reusing the train cache/corpus is rejected by the model.
+      bank_directory: null
+      candidate_directory: null
+      catalog_path: null
+      normalization_stats_path: null
+      audit_report_path: null
+      expected_query_corpus_sha256: null
+  val:
+    episode_catalog_path: ${data.warm_candidates.val.catalog_path}
+    pretrained_norm_stats: ${data.warm_candidates.val.normalization_stats_path}
 
 batch_size: 16
 num_workers: 8
@@ -39,10 +51,10 @@ num_epochs: 10
 max_steps: null
 log_every: 10
 save_every: 2000
-# There is no independent held-out candidate/run contract in M2 yet.  The
-# baseline data config has val_set_proportion=0, so periodic Trainer evaluation
-# would only relabel train loss as validation.  Use the immutable dev oracle
-# artifact now; enable periodic evaluation only after a real dev contract exists.
+# Kept disabled in the portable template because the live dev dataset/cache
+# paths are intentionally null.  The independent validation run contract is
+# still required for formal training attestation when eval_every is zero; a
+# server launch may set this positive only with the matching live dev artifacts.
 eval_every: 0
 
 gradient_accumulation_steps: 1

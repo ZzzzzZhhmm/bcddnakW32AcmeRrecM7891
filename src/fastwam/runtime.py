@@ -187,6 +187,8 @@ def create_warm_source(
     memory_sigma: float = 0.2,
     run_contract=None,
     run_contract_path: str | None = None,
+    validation_run_contract=None,
+    validation_run_contract_path: str | None = None,
     base_checkpoint_path: str | None = None,
 ):
     """Create the base-FastWAM M2 model with strict source-only semantics."""
@@ -203,14 +205,40 @@ def create_warm_source(
         contract_path = Path(run_contract_path).expanduser().resolve()
         with open(contract_path, "r", encoding="utf-8") as file:
             run_contract = json.load(file)
+    if (
+        validation_run_contract is not None
+        and validation_run_contract_path is not None
+    ):
+        raise ValueError(
+            "validation_run_contract and validation_run_contract_path are "
+            "mutually exclusive"
+        )
+    if validation_run_contract_path is not None:
+        validation_contract_path = Path(
+            validation_run_contract_path
+        ).expanduser().resolve()
+        with open(validation_contract_path, "r", encoding="utf-8") as file:
+            validation_run_contract = json.load(file)
     if isinstance(run_contract, DictConfig):
         run_contract = OmegaConf.to_container(run_contract, resolve=True)
+    if isinstance(validation_run_contract, DictConfig):
+        validation_run_contract = OmegaConf.to_container(
+            validation_run_contract, resolve=True
+        )
     if run_contract is None:
         contract = None
     elif isinstance(run_contract, WarmSourceRunContract):
         contract = run_contract
     else:
         contract = WarmSourceRunContract.from_dict(run_contract)
+    if validation_run_contract is None:
+        validation_contract = None
+    elif isinstance(validation_run_contract, WarmSourceRunContract):
+        validation_contract = validation_run_contract
+    else:
+        validation_contract = WarmSourceRunContract.from_dict(
+            validation_run_contract
+        )
 
     if source_policy not in {
         "gaussian_null",
@@ -288,6 +316,7 @@ def create_warm_source(
             "warm_source_policy": source_policy,
             "memory_sigma": memory_sigma,
             "warm_run_contract": contract,
+            "warm_validation_run_contract": validation_contract,
         },
     )
     if base_path is not None:
@@ -467,7 +496,7 @@ def create_fastwam_idm(
     )
 
 
-def build_datasets(data_cfg: DictConfig):
+def build_datasets(data_cfg: DictConfig, *, build_validation: bool = True):
     train_ds = instantiate(data_cfg.train)
     warm_cfg = data_cfg.get("warm_candidates")
     if warm_cfg is not None:
@@ -481,7 +510,7 @@ def build_datasets(data_cfg: DictConfig):
             train_candidate_cfg,
             expected_query_split="train",
         )
-    if data_cfg.get("val") is None:
+    if not build_validation or data_cfg.get("val") is None:
         val_ds = train_ds
     else:
         train_stats_path = data_cfg.train.get("pretrained_norm_stats")
@@ -593,10 +622,24 @@ def run_training(cfg: DictConfig):
     mixed_precision = _normalize_mixed_precision(cfg.mixed_precision)
     model_dtype = _mixed_precision_to_model_dtype(mixed_precision)
     model = instantiate(cfg.model, model_dtype=model_dtype, device=model_device)
-    train_ds, val_ds = build_datasets(cfg.data)
+    evaluation_enabled = int(cfg.get("eval_every", 0)) > 0
+    train_ds, val_ds = build_datasets(
+        cfg.data, build_validation=evaluation_enabled
+    )
     validate_training_dataset = getattr(model, "validate_training_dataset", None)
     if callable(validate_training_dataset):
         validate_training_dataset(train_ds)
+    validate_validation_dataset = getattr(
+        model, "validate_validation_dataset", None
+    )
+    if callable(validate_validation_dataset):
+        if evaluation_enabled and val_ds is train_ds:
+            raise ValueError(
+                "periodic WARM validation requires a separate catalog-bound "
+                "dev dataset/cache; reusing the train dataset is forbidden"
+            )
+        if val_ds is not train_ds:
+            validate_validation_dataset(val_ds)
 
     trainer = Wan22Trainer(
         cfg=cfg,

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import math
 from pathlib import Path
 from typing import Any, Mapping
@@ -20,12 +21,103 @@ from .source_transport import (
 
 
 WARM_SOURCE_CHECKPOINT_SCHEMA = "warm.source-only-checkpoint"
-WARM_SOURCE_CHECKPOINT_VERSION = 1
+WARM_SOURCE_CHECKPOINT_VERSION = 2
 
 WARM_CANDIDATE_MEANS = "warm_candidate_mu"
 WARM_CANDIDATE_MASK = "warm_candidate_mask"
 WARM_ORACLE_CANDIDATE_INDEX = "warm_oracle_candidate_index"
 WARM_MEMORY_ENABLED = "warm_memory_enabled"
+WARM_QUERY_SPLIT = "warm_query_split"
+
+_FORBIDDEN_RAW_INFERENCE_FIELDS = frozenset(
+    {
+        "action_source_context",
+        "candidate_means",
+        "candidate_valid_mask",
+        "memory_enabled_mask",
+    }
+)
+
+
+def _coerce_run_contract(
+    value: WarmSourceRunContract | Mapping[str, Any] | None,
+    *,
+    field: str,
+) -> WarmSourceRunContract | None:
+    if value is None:
+        return None
+    if isinstance(value, WarmSourceRunContract):
+        return value
+    if isinstance(value, Mapping):
+        return WarmSourceRunContract.from_dict(value)
+    raise TypeError(f"{field} must be WarmSourceRunContract, mapping, or None")
+
+
+def _json_safe(value: object, *, field: str) -> object:
+    """Return a detached JSON value or fail before rollout telemetry escapes."""
+
+    try:
+        encoded = json.dumps(
+            value,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=True,
+            allow_nan=False,
+        )
+    except (TypeError, ValueError) as error:
+        raise SourceTransportError(
+            f"{field} must contain only JSON-safe finite values"
+        ) from error
+    return json.loads(encoded)
+
+
+def _event_id_json(value: Any | None) -> dict[str, object] | None:
+    if value is None:
+        return None
+    return {
+        "dataset_id": value.dataset_id,
+        "dataset_index": int(value.dataset_index),
+        "episode_index": int(value.episode_index),
+        "start_frame": int(value.start_frame),
+    }
+
+
+def _fixed_retrieval_telemetry(online_step: Any) -> dict[str, object]:
+    """Emit the compact factual evidence needed to audit one retrieval."""
+
+    query_id = online_step.query_id
+    return {
+        "query_id": {
+            "dataset_id": query_id.dataset_id,
+            "dataset_index": int(query_id.dataset_index),
+            "episode_index": int(query_id.episode_index),
+            "frame_index": int(query_id.frame_index),
+        },
+        "online_contract_sha256": online_step.online_contract_sha256,
+        "training_run_contract_sha256": (
+            online_step.training_run_contract_sha256
+        ),
+        "validation_run_contract_sha256": (
+            online_step.validation_run_contract_sha256
+        ),
+        "bank_manifest_sha256": online_step.bank_manifest_sha256,
+        "bank_content_sha256": online_step.bank_content_sha256,
+        "step_sha256": online_step.step_sha256,
+        "prompt_sha256": online_step.prompt_sha256,
+        "proprio_sha256": online_step.proprio_sha256,
+        "model_input_sha256": online_step.model_input_sha256,
+        "ranked_event_ids": [
+            _event_id_json(value) for value in online_step.event_ids
+        ],
+        "bank_rows": [int(value) for value in online_step.bank_rows.tolist()],
+        "cosine_scores": [
+            float(value) for value in online_step.cosine_scores.tolist()
+        ],
+        "candidate_valid_mask": [
+            bool(value) for value in online_step.candidate_valid_mask.tolist()
+        ],
+        "latency_s": dict(online_step.telemetry),
+    }
 
 
 class WarmSourceFastWAM(FastWAM):
@@ -46,6 +138,9 @@ class WarmSourceFastWAM(FastWAM):
         warm_source_policy: SourcePolicy = "fixed_context_top1",
         memory_sigma: float = 0.2,
         warm_run_contract: WarmSourceRunContract | Mapping[str, Any] | None = None,
+        warm_validation_run_contract: (
+            WarmSourceRunContract | Mapping[str, Any] | None
+        ) = None,
         **kwargs,
     ) -> "WarmSourceFastWAM":
         model = super().from_wan22_pretrained(*args, **kwargs)
@@ -55,6 +150,7 @@ class WarmSourceFastWAM(FastWAM):
             policy=warm_source_policy,
             memory_sigma=memory_sigma,
             run_contract=warm_run_contract,
+            validation_run_contract=warm_validation_run_contract,
         )
         return model
 
@@ -64,6 +160,9 @@ class WarmSourceFastWAM(FastWAM):
         policy: SourcePolicy,
         memory_sigma: float,
         run_contract: WarmSourceRunContract | Mapping[str, Any] | None,
+        validation_run_contract: (
+            WarmSourceRunContract | Mapping[str, Any] | None
+        ) = None,
     ) -> None:
         if policy not in (
             "gaussian_null",
@@ -80,20 +179,64 @@ class WarmSourceFastWAM(FastWAM):
             raise SourceTransportError(
                 "memory_sigma must be a finite positive number"
             )
-        if run_contract is None:
-            contract = None
-        elif isinstance(run_contract, WarmSourceRunContract):
-            contract = run_contract
-        elif isinstance(run_contract, Mapping):
-            contract = WarmSourceRunContract.from_dict(run_contract)
-        else:
-            raise TypeError(
-                "warm_run_contract must be WarmSourceRunContract, mapping, or None"
-            )
+        contract = _coerce_run_contract(run_contract, field="warm_run_contract")
+        validation_contract = _coerce_run_contract(
+            validation_run_contract,
+            field="warm_validation_run_contract",
+        )
         if policy != "gaussian_null" and contract is None:
             raise SourceTransportError(
                 f"{policy} requires a complete WarmSourceRunContract"
             )
+        if contract is not None and contract.query_split != "train":
+            raise SourceTransportError(
+                "warm_run_contract must bind the train candidate/cache split"
+            )
+        if validation_contract is not None:
+            if contract is None:
+                raise SourceTransportError(
+                    "warm_validation_run_contract requires a train run contract"
+                )
+            if validation_contract.query_split != "dev":
+                raise SourceTransportError(
+                    "warm_validation_run_contract must bind the dev split"
+                )
+            shared_fields = (
+                "bank_manifest_sha256",
+                "bank_content_sha256",
+                "catalog_sha256",
+                "audit_sha256",
+                "normalization_stats_sha256",
+                "action_space_contract_sha256",
+                "base_checkpoint_sha256",
+                "global_sample_stride",
+                "action_horizon",
+                "action_dim",
+            )
+            mismatches = {
+                name: (getattr(contract, name), getattr(validation_contract, name))
+                for name in shared_fields
+                if getattr(contract, name) != getattr(validation_contract, name)
+            }
+            if mismatches:
+                details = ", ".join(
+                    f"{name}: train={train!r}, dev={dev!r}"
+                    for name, (train, dev) in sorted(mismatches.items())
+                )
+                raise SourceTransportError(
+                    "train/dev WARM run contracts disagree on shared artifacts; "
+                    + details
+                )
+            if (
+                validation_contract.candidate_manifest_sha256
+                == contract.candidate_manifest_sha256
+                or validation_contract.query_corpus_sha256
+                == contract.query_corpus_sha256
+            ):
+                raise SourceTransportError(
+                    "validation contract must bind an independent dev "
+                    "candidate manifest and query corpus"
+                )
         if contract is not None and contract.action_dim != int(
             self.action_expert.action_dim
         ):
@@ -105,6 +248,14 @@ class WarmSourceFastWAM(FastWAM):
         self.warm_source_policy: SourcePolicy = policy
         self.warm_memory_sigma = sigma
         self.warm_run_contract = contract
+        self.warm_validation_run_contract = validation_contract
+        # Online capabilities are process-local and are never serialized in a
+        # training checkpoint. Reconfiguration invalidates every prior bind.
+        self._warm_online_retriever = None
+        self._warm_loaded_checkpoint_sha256: str | None = None
+        # Formal trainer attestations bind the baseline bytes actually loaded,
+        # not only the digest declared by the source-run contract.
+        self._warm_loaded_base_checkpoint_sha256: str | None = None
 
     def load_checkpoint(self, path, optimizer=None):
         """Strictly restore a complete, contract-bound WARM checkpoint.
@@ -116,19 +267,47 @@ class WarmSourceFastWAM(FastWAM):
         way to initialize WARM from a non-WARM baseline.
         """
 
-        return super().load_checkpoint(
-            path,
+        # Invalidate an earlier authorization *before* any filesystem or
+        # checkpoint operation.  Every failure path must leave online use
+        # disabled, including a missing file or a partially loaded state dict.
+        self._warm_loaded_checkpoint_sha256 = None
+        self._warm_online_retriever = None
+
+        from fastwam.memory.manifest import sha256_file
+
+        checkpoint_path = Path(path).expanduser().resolve()
+        checkpoint_sha256 = sha256_file(checkpoint_path)
+        payload = super().load_checkpoint(
+            checkpoint_path,
             optimizer=optimizer,
             load_extra_state=True,
             strict_model_state=True,
             exact_proprio_state=True,
             allow_legacy_dit=False,
         )
+        checkpoint_sha256_after = sha256_file(checkpoint_path)
+        if checkpoint_sha256_after != checkpoint_sha256:
+            self._warm_loaded_checkpoint_sha256 = None
+            self._warm_online_retriever = None
+            raise SourceTransportError(
+                "WARM checkpoint changed while it was being loaded; online "
+                "binding is forbidden"
+            )
+        # Set this only after metadata and state-dict preflight/load succeed.
+        # A failed checkpoint attempt must not authorize an online contract.
+        self._warm_loaded_checkpoint_sha256 = checkpoint_sha256_after
+        self._warm_online_retriever = None
+        return payload
 
     def load_base_checkpoint(self, path: str | Path) -> dict[str, Any]:
         """Load an immutable FastWAM baseline, never a prior WARM checkpoint."""
 
         self._require_warm_configuration()
+        # Base initialization always revokes any prior WARM checkpoint
+        # capability, even when validation/loading below fails.
+        self._warm_loaded_checkpoint_sha256 = None
+        self._warm_online_retriever = None
+        self._warm_loaded_base_checkpoint_sha256 = None
         if self.warm_run_contract is None:
             raise SourceTransportError(
                 "base checkpoint loading requires a WarmSourceRunContract"
@@ -143,7 +322,7 @@ class WarmSourceFastWAM(FastWAM):
                 "base checkpoint SHA256 changed or does not match the run "
                 f"contract: {actual_sha256} != {expected_sha256}"
             )
-        return super().load_checkpoint(
+        payload = super().load_checkpoint(
             checkpoint_path,
             load_extra_state=False,
             forbid_extra_keys=("warm_source",),
@@ -151,6 +330,50 @@ class WarmSourceFastWAM(FastWAM):
             exact_proprio_state=True,
             allow_legacy_dit=False,
         )
+        actual_sha256_after = sha256_file(checkpoint_path)
+        if actual_sha256_after != actual_sha256:
+            self._warm_loaded_checkpoint_sha256 = None
+            self._warm_online_retriever = None
+            raise SourceTransportError(
+                "base checkpoint changed while it was being loaded; WARM "
+                "initialization is not contract-bound"
+            )
+        self._warm_loaded_base_checkpoint_sha256 = actual_sha256_after
+        return payload
+
+    def training_attestation_metadata(self) -> dict[str, Any]:
+        """Return closed-world source identities to the live trainer.
+
+        This capability is intentionally unavailable until the immutable base
+        checkpoint has been loaded and verified in-process.  The trainer uses
+        the method's presence to require a clean-repository attestation for
+        every formally published WARM weights checkpoint.
+        """
+
+        self._require_warm_configuration()
+        contract = self.warm_run_contract
+        if contract is None:
+            raise SourceTransportError(
+                "formal WARM training attestation requires a train source contract"
+            )
+        loaded_base = self._warm_loaded_base_checkpoint_sha256
+        if loaded_base != contract.base_checkpoint_sha256:
+            raise SourceTransportError(
+                "formal WARM training attestation requires the contract-bound "
+                "base checkpoint to be loaded first"
+            )
+        validation = self.warm_validation_run_contract
+        if validation is None:
+            raise SourceTransportError(
+                "formal WARM training attestation requires an independent dev "
+                "source contract, even when periodic validation is disabled"
+            )
+        return {
+            "source_policy": self.warm_source_policy,
+            "train_source_contract_sha256": contract.sha256,
+            "dev_source_contract_sha256": validation.sha256,
+            "base_checkpoint_sha256": loaded_base,
+        }
 
     def _require_warm_configuration(self) -> None:
         if not hasattr(self, "warm_source_policy") or not hasattr(
@@ -170,13 +393,45 @@ class WarmSourceFastWAM(FastWAM):
                 )
             return
 
+        self._validate_dataset_against_contract(
+            dataset,
+            contract=contract,
+            purpose="training",
+        )
+
+    def validate_validation_dataset(self, dataset: object) -> None:
+        """Prove that held-out loss uses the independently bound dev cache."""
+
+        self._require_warm_configuration()
+        contract = self.warm_validation_run_contract
+        if contract is None:
+            raise SourceTransportError(
+                "validation is disabled until warm_validation_run_contract "
+                "binds an independent dev dataset/cache"
+            )
+        self._validate_dataset_against_contract(
+            dataset,
+            contract=contract,
+            purpose="validation",
+        )
+
+    @staticmethod
+    def _validate_dataset_against_contract(
+        dataset: object,
+        *,
+        contract: WarmSourceRunContract,
+        purpose: str,
+    ) -> None:
+        if purpose not in {"training", "validation"}:
+            raise ValueError("purpose must be training or validation")
+
         from fastwam.memory.manifest import sha256_canonical_json
         from fastwam.memory.runtime_candidates import RuntimeCandidateResolver
 
         resolver = getattr(dataset, "resolver", None)
         if not isinstance(resolver, RuntimeCandidateResolver):
             raise SourceTransportError(
-                "contract-bound WARM training requires "
+                f"contract-bound WARM {purpose} requires "
                 "RuntimeCandidateDatasetAdapter"
             )
         actual = {
@@ -208,7 +463,7 @@ class WarmSourceFastWAM(FastWAM):
                 for field, (expected, observed) in sorted(mismatches.items())
             )
             raise SourceTransportError(
-                "training dataset does not match WarmSourceRunContract; "
+                f"{purpose} dataset does not match WarmSourceRunContract; "
                 + details
             )
 
@@ -239,20 +494,31 @@ class WarmSourceFastWAM(FastWAM):
             raise ValueError("sample['action'] must be a [B,H,D] torch tensor")
         batch_size = int(action.shape[0])
         if (
-            self.warm_run_contract is not None
-            and self.warm_run_contract.query_split != "train"
+            self.warm_validation_run_contract is not None
+            and WARM_QUERY_SPLIT not in sample
         ):
             raise SourceTransportError(
-                "training requires a run contract bound to a train candidate cache"
+                f"{WARM_QUERY_SPLIT} is required when independent train/dev "
+                "candidate contracts are configured"
             )
-        if self.warm_run_contract is not None and tuple(action.shape[1:]) != (
-            self.warm_run_contract.action_horizon,
-            self.warm_run_contract.action_dim,
+        query_split = self._query_split_from_sample(sample, batch_size=batch_size)
+        if query_split == "train":
+            sample_contract = self.warm_run_contract
+        else:
+            sample_contract = self.warm_validation_run_contract
+            if sample_contract is None:
+                raise SourceTransportError(
+                    "dev sample requires warm_validation_run_contract"
+                )
+        if sample_contract is not None and tuple(action.shape[1:]) != (
+            sample_contract.action_horizon,
+            sample_contract.action_dim,
         ):
             raise SourceTransportError(
-                "training action shape does not match WarmSourceRunContract: "
+                f"{query_split} action shape does not match its "
+                "WarmSourceRunContract: "
                 f"{tuple(action.shape[1:])} != "
-                f"{(self.warm_run_contract.action_horizon, self.warm_run_contract.action_dim)}"
+                f"{(sample_contract.action_horizon, sample_contract.action_dim)}"
             )
 
         if self.warm_source_policy == "gaussian_null":
@@ -305,6 +571,36 @@ class WarmSourceFastWAM(FastWAM):
             candidate_valid_mask=valid,
         )
 
+    @staticmethod
+    def _query_split_from_sample(
+        sample: Mapping[str, Any],
+        *,
+        batch_size: int,
+    ) -> str:
+        value = sample.get(WARM_QUERY_SPLIT, "train")
+        if isinstance(value, str):
+            values = (value,)
+        elif isinstance(value, (tuple, list)):
+            values = tuple(value)
+            if len(values) != batch_size:
+                raise SourceTransportError(
+                    f"{WARM_QUERY_SPLIT} batch length must be {batch_size}"
+                )
+        else:
+            raise TypeError(
+                f"{WARM_QUERY_SPLIT} must be a split string or homogeneous "
+                "batch of split strings"
+            )
+        if not values or any(item not in {"train", "dev"} for item in values):
+            raise SourceTransportError(
+                f"{WARM_QUERY_SPLIT} values must be 'train' or 'dev'"
+            )
+        if len(set(values)) != 1:
+            raise SourceTransportError(
+                "one WARM batch cannot mix train and dev candidate contracts"
+            )
+        return values[0]
+
     def training_loss(self, sample, tiled: bool = False):
         source_context = self._source_context_from_batch(sample)
         return self.training_loss_action_only(
@@ -314,15 +610,177 @@ class WarmSourceFastWAM(FastWAM):
             tiled=tiled,
         )
 
+    def bind_online_retriever(self, retriever: object) -> None:
+        """Bind one process-local capability to this loaded WARM checkpoint.
+
+        Online candidates are not a tensor API.  They are accepted only from
+        the exact retriever whose immutable rollout contract matches the train
+        contract and the bytes of the WARM checkpoint loaded into this model.
+        The retriever capability itself is deliberately not checkpoint state.
+        """
+
+        self._require_warm_configuration()
+        # A failed rebind must never leave an older retriever authorized.
+        self._warm_online_retriever = None
+        if self.warm_source_policy == "oracle_action_top1":
+            raise SourceTransportError(
+                "oracle_action_top1 cannot bind an online retriever"
+            )
+        if self.warm_source_policy == "gaussian_null":
+            raise SourceTransportError(
+                "gaussian_null does not bind or access an online retriever"
+            )
+        contract = self.warm_run_contract
+        if contract is None:
+            raise SourceTransportError(
+                "fixed online retrieval requires a train run contract"
+            )
+        validation_contract = self.warm_validation_run_contract
+        if validation_contract is None:
+            raise SourceTransportError(
+                "fixed online retrieval requires an independently bound dev "
+                "validation run contract"
+            )
+        if self._warm_loaded_checkpoint_sha256 is None:
+            raise SourceTransportError(
+                "bind_online_retriever requires a successfully loaded WARM "
+                "checkpoint"
+            )
+
+        from fastwam.memory.online_retrieval import FrozenDinoOnlineRetriever
+        from .online_contract import WarmOnlineRunContract
+
+        if type(retriever) is not FrozenDinoOnlineRetriever:
+            raise TypeError(
+                "retriever must be an exact FrozenDinoOnlineRetriever instance"
+            )
+        if retriever.artifact_verified is not True:
+            raise SourceTransportError(
+                "online retriever has no closed-world artifact verification"
+            )
+        source_contract = getattr(retriever, "source_run_contract", None)
+        online_contract = getattr(retriever, "online_run_contract", None)
+        if not isinstance(source_contract, WarmSourceRunContract):
+            raise SourceTransportError(
+                "online retriever is missing its source run contract"
+            )
+        if not isinstance(online_contract, WarmOnlineRunContract):
+            raise SourceTransportError(
+                "online retriever is missing its online run contract"
+            )
+        if source_contract.sha256 != contract.sha256:
+            raise SourceTransportError(
+                "online retriever training run contract does not match model"
+            )
+
+        expected = {
+            "training_run_contract_sha256": contract.sha256,
+            "validation_run_contract_sha256": validation_contract.sha256,
+            "warm_checkpoint_sha256": self._warm_loaded_checkpoint_sha256,
+            "bank_manifest_sha256": contract.bank_manifest_sha256,
+            "bank_content_sha256": contract.bank_content_sha256,
+            "normalization_stats_sha256": contract.normalization_stats_sha256,
+            "action_space_contract_sha256": (
+                contract.action_space_contract_sha256
+            ),
+            "catalog_sha256": contract.catalog_sha256,
+            "audit_sha256": contract.audit_sha256,
+            "source_policy": self.warm_source_policy,
+            "memory_sigma": self.warm_memory_sigma,
+            "action_horizon": contract.action_horizon,
+            "action_dim": contract.action_dim,
+        }
+        mismatches = {
+            field: (value, getattr(online_contract, field, None))
+            for field, value in expected.items()
+            if getattr(online_contract, field, None) != value
+        }
+        if mismatches:
+            details = ", ".join(
+                f"{field}: model={model!r}, online={online!r}"
+                for field, (model, online) in sorted(mismatches.items())
+            )
+            raise SourceTransportError(
+                "online retriever contract does not match loaded model; " + details
+            )
+        self._warm_online_retriever = retriever
+
+    def _validate_online_step_model_binding(self, online_step: Any) -> None:
+        """Validate model-shape inputs before consuming the one-shot step."""
+
+        model_input = online_step.model_input
+        if tuple(model_input.shape[:2]) != (1, 3):
+            raise SourceTransportError(
+                "bound online model_input must have shape [1,3,H,W]"
+            )
+        if int(model_input.shape[2]) % 16 or int(model_input.shape[3]) % 16:
+            raise SourceTransportError(
+                "bound online model_input spatial dimensions must be multiples of 16"
+            )
+
+        proprio = online_step.proprio
+        if self.proprio_dim is None:
+            if proprio is not None:
+                raise SourceTransportError(
+                    "bound online step contains proprio but this model disables it"
+                )
+            return
+        if proprio is None:
+            raise SourceTransportError(
+                "proprio-enabled WARM model requires bound online proprio"
+            )
+        if tuple(proprio.shape) != (1, int(self.proprio_dim)):
+            raise SourceTransportError(
+                "bound online proprio shape does not match model: "
+                f"{tuple(proprio.shape)} != {(1, int(self.proprio_dim))}"
+            )
+
+    def _source_context_from_validated_online_step(
+        self,
+        online_step: Any,
+    ) -> ActionSourceContext:
+        """Convert one already capability-validated step into source tensors."""
+
+        means = torch.tensor(
+            online_step.candidate_means,
+            dtype=self.torch_dtype,
+            device=self.device,
+        ).unsqueeze(0)
+        valid = torch.tensor(
+            online_step.candidate_valid_mask,
+            dtype=torch.bool,
+            device=self.device,
+        ).unsqueeze(0)
+        contract = self.warm_run_contract
+        if contract is None or tuple(means.shape[2:]) != (
+            contract.action_horizon,
+            contract.action_dim,
+        ):
+            raise SourceTransportError(
+                "bound online candidate action shape does not match model contract"
+            )
+        if valid.shape != means.shape[:2]:
+            raise SourceTransportError(
+                "bound online candidate means/mask ranks do not match"
+            )
+        components = select_source_components(
+            valid,
+            policy="fixed_context_top1",
+            phase="infer",
+        )
+        return ActionSourceContext(
+            component_indices=components,
+            candidate_means=means,
+            candidate_valid_mask=valid,
+        )
+
     def build_inference_source_context(
         self,
         *,
-        candidate_means: torch.Tensor | None = None,
-        candidate_valid_mask: torch.Tensor | None = None,
-        memory_enabled_mask: torch.Tensor | None = None,
+        online_step: object | None = None,
         batch_size: int = 1,
     ) -> ActionSourceContext:
-        """Build a deployment-safe context; oracle policy is rejected here."""
+        """Build an inference source only from null or a bound online step."""
 
         self._require_warm_configuration()
         if isinstance(batch_size, bool) or not isinstance(batch_size, int):
@@ -334,6 +792,7 @@ class WarmSourceFastWAM(FastWAM):
                 "oracle_action_top1 is forbidden for inference/rollout"
             )
         if self.warm_source_policy == "gaussian_null":
+            # Do not inspect online_step or a retriever on the null branch.
             return ActionSourceContext(
                 component_indices=torch.zeros(
                     (batch_size,), dtype=torch.long, device=self.device
@@ -341,129 +800,180 @@ class WarmSourceFastWAM(FastWAM):
                 candidate_means=None,
                 candidate_valid_mask=None,
             )
-        if candidate_means is None or candidate_valid_mask is None:
+        if batch_size != 1:
             raise SourceTransportError(
-                "fixed_context_top1 inference requires candidate means and mask"
+                "online fixed retrieval currently supports one rollout step"
             )
-        means = candidate_means.to(
-            device=self.device, dtype=self.torch_dtype, non_blocking=True
-        )
-        valid = candidate_valid_mask.to(
-            device=self.device, dtype=torch.bool, non_blocking=True
-        )
-        if means.ndim != 4 or valid.ndim != 2:
+        retriever = self._warm_online_retriever
+        if retriever is None:
             raise SourceTransportError(
-                "inference candidates must have shapes [B,K,H,D] and [B,K]"
+                "fixed_context_top1 requires bind_online_retriever before inference"
             )
-        if means.shape[:2] != valid.shape or means.shape[0] != batch_size:
+
+        from fastwam.memory.online_retrieval import BoundOnlineStep
+
+        if type(online_step) is not BoundOnlineStep:
             raise SourceTransportError(
-                "inference candidate batch/rank dimensions do not match"
+                "fixed_context_top1 requires a retriever-produced BoundOnlineStep"
             )
-        if self.warm_run_contract is not None and (
-            means.ndim != 4
-            or tuple(means.shape[2:])
-            != (
-                self.warm_run_contract.action_horizon,
-                self.warm_run_contract.action_dim,
-            )
-        ):
+        self._validate_online_step_model_binding(online_step)
+        validated = retriever.assert_owned_bound_step(
+            online_step,
+            prompt=online_step.prompt,
+            proprio=online_step.proprio,
+            input_image=online_step.model_input,
+        )
+        if validated is not online_step:
             raise SourceTransportError(
-                "inference candidate action shape does not match WarmSourceRunContract"
+                "online retriever must validate and return the identical capability"
             )
-        enabled = None
-        if memory_enabled_mask is not None:
-            enabled = memory_enabled_mask.to(
-                device=self.device, dtype=torch.bool, non_blocking=True
-            )
-        components = select_source_components(
-            valid,
-            policy="fixed_context_top1",
-            phase="infer",
-            memory_enabled_mask=enabled,
-        )
-        return ActionSourceContext(
-            component_indices=components,
-            candidate_means=means,
-            candidate_valid_mask=valid,
-        )
+        return self._source_context_from_validated_online_step(online_step)
 
     @torch.no_grad()
     def infer_action(
         self,
         *args,
-        candidate_means: torch.Tensor | None = None,
-        candidate_valid_mask: torch.Tensor | None = None,
-        memory_enabled_mask: torch.Tensor | None = None,
+        online_step: object | None = None,
         **kwargs,
     ):
-        """Run the action-only path using only policy-resolved raw candidates.
-
-        A caller cannot provide an ``ActionSourceContext`` because that object
-        already contains component indices and could therefore bypass the
-        checkpoint-bound source policy.  Fixed-source deployment must provide
-        the raw rank-ordered candidate tensors returned by online retrieval.
-        """
+        """Run action-only inference with a bound online capability or null."""
 
         self._require_warm_configuration()
-        if "action_source_context" in kwargs:
+        forbidden = sorted(_FORBIDDEN_RAW_INFERENCE_FIELDS.intersection(kwargs))
+        if forbidden:
             raise SourceTransportError(
-                "prebuilt ActionSourceContext is forbidden for WARM inference; "
-                "provide raw candidate_means/candidate_valid_mask instead"
+                "raw/prebuilt WARM inference payloads are forbidden; "
+                f"received {forbidden}. Use a BoundOnlineStep."
             )
         if self.warm_source_policy == "oracle_action_top1":
             raise SourceTransportError(
                 "oracle_action_top1 checkpoints cannot run infer_action"
             )
         if self.warm_source_policy == "gaussian_null":
-            # Deliberately do not inspect caller candidate payloads.  The null
-            # checkpoint always reconstructs the explicit Gaussian component.
+            # Deliberately do not inspect online_step or any retriever state.
             action_source_context = self.build_inference_source_context(batch_size=1)
-        else:
-            if candidate_means is None or candidate_valid_mask is None:
-                raise SourceTransportError(
-                    "fixed_context_top1 infer_action requires raw candidate "
-                    "means and mask from runtime retrieval"
-                )
-            if not isinstance(candidate_means, torch.Tensor) or not isinstance(
-                candidate_valid_mask, torch.Tensor
-            ):
-                raise TypeError(
-                    "candidate_means and candidate_valid_mask must be torch tensors"
-                )
-            if candidate_means.ndim == 3:
-                candidate_means = candidate_means.unsqueeze(0)
-            if candidate_valid_mask.ndim == 1:
-                candidate_valid_mask = candidate_valid_mask.unsqueeze(0)
-            if candidate_means.ndim != 4 or candidate_means.shape[0] != 1:
-                raise SourceTransportError(
-                    "infer_action candidate_means must have shape [K,H,D] or "
-                    "[1,K,H,D]"
-                )
-            if (
-                candidate_valid_mask.ndim != 2
-                or candidate_valid_mask.shape[0] != 1
-            ):
-                raise SourceTransportError(
-                    "infer_action candidate_valid_mask must have shape [K] or [1,K]"
-                )
-            if memory_enabled_mask is not None:
-                if not isinstance(memory_enabled_mask, torch.Tensor):
-                    raise TypeError("memory_enabled_mask must be a torch tensor")
-                if memory_enabled_mask.ndim == 0:
-                    memory_enabled_mask = memory_enabled_mask.reshape(1)
-                if memory_enabled_mask.shape != (1,):
-                    raise SourceTransportError(
-                        "infer_action memory_enabled_mask must be scalar or shape [1]"
-                    )
-            action_source_context = self.build_inference_source_context(
-                candidate_means=candidate_means,
-                candidate_valid_mask=candidate_valid_mask,
-                memory_enabled_mask=memory_enabled_mask,
-                batch_size=1,
+            kwargs["action_source_context"] = action_source_context
+            kwargs["memory_sigma"] = self.warm_memory_sigma
+            output = super().infer_action(*args, **kwargs)
+            source_seed = kwargs.get("seed")
+            output["warm_online_telemetry"] = _json_safe(
+                {
+                    "retrieval": None,
+                    "source": {
+                        "policy": "gaussian_null",
+                        "component": 0,
+                        "selected_rank": None,
+                        "selected_event_id": None,
+                        "memory_selected": False,
+                        "memory_sigma": float(self.warm_memory_sigma),
+                        "derived_seed": (
+                            None if source_seed is None else int(source_seed)
+                        ),
+                    },
+                },
+                field="WARM null online telemetry",
             )
-        kwargs["action_source_context"] = action_source_context
-        kwargs["memory_sigma"] = self.warm_memory_sigma
-        return super().infer_action(*args, **kwargs)
+            return output
+
+        if args:
+            raise SourceTransportError(
+                "fixed_context_top1 accepts no positional model inputs; all "
+                "prompt/proprio/image bindings come from BoundOnlineStep"
+            )
+        bound_input_fields = {
+            "prompt",
+            "input_image",
+            "proprio",
+            "context",
+            "context_mask",
+            "action_horizon",
+            "seed",
+        }
+        externally_bound = sorted(bound_input_fields.intersection(kwargs))
+        if externally_bound:
+            raise SourceTransportError(
+                "fixed_context_top1 model inputs are owned by BoundOnlineStep; "
+                f"remove external fields {externally_bound}"
+            )
+        retriever = self._warm_online_retriever
+        if retriever is None:
+            raise SourceTransportError(
+                "fixed_context_top1 requires bind_online_retriever before inference"
+            )
+        from fastwam.memory.online_retrieval import BoundOnlineStep
+
+        if type(online_step) is not BoundOnlineStep:
+            raise SourceTransportError(
+                "fixed_context_top1 requires a retriever-produced BoundOnlineStep"
+            )
+        self._validate_online_step_model_binding(online_step)
+        validated = retriever.validate_bound_step(
+            online_step,
+            prompt=online_step.prompt,
+            proprio=online_step.proprio,
+            input_image=online_step.model_input,
+        )
+        if validated is not online_step:
+            raise SourceTransportError(
+                "online retriever must validate and return the identical capability"
+            )
+        action_source_context = self._source_context_from_validated_online_step(
+            online_step
+        )
+        kwargs.update(
+            {
+                "prompt": online_step.prompt,
+                "input_image": torch.tensor(
+                    online_step.model_input,
+                    dtype=self.torch_dtype,
+                    device=self.device,
+                ),
+                "action_horizon": int(self.warm_run_contract.action_horizon),
+                "proprio": (
+                    None
+                    if online_step.proprio is None
+                    else torch.tensor(
+                        online_step.proprio,
+                        dtype=self.torch_dtype,
+                        device=self.device,
+                    )
+                ),
+                "seed": int(online_step.derived_seed),
+                "action_source_context": action_source_context,
+                "memory_sigma": self.warm_memory_sigma,
+            }
+        )
+        output = super().infer_action(**kwargs)
+        component_value = output.get("source_component")
+        if not isinstance(component_value, torch.Tensor) or component_value.numel() != 1:
+            raise SourceTransportError(
+                "FastWAM fixed-source output is missing one source component"
+            )
+        component = int(component_value.detach().cpu().reshape(-1)[0].item())
+        if component not in {0, 1}:
+            raise SourceTransportError(
+                "fixed_context_top1 produced an invalid source component"
+            )
+        telemetry = {
+            "retrieval": _fixed_retrieval_telemetry(online_step),
+            "source": {
+                "policy": "fixed_context_top1",
+                "component": component,
+                "selected_rank": 0 if component == 1 else None,
+                "selected_event_id": (
+                    _event_id_json(online_step.selected_event_id)
+                    if component == 1
+                    else None
+                ),
+                "memory_selected": component == 1,
+                "memory_sigma": float(self.warm_memory_sigma),
+                "derived_seed": int(online_step.derived_seed),
+            },
+        }
+        output["warm_online_telemetry"] = _json_safe(
+            telemetry, field="WARM online telemetry"
+        )
+        return output
 
     @torch.no_grad()
     def infer_joint(self, *args, **kwargs):
@@ -476,9 +986,8 @@ class WarmSourceFastWAM(FastWAM):
             )
         if self.warm_source_policy == "fixed_context_top1":
             raise SourceTransportError(
-                "fixed_context_top1 joint inference is unavailable until the "
-                "online retrieval bridge is implemented; use infer_action with "
-                "raw retrieved candidates"
+                "fixed_context_top1 supports only infer_action with a "
+                "BoundOnlineStep"
             )
         return super().infer_joint(*args, **kwargs)
 
@@ -493,9 +1002,8 @@ class WarmSourceFastWAM(FastWAM):
             )
         if self.warm_source_policy == "fixed_context_top1":
             raise SourceTransportError(
-                "fixed_context_top1 generic inference is unavailable until the "
-                "online retrieval bridge is implemented; use infer_action with "
-                "raw retrieved candidates"
+                "fixed_context_top1 supports only infer_action with a "
+                "BoundOnlineStep"
             )
         return super().infer(*args, **kwargs)
 
@@ -509,6 +1017,16 @@ class WarmSourceFastWAM(FastWAM):
         contract_sha256 = (
             None if self.warm_run_contract is None else self.warm_run_contract.sha256
         )
+        validation_contract = (
+            None
+            if self.warm_validation_run_contract is None
+            else self.warm_validation_run_contract.to_dict()
+        )
+        validation_contract_sha256 = (
+            None
+            if self.warm_validation_run_contract is None
+            else self.warm_validation_run_contract.sha256
+        )
         return {
             "warm_source": {
                 "schema": WARM_SOURCE_CHECKPOINT_SCHEMA,
@@ -517,6 +1035,8 @@ class WarmSourceFastWAM(FastWAM):
                 "memory_sigma": self.warm_memory_sigma,
                 "run_contract": contract,
                 "run_contract_sha256": contract_sha256,
+                "validation_run_contract": validation_contract,
+                "validation_run_contract_sha256": validation_contract_sha256,
             }
         }
 
@@ -541,6 +1061,8 @@ class WarmSourceFastWAM(FastWAM):
             "memory_sigma",
             "run_contract",
             "run_contract_sha256",
+            "validation_run_contract",
+            "validation_run_contract_sha256",
         }
         if set(value) != expected_fields:
             raise ValueError(
@@ -575,6 +1097,32 @@ class WarmSourceFastWAM(FastWAM):
             raise ValueError(
                 "checkpoint run contract does not match the configured artifacts"
             )
+        validation_value = value["validation_run_contract"]
+        loaded_validation = (
+            None
+            if validation_value is None
+            else WarmSourceRunContract.from_dict(validation_value)
+        )
+        loaded_validation_hash = (
+            None if loaded_validation is None else loaded_validation.sha256
+        )
+        if (
+            value["validation_run_contract_sha256"]
+            != loaded_validation_hash
+        ):
+            raise ValueError(
+                "checkpoint validation_run_contract_sha256 is invalid"
+            )
+        configured_validation = self.warm_validation_run_contract
+        configured_validation_hash = (
+            None
+            if configured_validation is None
+            else configured_validation.sha256
+        )
+        if loaded_validation_hash != configured_validation_hash:
+            raise ValueError(
+                "checkpoint validation run contract does not match configured dev artifacts"
+            )
 
     def _preflight_checkpoint_extra_state(self, payload: dict[str, Any]) -> None:
         self._require_warm_configuration()
@@ -594,6 +1142,7 @@ __all__ = [
     "WARM_CANDIDATE_MEANS",
     "WARM_MEMORY_ENABLED",
     "WARM_ORACLE_CANDIDATE_INDEX",
+    "WARM_QUERY_SPLIT",
     "WARM_SOURCE_CHECKPOINT_SCHEMA",
     "WARM_SOURCE_CHECKPOINT_VERSION",
     "WarmSourceFastWAM",

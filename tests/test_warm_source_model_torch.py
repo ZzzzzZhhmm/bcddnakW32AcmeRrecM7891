@@ -4,8 +4,9 @@ import hashlib
 import json
 import os
 from pathlib import Path
-from types import MethodType
+from types import MethodType, SimpleNamespace
 
+import numpy as np
 import pytest
 
 
@@ -22,6 +23,30 @@ else:
 
 from fastwam.models.wan22.fastwam import FastWAM
 from fastwam.models.wan22.mot import MoT, VideoPrefillOutput
+from fastwam.memory.event_bank import EventBank
+import fastwam.memory.online_retrieval as online_retrieval_module
+from fastwam.memory.manifest import sha256_file
+from fastwam.memory.online_retrieval import (
+    FrozenDinoOnlineRetriever,
+    OnlineBoundStepError,
+)
+from fastwam.memory.payload_names import (
+    CONTAINS_FORCED_GRIPPER,
+    EFFECT_POST,
+    EFFECT_PRE,
+    EVENT_SCORE,
+    FEATURE_EPISODE_SHA256,
+    MODEL_SPACE_ACTION,
+    OBSERVED_GRIPPER_STATE,
+    SOURCE_EPISODE_SHA256,
+    START_PROPRIO,
+    TASK_INDEX,
+)
+from fastwam.memory.schema import EventId
+from fastwam.models.warm.online_contract import (
+    ONLINE_RETRIEVAL_IMPLEMENTATION,
+    WarmOnlineRunContract,
+)
 from fastwam.models.warm.source_contract import WarmSourceRunContract
 from fastwam.models.warm.source_model import WarmSourceFastWAM
 from fastwam.models.warm.source_transport import (
@@ -65,6 +90,147 @@ def _run_contract(
         global_sample_stride=1,
         action_horizon=ACTION_HORIZON,
         action_dim=ACTION_DIM,
+    )
+
+
+def _dev_contract(train: WarmSourceRunContract) -> WarmSourceRunContract:
+    return WarmSourceRunContract(
+        **{
+            **train.to_dict(),
+            "candidate_manifest_sha256": _digest("dev:candidate-manifest"),
+            "query_corpus_sha256": _digest("dev:query-corpus"),
+            "query_split": "dev",
+        }
+    )
+
+
+def _online_contract(
+    train: WarmSourceRunContract,
+    dev: WarmSourceRunContract,
+    *,
+    checkpoint_sha256: str,
+) -> WarmOnlineRunContract:
+    return WarmOnlineRunContract(
+        training_run_contract_sha256=train.sha256,
+        validation_run_contract_sha256=dev.sha256,
+        warm_checkpoint_sha256=checkpoint_sha256,
+        training_attestation_sha256=_digest("online:training-attestation"),
+        shared_training_recipe_sha256=_digest("online:shared-training-recipe"),
+        training_runtime_sha256=_digest("online:training-runtime"),
+        bank_manifest_sha256=train.bank_manifest_sha256,
+        bank_content_sha256=train.bank_content_sha256,
+        encoder_contract_sha256=_digest("online:encoder"),
+        encoder_runtime_sha256=_digest("online:encoder-runtime"),
+        camera_contract_sha256=_digest("online:camera"),
+        m1_data_config_sha256=_digest("online:m1-data-config"),
+        dino_checkpoint_tree_sha256=_digest("online:dino"),
+        dino_checkpoint_file_count=1,
+        normalization_stats_sha256=train.normalization_stats_sha256,
+        action_space_contract_sha256=train.action_space_contract_sha256,
+        catalog_sha256=train.catalog_sha256,
+        audit_sha256=train.audit_sha256,
+        resolved_eval_config_sha256=_digest("online:eval-config"),
+        vae_checkpoint_sha256=_digest("online:vae"),
+        text_encoder_tree_sha256=_digest("online:text"),
+        tokenizer_tree_sha256=_digest("online:tokenizer"),
+        evaluation_namespace_sha256=_digest("online:evaluation-namespace"),
+        task_suite="libero_10",
+        task_id=0,
+        task_description="task-0",
+        root_seed=17,
+        initial_states_sha256=_digest("online:initial-states"),
+        bddl_sha256=_digest("online:bddl"),
+        retrieval_implementation=ONLINE_RETRIEVAL_IMPLEMENTATION,
+        top_k=2,
+        source_policy="fixed_context_top1",
+        memory_sigma=0.2,
+        action_horizon=ACTION_HORIZON,
+        action_dim=ACTION_DIM,
+        git_commit="1" * 40,
+        git_dirty=False,
+    )
+
+
+def _hash_rows(*values: int) -> np.ndarray:
+    return np.stack(
+        [
+            np.frombuffer(bytes.fromhex(f"{value:064x}"), dtype=np.uint8)
+            for value in values
+        ]
+    )
+
+
+def _online_bank(*, task_index: int = 0) -> EventBank:
+    count = 2
+    actions = np.arange(
+        count * ACTION_HORIZON * ACTION_DIM,
+        dtype=np.float32,
+    ).reshape(count, ACTION_HORIZON, ACTION_DIM)
+    return EventBank.from_arrays(
+        (
+            EventId("libero", 0, 0, 0),
+            EventId("libero", 0, 1, 0),
+        ),
+        np.asarray([[1.0, 0.0], [0.8, 0.2]], dtype=np.float32),
+        **{
+            MODEL_SPACE_ACTION: actions,
+            EFFECT_PRE: np.zeros((count, 2, 2), dtype=np.float32),
+            EFFECT_POST: np.ones((count, 2, 2), dtype=np.float32),
+            START_PROPRIO: np.zeros((count, 8), dtype=np.float32),
+            OBSERVED_GRIPPER_STATE: np.zeros(
+                (count, ACTION_HORIZON), dtype=np.float32
+            ),
+            TASK_INDEX: np.full((count,), task_index, dtype=np.int64),
+            EVENT_SCORE: np.ones((count,), dtype=np.float32),
+            CONTAINS_FORCED_GRIPPER: np.zeros((count,), dtype=np.bool_),
+            SOURCE_EPISODE_SHA256: _hash_rows(1, 2),
+            FEATURE_EPISODE_SHA256: _hash_rows(11, 12),
+        },
+    )
+
+
+class _OnlineImageAdapter:
+    @staticmethod
+    def prepare(batch):
+        camera = np.asarray(batch["agentview"], dtype=np.float32)
+        return SimpleNamespace(
+            camera_frames={"agentview": camera},
+            vae_frames=np.ascontiguousarray(camera * 2.0 - 1.0),
+        )
+
+
+class _OnlineDino:
+    @staticmethod
+    def encode(_frames, *, batch_size):
+        assert batch_size == 1
+        return SimpleNamespace(
+            cls=np.asarray([[1.0, 0.0]], dtype=np.float32)
+        )
+
+
+def _online_retriever(
+    train: WarmSourceRunContract,
+    online: WarmOnlineRunContract,
+    *,
+    bank_task_index: int = 0,
+) -> FrozenDinoOnlineRetriever:
+    # Production code can only use from_artifacts().  This server-side unit
+    # fixture injects the module-private capability so the model/retriever
+    # handshake can be exercised without writing a full DINO checkpoint tree.
+    return FrozenDinoOnlineRetriever(
+        bank=_online_bank(task_index=bank_task_index),
+        source_run_contract=train,
+        online_run_contract=online,
+        image_adapter=_OnlineImageAdapter(),
+        dino_encoder=_OnlineDino(),
+        semantic_processor_camera="agentview",
+        processor_camera_keys=("agentview",),
+        context_mode="visual-only",
+        task_vocabulary=("task-0", "task-1") if bank_task_index else ("task-0",),
+        dino_batch_size=1,
+        _artifact_verification_capability=(
+            online_retrieval_module._ARTIFACT_VERIFICATION_CAPABILITY
+        ),
     )
 
 
@@ -208,6 +374,7 @@ def _new_model(
     policy: str = "gaussian_null",
     memory_sigma: float = 0.2,
     contract: WarmSourceRunContract | None = None,
+    validation_contract: WarmSourceRunContract | None = None,
     proprio_dim: int | None = None,
 ) -> WarmSourceFastWAM:
     video = _TinyVideoExpert()
@@ -231,6 +398,7 @@ def _new_model(
         policy=policy,
         memory_sigma=memory_sigma,
         run_contract=contract,
+        validation_run_contract=validation_contract,
     )
     return model
 
@@ -284,6 +452,87 @@ def test_non_null_policy_requires_complete_compatible_contract() -> None:
         _new_model(policy="fixed_context_top1", contract=incompatible)
 
 
+def test_train_and_dev_contracts_are_independent_and_checkpoint_bound(
+    tmp_path: Path,
+) -> None:
+    train = _run_contract()
+    dev = _dev_contract(train)
+    model = _new_model(
+        policy="fixed_context_top1",
+        contract=train,
+        validation_contract=dev,
+    )
+    metadata = model.trainer_state_metadata()
+    assert metadata["version"] == 2
+    assert metadata["validation_run_contract"] == dev.to_dict()
+    assert metadata["validation_run_contract_sha256"] == dev.sha256
+
+    checkpoint = tmp_path / "warm-with-dev.pt"
+    model.save_checkpoint(checkpoint)
+    restored = _new_model(
+        policy="fixed_context_top1",
+        contract=train,
+        validation_contract=dev,
+    )
+    restored.load_checkpoint(checkpoint)
+
+    missing_dev = _new_model(policy="fixed_context_top1", contract=train)
+    with pytest.raises(ValueError, match="validation run contract"):
+        missing_dev.load_checkpoint(checkpoint)
+
+    same_candidates = WarmSourceRunContract(
+        **{
+            **train.to_dict(),
+            "query_split": "dev",
+        }
+    )
+    with pytest.raises(SourceTransportError, match="independent dev"):
+        _new_model(
+            policy="fixed_context_top1",
+            contract=train,
+            validation_contract=same_candidates,
+        )
+
+    mismatched_bank = WarmSourceRunContract(
+        **{
+            **dev.to_dict(),
+            "bank_content_sha256": _digest("wrong-bank"),
+        }
+    )
+    with pytest.raises(SourceTransportError, match="shared artifacts"):
+        _new_model(
+            policy="fixed_context_top1",
+            contract=train,
+            validation_contract=mismatched_bank,
+        )
+
+
+def test_batch_split_marker_selects_dev_contract_and_rejects_mixed_batch() -> None:
+    train = _run_contract()
+    dev = _dev_contract(train)
+    model = _new_model(
+        policy="gaussian_null",
+        contract=train,
+        validation_contract=dev,
+    )
+    sample = _sample()
+    with pytest.raises(SourceTransportError, match="warm_query_split is required"):
+        model._source_context_from_batch(sample)
+
+    sample["warm_query_split"] = ["dev", "dev"]
+    context = model._source_context_from_batch(sample)
+    assert context.component_indices.tolist() == [0, 0]
+
+    sample["warm_query_split"] = ["train", "dev"]
+    with pytest.raises(SourceTransportError, match="cannot mix"):
+        model._source_context_from_batch(sample)
+
+    no_dev = _new_model(policy="gaussian_null", contract=train)
+    sample["warm_query_split"] = ["dev", "dev"]
+    with pytest.raises(SourceTransportError, match="validation_run_contract"):
+        no_dev._source_context_from_batch(sample)
+
+
 def test_warm_checkpoint_roundtrip_is_bound_to_policy_sigma_and_contract(
     tmp_path: Path,
 ) -> None:
@@ -323,6 +572,32 @@ def test_warm_checkpoint_roundtrip_is_bound_to_policy_sigma_and_contract(
     wrong_policy = _new_model(policy="gaussian_null")
     with pytest.raises(ValueError, match="source policy"):
         wrong_policy.load_checkpoint(checkpoint)
+
+
+def test_legacy_v1_warm_checkpoint_is_not_silently_admitted(
+    tmp_path: Path,
+) -> None:
+    contract = _run_contract()
+    source = _new_model(policy="fixed_context_top1", contract=contract)
+    checkpoint = tmp_path / "warm-v2.pt"
+    source.save_checkpoint(checkpoint)
+    payload = torch.load(checkpoint, map_location="cpu")
+    payload["warm_source"] = dict(payload["warm_source"])
+    payload["warm_source"]["version"] = 1
+    payload["warm_source"].pop("validation_run_contract")
+    payload["warm_source"].pop("validation_run_contract_sha256")
+    legacy = tmp_path / "warm-v1.pt"
+    torch.save(payload, legacy)
+
+    destination = _new_model(policy="fixed_context_top1", contract=contract)
+    before = {
+        name: tensor.detach().clone()
+        for name, tensor in destination.mot.state_dict().items()
+    }
+    with pytest.raises(ValueError, match="invalid warm_source checkpoint fields"):
+        destination.load_checkpoint(legacy)
+    for name, tensor in destination.mot.state_dict().items():
+        torch.testing.assert_close(tensor, before[name])
 
 
 def test_warm_checkpoint_requires_exact_mot_and_cannot_downgrade_strictness(
@@ -484,40 +759,23 @@ def test_formal_runtime_requires_contract_and_base_for_gaussian_null() -> None:
 def test_inference_policy_safety_and_fixed_rank_zero_semantics() -> None:
     contract = _run_contract()
     fixed = _new_model(policy="fixed_context_top1", contract=contract)
-    with pytest.raises(SourceTransportError, match="requires candidate means"):
+    with pytest.raises(SourceTransportError, match="bind_online_retriever"):
         fixed.build_inference_source_context()
-    with pytest.raises(SourceTransportError, match="requires raw candidate"):
+    with pytest.raises(SourceTransportError, match="bind_online_retriever"):
         fixed.infer_action()
 
     means = torch.randn((2, 2, ACTION_HORIZON, ACTION_DIM))
     valid = torch.tensor([[False, True], [True, True]], dtype=torch.bool)
-    context = fixed.build_inference_source_context(
-        candidate_means=means,
-        candidate_valid_mask=valid,
-        memory_enabled_mask=torch.tensor([True, False]),
-        batch_size=2,
-    )
-    # Row 0 must not skip invalid rank zero and silently use rank one. Row 1
-    # is explicitly disabled even though rank zero is valid.
-    assert context.component_indices.tolist() == [0, 0]
-
-    enabled = fixed.build_inference_source_context(
-        candidate_means=means,
-        candidate_valid_mask=valid,
-        batch_size=2,
-    )
-    assert enabled.component_indices.tolist() == [0, 1]
-
     bypass = ActionSourceContext(
         component_indices=torch.tensor([2], dtype=torch.long),
         candidate_means=means[:1],
         candidate_valid_mask=valid[:1],
     )
-    with pytest.raises(SourceTransportError, match="prebuilt ActionSourceContext"):
+    with pytest.raises(SourceTransportError, match="raw/prebuilt"):
         fixed.infer_action(action_source_context=bypass)
-    with pytest.raises(SourceTransportError, match="online retrieval bridge"):
+    with pytest.raises(SourceTransportError, match="BoundOnlineStep"):
         fixed.infer_joint()
-    with pytest.raises(SourceTransportError, match="online retrieval bridge"):
+    with pytest.raises(SourceTransportError, match="BoundOnlineStep"):
         fixed.infer()
 
     oracle = _new_model(policy="oracle_action_top1", contract=contract)
@@ -531,7 +789,7 @@ def test_inference_policy_safety_and_fixed_rank_zero_semantics() -> None:
         oracle.infer()
 
 
-def test_infer_action_rebuilds_policy_context_from_raw_candidates(
+def test_infer_action_rejects_raw_candidates_and_null_ignores_online_step(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     captured: list[ActionSourceContext] = []
@@ -546,23 +804,244 @@ def test_infer_action_rebuilds_policy_context_from_raw_candidates(
     valid = torch.tensor([True, True], dtype=torch.bool)
 
     null = _new_model(policy="gaussian_null")
-    null.infer_action(
-        candidate_means=means,
-        candidate_valid_mask=valid,
-    )
+    opaque_step = object()
+    null_output = null.infer_action(online_step=opaque_step, seed=123)
     assert captured[-1].component_indices.tolist() == [0]
     assert captured[-1].candidate_means is None
+    assert captured[-1].candidate_valid_mask is None
+    assert null_output["warm_online_telemetry"] == {
+        "retrieval": None,
+        "source": {
+            "component": 0,
+            "derived_seed": 123,
+            "memory_selected": False,
+            "memory_sigma": 0.2,
+            "policy": "gaussian_null",
+            "selected_event_id": None,
+            "selected_rank": None,
+        },
+    }
+    json.dumps(null_output["warm_online_telemetry"], allow_nan=False)
 
     fixed = _new_model(
         policy="fixed_context_top1",
         contract=_run_contract(),
     )
-    fixed.infer_action(
-        candidate_means=means,
-        candidate_valid_mask=valid,
+    with pytest.raises(SourceTransportError, match="raw/prebuilt"):
+        fixed.infer_action(
+            candidate_means=means,
+            candidate_valid_mask=valid,
+        )
+
+
+def test_fixed_online_step_binds_checkpoint_and_is_consumed_once(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    train = _run_contract()
+    dev = _dev_contract(train)
+    checkpoint = tmp_path / "warm-online.pt"
+    _new_model(
+        policy="fixed_context_top1",
+        contract=train,
+        validation_contract=dev,
+        proprio_dim=8,
+    ).save_checkpoint(checkpoint)
+    checkpoint_sha256 = sha256_file(checkpoint)
+
+    model = _new_model(
+        policy="fixed_context_top1",
+        contract=train,
+        validation_contract=dev,
+        proprio_dim=8,
     )
-    assert captured[-1].component_indices.tolist() == [1]
-    assert captured[-1].candidate_means is not means
+    model.load_checkpoint(checkpoint)
+    online = _online_contract(
+        train,
+        dev,
+        checkpoint_sha256=checkpoint_sha256,
+    )
+    retriever = _online_retriever(train, online)
+    model.bind_online_retriever(retriever)
+
+    retriever.begin_episode(0)
+    step = retriever.retrieve(
+        retriever.make_query_id(0),
+        {"agentview": np.zeros((16, 16, 3), dtype=np.uint8)},
+        task_description="task-0",
+        prompt="task-0",
+        proprio=np.zeros((8,), dtype=np.float32),
+    )
+
+    validate_calls: list[object] = []
+    original_validate = retriever.validate_bound_step
+
+    def counted_validate(value, **kwargs):
+        validate_calls.append(value)
+        return original_validate(value, **kwargs)
+
+    monkeypatch.setattr(retriever, "validate_bound_step", counted_validate)
+    captured: dict[str, object] = {}
+
+    def fake_base_infer(_self, *args, **kwargs):
+        assert not args
+        captured.update(kwargs)
+        context = kwargs["action_source_context"]
+        assert isinstance(context, ActionSourceContext)
+        return {
+            "action": torch.zeros((1, ACTION_HORIZON, ACTION_DIM)),
+            "source_component": context.component_indices.detach().clone(),
+        }
+
+    monkeypatch.setattr(FastWAM, "infer_action", fake_base_infer)
+    output = model.infer_action(online_step=step, num_inference_steps=4)
+
+    assert validate_calls == [step]
+    assert captured["prompt"] == step.prompt
+    assert captured["seed"] == step.derived_seed
+    assert captured["action_horizon"] == ACTION_HORIZON
+    torch.testing.assert_close(
+        captured["input_image"], torch.from_numpy(step.model_input)
+    )
+    torch.testing.assert_close(
+        captured["proprio"], torch.from_numpy(step.proprio)
+    )
+    context = captured["action_source_context"]
+    assert isinstance(context, ActionSourceContext)
+    assert context.component_indices.tolist() == [1]
+    assert output["warm_online_telemetry"]["source"]["selected_rank"] == 0
+    assert output["warm_online_telemetry"]["source"]["derived_seed"] == (
+        step.derived_seed
+    )
+    retrieval_telemetry = output["warm_online_telemetry"]["retrieval"]
+    assert retrieval_telemetry["query_id"]["frame_index"] == 0
+    assert retrieval_telemetry["online_contract_sha256"] == online.sha256
+    assert retrieval_telemetry["training_run_contract_sha256"] == train.sha256
+    assert retrieval_telemetry["validation_run_contract_sha256"] == dev.sha256
+    assert retrieval_telemetry["bank_rows"] == step.bank_rows.tolist()
+    assert retrieval_telemetry["cosine_scores"] == step.cosine_scores.tolist()
+    assert retrieval_telemetry["candidate_valid_mask"] == [True, True]
+    assert retrieval_telemetry["ranked_event_ids"][0] is not None
+    assert output["warm_online_telemetry"]["source"][
+        "selected_event_id"
+    ] == retrieval_telemetry["ranked_event_ids"][0]
+    json.dumps(output["warm_online_telemetry"], allow_nan=False)
+
+    with pytest.raises(OnlineBoundStepError, match="already consumed"):
+        model.infer_action(online_step=step)
+
+    missing_proprio = retriever.retrieve(
+        retriever.make_query_id(1),
+        {"agentview": np.zeros((16, 16, 3), dtype=np.uint8)},
+        task_description="task-0",
+        prompt="task-0",
+        proprio=None,
+    )
+    with pytest.raises(SourceTransportError, match="requires bound online proprio"):
+        model.infer_action(online_step=missing_proprio)
+    # Model-shape rejection happens before the one-shot capability is consumed.
+    assert retriever.assert_owned_bound_step(missing_proprio) is missing_proprio
+
+    preflight_step = retriever.retrieve(
+        retriever.make_query_id(2),
+        {"agentview": np.zeros((16, 16, 3), dtype=np.uint8)},
+        task_description="task-0",
+        prompt="task-0",
+        proprio=np.zeros((8,), dtype=np.float32),
+    )
+    preflight_context = model.build_inference_source_context(
+        online_step=preflight_step
+    )
+    assert preflight_context.component_indices.tolist() == [1]
+    # Public context preflight is non-consuming; policy inference owns the
+    # single atomic validate/consume operation.
+    second_output = model.infer_action(online_step=preflight_step)
+    assert second_output["warm_online_telemetry"]["source"]["component"] == 1
+
+    fallback_retriever = _online_retriever(
+        train,
+        online,
+        bank_task_index=1,
+    )
+    model.bind_online_retriever(fallback_retriever)
+    fallback_retriever.begin_episode(0)
+    fallback_step = fallback_retriever.retrieve(
+        fallback_retriever.make_query_id(0),
+        {"agentview": np.zeros((16, 16, 3), dtype=np.uint8)},
+        task_description="task-0",
+        prompt="task-0",
+        proprio=np.zeros((8,), dtype=np.float32),
+    )
+    fallback_output = model.infer_action(online_step=fallback_step)
+    assert fallback_step.candidate_valid_mask.tolist() == [False, False]
+    assert fallback_output["warm_online_telemetry"]["source"] == {
+        "policy": "fixed_context_top1",
+        "component": 0,
+        "selected_rank": None,
+        "selected_event_id": None,
+        "memory_selected": False,
+        "memory_sigma": 0.2,
+        "derived_seed": fallback_step.derived_seed,
+    }
+    json.dumps(fallback_output["warm_online_telemetry"], allow_nan=False)
+
+
+def test_online_bind_rejects_wrong_checkpoint_identity(tmp_path: Path) -> None:
+    train = _run_contract()
+    dev = _dev_contract(train)
+    checkpoint = tmp_path / "warm-online.pt"
+    _new_model(
+        policy="fixed_context_top1",
+        contract=train,
+        validation_contract=dev,
+    ).save_checkpoint(checkpoint)
+    model = _new_model(
+        policy="fixed_context_top1",
+        contract=train,
+        validation_contract=dev,
+    )
+    model.load_checkpoint(checkpoint)
+    wrong_online = _online_contract(
+        train,
+        dev,
+        checkpoint_sha256=_digest("wrong-warm-checkpoint"),
+    )
+
+    with pytest.raises(SourceTransportError, match="warm_checkpoint_sha256"):
+        model.bind_online_retriever(_online_retriever(train, wrong_online))
+
+
+def test_failed_checkpoint_reload_revokes_existing_online_authorization(
+    tmp_path: Path,
+) -> None:
+    train = _run_contract()
+    dev = _dev_contract(train)
+    checkpoint = tmp_path / "warm-online.pt"
+    _new_model(
+        policy="fixed_context_top1",
+        contract=train,
+        validation_contract=dev,
+    ).save_checkpoint(checkpoint)
+    model = _new_model(
+        policy="fixed_context_top1",
+        contract=train,
+        validation_contract=dev,
+    )
+    model.load_checkpoint(checkpoint)
+    online = _online_contract(
+        train,
+        dev,
+        checkpoint_sha256=sha256_file(checkpoint),
+    )
+    model.bind_online_retriever(_online_retriever(train, online))
+    assert model._warm_online_retriever is not None
+
+    with pytest.raises(FileNotFoundError):
+        model.load_checkpoint(tmp_path / "missing.pt")
+    assert model._warm_loaded_checkpoint_sha256 is None
+    assert model._warm_online_retriever is None
+    with pytest.raises(SourceTransportError, match="bind_online_retriever"):
+        model.infer_action()
 
 
 def test_prefill_legacy_and_extended_apis_share_one_internal_contract(

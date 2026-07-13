@@ -36,6 +36,7 @@ from fastwam.datasets.warm_candidates import (
     WARM_CANDIDATE_MU,
     WARM_CANDIDATE_SCORE,
     WARM_ORACLE_CANDIDATE_INDEX,
+    WARM_QUERY_SPLIT,
 )
 from fastwam.memory.action_contract import ActionSpaceContract
 from fastwam.memory.manifest import sha256_file
@@ -400,6 +401,7 @@ def test_adapter_resolves_exact_query_and_default_collates_fixed_shapes(
         INVALID_BANK_ROW,
     ]
     assert first[WARM_ORACLE_CANDIDATE_INDEX].item() == 0
+    assert first[WARM_QUERY_SPLIT] == "train"
     assert adapter.lerobot_dataset is base.lerobot_dataset
     assert adapter.lerobot_dataset.processor is base.lerobot_dataset.processor
     assert adapter.compatibility_marker == "delegated"
@@ -412,6 +414,7 @@ def test_adapter_resolves_exact_query_and_default_collates_fixed_shapes(
     assert batch[WARM_CANDIDATE_EVENT_INDEX].shape == (2, 3)
     assert batch[WARM_ORACLE_CANDIDATE_INDEX].shape == (2,)
     assert batch[WARM_ORACLE_CANDIDATE_INDEX].tolist() == [0, -1]
+    assert batch[WARM_QUERY_SPLIT] == ["train", "train"]
     # Frame one has a factual cache row whose candidate list is genuinely empty.
     assert not bool(batch[WARM_CANDIDATE_MASK][1].any().item())
 

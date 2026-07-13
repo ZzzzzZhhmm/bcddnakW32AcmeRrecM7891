@@ -40,6 +40,39 @@ EVALUATION:
   dataset_stats_path: null
   device: cuda
 
+  # M2.1 online WARM retrieval is opt-in.  The Gaussian-null comparison uses a
+  # distinct paired online contract with the same policy-independent evaluation
+  # namespace, but never constructs the retriever or opens the event bank.
+  warm_online:
+    enabled: false
+    contract_path: null
+    # Planned output path shared by the fixed/null configs. It is bound into
+    # both online contracts before the pair contract is atomically published.
+    pair_contract_path: null
+    # One passing fixed-side online/offline retrieval parity report is shared
+    # by both policy-specific jobs and later hash-bound by the pair contract.
+    parity_report_path: null
+    # Exact bytes used by M1 feature precompute; rollout processor recipe is
+    # cross-checked against this file before the first environment step.
+    m1_data_config_path: null
+    # Canonical sidecar emitted atomically with the policy-specific WARM
+    # checkpoint by the live trainer.
+    training_attestation_path: null
+    training_run_contract_path: null
+    validation_run_contract_path: null
+    base_checkpoint_path: null
+    bank_directory: null
+    normalizer_contract_path: null
+    encoder_contract_path: null
+    camera_contract_path: null
+    dino_checkpoint_path: null
+    catalog_path: null
+    audit_report_path: null
+    evaluation_namespace: warm-libero-m2.1
+    top_k: 32
+    dino_device: ${EVALUATION.device}
+    dino_batch_size: 1
+
 MULTIRUN:
   create_only: false
   task_file: null

@@ -44,6 +44,60 @@ def sha256_file(path: str | Path) -> str:
     return digest.hexdigest()
 
 
+def sha256_path_tree(path: str | Path) -> tuple[str, int]:
+    """Hash one file or a deterministic directory tree.
+
+    Directory identity is domain-separated and includes every regular file's
+    POSIX relative path, byte size, and SHA-256.  This is the canonical WARM
+    checkpoint-tree recipe used by both offline feature precompute and online
+    frozen-teacher retrieval.  Callers that load a mutable tree must compare a
+    second hash after loading to close the ordinary replacement window.
+    """
+
+    resolved = Path(path).expanduser().resolve()
+    if resolved.is_file():
+        return sha256_file(resolved), 1
+    if not resolved.is_dir():
+        raise FileNotFoundError(resolved)
+
+    rows: list[dict[str, object]] = []
+    for candidate in sorted(
+        resolved.rglob("*"),
+        key=lambda item: item.relative_to(resolved).as_posix(),
+    ):
+        if not candidate.is_file():
+            continue
+        relative = candidate.relative_to(resolved).as_posix()
+        before = candidate.stat()
+        file_sha256 = sha256_file(candidate)
+        after = candidate.stat()
+        if (before.st_size, before.st_mtime_ns) != (
+            after.st_size,
+            after.st_mtime_ns,
+        ):
+            raise ManifestError(
+                f"artifact file changed while it was hashed: {candidate}"
+            )
+        rows.append(
+            {
+                "path": relative,
+                "size": after.st_size,
+                "sha256": file_sha256,
+            }
+        )
+    if not rows:
+        raise ManifestError(f"artifact tree is empty: {resolved}")
+    encoded = json.dumps(
+        rows,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+        allow_nan=False,
+    ).encode("utf-8")
+    digest = hashlib.sha256(b"warm.checkpoint-tree.v1\0" + encoded).hexdigest()
+    return digest, len(rows)
+
+
 def sha256_array(array: np.ndarray) -> str:
     """Hash array content together with its exact dtype and shape."""
 

@@ -71,15 +71,28 @@ Deliverables:
 - online observation-to-query retrieval bridge before any fixed-context
   closed-loop evaluation is claimed;
 - an independently catalog-bound dev dataset/cache/run contract before periodic
-  Trainer validation is enabled.
+  Trainer validation is enabled;
+- immutable trainer-produced checkpoint attestations binding the actual
+  policy-specific weights, shared training recipe, optimizer/runtime facts,
+  train/dev source contracts, base checkpoint, seed/step, and clean Git commit;
+- exact M1-processor and frozen-DINO runtime binding for online retrieval;
+- a passing task-specific online/offline parity report, fixed/null pair
+  contract, and post-rollout pair-result verification report.
 
 Implementation note: M2 training consumes a distinct stride-one train-query
 candidate cache. A closed source-run contract binds that cache, the event
 bank, catalog/audit, action normalizer, and baseline checkpoint; the model and
 Dataset resolver cross-check the same hashes before Trainer construction.
-Until the online bridge and independent dev contract are delivered, the M2 task
-uses `eval_every=0`; offline fixed-source smoke tests and Gaussian-null inference
-parity are implementation gates, not evidence of fixed-memory rollout success.
+The M2.1 implementation now includes the online bridge and independent dev
+contract path. A formal WARM training attestation always requires both train
+and catalog-bound stride-one DEV source contracts, even when `eval_every=0` and
+no periodic validation loop is scheduled. Local implementation tests are not
+evidence of fixed-memory rollout success: on the server, training produces the
+two policy-specific checkpoint attestations first; resolved evaluation configs
+then bind those artifacts and the planned parity/pair paths; online contracts
+are published; exact fixed-side DEV parity passes; the pair contract is
+published; only then may actual fixed/null LIBERO rollouts and pair-result
+verification run.
 
 Compare the identical retrieved payload as context, residual, and source, plus
 FastWAM and WarmPrior-style recent-action source.
@@ -93,6 +106,9 @@ Acceptance:
 - closed-loop success improves at least about 3 percentage points over
   context-only and recent-action prior with positive three-seed confidence;
 - ordinary Markov tasks regress no more than about 2 points.
+- every reported fixed/null result is traceable through its training
+  attestation, online contract, passing parity report, pair contract, and
+  pair-result verification report.
 
 No-go: if source is not better than context/residual, source transport cannot
 remain the main contribution.

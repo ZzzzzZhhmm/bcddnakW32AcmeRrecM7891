@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 
 from fastwam.memory import ArraySpec, EventBankManifest, EventId, ManifestError
-from fastwam.memory.manifest import sha256_array
+from fastwam.memory.manifest import sha256_array, sha256_file, sha256_path_tree
 
 
 def _digest() -> str:
@@ -80,3 +80,34 @@ def test_manifest_rejects_missing_per_array_hash() -> None:
             content_hashes={"events.npz": _digest()},
             num_events=1,
         )
+
+
+def test_path_tree_hash_is_deterministic_and_binds_names_sizes_and_bytes(
+    tmp_path,
+) -> None:
+    root = tmp_path / "checkpoint"
+    (root / "nested").mkdir(parents=True)
+    first = root / "a.bin"
+    second = root / "nested" / "b.bin"
+    first.write_bytes(b"alpha")
+    second.write_bytes(b"beta")
+
+    digest, count = sha256_path_tree(root)
+    assert count == 2
+    assert sha256_path_tree(root) == (digest, count)
+    # A single file keeps the long-standing file digest identity; directory
+    # trees use their own domain-separated recipe.
+    assert sha256_path_tree(first) == (sha256_file(first), 1)
+
+    second.write_bytes(b"BETA")
+    assert sha256_path_tree(root)[0] != digest
+
+
+def test_path_tree_hash_rejects_missing_and_empty_trees(tmp_path) -> None:
+    with pytest.raises(FileNotFoundError):
+        sha256_path_tree(tmp_path / "missing")
+
+    empty = tmp_path / "empty"
+    empty.mkdir()
+    with pytest.raises(ManifestError, match="empty"):
+        sha256_path_tree(empty)

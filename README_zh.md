@@ -13,6 +13,25 @@ WARM 从跨 episode 记忆库检索真实发生过的“前状态—动作—观
 - `docs/IMPLEMENTATION_ROADMAP.md`
 - `docs/DATA_AND_EVAL_PROTOCOL.md`
 - `docs/LOCAL_AND_SERVER_WORKFLOW.md`
+- `docs/M1_OFFLINE_PIPELINE.md`
+- `docs/M2_SOURCE_ONLY.md`
+- `docs/M2_ONLINE_RETRIEVAL.md`
+- `docs/M2_ONLINE_PAIRING.md`
+
+本地实现只落在 `F:\WARM\code`，用于代码、配置、CPU 合约测试与轻量检查；DINO/Wan
+权重加载、特征预计算、WARM 训练和 LIBERO 仿真全部在 Linux CUDA 服务器运行。服务器只从
+私有仓库的 `main` 分支克隆：
+
+```bash
+git clone --branch main --single-branch git@github.com:ZzzzzZhhmm/WARM.git
+cd WARM
+test -z "$(git status --porcelain)"
+```
+
+正式 M2.1 证据链的顺序为：固定/空记忆策略各自的训练 checkpoint 与训练证明 sidecar、
+完整解析的评测配置、online-run contract、固定策略的 online/offline parity report、固定/空
+记忆 pair contract、真实 rollout，最后是 pair-result verification report。完整服务器命令见
+`docs/M2_ONLINE_RETRIEVAL.md`。本地代码实现本身不代表已经完成 GPU 训练或 benchmark 验证。
 
 基线来自 FastWAM 提交 `45d8e1458921d83f8ad6cf9ce993d371208dabd0`。来源、许可证和第三方
 声明见 `BASELINE.md`、`LICENSE` 与 `THIRD_PARTY_NOTICES.md`。以下基线说明暂时保留，直至

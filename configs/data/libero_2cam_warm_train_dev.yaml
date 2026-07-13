@@ -1,0 +1,28 @@
+defaults:
+  - libero_2cam
+  - _self_
+
+# Independently catalog-bound held-out dataset for WARM loss validation.  All
+# shape/processor semantics resolve from the train node, while episode identity
+# and normalization are explicit runtime inputs.  Null paths deliberately make
+# a formal launch fail until immutable dev artifacts are supplied.
+val:
+  _target_: ${data.train._target_}
+  dataset_dirs: ${data.train.dataset_dirs}
+  shape_meta: ${data.train.shape_meta}
+  num_frames: ${data.train.num_frames}
+  global_sample_stride: 1
+  action_video_freq_ratio: ${data.train.action_video_freq_ratio}
+  video_size: ${data.train.video_size}
+  camera_key: ${data.train.camera_key}
+  val_set_proportion: 0.0
+  is_training_set: false
+  strict_sample_loading: true
+  skip_padding_as_possible: false
+  concat_multi_camera: ${data.train.concat_multi_camera}
+  processor: ${data.train.processor}
+  text_embedding_cache_dir: ${data.train.text_embedding_cache_dir}
+  context_len: ${data.train.context_len}
+  episode_catalog_path: null
+  episode_split: dev
+  pretrained_norm_stats: null

@@ -35,12 +35,14 @@ WARM_CANDIDATE_MASK = "warm_candidate_mask"
 WARM_CANDIDATE_SCORE = "warm_candidate_score"
 WARM_CANDIDATE_EVENT_INDEX = "warm_candidate_event_index"
 WARM_ORACLE_CANDIDATE_INDEX = "warm_oracle_candidate_index"
+WARM_QUERY_SPLIT = "warm_query_split"
 WARM_CANDIDATE_FIELDS = (
     WARM_CANDIDATE_MU,
     WARM_CANDIDATE_MASK,
     WARM_CANDIDATE_SCORE,
     WARM_CANDIDATE_EVENT_INDEX,
     WARM_ORACLE_CANDIDATE_INDEX,
+    WARM_QUERY_SPLIT,
 )
 
 _PADDING_FIELDS = (
@@ -862,6 +864,10 @@ class RuntimeCandidateDatasetAdapter(torch.utils.data.Dataset):
         sample[WARM_ORACLE_CANDIDATE_INDEX] = torch.tensor(
             oracle_index, dtype=torch.int64
         )
+        # Trainer reuses ``training_loss`` for held-out loss evaluation.  Keep
+        # the independently bound cache split explicit in every collated batch
+        # so the model cannot silently interpret a dev row under train identity.
+        sample[WARM_QUERY_SPLIT] = self._resolver.query_split
         return sample
 
 
@@ -876,4 +882,5 @@ __all__ = [
     "WARM_CANDIDATE_MU",
     "WARM_CANDIDATE_SCORE",
     "WARM_ORACLE_CANDIDATE_INDEX",
+    "WARM_QUERY_SPLIT",
 ]

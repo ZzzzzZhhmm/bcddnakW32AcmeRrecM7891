@@ -11,10 +11,11 @@ falsifiable.
 
 ## Local and server boundary
 
-The canonical working tree is `F:\WARM\code`.  Windows is used only for source,
-manifest/contract validation, synthetic CPU tests, compilation, and private Git
-work.  PyTorch/CUDA installation, FastWAM weights, DINO/VAE encoding, training,
-and simulator rollouts remain server-only.
+`WARM_REPO` denotes the checkout root (`F:\WARM\code` is the current Windows
+example). Windows is used only for source, manifest/contract validation,
+synthetic CPU tests, compilation, and private Git work. PyTorch/CUDA
+installation, FastWAM weights, DINO/VAE encoding, training, and simulator
+rollouts remain server-only and may use a different checkout path.
 
 The local test suite intentionally skips Torch runtime tests when PyTorch is not
 installed.  The GPU smoke gate must run them and treats any skip as failure.
@@ -92,6 +93,33 @@ python scripts/build_warm_source_run_contract.py \
   --base-checkpoint "$FASTWAM_BASE/checkpoints/weights/final.pt" \
   --output "$WARM_M2/contracts/hybrid_h32_train_source.json" \
   --query-split train \
+  --expected-action-horizon 32 \
+  --expected-action-dim 7
+```
+
+Build an independent stride-one dev cache and dev source contract from the
+catalog-authorized dev episodes. It shares the immutable train bank and action
+contracts, but its candidate manifest and query-corpus hashes must differ from
+train; reusing the train cache is a hard error:
+
+```bash
+python scripts/build_warm_candidate_cache.py \
+  --bank "$WARM_M1/banks/hybrid_h32" \
+  --catalog "$WARM_M1/libero_catalog.json" \
+  --audit-report "$WARM_M1/libero_audit.json" \
+  --feature-list "$WARM_M1/features/dev_features.list" \
+  --output "$WARM_M2/candidates/hybrid_h32_dev_k32" \
+  --query-split dev \
+  --query-stride 1 \
+  --top-k 32 \
+  --summary "$WARM_M2/candidates/hybrid_h32_dev_k32.summary.json"
+
+python scripts/build_warm_source_run_contract.py \
+  --bank "$WARM_M1/banks/hybrid_h32" \
+  --candidate-cache "$WARM_M2/candidates/hybrid_h32_dev_k32" \
+  --base-checkpoint "$FASTWAM_BASE/checkpoints/weights/final.pt" \
+  --output "$WARM_M2/contracts/hybrid_h32_dev_source.json" \
+  --query-split dev \
   --expected-action-horizon 32 \
   --expected-action-dim 7
 ```
@@ -240,19 +268,27 @@ read the same train-only statistics file:
 ```bash
 export RUN_ID="${RUN_ID:-$(date +%Y-%m-%d_%H-%M-%S)}"
 RUN_DIR="./runs/libero_warm_source_2cam224_1e-4/$RUN_ID"
-CONTRACT="$WARM_M2/contracts/hybrid_h32_train_source.json"
+TRAIN_CONTRACT="$WARM_M2/contracts/hybrid_h32_train_source.json"
+DEV_CONTRACT="$WARM_M2/contracts/hybrid_h32_dev_source.json"
 
 WARM_OVERRIDES=(
   "task=libero_warm_source_2cam224_1e-4"
   "model.source_policy=fixed_context_top1"
-  "model.run_contract_path=$CONTRACT"
+  "model.run_contract_path=$TRAIN_CONTRACT"
+  "model.validation_run_contract_path=$DEV_CONTRACT"
   "model.base_checkpoint_path=$FASTWAM_BASE/checkpoints/weights/final.pt"
   "data.warm_candidates.train.bank_directory=$WARM_M1/banks/hybrid_h32"
   "data.warm_candidates.train.candidate_directory=$WARM_M2/candidates/hybrid_h32_train_k32"
   "data.warm_candidates.train.catalog_path=$WARM_M1/libero_catalog.json"
   "data.warm_candidates.train.audit_report_path=$WARM_M1/libero_audit.json"
   "data.warm_candidates.train.normalization_stats_path=$WARM_M1/train_stats/dataset_stats.json"
+  "data.warm_candidates.val.bank_directory=$WARM_M1/banks/hybrid_h32"
+  "data.warm_candidates.val.candidate_directory=$WARM_M2/candidates/hybrid_h32_dev_k32"
+  "data.warm_candidates.val.catalog_path=$WARM_M1/libero_catalog.json"
+  "data.warm_candidates.val.audit_report_path=$WARM_M1/libero_audit.json"
+  "data.warm_candidates.val.normalization_stats_path=$WARM_M1/train_stats/dataset_stats.json"
   "data.train.pretrained_norm_stats=$WARM_M1/train_stats/dataset_stats.json"
+  "data.val.pretrained_norm_stats=$WARM_M1/train_stats/dataset_stats.json"
 )
 
 mkdir -p "$RUN_DIR"
@@ -294,7 +330,7 @@ python scripts/train.py "output_dir=$RUN_DIR" "${WARM_OVERRIDES[@]}" \
   > "$RUN_DIR/resolved_config.preflight.yaml"
 git rev-parse HEAD > "$RUN_DIR/git_commit.txt"
 
-python - "$CONTRACT" "$RUN_DIR/run_contract_fingerprint.json" <<'PY'
+python - "$TRAIN_CONTRACT" "$RUN_DIR/run_contract_fingerprint.json" <<'PY'
 import hashlib
 import json
 from pathlib import Path
@@ -375,6 +411,21 @@ PY
 bash scripts/train_zero1.sh 8 "${WARM_OVERRIDES[@]}"
 ```
 
+Formal WARM training publishes every weights checkpoint as an immutable pair:
+
+```text
+$RUN_DIR/checkpoints/weights/step_NNNNNN.pt
+$RUN_DIR/checkpoints/weights/step_NNNNNN.training.json
+```
+
+The adjacent trainer-produced attestation binds the actual checkpoint bytes,
+policy, shared training recipe, optimizer/scheduler and batch/world-size
+facts, precision, seed and global step, train/DEV source contracts, base
+checkpoint, and clean Git commit. Publication is no-overwrite; do not
+hand-author, copy, rename independently, or regenerate the sidecar. M2.1
+online contract construction requires the selected sidecar through
+`--training-attestation`.
+
 Do not continue if Hydra cannot fully resolve the configuration or if the two
 normalization paths differ. The adapter additionally hashes the file and checks
 it against the bank's action-space contract at runtime. Preserve the runtime
@@ -387,12 +438,13 @@ Run `gaussian_null`, `fixed_context_top1`, and the training-only
 This keeps initialization, data order, Gaussian draws, and artifact identity
 paired; only source selection changes.
 
-The task deliberately sets `eval_every=0`. The baseline LIBERO data config has
-no held-out validation set, and M2 does not yet define a separate dev
-source-run contract, so reporting periodically repeated train loss as
-"validation" would be misleading. The immutable dev oracle above is the
-current selection gate. Periodic model validation may be enabled only after a
-catalog-bound dev dataset/cache/run contract is implemented.
+The portable task deliberately leaves `eval_every=0`; after all overrides
+above are present, a formal launch may set it positive. Regardless of whether
+periodic validation is scheduled, formal training attestation requires the
+independent `DEV_CONTRACT` alongside the train contract. If validation is
+enabled, runtime also validates the DEV dataset, requires
+`warm_query_split=dev`, and rejects train/dev candidate or query-corpus
+identity reuse before validation starts.
 
 ## Required GPU smoke gate
 
@@ -424,16 +476,10 @@ Before formal training, the server must then pass:
 8. fixed-context action-only forward/backward smoke using the offline
    candidate payload and exact train dataset adapter.
 
-M2 currently has no online observation-to-context-key/retrieval bridge in the
-LIBERO policy wrapper. Therefore a fixed-context closed-loop rollout is not a
-valid current gate and no rollout success is claimed here. Add and test that
-bridge before using fixed retrieval in simulator rollouts; until then, closed
-loop is limited to ordinary FastWAM/Gaussian-null parity checks and does not
-validate memory use.
-
-Formal M2 training begins only after the H=32 dev oracle gate passes. Before the
-online bridge exists, report paired source-to-GT RMS/L2 using the same epsilon,
-training stability, latency, peak memory, selected EventId, null rate, and all
-artifact hashes. Closed-loop success and ODE-step sensitivity for fixed
-retrieval become reportable only after the online bridge is implemented and
-contract-tested.
+M2.1 now provides a contract-bound online frozen-DINO retrieval bridge for
+LIBERO. Closed-loop success becomes reportable only after the server passes the
+additional gates in `docs/M2_ONLINE_RETRIEVAL.md`: fixed/null QueryId and seed
+parity, online-vs-offline dev feature/top-K parity, strict checkpoint binding,
+and one real CUDA LIBERO rollout with complete per-replan telemetry. Until
+those gates pass, the local implementation makes no closed-loop performance
+claim.

@@ -18,21 +18,38 @@ specification, roadmap, and evaluation protocol are in:
 - `docs/LOCAL_AND_SERVER_WORKFLOW.md`
 - `docs/M1_OFFLINE_PIPELINE.md`
 - `docs/M2_SOURCE_ONLY.md`
+- `docs/M2_ONLINE_RETRIEVAL.md`
+- `docs/M2_ONLINE_PAIRING.md`
 
-The canonical local working copy is `F:\WARM\code`. The Windows workstation
-is used for implementation and CPU contract tests; feature encoding, FastWAM
-training, and simulator evaluation run on the Linux GPU server from an exact
-private Git commit.
+Set `WARM_REPO` to the checkout root (`F:\WARM\code` is the current Windows
+example). The workstation is used for implementation and CPU contract tests;
+feature encoding, FastWAM training, and simulator evaluation run from any
+server path after checking out the exact private Git commit.
+
+The server should clone only the private `main` branch:
+
+```bash
+git clone --branch main --single-branch git@github.com:ZzzzzZhhmm/WARM.git
+cd WARM
+test -z "$(git status --porcelain)"
+```
+
+Formal M2.1 evidence is published in this order: policy-specific training
+checkpoints and trainer attestations, resolved fixed/null evaluation configs,
+online-run contracts, fixed-side online/offline parity, the fixed/null pair
+contract, actual rollouts, and the pair-result verification report. Exact
+server commands are in `docs/M2_ONLINE_RETRIEVAL.md`. No large-scale GPU
+training or benchmark result is claimed by the local implementation alone.
 
 Current engineering milestone: M1's audited full-episode data path,
 train-only normalization artifact, server feature-precompute entrypoint,
 immutable event/candidate caches, and dev oracle evaluator are implemented.
-M2's train candidate bridge, source/scheduler contract, current-frame cached
-Action-only path, and explicit trainable scope are under local contract testing;
-they are not considered experimentally validated until the GPU gates pass.
-The current M2 task disables periodic Trainer evaluation because no independent
-dev source-run contract exists yet, and it does not claim fixed-memory LIBERO
-rollout success until an online observation-to-retrieval bridge is implemented.
+M2's train/dev candidate bridges, source/scheduler contract, current-frame
+cached Action-only path, explicit trainable scope, and contract-bound online
+frozen-DINO LIBERO retrieval path are implemented under local contract tests.
+They are not considered experimentally validated until the mandatory Linux
+GPU gates pass: independent dev parity, real checkpoint loading, CUDA
+fixed/null inference, and paired LIBERO rollouts with per-replan telemetry.
 No checkpoint, dataset, feature tensor, or simulator workload is downloaded or
 executed on the Windows workstation.
 
