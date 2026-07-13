@@ -18,7 +18,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import math
-from typing import Literal, Protocol
+from typing import Literal, Mapping, Protocol
 
 import torch
 
@@ -79,6 +79,13 @@ class ActionSourceOutput:
     memory_mask: torch.Tensor
     selected_means: torch.Tensor | None
     memory_sigma: float
+    # Complete WARM may append compact gist/action tokens to Action DiT's raw
+    # conditioning sequence.  M2 leaves these fields unset and preserves its
+    # exact source-only behavior.
+    conditioning_tokens: torch.Tensor | None = None
+    auxiliary_loss: torch.Tensor | None = None
+    auxiliary_metrics: Mapping[str, torch.Tensor] | None = None
+    source_gate: torch.Tensor | None = None
 
     @property
     def selected_candidate_indices(self) -> torch.Tensor:

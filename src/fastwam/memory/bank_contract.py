@@ -124,7 +124,7 @@ def validate_warm_v1_bank(
         gripper,
         name=OBSERVED_GRIPPER_STATE,
         dtype=np.dtype(np.float32),
-        shape=(count, horizon),
+        shape=(count, horizon + 1),
     )
     _expect(
         _require_payload(bank, TASK_INDEX),

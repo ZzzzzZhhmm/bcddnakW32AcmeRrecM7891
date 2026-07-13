@@ -50,6 +50,9 @@ def test_builder_keeps_exact_fixed_horizon_actions_and_factual_effects() -> None
     )
     np.testing.assert_array_equal(bank.payload("effect_pre")[0], episode.semantic_features[0])
     np.testing.assert_array_equal(bank.payload("effect_post")[0], episode.semantic_features[4])
+    np.testing.assert_array_equal(
+        bank.payload("observed_gripper_state")[0], episode.gripper[0:5]
+    )
     assert bank.payload("contains_forced_gripper").tolist() == [True, False]
 
 

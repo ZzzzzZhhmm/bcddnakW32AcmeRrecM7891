@@ -239,7 +239,10 @@ def build_event_bank(
             start_proprio.append(episode.proprio[start])
             # This is observed gripper state metadata.  The executable gripper
             # command remains part of model_actions and is never interpolated.
-            gripper_sequence.append(episode.gripper[start:stop])
+            # Actions span ``[start, stop)`` while factual states span the
+            # closed interval ``[start, stop]``.  Keep H+1 gripper states so
+            # a close/release caused by the final action is not truncated.
+            gripper_sequence.append(episode.gripper[start : stop + 1])
             task_indices.append(episode.task_index)
             event_scores.append(float(np.max(result.scores[start:stop])))
             contains_forced_gripper.append(

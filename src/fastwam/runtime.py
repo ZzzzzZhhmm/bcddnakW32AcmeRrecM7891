@@ -190,6 +190,8 @@ def create_warm_source(
     validation_run_contract=None,
     validation_run_contract_path: str | None = None,
     base_checkpoint_path: str | None = None,
+    _warm_model_class=None,
+    _warm_pretrained_extra: dict | None = None,
 ):
     """Create the base-FastWAM M2 model with strict source-only semantics."""
 
@@ -294,6 +296,20 @@ def create_warm_source(
                 f"{actual_sha256} != {contract.base_checkpoint_sha256}"
             )
 
+    model_class = WarmSourceFastWAM if _warm_model_class is None else _warm_model_class
+    pretrained_extra = {
+        "warm_source_policy": source_policy,
+        "memory_sigma": memory_sigma,
+        "warm_run_contract": contract,
+        "warm_validation_run_contract": validation_contract,
+    }
+    if _warm_pretrained_extra:
+        collisions = set(pretrained_extra).intersection(_warm_pretrained_extra)
+        if collisions:
+            raise ValueError(
+                f"duplicate WARM pretrained arguments: {sorted(collisions)}"
+            )
+        pretrained_extra.update(_warm_pretrained_extra)
     model = create_fastwam(
         model_id=model_id,
         tokenizer_model_id=tokenizer_model_id,
@@ -311,17 +327,45 @@ def create_warm_source(
         redirect_common_files=redirect_common_files,
         model_dtype=model_dtype,
         device=device,
-        _model_class=WarmSourceFastWAM,
-        _from_pretrained_extra={
-            "warm_source_policy": source_policy,
-            "memory_sigma": memory_sigma,
-            "warm_run_contract": contract,
-            "warm_validation_run_contract": validation_contract,
-        },
+        _model_class=model_class,
+        _from_pretrained_extra=pretrained_extra,
     )
     if base_path is not None:
         model.load_base_checkpoint(str(base_path))
     return model
+
+
+def create_warm_retrospection(*, retrospection, **kwargs):
+    """Create the complete consequence-aligned WARM model.
+
+    The immutable M2 source contracts still bind the bank, train/dev candidate
+    corpora, and baseline checkpoint.  ``fixed_context_top1`` here describes
+    the coarse retrieval family; final selection is learned and consequence
+    aligned inside :class:`WarmRetrospectionFastWAM`.
+    """
+
+    from .models.warm.retrospection_config import WarmRetrospectionConfig
+    from .models.warm.retrospection_model import WarmRetrospectionFastWAM
+
+    if isinstance(retrospection, DictConfig):
+        retrospection = OmegaConf.to_container(retrospection, resolve=True)
+    config = (
+        retrospection
+        if isinstance(retrospection, WarmRetrospectionConfig)
+        else WarmRetrospectionConfig.from_dict(retrospection)
+    )
+    source_policy = kwargs.pop("source_policy", "fixed_context_top1")
+    if source_policy != "fixed_context_top1":
+        raise ValueError(
+            "complete WARM uses fixed_context_top1 only for coarse retrieval; "
+            "learned consequence selection supplies the final source"
+        )
+    return create_warm_source(
+        source_policy=source_policy,
+        _warm_model_class=WarmRetrospectionFastWAM,
+        _warm_pretrained_extra={"warm_retrospection_config": config},
+        **kwargs,
+    )
 
 
 def create_fastwam_joint(
@@ -558,6 +602,12 @@ def _wrap_warm_candidate_dataset(
         "normalization_stats_path",
         "audit_report_path",
         "expected_query_corpus_sha256",
+        "retrospective_feature_directory",
+        "retrospective_feature_list",
+        "retrospective_recent_event_capacity",
+        "retrospective_action_summary_capacity",
+        "retrospective_action_summary_chunk_size",
+        "retrospective_gripper_indices",
     }
     extra = set(candidate_cfg) - allowed
     if extra:
@@ -587,13 +637,59 @@ def _wrap_warm_candidate_dataset(
             "expected_query_corpus_sha256"
         ),
     )
-    return RuntimeCandidateDatasetAdapter(
+    adapted = RuntimeCandidateDatasetAdapter(
         dataset,
         resolver,
         candidate_cfg["catalog_path"],
         normalization_stats_path=candidate_cfg["normalization_stats_path"],
         audit_report_path=candidate_cfg["audit_report_path"],
     )
+    feature_directory = candidate_cfg.get("retrospective_feature_directory")
+    feature_list = candidate_cfg.get("retrospective_feature_list")
+    if feature_directory is not None and feature_list is not None:
+        raise ValueError(
+            "warm_candidates retrospective_feature_directory and "
+            "retrospective_feature_list are mutually exclusive"
+        )
+    if feature_directory is None and feature_list is None:
+        return adapted
+    from .datasets.warm_retrospective import (
+        RetrospectiveFeatureStore,
+        RuntimeRetrospectiveDatasetAdapter,
+        collect_feature_payloads,
+        collect_feature_payloads_from_list,
+    )
+
+    recent_capacity = int(
+        candidate_cfg.get("retrospective_recent_event_capacity", 6)
+    )
+    feature_paths = (
+        collect_feature_payloads(feature_directory)
+        if feature_directory is not None
+        else collect_feature_payloads_from_list(feature_list)
+    )
+    feature_store = RetrospectiveFeatureStore.from_paths(
+        feature_paths,
+        expected_split=expected_query_split,
+        expected_collection_sha256=resolver.query_corpus_sha256,
+        expected_catalog_sha256=resolver.query_catalog_sha256,
+        action_horizon=resolver.action_horizon,
+        recent_event_capacity=recent_capacity,
+        action_summary_capacity=int(
+            candidate_cfg.get("retrospective_action_summary_capacity", 2)
+        ),
+        action_summary_chunk_size=int(
+            candidate_cfg.get(
+                "retrospective_action_summary_chunk_size",
+                resolver.action_horizon,
+            )
+        ),
+        gripper_indices=tuple(
+            int(value)
+            for value in candidate_cfg.get("retrospective_gripper_indices", ())
+        ),
+    )
+    return RuntimeRetrospectiveDatasetAdapter(adapted, feature_store)
 
 
 def _resolve_train_device() -> str:

@@ -34,6 +34,7 @@ from fastwam.memory.online_retrieval import (
     FrozenDinoOnlineRetriever,
     OnlineArtifactContractError,
     OnlineBoundStepError,
+    OnlineCandidateFacts,
     OnlineEpisodeStateError,
     OnlineRetrievalError,
     derive_online_query_seed,
@@ -348,15 +349,24 @@ def _make_artifacts(tmp_path: Path) -> _Artifacts:
         ]
     )
     event_ids = tuple(EventId("synthetic", 0, index, 1) for index in range(4))
+    effect_pre = np.arange(4 * 4 * 3, dtype=np.float32).reshape(4, 4, 3)
     bank = EventBank(
         event_ids,
         np.ascontiguousarray(context_keys, dtype=np.float32),
         {
             MODEL_SPACE_ACTION: actions,
-            EFFECT_PRE: np.zeros((4, 4, 3), dtype=np.float32),
-            EFFECT_POST: np.ones((4, 4, 3), dtype=np.float32),
-            START_PROPRIO: np.zeros((4, 2), dtype=np.float32),
-            OBSERVED_GRIPPER_STATE: np.zeros((4, HORIZON), dtype=np.float32),
+            EFFECT_PRE: effect_pre,
+            EFFECT_POST: effect_pre + np.float32(2.0),
+            START_PROPRIO: np.arange(8, dtype=np.float32).reshape(4, 2),
+            OBSERVED_GRIPPER_STATE: np.asarray(
+                [
+                    [1.0, 0.0, 0.0],
+                    [0.0, 1.0, 1.0],
+                    [0.5, 0.5, 0.5],
+                    [1.0, 1.0, 0.0],
+                ],
+                dtype=np.float32,
+            ),
             TASK_INDEX: task_indices,
             EVENT_SCORE: np.ones((4,), dtype=np.float32),
             CONTAINS_FORCED_GRIPPER: np.zeros((4,), dtype=np.bool_),
@@ -569,6 +579,129 @@ def test_artifact_bound_retrieval_matches_m1_full_bank_stable_search_and_padding
     )
     with pytest.raises(OnlineBoundStepError, match="already consumed"):
         retriever.validate_bound_step(step)
+
+
+def test_candidate_facts_are_owned_immutable_and_strictly_zero_padded(
+    tmp_path: Path,
+) -> None:
+    artifacts = _make_artifacts(tmp_path)
+    retriever = _load_retriever(artifacts)
+    retriever.begin_episode(0)
+    step = retriever.retrieve(
+        retriever.make_query_id(2),
+        _raw_cameras(),
+        task_description=TASK_A,
+        prompt=TASK_A,
+        proprio=np.asarray([0.25, -0.25], dtype=np.float32),
+    )
+
+    facts = retriever.gather_candidate_facts(
+        step,
+        prompt=TASK_A,
+        proprio=np.asarray([0.25, -0.25], dtype=np.float32),
+        input_image=step.model_input,
+    )
+    assert isinstance(facts, OnlineCandidateFacts)
+    assert facts.step_sha256 == step.step_sha256
+    assert facts.candidate_valid_mask.tolist() == [True, True, True, True, False]
+    assert facts.context_keys.shape == (5, 5)
+    assert facts.effect_pre.shape == (5, 4, 3)
+    assert facts.effect_post.shape == (5, 4, 3)
+    assert facts.effect_delta.shape == (5, 4, 3)
+    assert facts.start_proprio.shape == (5, 2)
+    assert facts.observed_gripper.shape == (5, HORIZON + 1)
+    assert facts.gripper_timing.shape == (5, 4)
+    assert facts.support.tolist() == [1.0, 1.0, 1.0, 1.0, 0.0]
+
+    selected_rows = np.asarray([0, 3, 1, 2], dtype=np.int64)
+    expected_pre = np.arange(4 * 4 * 3, dtype=np.float32).reshape(4, 4, 3)
+    np.testing.assert_array_equal(facts.effect_pre[:4], expected_pre[selected_rows])
+    np.testing.assert_array_equal(
+        facts.effect_post[:4], expected_pre[selected_rows] + np.float32(2.0)
+    )
+    np.testing.assert_array_equal(
+        facts.effect_delta[:4], np.full((4, 4, 3), 2.0, dtype=np.float32)
+    )
+    np.testing.assert_array_equal(
+        facts.start_proprio[:4],
+        np.arange(8, dtype=np.float32).reshape(4, 2)[selected_rows],
+    )
+    np.testing.assert_array_equal(
+        facts.observed_gripper[:4],
+        np.asarray(
+            [
+                [1.0, 0.0, 0.0],
+                [1.0, 1.0, 0.0],
+                [0.0, 1.0, 1.0],
+                [0.5, 0.5, 0.5],
+            ],
+            dtype=np.float32,
+        ),
+    )
+    np.testing.assert_array_equal(
+        facts.gripper_timing[:4],
+        np.asarray(
+            [
+                [0.5, 1.0, 0.0, 0.0],
+                [1.0, 1.0, 0.0, 0.0],
+                [0.0, 0.0, 0.5, 1.0],
+                [0.0, 0.0, 0.0, 0.0],
+            ],
+            dtype=np.float32,
+        ),
+    )
+    for array in facts.as_mapping().values():
+        assert not array.flags.writeable
+        np.testing.assert_array_equal(array[4], np.zeros_like(array[4]))
+        with pytest.raises(ValueError):
+            array.setflags(write=True)
+    with pytest.raises(TypeError):
+        facts.as_mapping()["support"] = facts.support  # type: ignore[index]
+
+    # Gathering alone is deliberately non-consuming, so the existing policy
+    # boundary remains responsible for the exactly-once capability use.
+    assert retriever.validate_bound_step(step) is step
+
+
+def test_validate_and_gather_candidate_facts_consumes_exactly_once(
+    tmp_path: Path,
+) -> None:
+    artifacts = _make_artifacts(tmp_path)
+    retriever = _load_retriever(artifacts)
+    retriever.begin_episode(1)
+    step = retriever.retrieve(
+        retriever.make_query_id(3),
+        _raw_cameras(),
+        task_description=TASK_A,
+        prompt=TASK_A,
+        proprio=np.asarray([0.0, 0.0], dtype=np.float32),
+    )
+
+    facts = retriever.validate_and_gather_candidate_facts(step, prompt=TASK_A)
+    assert facts.step_sha256 == step.step_sha256
+    with pytest.raises(OnlineBoundStepError, match="already consumed"):
+        retriever.validate_and_gather_candidate_facts(step)
+
+
+def test_candidate_facts_reject_forged_negative_valid_bank_row_before_gather(
+    tmp_path: Path,
+) -> None:
+    artifacts = _make_artifacts(tmp_path)
+    retriever = _load_retriever(artifacts)
+    retriever.begin_episode(1)
+    step = retriever.retrieve(
+        retriever.make_query_id(3),
+        _raw_cameras(),
+        task_description=TASK_A,
+        prompt=TASK_A,
+        proprio=np.asarray([0.0, 0.0], dtype=np.float32),
+    )
+    forged = np.array(step.bank_rows, copy=True)
+    forged[0] = INVALID_BANK_ROW
+    object.__setattr__(step, "bank_rows", forged)
+
+    with pytest.raises(OnlineBoundStepError, match="out-of-range bank row"):
+        retriever.gather_candidate_facts(step)
 
 
 def test_query_namespace_and_seed_are_policy_independent_but_ids_are_strict(

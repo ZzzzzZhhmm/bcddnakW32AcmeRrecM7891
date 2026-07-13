@@ -31,6 +31,7 @@ class ActionConditioningCache:
     final_video_tokens: torch.Tensor
     attention_mask: torch.Tensor
     video_seq_len: int
+    world_token_streams: tuple[torch.Tensor, ...] = ()
 
 
 class FastWAM(torch.nn.Module):
@@ -510,6 +511,7 @@ class FastWAM(torch.nn.Module):
         context_mask = context_mask.to(
             device=self.device, dtype=torch.bool, non_blocking=True
         )
+        current_proprio = None
         if self.proprio_encoder is not None:
             if not isinstance(proprio, torch.Tensor) or proprio.ndim != 3:
                 shape = None if not isinstance(proprio, torch.Tensor) else tuple(proprio.shape)
@@ -522,12 +524,13 @@ class FastWAM(torch.nn.Module):
                     "sample['proprio'] batch/action dimension mismatch, got "
                     f"{tuple(proprio.shape)}"
                 )
+            current_proprio = proprio[:, 0, :].to(
+                device=self.device, dtype=self.torch_dtype, non_blocking=True
+            )
             context, context_mask = self._append_proprio_to_context(
                 context=context,
                 context_mask=context_mask,
-                proprio=proprio[:, 0, :].to(
-                    device=self.device, dtype=self.torch_dtype, non_blocking=True
-                ),
+                proprio=current_proprio,
             )
 
         current_video = video[:, :, 0:1].to(
@@ -550,6 +553,7 @@ class FastWAM(torch.nn.Module):
                 device=self.device, dtype=self.torch_dtype, non_blocking=True
             ),
             "action_is_pad": action_is_pad,
+            "current_proprio": current_proprio,
             "fuse_vae_embedding_in_latents": bool(
                 getattr(self.video_expert, "fuse_vae_embedding_in_latents", False)
             ),
@@ -601,12 +605,14 @@ class FastWAM(torch.nn.Module):
                     "mask": video_pre["context_mask"],
                 },
                 video_attention_mask=attention_mask[:video_seq_len, :video_seq_len],
+                **self._video_layer_adapter_kwargs(),
             )
         return ActionConditioningCache(
             video_kv_cache=prefill.kv_cache,
             final_video_tokens=prefill.final_tokens,
             attention_mask=attention_mask,
             video_seq_len=video_seq_len,
+            world_token_streams=prefill.intermediate_tokens,
         )
 
     def _resolve_action_source(
@@ -617,6 +623,11 @@ class FastWAM(torch.nn.Module):
         memory_sigma: float,
         phase: str,
         final_video_tokens: torch.Tensor | None,
+        world_token_streams: tuple[torch.Tensor, ...] | None = None,
+        text_context: torch.Tensor | None = None,
+        text_context_mask: torch.Tensor | None = None,
+        current_proprio: torch.Tensor | None = None,
+        current_video_latent: torch.Tensor | None = None,
     ) -> ActionSourceOutput:
         """Resolve M2's explicit null/memory source.
 
@@ -627,7 +638,14 @@ class FastWAM(torch.nn.Module):
 
         if phase not in ("train", "infer"):
             raise ValueError("phase must be 'train' or 'infer'")
-        del final_video_tokens
+        del (
+            final_video_tokens,
+            world_token_streams,
+            text_context,
+            text_context_mask,
+            current_proprio,
+            current_video_latent,
+        )
         if action_source_context is None:
             action_source_context = ActionSourceContext(
                 component_indices=torch.zeros(
@@ -642,6 +660,48 @@ class FastWAM(torch.nn.Module):
             base_gaussian,
             action_source_context,
             memory_sigma=memory_sigma,
+        )
+
+    def _append_action_source_conditioning(
+        self,
+        *,
+        context: torch.Tensor,
+        context_mask: torch.Tensor,
+        source_output: ActionSourceOutput,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """Append optional learned WARM tokens only to Action DiT context."""
+
+        tokens = source_output.conditioning_tokens
+        if tokens is None:
+            return context, context_mask
+        if not isinstance(tokens, torch.Tensor) or tokens.ndim != 3:
+            raise TypeError(
+                "source conditioning_tokens must be [B,L,text_dim] tensor"
+            )
+        expected = (context.shape[0], self.text_dim)
+        if tokens.shape[0] != expected[0] or tokens.shape[2] != expected[1]:
+            raise ValueError(
+                "source conditioning_tokens batch/width mismatch: "
+                f"{tuple(tokens.shape)} vs B={expected[0]}, D={expected[1]}"
+            )
+        if tokens.shape[1] <= 0:
+            raise ValueError("source conditioning_tokens must be non-empty")
+        if (
+            tokens.device != context.device
+            or tokens.dtype != context.dtype
+            or not tokens.is_floating_point()
+        ):
+            raise TypeError(
+                "source conditioning_tokens must share context device/dtype"
+            )
+        if not bool(torch.isfinite(tokens).all().item()):
+            raise ValueError("source conditioning_tokens must be finite")
+        token_mask = torch.ones(
+            tokens.shape[:2], dtype=torch.bool, device=tokens.device
+        )
+        return (
+            torch.cat((context, tokens), dim=1),
+            torch.cat((context_mask, token_mask), dim=1),
         )
 
     def _compute_video_loss_per_sample(
@@ -682,6 +742,91 @@ class FastWAM(torch.nn.Module):
         valid = (~video_is_pad).to(device=video_loss_token.device, dtype=video_loss_token.dtype)
         valid_sum = valid.sum(dim=1).clamp(min=1.0)
         return (video_loss_token * valid).sum(dim=1) / valid_sum
+
+    def _video_layer_adapter_kwargs(self) -> dict[str, nn.ModuleDict]:
+        """Return selected-layer adapters only for models that configure them."""
+
+        adapters = getattr(self, "video_layer_adapters", None)
+        if isinstance(adapters, nn.ModuleDict) and len(adapters) > 0:
+            return {"layer_adapters": adapters}
+        return {}
+
+    def training_loss_video_only(self, sample, tiled: bool = False):
+        """Compute an isolated future-video objective without Action DiT.
+
+        Demonstrated future RGB is visible only inside this video branch.  No
+        Action DiT tokens are constructed, so the deployment-matched WARM
+        action pass cannot attend to ground-truth future observations.
+        """
+
+        inputs = self.build_inputs(sample, tiled=tiled)
+        input_latents = inputs["input_latents"]
+        batch_size = int(input_latents.shape[0])
+        noise_video = torch.randn_like(input_latents)
+        timestep_video = self.train_video_scheduler.sample_training_t(
+            batch_size=batch_size,
+            device=self.device,
+            dtype=input_latents.dtype,
+        )
+        latents = self.train_video_scheduler.add_noise(
+            input_latents, noise_video, timestep_video
+        )
+        target_video = self.train_video_scheduler.training_target(
+            input_latents, noise_video, timestep_video
+        )
+        if inputs["first_frame_latents"] is not None:
+            latents[:, :, 0:1] = inputs["first_frame_latents"]
+
+        video_pre = self.video_expert.pre_dit(
+            x=latents,
+            timestep=timestep_video,
+            context=inputs["context"],
+            context_mask=inputs["context_mask"],
+            action=inputs["action"],
+            fuse_vae_embedding_in_latents=inputs[
+                "fuse_vae_embedding_in_latents"
+            ],
+        )
+        video_tokens = video_pre["tokens"]
+        video_mask = self.video_expert.build_video_to_video_mask(
+            video_seq_len=int(video_tokens.shape[1]),
+            video_tokens_per_frame=int(video_pre["meta"]["tokens_per_frame"]),
+            device=video_tokens.device,
+        )
+        video_output = self.mot.prefill_video_cache_with_tokens(
+            video_tokens=video_tokens,
+            video_freqs=video_pre["freqs"],
+            video_t_mod=video_pre["t_mod"],
+            video_context_payload={
+                "context": video_pre["context"],
+                "mask": video_pre["context_mask"],
+            },
+            video_attention_mask=video_mask,
+            **self._video_layer_adapter_kwargs(),
+        )
+        pred_video = self.video_expert.post_dit(
+            video_output.final_tokens, video_pre
+        )
+
+        include_initial_video_step = inputs["first_frame_latents"] is None
+        if inputs["first_frame_latents"] is not None:
+            pred_video = pred_video[:, :, 1:]
+            target_video = target_video[:, :, 1:]
+        loss_per_sample = self._compute_video_loss_per_sample(
+            pred_video=pred_video,
+            target_video=target_video,
+            image_is_pad=inputs["image_is_pad"],
+            include_initial_video_step=include_initial_video_step,
+        )
+        weight = self.train_video_scheduler.training_weight(timestep_video).to(
+            loss_per_sample.device, dtype=loss_per_sample.dtype
+        )
+        loss_video = (loss_per_sample * weight).mean()
+        weighted = self.loss_lambda_video * loss_video
+        return weighted, {
+            "loss_video": self.loss_lambda_video
+            * float(loss_video.detach().item())
+        }
 
     def training_loss(self, sample, tiled: bool = False):
         inputs = self.build_inputs(sample, tiled=tiled)
@@ -849,6 +994,11 @@ class FastWAM(torch.nn.Module):
             memory_sigma=memory_sigma,
             phase="train",
             final_video_tokens=conditioning.final_video_tokens,
+            world_token_streams=conditioning.world_token_streams,
+            text_context=inputs["context"],
+            text_context_mask=inputs["context_mask"],
+            current_proprio=inputs["current_proprio"],
+            current_video_latent=inputs["current_latents"],
         )
         flow_pair = build_action_flow_pair(
             action,
@@ -857,11 +1007,19 @@ class FastWAM(torch.nn.Module):
             self.train_action_scheduler,
         )
 
+        action_context, action_context_mask = (
+            self._append_action_source_conditioning(
+                context=inputs["context"],
+                context_mask=inputs["context_mask"],
+                source_output=source_output,
+            )
+        )
+
         action_pre = self.action_expert.pre_dit(
             action_tokens=flow_pair.noisy_action,
             timestep=timestep_action,
-            context=inputs["context"],
-            context_mask=inputs["context_mask"],
+            context=action_context,
+            context_mask=action_context_mask,
         )
         action_tokens = self.mot.forward_action_with_video_cache(
             action_tokens=action_pre["tokens"],
@@ -896,6 +1054,18 @@ class FastWAM(torch.nn.Module):
         ).to(action_loss_per_sample.device, dtype=action_loss_per_sample.dtype)
         loss_action = (action_loss_per_sample * action_weight).mean()
         loss_total = self.loss_lambda_action * loss_action
+        auxiliary_loss = source_output.auxiliary_loss
+        if auxiliary_loss is not None:
+            if (
+                not isinstance(auxiliary_loss, torch.Tensor)
+                or auxiliary_loss.ndim != 0
+                or auxiliary_loss.device != loss_total.device
+                or not bool(torch.isfinite(auxiliary_loss).item())
+            ):
+                raise ValueError(
+                    "source auxiliary_loss must be one finite scalar tensor"
+                )
+            loss_total = loss_total + auxiliary_loss
 
         geometry = measure_source_geometry(
             flow_pair.source_action,
@@ -926,6 +1096,19 @@ class FastWAM(torch.nn.Module):
                 source_rms_reduction.detach().item()
             ),
         }
+        if auxiliary_loss is not None:
+            loss_dict["loss_warm_auxiliary"] = float(
+                auxiliary_loss.detach().item()
+            )
+        if source_output.auxiliary_metrics is not None:
+            for name, value in source_output.auxiliary_metrics.items():
+                if not isinstance(name, str) or not name:
+                    raise TypeError("source auxiliary metric names must be non-empty")
+                if not isinstance(value, torch.Tensor) or value.numel() != 1:
+                    raise TypeError(
+                        f"source auxiliary metric {name!r} must be scalar tensor"
+                    )
+                loss_dict[name] = float(value.detach().float().item())
         return loss_total, loss_dict
 
     @torch.no_grad()
@@ -1386,6 +1569,7 @@ class FastWAM(torch.nn.Module):
                 video_t_mod=video_pre["t_mod"],
                 video_context_payload=video_payload,
                 video_attention_mask=attention_mask[:video_seq_len, :video_seq_len],
+                **self._video_layer_adapter_kwargs(),
             )
         else:
             prefill = self.mot.prefill_video_cache_with_tokens(
@@ -1394,6 +1578,7 @@ class FastWAM(torch.nn.Module):
                 video_t_mod=video_pre["t_mod"],
                 video_context_payload=video_payload,
                 video_attention_mask=attention_mask[:video_seq_len, :video_seq_len],
+                **self._video_layer_adapter_kwargs(),
             )
             video_kv_cache = prefill.kv_cache
             source_output = self._resolve_action_source(
@@ -1402,8 +1587,18 @@ class FastWAM(torch.nn.Module):
                 memory_sigma=memory_sigma,
                 phase="infer",
                 final_video_tokens=prefill.final_tokens,
+                world_token_streams=prefill.intermediate_tokens,
+                text_context=context,
+                text_context_mask=context_mask,
+                current_proprio=proprio,
+                current_video_latent=first_frame_latents,
             )
             latents_action = source_output.source
+            context, context_mask = self._append_action_source_conditioning(
+                context=context,
+                context_mask=context_mask,
+                source_output=source_output,
+            )
 
         infer_timesteps_action, infer_deltas_action = self.infer_action_scheduler.build_inference_schedule(
             num_inference_steps=num_inference_steps,
@@ -1437,6 +1632,10 @@ class FastWAM(torch.nn.Module):
             output["source_memory_mask"] = source_output.memory_mask.detach().to(
                 device="cpu"
             )
+            if source_output.source_gate is not None:
+                output["source_gate"] = source_output.source_gate.detach().to(
+                    device="cpu", dtype=torch.float32
+                )
         return output
 
     @torch.no_grad()

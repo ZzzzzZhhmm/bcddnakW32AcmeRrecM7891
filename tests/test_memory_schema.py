@@ -61,7 +61,7 @@ def test_manifest_has_required_contract_and_round_trips_json(tmp_path) -> None:
     raw = json.loads(path.read_text(encoding="utf-8"))
 
     assert raw["schema"] == "warm.event-bank"
-    assert raw["version"] == 2
+    assert raw["version"] == 3
     assert raw["action_normalizer"]["type"] == "quantile"
     assert raw["encoder"]["revision"] == "pinned"
     assert raw["camera_layout"]["effect_view"] == "external"

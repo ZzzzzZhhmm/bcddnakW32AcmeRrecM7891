@@ -437,6 +437,26 @@ def test_cli_binds_every_online_identity_and_publishes_atomically(
     assert not list(paths["output"].parent.glob(".*.tmp"))
 
 
+def test_full_retrospection_builds_one_checkpoint_contract_without_pair_artifacts(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    argv, paths = _fixture(tmp_path, monkeypatch)
+    config = loads(paths["config"].read_text(encoding="utf-8"))
+    online = config["EVALUATION"]["warm_online"]
+    online["mode"] = "full_retrospection"
+    online.pop("pair_contract_path")
+    online.pop("parity_report_path")
+    paths["config"].write_text(dumps(config), encoding="utf-8")
+
+    assert online_cli.main(argv) == 0
+    contract = WarmOnlineRunContract.from_dict(
+        loads(paths["output"].read_text(encoding="utf-8"))
+    )
+    assert contract.source_policy == "fixed_context_top1"
+    assert contract.warm_checkpoint_sha256 == sha256_file(paths["checkpoint"])
+
+
 def test_cli_rejects_config_that_disagrees_with_explicit_fields(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

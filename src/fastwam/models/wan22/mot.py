@@ -18,6 +18,10 @@ class VideoPrefillOutput:
 
     kv_cache: list[dict[str, torch.Tensor]]
     final_tokens: torch.Tensor
+    # Frozen current-frame streams after approximately L/3 and 2L/3.  The
+    # tuple is empty only for legacy/synthetic callers that instantiate this
+    # value directly; production prefill always emits two aligned streams.
+    intermediate_tokens: tuple[torch.Tensor, ...] = ()
 
 
 class MoT(nn.Module):
@@ -270,6 +274,7 @@ class MoT(nn.Module):
         video_t_mod: torch.Tensor,
         video_context_payload: Optional[dict],
         video_attention_mask: torch.Tensor,
+        layer_adapters: Optional[nn.ModuleDict] = None,
     ) -> VideoPrefillOutput:
         """Shared prefill implementation used by the old and extended APIs."""
 
@@ -292,6 +297,11 @@ class MoT(nn.Module):
         expert = self.mixtures["video"]
         x = video_tokens
         kv_cache: list[dict[str, torch.Tensor]] = []
+        tap_layers = {
+            max(0, min(self.num_layers - 1, self.num_layers // 3 - 1)),
+            max(0, min(self.num_layers - 1, (2 * self.num_layers) // 3 - 1)),
+        }
+        tapped: list[torch.Tensor] = []
         for layer_idx in range(self.num_layers):
             block = expert.blocks[layer_idx]
             # Build video Q/K/V from current layer input tokens.
@@ -331,8 +341,24 @@ class MoT(nn.Module):
                 mixed_slice=mixed,
                 context_payload=video_context_payload,
             )
+            x = self._apply_optional_layer_adapter(
+                layer_adapters=layer_adapters,
+                layer_idx=layer_idx,
+                tokens=x,
+            )
             kv_cache.append({"k": k, "v": v})
-        return VideoPrefillOutput(kv_cache=kv_cache, final_tokens=x)
+            if layer_idx in tap_layers:
+                tapped.append(x)
+        # Tiny synthetic experts can collapse the two requested fractions to
+        # one layer.  Duplicate that factual stream so the downstream bridge
+        # retains its stable two-input contract.
+        if len(tapped) == 1:
+            tapped.append(tapped[0])
+        return VideoPrefillOutput(
+            kv_cache=kv_cache,
+            final_tokens=x,
+            intermediate_tokens=tuple(tapped),
+        )
 
     def prefill_video_cache(
         self,
@@ -341,6 +367,7 @@ class MoT(nn.Module):
         video_t_mod: torch.Tensor,
         video_context_payload: Optional[dict],
         video_attention_mask: torch.Tensor,
+        layer_adapters: Optional[nn.ModuleDict] = None,
     ) -> list[dict[str, torch.Tensor]]:
         """Prefill video branch while preserving the original list return API.
 
@@ -365,6 +392,7 @@ class MoT(nn.Module):
             video_t_mod=video_t_mod,
             video_context_payload=video_context_payload,
             video_attention_mask=video_attention_mask,
+            layer_adapters=layer_adapters,
         ).kv_cache
 
     def prefill_video_cache_with_tokens(
@@ -374,6 +402,7 @@ class MoT(nn.Module):
         video_t_mod: torch.Tensor,
         video_context_payload: Optional[dict],
         video_attention_mask: torch.Tensor,
+        layer_adapters: Optional[nn.ModuleDict] = None,
     ) -> VideoPrefillOutput:
         """Prefill once and also expose final safe first-frame world tokens.
 
@@ -388,7 +417,31 @@ class MoT(nn.Module):
             video_t_mod=video_t_mod,
             video_context_payload=video_context_payload,
             video_attention_mask=video_attention_mask,
+            layer_adapters=layer_adapters,
         )
+
+    @staticmethod
+    def _apply_optional_layer_adapter(
+        *,
+        layer_adapters: Optional[nn.ModuleDict],
+        layer_idx: int,
+        tokens: torch.Tensor,
+    ) -> torch.Tensor:
+        """Apply a separately serialized selected-layer adapter, if present."""
+
+        if layer_adapters is None:
+            return tokens
+        if not isinstance(layer_adapters, nn.ModuleDict):
+            raise TypeError("layer_adapters must be a torch.nn.ModuleDict")
+        key = str(int(layer_idx))
+        if key not in layer_adapters:
+            return tokens
+        adapted = layer_adapters[key](tokens)
+        if not isinstance(adapted, torch.Tensor) or adapted.shape != tokens.shape:
+            raise ValueError("video layer adapter must preserve [B,S,D] shape")
+        if adapted.device != tokens.device or adapted.dtype != tokens.dtype:
+            raise TypeError("video layer adapter must preserve device and dtype")
+        return adapted
 
     def forward_action_with_video_cache(
         self,

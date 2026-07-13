@@ -1,4 +1,17 @@
-# WARM v1 implementation specification
+# WARM v1 staged specification (historical)
+
+> **Status:** This file records the earlier staged M1/M2 design and the safety
+> constraints that motivated it. It is not the authoritative specification of
+> the now-implemented complete model. Use
+> [`WARM_FULL_ARCHITECTURE.md`](WARM_FULL_ARCHITECTURE.md) for the code-level
+> architecture and
+> [`WARM_FULL_SERVER_RUNBOOK.md`](WARM_FULL_SERVER_RUNBOOK.md) for the
+> executable server workflow. Where this file proposes a learned online ANN
+> bridge, hard null component, identity-only source adapter, FIFO-only working
+> memory, or postponed full adapter, the full documents and current code
+> supersede it. Safety requirements such as candidate-independent required
+> consequence, factual-only episode writes, future isolation, and normalized
+> model-space action terminology remain applicable.
 
 ## 1. Research claim
 

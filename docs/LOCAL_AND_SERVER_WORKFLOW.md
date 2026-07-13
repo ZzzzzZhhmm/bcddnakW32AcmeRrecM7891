@@ -76,6 +76,11 @@ checkpoint.
 
 Results are accepted only when they can be traced back to this record.
 
+The end-to-end commands for the learned consequence-aligned model are in
+[`WARM_FULL_SERVER_RUNBOOK.md`](WARM_FULL_SERVER_RUNBOOK.md). The M1/M2
+documents remain the isolated retrieval/source diagnostics and should not be
+mistaken for the complete-model launch recipe.
+
 ## Promotion sequence
 
 1. Local CPU tests and compile checks pass.

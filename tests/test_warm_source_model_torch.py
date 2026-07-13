@@ -178,7 +178,7 @@ def _online_bank(*, task_index: int = 0) -> EventBank:
             EFFECT_POST: np.ones((count, 2, 2), dtype=np.float32),
             START_PROPRIO: np.zeros((count, 8), dtype=np.float32),
             OBSERVED_GRIPPER_STATE: np.zeros(
-                (count, ACTION_HORIZON), dtype=np.float32
+                (count, ACTION_HORIZON + 1), dtype=np.float32
             ),
             TASK_INDEX: np.full((count,), task_index, dtype=np.int64),
             EVENT_SCORE: np.ones((count,), dtype=np.float32),

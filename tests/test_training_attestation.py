@@ -400,3 +400,14 @@ def test_trainer_and_model_expose_attestation_lifecycle() -> None:
     assert "os.replace(temporary, path)" not in attestation
     assert "training_attestation_metadata" in model
     assert "_warm_loaded_base_checkpoint_sha256" in model
+
+
+def test_full_retrospection_preserves_closed_source_attestation_schema() -> None:
+    root = Path(__file__).resolve().parents[1]
+    source = (
+        root / "src/fastwam/models/warm/retrospection_model.py"
+    ).read_text(encoding="utf-8")
+    start = source.index("    def training_attestation_metadata(self)")
+    method = source[start : source.index("\n\n\n__all__", start)]
+    assert "return super().training_attestation_metadata()" in method
+    assert 'value["retrospection_config_sha256"]' not in method

@@ -52,6 +52,10 @@ from .training_attestation import (
     training_config_hashes,
     verify_training_attestation,
 )
+from .retrospection_config import (
+    WarmRetrospectionConfig,
+    WarmRetrospectionConfigError,
+)
 
 __all__ = [
     "NULL_COMPONENT",
@@ -96,6 +100,8 @@ __all__ = [
     "training_attestation_path",
     "training_config_hashes",
     "verify_training_attestation",
+    "WarmRetrospectionConfig",
+    "WarmRetrospectionConfigError",
 ]
 
 # The Windows source-development environment intentionally need not install the
@@ -113,6 +119,11 @@ try:
         resolve_action_source,
         select_source_components,
     )
+    from .retrospection_model import (
+        RetrospectiveSourceContext,
+        WarmRetrospectionError,
+        WarmRetrospectionFastWAM,
+    )
 except ModuleNotFoundError as error:
     if error.name != "torch":
         raise
@@ -128,5 +139,8 @@ else:
             "measure_source_geometry",
             "resolve_action_source",
             "select_source_components",
+            "RetrospectiveSourceContext",
+            "WarmRetrospectionError",
+            "WarmRetrospectionFastWAM",
         ]
     )

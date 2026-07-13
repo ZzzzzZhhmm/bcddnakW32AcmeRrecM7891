@@ -4,22 +4,38 @@ Private research implementation of **WARM: World-Action Retrospection via
 Consequence-Aligned Source Transport**.
 
 WARM retrieves factual cross-episode `pre-state -> action -> observed-effect`
-events, independently estimates the consequence required by the current task,
-and uses a compatible retrieved action as a stochastic source component for
-Action DiT refinement.  A Gaussian null component provides explicit rejection
-when no memory is useful.
+events, predicts the world transition required by the current query without
+showing that predictor any long-term candidate, independently validates the
+candidates' factual effects, and uses a continuously gated retrieved action as
+part of the stochastic source for Action DiT refinement. When the gate closes,
+both source and candidate-conditioned prompts reduce to the Gaussian
+no-long-memory path.
 
-The implementation is being developed in gated stages.  The authoritative
-specification, roadmap, and evaluation protocol are in:
+## Implementation status
 
-- `docs/WARM_V1_ARCHITECTURE.md`
-- `docs/IMPLEMENTATION_ROADMAP.md`
-- `docs/DATA_AND_EVAL_PROTOCOL.md`
-- `docs/LOCAL_AND_SERVER_WORKFLOW.md`
-- `docs/M1_OFFLINE_PIPELINE.md`
-- `docs/M2_SOURCE_ONLY.md`
-- `docs/M2_ONLINE_RETRIEVAL.md`
-- `docs/M2_ONLINE_PAIRING.md`
+The complete local code path is implemented: automatic factual feature/event
+preparation, immutable bank and candidate contracts, causally matched offline
+and online episode working memory, the complete learned WARM model, checkpoint
+serialization, and single-checkpoint online LIBERO evaluation. **It has not yet
+received large-scale GPU training or simulator validation.** Local CPU and
+synthetic contract tests establish software behavior only; they do not claim
+learning effectiveness, benchmark success, latency, or non-regression.
+
+Start here:
+
+- [`docs/WARM_FULL_SERVER_RUNBOOK.md`](docs/WARM_FULL_SERVER_RUNBOOK.md) is the
+  executable server path from a clean private clone through artifacts,
+  training, and evaluation.
+- [`docs/WARM_FULL_ARCHITECTURE.md`](docs/WARM_FULL_ARCHITECTURE.md) describes
+  the architecture that the current code actually implements.
+- [`docs/DATA_AND_EVAL_PROTOCOL.md`](docs/DATA_AND_EVAL_PROTOCOL.md) and
+  [`docs/LOCAL_AND_SERVER_WORKFLOW.md`](docs/LOCAL_AND_SERVER_WORKFLOW.md)
+  define data/evaluation discipline and workstation/server boundaries.
+- `docs/M1_*` and `docs/M2_*` retain the staged evidence trail. They are not a
+  substitute for the full-model runbook.
+- [`docs/WARM_V1_ARCHITECTURE.md`](docs/WARM_V1_ARCHITECTURE.md) is a historical
+  staged specification and has been superseded where it conflicts with the
+  implemented full architecture.
 
 Set `WARM_REPO` to the checkout root (`F:\WARM\code` is the current Windows
 example). The workstation is used for implementation and CPU contract tests;
@@ -34,29 +50,32 @@ cd WARM
 test -z "$(git status --porcelain)"
 ```
 
-Formal M2.1 evidence is published in this order: policy-specific training
-checkpoints and trainer attestations, resolved fixed/null evaluation configs,
-online-run contracts, fixed-side online/offline parity, the fixed/null pair
-contract, actual rollouts, and the pair-result verification report. Exact
-server commands are in `docs/M2_ONLINE_RETRIEVAL.md`. No large-scale GPU
-training or benchmark result is claimed by the local implementation alone.
+The implemented full path deliberately keeps several boundaries explicit:
 
-Current engineering milestone: M1's audited full-episode data path,
-train-only normalization artifact, server feature-precompute entrypoint,
-immutable event/candidate caches, and dev oracle evaluator are implemented.
-M2's train/dev candidate bridges, source/scheduler contract, current-frame
-cached Action-only path, explicit trainable scope, and contract-bound online
-frozen-DINO LIBERO retrieval path are implemented under local contract tests.
-They are not considered experimentally validated until the mandatory Linux
-GPU gates pass: independent dev parity, real checkpoint loading, CUDA
-fixed/null inference, and paired LIBERO rollouts with per-replan telemetry.
+- production v1 coarse ANN retrieval still uses the contract-bound frozen
+  DINO encoder online; the learned semantic bridge supplies compact
+  world/consequence tokens inside WARM and is not presented as the online ANN
+  query encoder;
+- the required-consequence gist is candidate-independent, candidate factual
+  effects are validated separately, and the selected candidate-aware
+  predictive gist can affect Action DiT only through the same continuous gate;
+- Action DiT, compact WARM modules, and rank-16 residual adapters at Video DiT
+  layers 9/19 are trainable; the 5B Video DiT backbone, VAE, and text encoder
+  remain frozen, with an isolated video-only co-training loss;
+- event actions are stored in FastWAM's normalized model action space. The
+  current code does not claim geometric action canonicalization, and its
+  bounded residual uses normalized action units unless explicit scales are
+  supplied--not an inferred dataset-standard-deviation transform.
+
 No checkpoint, dataset, feature tensor, or simulator workload is downloaded or
-executed on the Windows workstation.
+executed on the Windows workstation. Mandatory Linux/CUDA gates are specified
+in the full server runbook.
 
 The baseline was imported from FastWAM revision
 `45d8e1458921d83f8ad6cf9ce993d371208dabd0`; see `BASELINE.md`, `LICENSE`, and
-`THIRD_PARTY_NOTICES.md`.  The remaining baseline instructions below are kept
-until their WARM replacements are implemented and verified.
+`THIRD_PARTY_NOTICES.md`. The remaining baseline instructions below are kept as
+upstream setup and reproduction reference. Complete-WARM users should follow
+the full server runbook above.
 
 ## FastWAM baseline
 

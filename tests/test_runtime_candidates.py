@@ -94,7 +94,7 @@ def _write_artifacts(
             EFFECT_PRE: np.zeros((count, 2, 2), dtype=np.float32),
             EFFECT_POST: np.ones((count, 2, 2), dtype=np.float32),
             START_PROPRIO: np.zeros((count, 8), dtype=np.float32),
-            OBSERVED_GRIPPER_STATE: np.zeros((count, 4), dtype=np.float32),
+            OBSERVED_GRIPPER_STATE: np.zeros((count, 5), dtype=np.float32),
             TASK_INDEX: np.zeros((count,), dtype=np.int64),
             EVENT_SCORE: np.ones((count,), dtype=np.float32),
             CONTAINS_FORCED_GRIPPER: np.zeros((count,), dtype=np.bool_),

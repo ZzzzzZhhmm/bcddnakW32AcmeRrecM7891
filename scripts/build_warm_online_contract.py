@@ -203,6 +203,22 @@ def _validate_resolved_config(
 ) -> None:
     """Reject a hash-only config binding that contradicts explicit fields."""
 
+    warm_online = _config_value(value, "EVALUATION", "warm_online")
+    if not isinstance(warm_online, Mapping):
+        raise OnlineContractBuildError(
+            "resolved eval config EVALUATION.warm_online must be a mapping"
+        )
+    mode = str(warm_online.get("mode", "source_only"))
+    if mode not in {"source_only", "full_retrospection"}:
+        raise OnlineContractBuildError(
+            "resolved eval config warm_online.mode must be source_only or "
+            "full_retrospection"
+        )
+    if mode == "full_retrospection" and args.source_policy != "fixed_context_top1":
+        raise OnlineContractBuildError(
+            "full_retrospection online contracts require fixed_context_top1"
+        )
+
     comparisons = (
         (("seed",), args.root_seed, "root seed"),
         (("EVALUATION", "task_suite_name"), args.task_suite, "task suite"),
@@ -259,22 +275,22 @@ def _validate_resolved_config(
             "formal M2.1 online evaluation must disable action ensembling"
         )
 
-    # The report is produced only after this online contract exists.  Its
-    # planned path is nevertheless part of the resolved-config digest; the
-    # pair builder later requires a passing report at exactly this path and
-    # binds its bytes into the pair contract.
-    _resolved_path_value(
-        _config_value(
-            value, "EVALUATION", "warm_online", "parity_report_path"
-        ),
-        label="planned online parity report",
-    )
-    _resolved_path_value(
-        _config_value(
-            value, "EVALUATION", "warm_online", "pair_contract_path"
-        ),
-        label="planned online pair contract",
-    )
+    if mode == "source_only":
+        # The M2.1 report is produced only after this online contract exists.
+        # Its planned path is nevertheless part of the resolved-config digest;
+        # the pair builder later requires a passing report at exactly this path.
+        _resolved_path_value(
+            _config_value(
+                value, "EVALUATION", "warm_online", "parity_report_path"
+            ),
+            label="planned online parity report",
+        )
+        _resolved_path_value(
+            _config_value(
+                value, "EVALUATION", "warm_online", "pair_contract_path"
+            ),
+            label="planned online pair contract",
+        )
 
     path_bindings = (
         (("ckpt",), args.warm_checkpoint, "WARM checkpoint"),

@@ -109,13 +109,14 @@ def test_fixed_model_call_accepts_only_bound_step_and_sampling_parameters() -> N
     assert any(key is None for key in value.keys), "sampling kwargs must be unpacked"
 
 
-def test_online_query_lifecycle_uses_absolute_simulator_step() -> None:
+def test_online_query_lifecycle_uses_executed_policy_action_step() -> None:
     issue = _source(_function("issue_query_id"))
     assert "frame_index <= self._last_frame_index" in issue
     assert "self._last_frame_index = frame_index" in issue
 
     episode = _source(_function("run_single_episode"))
-    assert "frame_index=t" in episode
+    assert "frame_index=policy_action_step_count" in episode
+    assert "policy_action_step_count += 1" in episode
     assert "online_runtime.begin_episode(episode_idx)" in episode
     for evidence in (
         '"configured_wait_steps"',

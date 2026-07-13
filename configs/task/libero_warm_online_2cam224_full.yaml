@@ -1,0 +1,32 @@
+# @package _global_
+
+defaults:
+  - override /data: libero_2cam
+  - override /model: warm
+  - _self_
+
+# Full learned WARM online rollout. The event bank and DINO encoder are opened
+# only through the hash-bound online contract assembled on the GPU server.
+model:
+  source_policy: fixed_context_top1
+  run_contract_path: ${EVALUATION.warm_online.training_run_contract_path}
+  validation_run_contract_path: ${EVALUATION.warm_online.validation_run_contract_path}
+  base_checkpoint_path: ${EVALUATION.warm_online.base_checkpoint_path}
+  mot_checkpoint_mixed_attn: false
+
+data:
+  train:
+    pretrained_norm_stats: ${EVALUATION.dataset_stats_path}
+
+EVALUATION:
+  visualize_future_video: false
+  use_action_ensembler: false
+  action_horizon: 32
+  # Must match model.retrospection.episode_action_chunk_size so the online
+  # executed-action summaries have the same window used in training.
+  replan_steps: 10
+  warm_online:
+    enabled: true
+    mode: full_retrospection
+    evaluation_namespace: warm-libero-full-v1
+    top_k: 32

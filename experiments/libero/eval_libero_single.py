@@ -74,12 +74,13 @@ class WarmOnlineEvalRuntime:
     source_contract: Any
     validation_source_contract: Any
     retriever: Any | None
+    retrospective_episode_memory: Any | None
     null_image_adapter: Any | None
     normalization_stats_loaded_sha256: str
-    pair_contract_file_sha256: str
-    pair_contract_path: Path
-    parity_report_file_sha256: str
-    parity_report_path: Path
+    pair_contract_file_sha256: str | None
+    pair_contract_path: Path | None
+    parity_report_file_sha256: str | None
+    parity_report_path: Path | None
     m1_data_config_path: Path
     training_attestation_file_sha256: str
     training_attestation_path: Path
@@ -94,6 +95,12 @@ class WarmOnlineEvalRuntime:
     _seen_episode_indices: set[int] = field(
         default_factory=set, init=False, repr=False
     )
+    _executed_actions_since_replan: list[np.ndarray] = field(
+        default_factory=list, init=False, repr=False
+    )
+    _executed_environment_actions_since_replan: list[np.ndarray] = field(
+        default_factory=list, init=False, repr=False
+    )
 
     @property
     def source_policy(self) -> str:
@@ -102,6 +109,12 @@ class WarmOnlineEvalRuntime:
     def pair_identity(self) -> dict[str, str]:
         """Return the standalone comparison identity for result records."""
 
+        if self.pair_contract is None:
+            return {
+                "pair_contract_sha256": self.contract.sha256,
+                "comparison_kind": "full_retrospection_single_checkpoint",
+                "side": "full_retrospection",
+            }
         return {
             "pair_contract_sha256": self.pair_contract.sha256,
             "comparison_kind": self.pair_contract.comparison_kind,
@@ -111,10 +124,12 @@ class WarmOnlineEvalRuntime:
     def attest_pair_contract_file(self) -> None:
         from fastwam.memory.manifest import sha256_file
 
-        if sha256_file(self.pair_contract_path) != self.pair_contract_file_sha256:
-            raise RuntimeError("online pair contract changed during evaluation")
-        if sha256_file(self.parity_report_path) != self.parity_report_file_sha256:
-            raise RuntimeError("online parity report changed during evaluation")
+        if self.pair_contract_path is not None:
+            if sha256_file(self.pair_contract_path) != self.pair_contract_file_sha256:
+                raise RuntimeError("online pair contract changed during evaluation")
+        if self.parity_report_path is not None:
+            if sha256_file(self.parity_report_path) != self.parity_report_file_sha256:
+                raise RuntimeError("online parity report changed during evaluation")
         if sha256_file(self.m1_data_config_path) != self.contract.m1_data_config_sha256:
             raise RuntimeError("M1 data config changed during evaluation")
         if sha256_file(self.training_attestation_path) != (
@@ -143,6 +158,10 @@ class WarmOnlineEvalRuntime:
             raise ValueError(f"episode_index {episode_index} was already evaluated")
         if self.retriever is not None:
             self.retriever.begin_episode(episode_index)
+        if self.retrospective_episode_memory is not None:
+            self.retrospective_episode_memory.begin_episode(episode_index)
+        self._executed_actions_since_replan.clear()
+        self._executed_environment_actions_since_replan.clear()
         self._seen_episode_indices.add(episode_index)
         self._active_episode_index = episode_index
         self._last_frame_index = None
@@ -166,6 +185,112 @@ class WarmOnlineEvalRuntime:
             )
         self._last_frame_index = frame_index
         return query_id
+
+    def retrospective_history_kwargs(self) -> tuple[dict[str, Any], dict[str, Any] | None]:
+        """Return factual history strictly preceding the current replan."""
+
+        if self.retrospective_episode_memory is None:
+            return {}, None
+        pending = (
+            None
+            if not self._executed_actions_since_replan
+            else np.stack(self._executed_actions_since_replan, axis=0)
+        )
+        history = self.retrospective_episode_memory.history_inputs(
+            executed_actions_since_previous=pending
+        )
+        if history is None:
+            return {}, None
+        return history.model_kwargs(), history.evidence()
+
+    def note_executed_action(
+        self,
+        action: Any,
+        *,
+        model_space_action: Any,
+    ) -> None:
+        """Record exactly one command after it was sent to the simulator."""
+
+        if self.retrospective_episode_memory is None:
+            return
+        array = np.asarray(action, dtype=np.float32)
+        if array.ndim != 1 or not array.size or not np.isfinite(array).all():
+            raise ValueError("executed WARM action must be one finite vector")
+        model_array = np.asarray(model_space_action, dtype=np.float32)
+        if model_array.shape != array.shape or not np.isfinite(model_array).all():
+            raise ValueError(
+                "model-space executed WARM action must match the environment command"
+            )
+        self._executed_environment_actions_since_replan.append(
+            np.ascontiguousarray(array)
+        )
+        self._executed_actions_since_replan.append(
+            np.ascontiguousarray(model_array)
+        )
+
+    def commit_factual_replan_observation(
+        self,
+        *,
+        frame_index: int,
+        model_output: Mapping[str, Any],
+    ) -> dict[str, Any] | None:
+        """Commit model-certified current real features after one inference."""
+
+        if self.retrospective_episode_memory is None:
+            return None
+        payload = model_output.get("warm_factual_observation")
+        if not isinstance(payload, Mapping):
+            raise RuntimeError(
+                "full WARM inference returned no warm_factual_observation"
+            )
+        actions: np.ndarray | None
+        if self._executed_actions_since_replan:
+            actions = np.stack(self._executed_actions_since_replan, axis=0)
+        else:
+            actions = None
+        evidence = self.retrospective_episode_memory.record_factual_observation(
+            frame_index=frame_index,
+            factual_payload=payload,
+            executed_actions_since_previous=actions,
+        )
+        if self._executed_environment_actions_since_replan:
+            from fastwam.memory.manifest import sha256_array
+
+            exact = np.stack(
+                self._executed_environment_actions_since_replan, axis=0
+            )
+            evidence["executed_environment_prefix_sha256"] = sha256_array(exact)
+            evidence["executed_environment_prefix_count"] = int(exact.shape[0])
+        else:
+            evidence["executed_environment_prefix_sha256"] = None
+            evidence["executed_environment_prefix_count"] = 0
+        self._executed_actions_since_replan.clear()
+        self._executed_environment_actions_since_replan.clear()
+        return evidence
+
+    def end_episode(self) -> dict[str, Any] | None:
+        if self.retrospective_episode_memory is None:
+            return None
+        evidence = self.retrospective_episode_memory.end_episode()
+        # A terminal prefix may have no subsequent observation embedding.  It
+        # is reported rather than paired with a fabricated feature write.
+        evidence["unpaired_terminal_action_count"] = len(
+            self._executed_actions_since_replan
+        )
+        if self._executed_environment_actions_since_replan:
+            from fastwam.memory.manifest import sha256_array
+
+            terminal = np.stack(
+                self._executed_environment_actions_since_replan, axis=0
+            )
+            evidence["unpaired_terminal_environment_actions_sha256"] = (
+                sha256_array(terminal)
+            )
+        else:
+            evidence["unpaired_terminal_environment_actions_sha256"] = None
+        self._executed_actions_since_replan.clear()
+        self._executed_environment_actions_since_replan.clear()
+        return evidence
 
     def result_header(self) -> dict[str, Any]:
         self.attest_pair_contract_file()
@@ -201,7 +326,11 @@ class WarmOnlineEvalRuntime:
                 "bddl_sha256_after_environment_load": self.contract.bddl_sha256,
             },
             "contract": self.contract.to_dict(),
-            "pair_contract": self.pair_contract.to_dict(),
+            **(
+                {"pair_contract": self.pair_contract.to_dict()}
+                if self.pair_contract is not None
+                else {"pair_contract": None}
+            ),
         }
 
 
@@ -523,8 +652,22 @@ def _load_warm_online_runtime(
     )
 
     contract_path = _required_online_path(online_cfg, "contract_path")
-    pair_contract_path = _required_online_path(online_cfg, "pair_contract_path")
-    parity_report_path = _required_online_path(online_cfg, "parity_report_path")
+    online_mode = str(online_cfg.get("mode", "source_only"))
+    if online_mode not in {"source_only", "full_retrospection"}:
+        raise ValueError(
+            "EVALUATION.warm_online.mode must be source_only or full_retrospection"
+        )
+    full_retrospection = online_mode == "full_retrospection"
+    pair_contract_path = (
+        None
+        if full_retrospection
+        else _required_online_path(online_cfg, "pair_contract_path")
+    )
+    parity_report_path = (
+        None
+        if full_retrospection
+        else _required_online_path(online_cfg, "parity_report_path")
+    )
     m1_data_config_path = _required_online_path(
         online_cfg, "m1_data_config_path"
     )
@@ -538,30 +681,35 @@ def _load_warm_online_runtime(
     contract = WarmOnlineRunContract.from_dict(
         _read_json_mapping(contract_path, label="online run contract")
     )
-    pair_contract_file_sha256 = sha256_file(pair_contract_path)
-    pair_contract = WarmOnlinePairContract.from_dict(
-        _read_json_mapping(pair_contract_path, label="online pair contract")
-    )
-    if sha256_file(pair_contract_path) != pair_contract_file_sha256:
-        raise RuntimeError("online pair contract changed while it was read")
-    parity_report_file_sha256 = sha256_file(parity_report_path)
-    if parity_report_file_sha256 != pair_contract.parity_report_sha256:
-        raise ValueError("online parity report does not match the pair contract")
-    parity_report = _read_json_mapping(
-        parity_report_path, label="online parity report"
-    )
-    validate_passing_online_parity_report(
-        parity_report,
-        fixed_online_contract=contract,
-        expected_online_contract_sha256=(
-            pair_contract.fixed_online_run_contract_sha256
-        ),
-        expected_resolved_eval_config_sha256=(
-            pair_contract.fixed_resolved_eval_config_sha256
-        ),
-    )
-    if sha256_file(parity_report_path) != parity_report_file_sha256:
-        raise RuntimeError("online parity report changed while it was read")
+    pair_contract_file_sha256 = None
+    pair_contract = None
+    parity_report_file_sha256 = None
+    if not full_retrospection:
+        assert pair_contract_path is not None and parity_report_path is not None
+        pair_contract_file_sha256 = sha256_file(pair_contract_path)
+        pair_contract = WarmOnlinePairContract.from_dict(
+            _read_json_mapping(pair_contract_path, label="online pair contract")
+        )
+        if sha256_file(pair_contract_path) != pair_contract_file_sha256:
+            raise RuntimeError("online pair contract changed while it was read")
+        parity_report_file_sha256 = sha256_file(parity_report_path)
+        if parity_report_file_sha256 != pair_contract.parity_report_sha256:
+            raise ValueError("online parity report does not match the pair contract")
+        parity_report = _read_json_mapping(
+            parity_report_path, label="online parity report"
+        )
+        validate_passing_online_parity_report(
+            parity_report,
+            fixed_online_contract=contract,
+            expected_online_contract_sha256=(
+                pair_contract.fixed_online_run_contract_sha256
+            ),
+            expected_resolved_eval_config_sha256=(
+                pair_contract.fixed_resolved_eval_config_sha256
+            ),
+        )
+        if sha256_file(parity_report_path) != parity_report_file_sha256:
+            raise RuntimeError("online parity report changed while it was read")
     m1_processor_recipe, m1_data_config_sha256 = load_m1_data_config(
         m1_data_config_path
     )
@@ -680,31 +828,39 @@ def _load_warm_online_runtime(
         raise ValueError(
             "runtime Git checkout does not match the clean online run contract"
         )
-    pair_side = _validate_online_pair_membership(
-        pair_contract=pair_contract,
-        online_contract=contract,
-        resolved_eval_config_sha256=resolved_eval_config_sha256,
-        checkpoint_sha256=checkpoint_sha256,
-        training_attestation_sha256=training_attestation_file_sha256,
-        git_commit=git_commit,
-        git_dirty=git_dirty,
-    )
-    expected_training_attestation_sha256 = (
-        pair_contract.fixed_training_attestation_sha256
-        if pair_side == "fixed"
-        else pair_contract.gaussian_null_training_attestation_sha256
-    )
-    if (
-        training_attestation_file_sha256
-        != expected_training_attestation_sha256
-        or training_attestation.shared_recipe_sha256
-        != pair_contract.shared_training_recipe_sha256
-        or training_attestation.training_runtime_sha256
-        != pair_contract.shared_training_runtime_sha256
-    ):
-        raise ValueError(
-            "training attestation does not match the declared online pair side"
+    if full_retrospection:
+        if contract.source_policy != "fixed_context_top1":
+            raise ValueError(
+                "full_retrospection requires the fixed-context retrieval policy"
+            )
+        pair_side = "full_retrospection"
+    else:
+        assert pair_contract is not None
+        pair_side = _validate_online_pair_membership(
+            pair_contract=pair_contract,
+            online_contract=contract,
+            resolved_eval_config_sha256=resolved_eval_config_sha256,
+            checkpoint_sha256=checkpoint_sha256,
+            training_attestation_sha256=training_attestation_file_sha256,
+            git_commit=git_commit,
+            git_dirty=git_dirty,
         )
+        expected_training_attestation_sha256 = (
+            pair_contract.fixed_training_attestation_sha256
+            if pair_side == "fixed"
+            else pair_contract.gaussian_null_training_attestation_sha256
+        )
+        if (
+            training_attestation_file_sha256
+            != expected_training_attestation_sha256
+            or training_attestation.shared_recipe_sha256
+            != pair_contract.shared_training_recipe_sha256
+            or training_attestation.training_runtime_sha256
+            != pair_contract.shared_training_runtime_sha256
+        ):
+            raise ValueError(
+                "training attestation does not match the declared online pair side"
+            )
 
     raw_initial_states = np.ascontiguousarray(np.asarray(initial_states))
     if sha256_array(raw_initial_states) != contract.initial_states_sha256:
@@ -749,6 +905,7 @@ def _load_warm_online_runtime(
         raise ValueError("loaded tokenizer does not match online run contract")
 
     retriever = None
+    retrospective_episode_memory = None
     null_image_adapter = None
     if contract.source_policy == "fixed_context_top1":
         from fastwam.memory.online_retrieval import FrozenDinoOnlineRetriever
@@ -780,6 +937,41 @@ def _load_warm_online_runtime(
             dino_batch_size=int(online_cfg.get("dino_batch_size", 1)),
         )
         model.bind_online_retriever(retriever)
+        online_mode = str(online_cfg.get("mode", "source_only"))
+        retrospection_config = getattr(model, "warm_retrospection_config", None)
+        if online_mode == "full_retrospection":
+            if retrospection_config is None:
+                raise ValueError(
+                    "full_retrospection mode requires WarmRetrospectionFastWAM"
+                )
+            if (
+                int(retrospection_config.action_dim) != action_dim
+                or int(retrospection_config.action_horizon) != action_horizon
+                or int(retrospection_config.episode_action_summary_dim)
+                != 3 * action_dim + 4
+                or int(retrospection_config.episode_action_chunk_size)
+                != replan_steps
+            ):
+                raise ValueError(
+                    "full WARM episode-memory dimensions differ from the rollout"
+                )
+            from fastwam.memory.online_episode_memory import (
+                OnlineRetrospectiveEpisodeMemory,
+            )
+
+            retrospective_episode_memory = OnlineRetrospectiveEpisodeMemory(
+                action_dim=action_dim,
+                action_horizon=action_horizon,
+                semantic_dim=int(retrospection_config.semantic_dim),
+                # LIBERO uses the final model-space action channel for the
+                # gripper; the evaluator records its exact executed command.
+                gripper_indices=(action_dim - 1,),
+                recent_event_capacity=6,
+            )
+        elif retrospection_config is not None:
+            raise ValueError(
+                "a full WARM checkpoint requires warm_online.mode=full_retrospection"
+            )
     else:
         # Null evaluation deliberately reaches no event-bank/DINO path.  It
         # constructs only the contract-verified baseline image transform.
@@ -794,10 +986,12 @@ def _load_warm_online_runtime(
             ),
         )
 
-    if sha256_file(pair_contract_path) != pair_contract_file_sha256:
-        raise RuntimeError("online pair contract changed during runtime setup")
-    if sha256_file(parity_report_path) != parity_report_file_sha256:
-        raise RuntimeError("online parity report changed during runtime setup")
+    if pair_contract_path is not None:
+        if sha256_file(pair_contract_path) != pair_contract_file_sha256:
+            raise RuntimeError("online pair contract changed during runtime setup")
+    if parity_report_path is not None:
+        if sha256_file(parity_report_path) != parity_report_file_sha256:
+            raise RuntimeError("online parity report changed during runtime setup")
     if sha256_file(m1_data_config_path) != m1_data_config_sha256:
         raise RuntimeError("M1 data config changed during runtime setup")
     if sha256_file(training_attestation_path) != (
@@ -820,6 +1014,7 @@ def _load_warm_online_runtime(
         source_contract=source,
         validation_source_contract=validation_source,
         retriever=retriever,
+        retrospective_episode_memory=retrospective_episode_memory,
         null_image_adapter=null_image_adapter,
         normalization_stats_loaded_sha256=loaded_dataset_stats_sha256,
         pair_contract_file_sha256=pair_contract_file_sha256,
@@ -1106,6 +1301,40 @@ def _denormalize_action(action: torch.Tensor, processor: FastWAMProcessor) -> np
     return denorm.numpy()
 
 
+def _executed_action_to_model_space(
+    action: Any,
+    processor: FastWAMProcessor,
+) -> np.ndarray:
+    """Invert the LIBERO rollout transform for an action actually executed.
+
+    The returned vector is a deterministic normalized representation of the
+    exact environment command.  Episode-memory action summaries therefore use
+    the same scale as offline training while telemetry separately hashes the
+    unmodified simulator command.
+    """
+
+    value = np.asarray(action, dtype=np.float32)
+    if value.ndim != 1 or value.size != int(processor.action_output_dim):
+        raise ValueError("executed LIBERO action has an invalid shape")
+    raw = np.ascontiguousarray(value.copy())
+    # Forward rollout uses e = -(2*d - 1) = 1 - 2*d, where d is the factual
+    # dataset gripper channel.  Invert both the affine map and sign flip.
+    raw[-1] = (np.float32(1.0) - raw[-1]) * np.float32(0.5)
+    action_meta = processor.shape_meta["action"]
+    if len(action_meta) != 1:
+        raise ValueError(
+            "LIBERO eval expects one merged action key for executed summaries"
+        )
+    action_key = action_meta[0]["key"]
+    normalizer = processor.normalizer.normalizers["action"][action_key]
+    tensor = torch.from_numpy(raw).reshape(1, 1, -1)
+    normalized = normalizer.forward(tensor).reshape(-1)
+    result = np.ascontiguousarray(normalized.detach().cpu().numpy(), dtype=np.float32)
+    if not np.isfinite(result).all():
+        raise ValueError("normalized executed action contains non-finite values")
+    return result
+
+
 def _get_num_video_frames(cfg: DictConfig) -> int:
     return (int(cfg.data.train.num_frames) - 1) // int(cfg.data.train.action_video_freq_ratio) + 1
 
@@ -1233,6 +1462,8 @@ def _predict_action_chunk(
     online_input_evidence: dict[str, Any] | None = None
     online_input_stage_s: float | None = None
     online_pipeline_start: float | None = None
+    retrospective_history_evidence: dict[str, Any] | None = None
+    retrospective_update_evidence: dict[str, Any] | None = None
 
     if online_runtime is None:
         image, proprio, imgs = _obs_to_model_input(
@@ -1291,6 +1522,13 @@ def _predict_action_chunk(
                 **common_infer_kwargs,
                 "online_step": online_step,
             }
+            history_kwargs, retrospective_history_evidence = (
+                online_runtime.retrospective_history_kwargs()
+            )
+            # Only the full-retrospection runtime owns these learned-history
+            # inputs.  Source-only M2.1 checkpoints retain their exact public
+            # call surface.
+            infer_kwargs.update(history_kwargs)
         elif online_runtime.source_policy == "gaussian_null":
             from fastwam.memory.online_retrieval import derive_online_query_seed
             from fastwam.memory.manifest import sha256_array
@@ -1339,6 +1577,17 @@ def _predict_action_chunk(
             pred = model.infer_action(**infer_kwargs)
     model_inference_s = time.perf_counter() - model_inference_start
     if online_runtime is not None:
+        if online_runtime.retrospective_episode_memory is not None:
+            if frame_index is None:
+                raise RuntimeError(
+                    "full WARM factual memory requires an absolute frame index"
+                )
+            retrospective_update_evidence = (
+                online_runtime.commit_factual_replan_observation(
+                    frame_index=frame_index,
+                    model_output=pred,
+                )
+            )
         if (
             online_pipeline_start is None
             or online_input_stage_s is None
@@ -1366,6 +1615,11 @@ def _predict_action_chunk(
             },
             "model": dict(model_telemetry),
         }
+        if online_runtime.retrospective_episode_memory is not None:
+            online_telemetry["retrospective_episode_memory"] = {
+                "history_before_replan": retrospective_history_evidence,
+                "factual_update_after_replan": retrospective_update_evidence,
+            }
         if online_step is not None:
             candidates = []
             for rank in range(len(online_step.event_ids)):
@@ -1535,7 +1789,10 @@ def run_single_episode(
                 input_h=input_h,
                 model_device=model_device,
                 online_runtime=online_runtime,
-                frame_index=t,
+                # Query/working-memory time counts only policy actions.  The
+                # initial simulator-settling dummy commands are not part of a
+                # demonstration and must not phase-shift causal replay.
+                frame_index=policy_action_step_count,
             )
             if online_telemetry is not None:
                 online_telemetry["replan_index"] = len(online_replans)
@@ -1560,7 +1817,18 @@ def run_single_episode(
             imgs = get_libero_image(obs)
             replay_images.append(imgs.copy())
 
-        obs, _, done, _ = env.step(pending_actions.pop(0))
+        executed_action = pending_actions.pop(0)
+        obs, _, done, _ = env.step(executed_action)
+        if (
+            online_runtime is not None
+            and online_runtime.retrospective_episode_memory is not None
+        ):
+            online_runtime.note_executed_action(
+                executed_action,
+                model_space_action=_executed_action_to_model_space(
+                    executed_action, processor
+                ),
+            )
         environment_step_count += 1
         policy_action_step_count += 1
         if visualize_future_video and current_predicted_future_clip is not None:
@@ -1618,6 +1886,10 @@ def run_single_episode(
         t += 1
     pbar.close()
 
+    retrospective_episode_evidence = (
+        None if online_runtime is None else online_runtime.end_episode()
+    )
+
     episode_mean_psnr = (
         float(np.mean(episode_future_clip_psnr)) if len(episode_future_clip_psnr) > 0 else None
     )
@@ -1632,6 +1904,10 @@ def run_single_episode(
         "configured_replan_steps": int(replan_steps),
         "replan_count": len(online_replans),
     }
+    if retrospective_episode_evidence is not None:
+        episode_evidence["retrospective_episode_memory"] = (
+            retrospective_episode_evidence
+        )
     return (
         bool(done),
         replay_images,

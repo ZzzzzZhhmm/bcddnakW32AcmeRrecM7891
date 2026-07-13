@@ -1,0 +1,64 @@
+defaults:
+  - warm_source
+  - _self_
+
+_target_: fastwam.runtime.create_warm_retrospection
+
+# The complete WARM model keeps the immutable M2 bank/candidate/base-checkpoint
+# contracts, then learns consequence-aware reranking, transition gist, bounded
+# action adaptation, and a confidence-gated stochastic source.
+source_policy: fixed_context_top1
+memory_sigma: 0.2
+
+# Canonical four-suite LIBERO contract:
+#   context_dim = DINOv2-base CLS (768) + catalog-global task one-hot (40)
+#   semantic_dim = 2x2 pooled DINOv2-base token width (768)
+#   action_horizon = num_frames - 1 = 32
+# A different catalog/encoder must use an explicitly different model config;
+# runtime dimensional checks reject an accidental mismatch.
+retrospection:
+  context_dim: 808
+  semantic_dim: 768
+  video_dim: ${model.video_dit_config.hidden_dim}
+  text_dim: ${model.video_dit_config.text_dim}
+  proprio_dim: ${data.train.processor.proprio_output_dim}
+  action_dim: ${data.train.processor.action_output_dim}
+  action_horizon: 32
+  timing_dim: 4
+  gist_dim: ${model.action_dit_config.hidden_dim}
+  event_model_dim: 512
+  bridge_heads: 8
+  gist_heads: 8
+  event_heads: 8
+  reranker_hidden_dim: 128
+  gate_hidden_dim: 16
+  # Selected-layer bottleneck adapters preserve the immutable 5B Video DiT
+  # backbone. Layers 9/19 are the same ~1/3 and ~2/3 feature taps consumed by
+  # the semantic bridge; rank 16 adds only about 0.2M trainable parameters.
+  video_adapter_rank: 16
+  video_adapter_layers: [9, 19]
+  video_adapter_scale: 1.0
+  episode_action_chunk_size: 10
+  source_sigma_min: 0.2
+  residual_rho: 0.25
+  consequence_weight: 1.0
+  support_weight: 0.0
+  magnitude_weight: 0.25
+  utility_effect_weight: 1.0
+  utility_temperature: 1.0
+  gate_effect_weight: 1.0
+  gate_temperature: 1.0
+  loss_retrieval: 0.10
+  loss_bridge: 0.05
+  loss_gist: 0.05
+  loss_effect: 0.05
+  loss_gate: 0.05
+  loss_adaptation: 0.05
+  corruption_seed: 3407
+
+# Full WARM uses disjoint action and video passes. The action pass reads only
+# current RGB; the isolated video-only pass preserves FastWAM co-training and
+# never constructs Action DiT tokens, preventing demonstrated-future leakage.
+loss:
+  lambda_video: 1.0
+  lambda_action: 1.0

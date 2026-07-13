@@ -1,0 +1,70 @@
+# @package _global_
+
+defaults:
+  - override /data: libero_2cam_warm_train_dev
+  - override /model: warm
+  - _self_
+
+# QueryId and retrospective future targets are indexed on raw factual frames.
+# A stride other than one invalidates both immutable cache identities.
+data:
+  train:
+    global_sample_stride: 1
+    strict_sample_loading: true
+    skip_padding_as_possible: false
+    pretrained_norm_stats: ${data.warm_candidates.train.normalization_stats_path}
+    episode_catalog_path: ${data.warm_candidates.train.catalog_path}
+    episode_split: train
+  warm_candidates:
+    train:
+      bank_directory: null
+      candidate_directory: null
+      catalog_path: null
+      normalization_stats_path: null
+      audit_report_path: null
+      expected_query_corpus_sha256: null
+      # precompute_warm_features.py publishes this list atomically. Paths inside
+      # it are catalog-bound and may be absolute or relative to the list file.
+      retrospective_feature_list: null
+      retrospective_feature_directory: null
+      retrospective_recent_event_capacity: 6
+      retrospective_action_summary_capacity: 2
+      retrospective_action_summary_chunk_size: 10
+      retrospective_gripper_indices: [6]
+    val:
+      bank_directory: null
+      candidate_directory: null
+      catalog_path: null
+      normalization_stats_path: null
+      audit_report_path: null
+      expected_query_corpus_sha256: null
+      retrospective_feature_list: null
+      retrospective_feature_directory: null
+      retrospective_recent_event_capacity: 6
+      retrospective_action_summary_capacity: 2
+      retrospective_action_summary_chunk_size: 10
+      retrospective_gripper_indices: [6]
+  val:
+    episode_catalog_path: ${data.warm_candidates.val.catalog_path}
+    episode_split: dev
+    pretrained_norm_stats: ${data.warm_candidates.val.normalization_stats_path}
+
+batch_size: 16
+num_workers: 8
+
+model:
+  # Full WARM runs a 33-frame video-only backward pass in addition to the
+  # current-frame action pass. Activation checkpointing is required for the
+  # frozen 5B backbone path that connects the trainable layer-9/19 adapters.
+  mot_checkpoint_mixed_attn: true
+
+lr_scheduler_type: cosine
+learning_rate: 1.0e-4
+num_epochs: 10
+max_steps: null
+log_every: 10
+save_every: 2000
+eval_every: 0
+gradient_accumulation_steps: 1
+weight_decay: 1.0e-2
+resume: null

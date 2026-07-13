@@ -53,7 +53,14 @@ from .manifest import (
     sha256_file,
     sha256_path_tree,
 )
-from .payload_names import MODEL_SPACE_ACTION, TASK_INDEX
+from .payload_names import (
+    EFFECT_POST,
+    EFFECT_PRE,
+    MODEL_SPACE_ACTION,
+    OBSERVED_GRIPPER_STATE,
+    START_PROPRIO,
+    TASK_INDEX,
+)
 from .schema import EventId
 
 
@@ -580,6 +587,200 @@ class BoundOnlineStep:
             raise OnlineBoundStepError("bound proprio content changed")
         if _step_digest(self) != self.step_sha256:
             raise OnlineBoundStepError("bound online step digest is invalid")
+
+
+@dataclass(frozen=True, slots=True)
+class OnlineCandidateFacts:
+    """Immutable factual event-bank evidence for one bound online step.
+
+    This object is deliberately derived on demand rather than embedded in
+    :class:`BoundOnlineStep`.  Consequently the frozen M2.1 step digest and
+    wire/JSON evidence remain unchanged while the complete WARM policy can
+    read the state-action-effect payload bound to the already selected bank
+    rows.  Every invalid candidate slot is represented by exact zeros.
+    """
+
+    step_sha256: str
+    candidate_valid_mask: np.ndarray
+    context_keys: np.ndarray
+    effect_pre: np.ndarray
+    effect_post: np.ndarray
+    effect_delta: np.ndarray
+    start_proprio: np.ndarray
+    observed_gripper: np.ndarray
+    gripper_timing: np.ndarray
+    support: np.ndarray
+
+    def __post_init__(self) -> None:
+        step_sha256 = _digest(self.step_sha256, "step_sha256")
+        valid = _readonly_array(
+            self.candidate_valid_mask,
+            dtype=np.dtype(np.bool_),
+            field_name="candidate_valid_mask",
+            rank=1,
+        )
+        context = _readonly_array(
+            self.context_keys,
+            dtype=np.dtype(np.float32),
+            field_name="context_keys",
+            rank=2,
+        )
+        pre_array = np.asarray(self.effect_pre)
+        if pre_array.ndim < 2:
+            raise OnlineBoundStepError(
+                "effect_pre must have a leading candidate dimension and a "
+                "non-scalar effect shape"
+            )
+        pre = _readonly_array(
+            pre_array,
+            dtype=np.dtype(np.float32),
+            field_name="effect_pre",
+            rank=pre_array.ndim,
+        )
+        post = _readonly_array(
+            self.effect_post,
+            dtype=np.dtype(np.float32),
+            field_name="effect_post",
+            rank=pre_array.ndim,
+        )
+        delta = _readonly_array(
+            self.effect_delta,
+            dtype=np.dtype(np.float32),
+            field_name="effect_delta",
+            rank=pre_array.ndim,
+        )
+        proprio = _readonly_array(
+            self.start_proprio,
+            dtype=np.dtype(np.float32),
+            field_name="start_proprio",
+            rank=2,
+        )
+        gripper = _readonly_array(
+            self.observed_gripper,
+            dtype=np.dtype(np.float32),
+            field_name="observed_gripper",
+            rank=2,
+        )
+        timing = _readonly_array(
+            self.gripper_timing,
+            dtype=np.dtype(np.float32),
+            field_name="gripper_timing",
+            rank=2,
+        )
+        support = _readonly_array(
+            self.support,
+            dtype=np.dtype(np.float32),
+            field_name="support",
+            rank=1,
+        )
+        count = int(valid.size)
+        leading_arrays = (
+            ("context_keys", context),
+            ("effect_pre", pre),
+            ("effect_post", post),
+            ("effect_delta", delta),
+            ("start_proprio", proprio),
+            ("observed_gripper", gripper),
+            ("gripper_timing", timing),
+            ("support", support),
+        )
+        for name, array in leading_arrays:
+            if int(array.shape[0]) != count:
+                raise OnlineBoundStepError(
+                    f"{name} leading dimension must equal candidate K={count}"
+                )
+        if pre.shape != post.shape or pre.shape != delta.shape:
+            raise OnlineBoundStepError(
+                "effect_pre, effect_post, and effect_delta must share a shape"
+            )
+        if timing.shape != (count, 4):
+            raise OnlineBoundStepError(
+                f"gripper_timing must have shape {(count, 4)}"
+            )
+        if not np.array_equal(delta, post - pre):
+            raise OnlineBoundStepError(
+                "effect_delta must exactly equal effect_post - effect_pre"
+            )
+        if np.any(support[valid] != np.float32(1.0)):
+            raise OnlineBoundStepError(
+                "every valid factual exemplar must have support exactly one"
+            )
+        for name, array in leading_arrays:
+            if np.any(array[~valid] != 0):
+                raise OnlineBoundStepError(
+                    f"invalid candidate slots in {name} must be exactly zero"
+                )
+
+        object.__setattr__(self, "step_sha256", step_sha256)
+        object.__setattr__(self, "candidate_valid_mask", valid)
+        object.__setattr__(self, "context_keys", context)
+        object.__setattr__(self, "effect_pre", pre)
+        object.__setattr__(self, "effect_post", post)
+        object.__setattr__(self, "effect_delta", delta)
+        object.__setattr__(self, "start_proprio", proprio)
+        object.__setattr__(self, "observed_gripper", gripper)
+        object.__setattr__(self, "gripper_timing", timing)
+        object.__setattr__(self, "support", support)
+
+    def as_mapping(self) -> Mapping[str, np.ndarray]:
+        """Return a read-only field mapping suitable for model adapters."""
+
+        return MappingProxyType(
+            {
+                "candidate_valid_mask": self.candidate_valid_mask,
+                "context_keys": self.context_keys,
+                "effect_pre": self.effect_pre,
+                "effect_post": self.effect_post,
+                "effect_delta": self.effect_delta,
+                "start_proprio": self.start_proprio,
+                "observed_gripper": self.observed_gripper,
+                "gripper_timing": self.gripper_timing,
+                "support": self.support,
+            }
+        )
+
+
+def _online_gripper_timing(
+    observed_gripper: np.ndarray,
+    candidate_valid_mask: np.ndarray,
+) -> np.ndarray:
+    """Encode first close/open phases and validity without semantic guessing.
+
+    The ordering matches the factual training adapter:
+    ``[close_phase, close_valid, open_phase, open_valid]``.  A negative
+    observed-state delta is a close transition and a positive delta is an
+    open transition.  Missing transitions and padded candidates stay zero.
+    """
+
+    values = np.asarray(observed_gripper)
+    valid = np.asarray(candidate_valid_mask)
+    if (
+        values.dtype != np.dtype(np.float32)
+        or values.ndim != 2
+        or valid.dtype != np.dtype(np.bool_)
+        or valid.ndim != 1
+        or values.shape[0] != valid.size
+    ):
+        raise OnlineBoundStepError(
+            "observed gripper and candidate mask have incompatible layouts"
+        )
+    timing = np.zeros((valid.size, 4), dtype=np.float32)
+    denominator = max(int(values.shape[1]) - 1, 1)
+    for position in np.flatnonzero(valid).tolist():
+        delta = np.diff(values[position].astype(np.float64, copy=False))
+        close = np.flatnonzero(delta < 0.0)
+        opened = np.flatnonzero(delta > 0.0)
+        if close.size:
+            timing[position, 0] = np.float32(
+                float(int(close[0]) + 1) / denominator
+            )
+            timing[position, 1] = np.float32(1.0)
+        if opened.size:
+            timing[position, 2] = np.float32(
+                float(int(opened[0]) + 1) / denominator
+            )
+            timing[position, 3] = np.float32(1.0)
+    return timing
 
 
 def _coerce_source_contract(
@@ -1765,11 +1966,130 @@ class FrozenDinoOnlineRetriever:
             self._model_consumed.add(step.query_id)
         return result
 
+    def _candidate_facts_from_owned_step(
+        self, step: BoundOnlineStep
+    ) -> OnlineCandidateFacts:
+        """Gather only explicit valid rows from the immutable event bank.
+
+        Callers must hold ``self._lock`` and must first prove ownership with
+        ``assert_owned_bound_step`` or ``validate_bound_step``.  In
+        particular, this function never indexes the bank with padded ``-1``
+        rows.
+        """
+
+        valid = np.asarray(step.candidate_valid_mask, dtype=np.bool_)
+        positions = np.flatnonzero(valid)
+        rows = np.asarray(step.bank_rows[positions], dtype=np.int64)
+        if np.any(rows < 0):
+            raise OnlineBoundStepError(
+                "candidate facts cannot gather a negative event-bank row"
+            )
+        if np.any(rows >= len(self._bank)):
+            raise OnlineBoundStepError(
+                "candidate facts contain an out-of-range event-bank row"
+            )
+
+        count = int(valid.size)
+        context = np.zeros(
+            (count, self._summary.context_dim), dtype=np.float32
+        )
+        effect_shape = tuple(self._summary.effect_shape)
+        effect_pre = np.zeros((count, *effect_shape), dtype=np.float32)
+        effect_post = np.zeros((count, *effect_shape), dtype=np.float32)
+        start_proprio = np.zeros(
+            (count, self._summary.proprio_dim), dtype=np.float32
+        )
+        observed_gripper = np.zeros(
+            (count, self._summary.action_horizon + 1), dtype=np.float32
+        )
+        support = np.zeros((count,), dtype=np.float32)
+
+        if rows.size:
+            # Indexing occurs only after explicit non-negative/range checks;
+            # invalid padded positions remain their initialized exact zeros.
+            context[positions] = self._bank.context_keys[rows]
+            effect_pre[positions] = self._bank.payload(EFFECT_PRE)[rows]
+            effect_post[positions] = self._bank.payload(EFFECT_POST)[rows]
+            start_proprio[positions] = self._bank.payload(START_PROPRIO)[rows]
+            observed_gripper[positions] = self._bank.payload(
+                OBSERVED_GRIPPER_STATE
+            )[rows]
+            support[positions] = np.float32(1.0)
+
+        effect_delta = np.ascontiguousarray(
+            effect_post - effect_pre, dtype=np.float32
+        )
+        timing = _online_gripper_timing(observed_gripper, valid)
+        return OnlineCandidateFacts(
+            step_sha256=step.step_sha256,
+            candidate_valid_mask=np.ascontiguousarray(valid),
+            context_keys=context,
+            effect_pre=effect_pre,
+            effect_post=effect_post,
+            effect_delta=effect_delta,
+            start_proprio=start_proprio,
+            observed_gripper=observed_gripper,
+            gripper_timing=timing,
+            support=support,
+        )
+
+    def gather_candidate_facts(
+        self,
+        step: BoundOnlineStep,
+        *,
+        prompt: str | None = None,
+        proprio: Any | None = None,
+        input_image: Any | None = None,
+    ) -> OnlineCandidateFacts:
+        """Return factual candidate evidence after a non-consuming proof.
+
+        This is intended for a policy path that already consumes the same
+        :class:`BoundOnlineStep` through :meth:`validate_bound_step`.  The
+        method still performs the complete ownership, registration, digest,
+        prompt/proprio/image, bank-row, and action-payload checks before any
+        bank payload is gathered.
+        """
+
+        with self._lock:
+            owned = self.assert_owned_bound_step(
+                step,
+                prompt=prompt,
+                proprio=proprio,
+                input_image=input_image,
+            )
+            return self._candidate_facts_from_owned_step(owned)
+
+    def validate_and_gather_candidate_facts(
+        self,
+        step: BoundOnlineStep,
+        *,
+        prompt: str | None = None,
+        proprio: Any | None = None,
+        input_image: Any | None = None,
+    ) -> OnlineCandidateFacts:
+        """Atomically consume a policy capability and return its facts.
+
+        Complete WARM online inference can use this method in place of a
+        separate ``validate_bound_step`` call.  Holding the retriever's
+        re-entrant lock across validation and gathering prevents an episode
+        transition from interleaving between the two operations.
+        """
+
+        with self._lock:
+            owned = self.validate_bound_step(
+                step,
+                prompt=prompt,
+                proprio=proprio,
+                input_image=input_image,
+            )
+            return self._candidate_facts_from_owned_step(owned)
+
 
 __all__ = [
     "BoundOnlineStep",
     "FrozenDinoOnlineRetriever",
     "INVALID_BANK_ROW",
+    "OnlineCandidateFacts",
     "OnlineArtifactContractError",
     "OnlineBoundStepError",
     "OnlineEpisodeStateError",

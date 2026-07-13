@@ -498,6 +498,23 @@ class Wan22Trainer:
             "warm_candidate_event_index": 1,
             "warm_oracle_candidate_index": 0,
             "warm_memory_enabled": 0,
+            "warm_candidate_context": 2,
+            "warm_candidate_effect_pre": 3,
+            "warm_candidate_effect_post": 3,
+            "warm_candidate_effect_delta": 3,
+            "warm_candidate_start_proprio": 2,
+            "warm_candidate_gripper": 2,
+            "warm_candidate_timing": 2,
+            "warm_candidate_support": 1,
+            "warm_current_context": 1,
+            "warm_current_semantic": 2,
+            "warm_future_semantic": 2,
+            "warm_target_effect": 2,
+            "warm_future_valid": 0,
+            "warm_episode_tokens": 2,
+            "warm_episode_mask": 1,
+            "warm_episode_action_summaries": 2,
+            "warm_episode_action_mask": 1,
         }
         for key, unbatched_rank in extra_tensor_ranks.items():
             if key not in sample:
@@ -513,6 +530,14 @@ class Wan22Trainer:
                     f"or leading singleton batch, got {tuple(value.shape)}"
                 )
             batched[key] = value
+        if "warm_query_split" in sample:
+            split = sample["warm_query_split"]
+            if not isinstance(split, str):
+                raise TypeError("`sample['warm_query_split']` must be a string")
+            batched["warm_query_split"] = split
+        for key in ("dataset_index", "episode_index", "frame_index"):
+            if key in sample:
+                batched[key] = sample[key]
         return batched
 
     @torch.no_grad()
@@ -521,9 +546,13 @@ class Wan22Trainer:
             return None
 
         model = self.accelerator.unwrap_model(self.model)
-        action_expert = getattr(model, "action_expert", None)
-        was_train_scope_active = bool(model.dit.training) or bool(
-            action_expert is not None and action_expert.training
+        was_train_scope_active = any(
+            module.training
+            and any(
+                parameter.requires_grad
+                for parameter in module.parameters(recurse=False)
+            )
+            for module in model.modules()
         )
         model.eval()
 

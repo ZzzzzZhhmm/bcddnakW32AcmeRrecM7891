@@ -442,6 +442,7 @@ class RuntimeCandidateResolver:
             }
         )
         self._action_space = action_contract
+        self._bank_summary = summary
         self._bank_manifest_sha256 = bank_manifest_hash
         self._bank_content_sha256 = bank_content_hash
         self._candidate_manifest_sha256 = candidate_manifest_hash
@@ -524,6 +525,14 @@ class RuntimeCandidateResolver:
     @property
     def action_space(self) -> ActionSpaceContract:
         return self._action_space
+
+    @property
+    def context_dim(self) -> int:
+        return int(self._bank.context_keys.shape[1])
+
+    @property
+    def semantic_effect_shape(self) -> tuple[int, ...]:
+        return tuple(int(value) for value in self._bank.payload[EFFECT_PRE].shape[1:])
 
     @property
     def query_catalog_sha256(self) -> str:
@@ -701,6 +710,37 @@ class RuntimeCandidateResolver:
         """Safely gather the canonical model-space source action payload."""
 
         return self.gather_payload(resolved, MODEL_SPACE_ACTION)
+
+    def gather_context_keys(self, resolved: ResolvedCandidateRow) -> np.ndarray:
+        """Gather candidate context keys without ever indexing padding rows.
+
+        Context keys are part of the event-bank index rather than a named
+        payload.  Full WARM reranking nevertheless needs the exact factual key
+        associated with every candidate, so this method mirrors
+        :meth:`gather_payload`'s sentinel-safe behavior.
+        """
+
+        if not isinstance(resolved, ResolvedCandidateRow):
+            raise TypeError("resolved must be ResolvedCandidateRow")
+        if resolved.fixed_k != self._fixed_k:
+            raise RuntimeCandidateGatherError(
+                "resolved row width does not match this resolver"
+            )
+        valid_positions = np.flatnonzero(resolved.mask)
+        valid_rows = resolved.bank_rows[valid_positions]
+        if np.any(valid_rows < 0) or np.any(valid_rows >= len(self._bank)):
+            raise RuntimeCandidateGatherError(
+                "resolved row contains an out-of-range valid bank index"
+            )
+        output = np.zeros(
+            (self._fixed_k, self._bank.context_keys.shape[1]),
+            dtype=np.float32,
+        )
+        if valid_rows.size:
+            output[valid_positions] = self._bank.context_keys[valid_rows]
+        output = np.ascontiguousarray(output)
+        output.flags.writeable = False
+        return output
 
 
 __all__ = [
