@@ -68,6 +68,18 @@ Deliverables:
 - fixed/oracle retrieval source sampler plus Gaussian null;
 - Action DiT LoRA or explicitly scoped action-expert fine-tuning;
 - source geometry metrics and Gaussian-parity tests.
+- online observation-to-query retrieval bridge before any fixed-context
+  closed-loop evaluation is claimed;
+- an independently catalog-bound dev dataset/cache/run contract before periodic
+  Trainer validation is enabled.
+
+Implementation note: M2 training consumes a distinct stride-one train-query
+candidate cache. A closed source-run contract binds that cache, the event
+bank, catalog/audit, action normalizer, and baseline checkpoint; the model and
+Dataset resolver cross-check the same hashes before Trainer construction.
+Until the online bridge and independent dev contract are delivered, the M2 task
+uses `eval_every=0`; offline fixed-source smoke tests and Gaussian-null inference
+parity are implementation gates, not evidence of fixed-memory rollout success.
 
 Compare the identical retrieved payload as context, residual, and source, plus
 FastWAM and WarmPrior-style recent-action source.
@@ -76,6 +88,8 @@ Acceptance:
 
 - source reduces expected source-to-GT displacement/flow curvature by about
   15% or more;
+- fixed-context closed-loop acceptance is evaluated only after the online
+  retrieval bridge is present and tested;
 - closed-loop success improves at least about 3 percentage points over
   context-only and recent-action prior with positive three-seed confidence;
 - ordinary Markov tasks regress no more than about 2 points.

@@ -62,6 +62,7 @@ from .schema import (
     EventId,
 )
 from .offline_pipeline import (
+    CandidateQuerySplit,
     FeatureCacheCollection,
     FeatureCollectionContract,
     FeatureDataBinding,
@@ -87,6 +88,14 @@ from .oracle_metrics import (
     evaluate_oracle_metrics,
     evaluate_oracle_retrieval,
     oracle_metrics_report_to_dict,
+)
+from .runtime_candidates import (
+    INVALID_BANK_ROW,
+    ResolvedCandidateRow,
+    RuntimeCandidateContractError,
+    RuntimeCandidateError,
+    RuntimeCandidateGatherError,
+    RuntimeCandidateResolver,
 )
 from .train_stats import (
     TRAIN_STATS_FILENAME,
@@ -117,6 +126,7 @@ __all__ = [
     "CandidateCacheError",
     "CandidateCacheIntegrityError",
     "CandidateCacheManifest",
+    "CandidateQuerySplit",
     "EVENT_BANK_SCHEMA",
     "EVENT_BANK_SCHEMA_VERSION",
     "EpisodeKey",
@@ -129,6 +139,7 @@ __all__ = [
     "EventMiningConfig",
     "EventMiningResult",
     "IntegrityError",
+    "INVALID_BANK_ROW",
     "FeatureCacheCollection",
     "FeatureCacheError",
     "FeatureCacheIntegrityError",
@@ -147,6 +158,11 @@ __all__ = [
     "OracleQuery",
     "OracleQueryResult",
     "QueryId",
+    "ResolvedCandidateRow",
+    "RuntimeCandidateContractError",
+    "RuntimeCandidateError",
+    "RuntimeCandidateGatherError",
+    "RuntimeCandidateResolver",
     "SearchResult",
     "TRAIN_STATS_FILENAME",
     "TRAIN_STATS_MANIFEST_FILENAME",

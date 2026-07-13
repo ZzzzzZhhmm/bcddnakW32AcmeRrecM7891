@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Dict, Optional
 
 import torch
@@ -9,6 +10,14 @@ from .wan_video_dit import flash_attention, modulate, rope_apply
 from fastwam.utils.logging_config import get_logger
 
 logger = get_logger(__name__)
+
+
+@dataclass(frozen=True, slots=True)
+class VideoPrefillOutput:
+    """Layer-wise video K/V plus the final first-frame world tokens."""
+
+    kv_cache: list[dict[str, torch.Tensor]]
+    final_tokens: torch.Tensor
 
 
 class MoT(nn.Module):
@@ -254,31 +263,16 @@ class MoT(nn.Module):
             gate_mlp,
         )
 
-    def prefill_video_cache(
+    def _prefill_video_cache_with_tokens(
         self,
         video_tokens: torch.Tensor,
         video_freqs: torch.Tensor,
         video_t_mod: torch.Tensor,
         video_context_payload: Optional[dict],
         video_attention_mask: torch.Tensor,
-    ) -> list[dict[str, torch.Tensor]]:
-        """Prefill video branch once and cache per-layer K/V for action denoising.
+    ) -> VideoPrefillOutput:
+        """Shared prefill implementation used by the old and extended APIs."""
 
-        Args:
-            video_tokens: Video tokens before layer 0, shape [B, Sv, D].
-            video_freqs: Video RoPE frequencies, shape [Sv, 1, rope_dim].
-            video_t_mod: Video time modulation tensor.
-            video_context_payload: Optional dict for video cross-attention.
-                - `context`: encoder states [B, L, D]
-                - `mask`: attention mask [B, Sv, L] or [B, 1, Sv, L]
-            video_attention_mask: Video self-attention mask, shape [Sv, Sv].
-
-        Returns:
-            Layer-wise cache list with length `num_layers`.
-            Each entry contains:
-                - `k`: video key tensor [B, Sv, H*Dh]
-                - `v`: video value tensor [B, Sv, H*Dh]
-        """
         if "video" not in self.mixtures:
             raise ValueError("MoT requires `video` expert for `prefill_video_cache`.")
         if video_attention_mask.ndim != 2:
@@ -338,7 +332,63 @@ class MoT(nn.Module):
                 context_payload=video_context_payload,
             )
             kv_cache.append({"k": k, "v": v})
-        return kv_cache
+        return VideoPrefillOutput(kv_cache=kv_cache, final_tokens=x)
+
+    def prefill_video_cache(
+        self,
+        video_tokens: torch.Tensor,
+        video_freqs: torch.Tensor,
+        video_t_mod: torch.Tensor,
+        video_context_payload: Optional[dict],
+        video_attention_mask: torch.Tensor,
+    ) -> list[dict[str, torch.Tensor]]:
+        """Prefill video branch while preserving the original list return API.
+
+        Args:
+            video_tokens: Video tokens before layer 0, shape [B, Sv, D].
+            video_freqs: Video RoPE frequencies, shape [Sv, 1, rope_dim].
+            video_t_mod: Video time modulation tensor.
+            video_context_payload: Optional dict for video cross-attention.
+                - `context`: encoder states [B, L, D]
+                - `mask`: attention mask [B, Sv, L] or [B, 1, Sv, L]
+            video_attention_mask: Video self-attention mask, shape [Sv, Sv].
+
+        Returns:
+            Layer-wise cache list with length `num_layers`.
+            Each entry contains:
+                - `k`: video key tensor [B, Sv, H*Dh]
+                - `v`: video value tensor [B, Sv, H*Dh]
+        """
+        return self._prefill_video_cache_with_tokens(
+            video_tokens=video_tokens,
+            video_freqs=video_freqs,
+            video_t_mod=video_t_mod,
+            video_context_payload=video_context_payload,
+            video_attention_mask=video_attention_mask,
+        ).kv_cache
+
+    def prefill_video_cache_with_tokens(
+        self,
+        video_tokens: torch.Tensor,
+        video_freqs: torch.Tensor,
+        video_t_mod: torch.Tensor,
+        video_context_payload: Optional[dict],
+        video_attention_mask: torch.Tensor,
+    ) -> VideoPrefillOutput:
+        """Prefill once and also expose final safe first-frame world tokens.
+
+        This separate method keeps every existing ``prefill_video_cache`` caller
+        source-compatible while giving WARM the final VideoDiT representation
+        without a second video pass.
+        """
+
+        return self._prefill_video_cache_with_tokens(
+            video_tokens=video_tokens,
+            video_freqs=video_freqs,
+            video_t_mod=video_t_mod,
+            video_context_payload=video_context_payload,
+            video_attention_mask=video_attention_mask,
+        )
 
     def forward_action_with_video_cache(
         self,

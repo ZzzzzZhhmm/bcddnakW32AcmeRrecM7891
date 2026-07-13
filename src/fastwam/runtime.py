@@ -1,6 +1,7 @@
 import logging
 import os
 import inspect
+import json
 from pathlib import Path
 
 import torch
@@ -90,8 +91,13 @@ def create_fastwam(
     redirect_common_files: bool = True,
     model_dtype: torch.dtype = torch.bfloat16,
     device: str = "cuda",
+    _model_class=None,
+    _from_pretrained_extra: dict | None = None,
 ):
-    from .models.wan22.fastwam import FastWAM
+    if _model_class is None:
+        from .models.wan22.fastwam import FastWAM
+    else:
+        FastWAM = _model_class
 
     if isinstance(video_dit_config, DictConfig):
         video_dit_config = OmegaConf.to_container(video_dit_config, resolve=True)
@@ -133,6 +139,7 @@ def create_fastwam(
     if not isinstance(loss, dict):
         raise ValueError(f"`loss` must be dict-like, got {type(loss)}")
 
+    extra = {} if _from_pretrained_extra is None else dict(_from_pretrained_extra)
     return FastWAM.from_wan22_pretrained(
         device=device,
         torch_dtype=model_dtype,
@@ -155,7 +162,137 @@ def create_fastwam(
         action_num_train_timesteps=int(action_scheduler["num_train_timesteps"]),
         loss_lambda_video=float(loss.get("lambda_video", 1.0)),
         loss_lambda_action=float(loss.get("lambda_action", 1.0)),
+        **extra,
     )
+
+
+def create_warm_source(
+    model_id: str,
+    tokenizer_model_id: str,
+    video_dit_config,
+    tokenizer_max_len: int = 512,
+    load_text_encoder: bool = True,
+    proprio_dim: int | None = None,
+    action_dit_config=None,
+    action_dit_pretrained_path: str | None = None,
+    skip_dit_load_from_pretrain: bool = False,
+    video_scheduler=None,
+    action_scheduler=None,
+    loss=None,
+    mot_checkpoint_mixed_attn: bool = True,
+    redirect_common_files: bool = True,
+    model_dtype: torch.dtype = torch.bfloat16,
+    device: str = "cuda",
+    source_policy: str = "fixed_context_top1",
+    memory_sigma: float = 0.2,
+    run_contract=None,
+    run_contract_path: str | None = None,
+    base_checkpoint_path: str | None = None,
+):
+    """Create the base-FastWAM M2 model with strict source-only semantics."""
+
+    from .memory.manifest import sha256_file
+    from .models.warm.source_contract import WarmSourceRunContract
+    from .models.warm.source_model import WarmSourceFastWAM
+
+    if run_contract is not None and run_contract_path is not None:
+        raise ValueError(
+            "run_contract and run_contract_path are mutually exclusive"
+        )
+    if run_contract_path is not None:
+        contract_path = Path(run_contract_path).expanduser().resolve()
+        with open(contract_path, "r", encoding="utf-8") as file:
+            run_contract = json.load(file)
+    if isinstance(run_contract, DictConfig):
+        run_contract = OmegaConf.to_container(run_contract, resolve=True)
+    if run_contract is None:
+        contract = None
+    elif isinstance(run_contract, WarmSourceRunContract):
+        contract = run_contract
+    else:
+        contract = WarmSourceRunContract.from_dict(run_contract)
+
+    if source_policy not in {
+        "gaussian_null",
+        "fixed_context_top1",
+        "oracle_action_top1",
+    }:
+        raise ValueError(f"unsupported WARM source_policy {source_policy!r}")
+    resolved_action_config = action_dit_config
+    if isinstance(resolved_action_config, DictConfig):
+        resolved_action_config = OmegaConf.to_container(
+            resolved_action_config, resolve=True
+        )
+    if contract is not None and isinstance(resolved_action_config, dict):
+        configured_action_dim = resolved_action_config.get("action_dim")
+        if (
+            configured_action_dim is not None
+            and int(configured_action_dim) != contract.action_dim
+        ):
+            raise ValueError(
+                "Action DiT config does not match WarmSourceRunContract "
+                f"action_dim: {configured_action_dim} != {contract.action_dim}"
+            )
+
+    # The public Hydra/runtime factory is the formal experiment path.  Even
+    # the Gaussian-null ablation must start from the exact same immutable
+    # FastWAM checkpoint and artifact contract as fixed/oracle runs; otherwise
+    # warm_source.yaml's skipped pretrained loads could leave random experts
+    # and create a meaningless "null" comparison.  Tiny unit fixtures may
+    # still construct WarmSourceFastWAM directly without a contract.
+    if contract is None:
+        raise ValueError(
+            "formal WARM runtime requires run_contract or run_contract_path "
+            "for every source policy, including gaussian_null"
+        )
+    if base_checkpoint_path is None:
+        raise ValueError(
+            "a run contract requires base_checkpoint_path for hash verification"
+        )
+
+    base_path = None
+    if base_checkpoint_path is not None:
+        base_path = Path(base_checkpoint_path).expanduser().resolve()
+        if not base_path.is_file():
+            raise FileNotFoundError(f"base checkpoint not found: {base_path}")
+        if contract is None:
+            raise ValueError(
+                "base_checkpoint_path requires a run contract binding its hash"
+            )
+        actual_sha256 = sha256_file(base_path)
+        if actual_sha256 != contract.base_checkpoint_sha256:
+            raise ValueError(
+                "base checkpoint SHA256 does not match WarmSourceRunContract: "
+                f"{actual_sha256} != {contract.base_checkpoint_sha256}"
+            )
+
+    model = create_fastwam(
+        model_id=model_id,
+        tokenizer_model_id=tokenizer_model_id,
+        video_dit_config=video_dit_config,
+        tokenizer_max_len=tokenizer_max_len,
+        load_text_encoder=load_text_encoder,
+        proprio_dim=proprio_dim,
+        action_dit_config=action_dit_config,
+        action_dit_pretrained_path=action_dit_pretrained_path,
+        skip_dit_load_from_pretrain=skip_dit_load_from_pretrain,
+        video_scheduler=video_scheduler,
+        action_scheduler=action_scheduler,
+        loss=loss,
+        mot_checkpoint_mixed_attn=mot_checkpoint_mixed_attn,
+        redirect_common_files=redirect_common_files,
+        model_dtype=model_dtype,
+        device=device,
+        _model_class=WarmSourceFastWAM,
+        _from_pretrained_extra={
+            "warm_source_policy": source_policy,
+            "memory_sigma": memory_sigma,
+            "warm_run_contract": contract,
+        },
+    )
+    if base_path is not None:
+        model.load_base_checkpoint(str(base_path))
+    return model
 
 
 def create_fastwam_joint(
@@ -332,6 +469,18 @@ def create_fastwam_idm(
 
 def build_datasets(data_cfg: DictConfig):
     train_ds = instantiate(data_cfg.train)
+    warm_cfg = data_cfg.get("warm_candidates")
+    if warm_cfg is not None:
+        train_candidate_cfg = warm_cfg.get("train")
+        if train_candidate_cfg is None:
+            raise ValueError(
+                "data.warm_candidates.train is required when WARM candidates are enabled"
+            )
+        train_ds = _wrap_warm_candidate_dataset(
+            train_ds,
+            train_candidate_cfg,
+            expected_query_split="train",
+        )
     if data_cfg.get("val") is None:
         val_ds = train_ds
     else:
@@ -341,7 +490,81 @@ def build_datasets(data_cfg: DictConfig):
         pretrained_norm_stats = val_stats_path or train_stats_path or default_stats_path
         logger.info("Building val dataset with pretrained_norm_stats: %s", pretrained_norm_stats)
         val_ds = instantiate(data_cfg.val, pretrained_norm_stats=pretrained_norm_stats)
+        if warm_cfg is not None:
+            val_candidate_cfg = warm_cfg.get("val")
+            if val_candidate_cfg is None:
+                raise ValueError(
+                    "data.warm_candidates.val is required when a separate "
+                    "validation dataset is configured"
+                )
+            val_ds = _wrap_warm_candidate_dataset(
+                val_ds,
+                val_candidate_cfg,
+                expected_query_split="dev",
+            )
     return train_ds, val_ds
+
+
+def _wrap_warm_candidate_dataset(
+    dataset,
+    candidate_cfg,
+    *,
+    expected_query_split: str,
+):
+    """Attach one immutable candidate-cache row to each exact dataset sample."""
+
+    from .datasets.warm_candidates import RuntimeCandidateDatasetAdapter
+    from .memory.runtime_candidates import RuntimeCandidateResolver
+
+    if isinstance(candidate_cfg, DictConfig):
+        candidate_cfg = OmegaConf.to_container(
+            candidate_cfg, resolve=True
+        )
+    if not isinstance(candidate_cfg, dict):
+        raise TypeError("WARM candidate dataset config must resolve to a dict")
+    allowed = {
+        "bank_directory",
+        "candidate_directory",
+        "catalog_path",
+        "normalization_stats_path",
+        "audit_report_path",
+        "expected_query_corpus_sha256",
+    }
+    extra = set(candidate_cfg) - allowed
+    if extra:
+        raise ValueError(
+            f"unsupported WARM candidate dataset config keys: {sorted(extra)}"
+        )
+    missing = [
+        field
+        for field in (
+            "bank_directory",
+            "candidate_directory",
+            "catalog_path",
+            "normalization_stats_path",
+            "audit_report_path",
+        )
+        if not candidate_cfg.get(field)
+    ]
+    if missing:
+        raise ValueError(
+            f"WARM candidate dataset paths are required: {sorted(missing)}"
+        )
+    resolver = RuntimeCandidateResolver.from_artifacts(
+        candidate_cfg["bank_directory"],
+        candidate_cfg["candidate_directory"],
+        expected_query_split=expected_query_split,
+        expected_query_corpus_sha256=candidate_cfg.get(
+            "expected_query_corpus_sha256"
+        ),
+    )
+    return RuntimeCandidateDatasetAdapter(
+        dataset,
+        resolver,
+        candidate_cfg["catalog_path"],
+        normalization_stats_path=candidate_cfg["normalization_stats_path"],
+        audit_report_path=candidate_cfg["audit_report_path"],
+    )
 
 
 def _resolve_train_device() -> str:
@@ -371,6 +594,9 @@ def run_training(cfg: DictConfig):
     model_dtype = _mixed_precision_to_model_dtype(mixed_precision)
     model = instantiate(cfg.model, model_dtype=model_dtype, device=model_device)
     train_ds, val_ds = build_datasets(cfg.data)
+    validate_training_dataset = getattr(model, "validate_training_dataset", None)
+    if callable(validate_training_dataset):
+        validate_training_dataset(train_ds)
 
     trainer = Wan22Trainer(
         cfg=cfg,

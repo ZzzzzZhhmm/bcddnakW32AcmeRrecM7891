@@ -6,7 +6,7 @@ from dataclasses import asdict, dataclass
 import hashlib
 import json
 from pathlib import Path
-from typing import Iterable, Sequence
+from typing import Iterable, Literal, Sequence
 
 import numpy as np
 
@@ -26,6 +26,15 @@ from .payload_names import FEATURE_EPISODE_SHA256, SOURCE_EPISODE_SHA256
 
 class OfflinePipelineError(ValueError):
     """Raised when verified offline artifacts cannot be composed safely."""
+
+
+CandidateQuerySplit = Literal["train", "dev"]
+
+
+def _candidate_query_split(value: object) -> CandidateQuerySplit:
+    if not isinstance(value, str) or value not in {"train", "dev"}:
+        raise OfflinePipelineError("candidate query split must be 'train' or 'dev'")
+    return value
 
 
 @dataclass(frozen=True, slots=True)
@@ -382,9 +391,19 @@ def validate_event_bank_data_binding(
 def validate_query_collection_against_bank(
     bank: EventBank,
     queries: FeatureCacheCollection,
+    *,
+    query_split: CandidateQuerySplit = "dev",
 ) -> WarmBankSummary:
-    """Bind query features to a saved bank and reject content-level leakage."""
+    """Bind query features to a saved train bank without weakening isolation.
 
+    Dev queries must be globally disjoint from the train bank by raw and
+    encoded episode content. Train queries intentionally come from the same
+    immutable feature collection as the bank; their leakage boundary is
+    instead enforced for every retrieval row by complete-episode identity and
+    content-hash exclusion in :func:`build_candidate_cache_from_collection`.
+    """
+
+    query_split = _candidate_query_split(query_split)
     summary = validate_warm_v1_bank(bank)
     if bank.manifest is None:
         raise OfflinePipelineError("event bank must be loaded from or saved to a manifest")
@@ -395,9 +414,10 @@ def validate_query_collection_against_bank(
         )
     if bank.manifest.provenance.get("split") != "train":
         raise OfflinePipelineError("query evaluation requires a train-only event bank")
-    if queries.split != "dev":
+    if queries.split != query_split:
         raise OfflinePipelineError(
-            f"M1 query/oracle collection must use split 'dev', got {queries.split!r}"
+            f"candidate query collection must use split {query_split!r}, "
+            f"got {queries.split!r}"
         )
     for label, manifest_mapping, contract_field in (
         (
@@ -416,6 +436,17 @@ def validate_query_collection_against_bank(
         raise OfflinePipelineError(
             "query context-key dimension does not match the event bank"
         )
+    if query_split == "train":
+        bank_collection_hash = bank.manifest.provenance.get(
+            "feature_collection_sha256"
+        )
+        if bank_collection_hash != queries.content_hash:
+            raise OfflinePipelineError(
+                "train candidate queries must exactly match the immutable "
+                "feature collection used to build the event bank"
+            )
+        return summary
+
     bank_hash_rows = bank.payload(SOURCE_EPISODE_SHA256)
     bank_hashes = {
         bytes(memoryview(row).cast("B")).hex() for row in bank_hash_rows
@@ -519,10 +550,21 @@ def build_candidate_cache_from_collection(
     action_horizon: int,
     query_stride: int,
     top_k: int,
+    query_split: CandidateQuerySplit = "dev",
 ) -> CandidateCache:
     """Run exact retrieval with identity and source-content episode exclusion."""
 
-    validate_query_collection_against_bank(bank, queries)
+    query_split = _candidate_query_split(query_split)
+    if query_split == "train" and query_stride != 1:
+        raise OfflinePipelineError(
+            "train candidate caches require query_stride=1 for exact "
+            "dataset-frame to QueryId binding"
+        )
+    validate_query_collection_against_bank(
+        bank,
+        queries,
+        query_split=query_split,
+    )
     validate_warm_v1_bank(bank, expected_action_horizon=action_horizon)
     if top_k <= 0:
         raise OfflinePipelineError("top_k must be positive")
@@ -605,6 +647,7 @@ def build_oracle_queries_from_collection(
 
 
 __all__ = [
+    "CandidateQuerySplit",
     "FeatureCacheCollection",
     "FeatureCollectionContract",
     "FeatureDataBinding",

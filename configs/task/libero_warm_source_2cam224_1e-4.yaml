@@ -1,0 +1,50 @@
+# @package _global_
+
+defaults:
+  - override /data: libero_2cam
+  - override /model: warm_source
+  - _self_
+
+# M2 QueryId is defined on raw frames; any dataset stride other than one is a
+# contract error rather than a silent nearest-frame lookup.
+data:
+  train:
+    global_sample_stride: 1
+    # These settings prevent RobotVideoDataset from silently substituting a
+    # different sample, which would invalidate exact candidate-cache identity.
+    strict_sample_loading: true
+    skip_padding_as_possible: false
+    pretrained_norm_stats: ${data.warm_candidates.train.normalization_stats_path}
+    episode_catalog_path: ${data.warm_candidates.train.catalog_path}
+    episode_split: train
+  warm_candidates:
+    train:
+      # Supply immutable M1/M2 artifacts on the GPU server via CLI overrides.
+      bank_directory: null
+      candidate_directory: null
+      catalog_path: null
+      normalization_stats_path: null
+      audit_report_path: null
+      expected_query_corpus_sha256: null
+
+batch_size: 16
+num_workers: 8
+
+model:
+  mot_checkpoint_mixed_attn: false
+
+lr_scheduler_type: cosine
+learning_rate: 1.0e-4
+num_epochs: 10
+max_steps: null
+log_every: 10
+save_every: 2000
+# There is no independent held-out candidate/run contract in M2 yet.  The
+# baseline data config has val_set_proportion=0, so periodic Trainer evaluation
+# would only relabel train loss as validation.  Use the immutable dev oracle
+# artifact now; enable periodic evaluation only after a real dev contract exists.
+eval_every: 0
+
+gradient_accumulation_steps: 1
+weight_decay: 1.0e-2
+resume: null

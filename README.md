@@ -17,6 +17,7 @@ specification, roadmap, and evaluation protocol are in:
 - `docs/DATA_AND_EVAL_PROTOCOL.md`
 - `docs/LOCAL_AND_SERVER_WORKFLOW.md`
 - `docs/M1_OFFLINE_PIPELINE.md`
+- `docs/M2_SOURCE_ONLY.md`
 
 The canonical local working copy is `F:\WARM\code`. The Windows workstation
 is used for implementation and CPU contract tests; feature encoding, FastWAM
@@ -26,6 +27,12 @@ private Git commit.
 Current engineering milestone: M1's audited full-episode data path,
 train-only normalization artifact, server feature-precompute entrypoint,
 immutable event/candidate caches, and dev oracle evaluator are implemented.
+M2's train candidate bridge, source/scheduler contract, current-frame cached
+Action-only path, and explicit trainable scope are under local contract testing;
+they are not considered experimentally validated until the GPU gates pass.
+The current M2 task disables periodic Trainer evaluation because no independent
+dev source-run contract exists yet, and it does not claim fixed-memory LIBERO
+rollout success until an online observation-to-retrieval bridge is implemented.
 No checkpoint, dataset, feature tensor, or simulator workload is downloaded or
 executed on the Windows workstation.
 

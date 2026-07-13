@@ -201,6 +201,90 @@ def test_cli_builds_self_validates_and_writes_atomic_summary(
     )
 
 
+def test_cli_builds_train_cache_with_stride_one_and_episode_exclusion(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    bank_path, _, _ = _bank_and_queries(tmp_path)
+    train_paths = [
+        tmp_path / "train" / "episode-0.npz",
+        tmp_path / "train" / "episode-1.npz",
+    ]
+    output = tmp_path / "train-candidates"
+
+    assert (
+        main(
+            [
+                "--bank",
+                str(bank_path),
+                *_data_args(bank_path),
+                "--query-split",
+                "train",
+                "--feature-cache",
+                str(train_paths[0]),
+                "--feature-cache",
+                str(train_paths[1]),
+                "--output",
+                str(output),
+                "--query-stride",
+                "1",
+                "--top-k",
+                "3",
+            ]
+        )
+        == 0
+    )
+
+    summary = json.loads(capsys.readouterr().out)
+    assert summary["query_split"] == "train"
+    assert summary["query_stride"] == 1
+    assert summary["query_count"] == 10
+    assert summary["candidate_count"] == 20
+    restored = CandidateCache.load(output)
+    assert restored.manifest is not None
+    assert restored.manifest.build_recipe["query_split"] == "train"
+    assert restored.manifest.build_recipe["query_data_binding"]["split"] == "train"
+    assert all(
+        candidate.event_id.episode_key != query.episode_key
+        for query, row in zip(
+            restored.query_ids, restored.candidates, strict=True
+        )
+        for candidate in row
+    )
+
+
+def test_cli_rejects_train_cache_stride_other_than_one(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    bank_path, _, _ = _bank_and_queries(tmp_path)
+    output = tmp_path / "invalid-train-candidates"
+
+    with pytest.raises(SystemExit) as exc_info:
+        main(
+            [
+                "--bank",
+                str(bank_path),
+                *_data_args(bank_path),
+                "--query-split",
+                "train",
+                "--feature-cache",
+                str(tmp_path / "train" / "episode-0.npz"),
+                "--feature-cache",
+                str(tmp_path / "train" / "episode-1.npz"),
+                "--output",
+                str(output),
+                "--query-stride",
+                "2",
+                "--top-k",
+                "3",
+            ]
+        )
+    assert exc_info.value.code == 2
+    assert "requires --query-stride=1" in capsys.readouterr().err
+    assert not output.exists()
+
+
 def test_cli_combines_repeated_inputs_and_resolves_relative_feature_lists(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],

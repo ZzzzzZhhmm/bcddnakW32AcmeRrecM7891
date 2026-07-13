@@ -32,6 +32,28 @@ evaluate_results/
 *.pickle
 *.txt
 
+# Raw robotics datasets and generated rollout media stay outside Git.  Keep
+# small JSON manifests/contracts versioned; ignore only bulk tensor/table/video
+# formats here.
+*.parquet
+*.arrow
+*.feather
+*.h5
+*.hdf5
+*.zarr
+*.tfrecord
+*.mcap
+*.bag
+*.db3
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.webm
+*.m4v
+*.mpg
+*.mpeg
+
 # Other uncheckable file types
 *.zip
 *.exe

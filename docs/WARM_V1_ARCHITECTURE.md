@@ -102,7 +102,7 @@ factual world evidence:
 
 action payload:
   model_space_action[H, D]
-  physical_space_action[H, D]
+  optional physical_space_action[H, D] (post-M2/debug only)
   gripper_state[H]
   timing metadata and validity mask
 
@@ -116,6 +116,11 @@ provenance:
 The external fixed camera is the v1 source of consequence evidence. Wrist
 features may help retrieve context but are not directly differenced to define
 world effect because camera ego-motion dominates.
+
+M2 consumes `model_space_action` directly because it is already produced by
+the exact FastWAM normalizer.  It must not denormalize and renormalize that
+payload.  A physical-space copy is not required by the source-only mechanism
+and may be added later only as an explicitly versioned diagnostic payload.
 
 The source of truth is sharded tensor payload plus tabular metadata and a
 manifest. ANN indices and candidate caches are rebuildable derived artifacts.
@@ -285,4 +290,3 @@ zero-initialized can be tested for numerical parity with FastWAM. After Action
 DiT adaptation, null is accurately described as the **Gaussian no-long-memory
 path**, not an exact unchanged FastWAM policy. Both parity and non-regression
 must be measured rather than asserted.
-

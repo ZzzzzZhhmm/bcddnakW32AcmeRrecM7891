@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Any, Optional, Sequence, Union
 
 import torch
@@ -6,6 +7,13 @@ import torch.nn.functional as F
 from PIL import Image
 
 from fastwam.utils.logging_config import get_logger
+from fastwam.models.warm.source_transport import (
+    ActionSourceContext,
+    ActionSourceOutput,
+    build_action_flow_pair,
+    measure_source_geometry,
+    resolve_action_source,
+)
 
 from .action_dit import ActionDiT
 from .helpers.loader import load_wan22_ti2v_5b_components
@@ -13,6 +21,16 @@ from .mot import MoT
 from .schedulers.scheduler_continuous import WanContinuousFlowMatchScheduler
 
 logger = get_logger(__name__)
+
+
+@dataclass(frozen=True, slots=True)
+class ActionConditioningCache:
+    """Safe first-frame state reused by every Action DiT flow step."""
+
+    video_kv_cache: list[dict[str, torch.Tensor]]
+    final_video_tokens: torch.Tensor
+    attention_mask: torch.Tensor
+    video_seq_len: int
 
 
 class FastWAM(torch.nn.Module):
@@ -406,6 +424,226 @@ class FastWAM(torch.nn.Module):
         mask[video_seq_len:, :first_frame_tokens] = True
         return mask
 
+    def _build_action_only_inputs(self, sample, tiled: bool = False) -> dict[str, Any]:
+        """Build the deployment-matched current-frame inputs for WARM M2.
+
+        Unlike :meth:`build_inputs`, this method never sends demonstrated
+        future frames through the VAE or Video DiT.  The dataset may still
+        carry those frames for other objectives, but only ``video[:, :, 0:1]``
+        is read by this path.
+        """
+
+        if not isinstance(sample, dict):
+            raise TypeError("sample must be a dictionary")
+        required = {"video", "context", "context_mask", "action"}
+        missing = sorted(required - set(sample))
+        if missing:
+            raise ValueError(f"action-only FastWAM sample is missing keys: {missing}")
+
+        video = sample["video"]
+        context = sample["context"]
+        context_mask = sample["context_mask"]
+        action = sample["action"]
+        proprio = sample.get("proprio")
+        action_is_pad = sample.get("action_is_pad")
+
+        if not isinstance(video, torch.Tensor) or video.ndim != 5:
+            shape = None if not isinstance(video, torch.Tensor) else tuple(video.shape)
+            raise ValueError(f"sample['video'] must be [B,3,T,H,W], got {shape}")
+        if video.shape[1] != 3 or video.shape[2] < 1:
+            raise ValueError(
+                "sample['video'] must contain at least one RGB frame, got "
+                f"{tuple(video.shape)}"
+            )
+        batch_size, _, _, height, width = video.shape
+        if height % 16 != 0 or width % 16 != 0:
+            raise ValueError(
+                f"Video spatial dims must be multiples of 16, got H={height}, W={width}"
+            )
+
+        if not isinstance(action, torch.Tensor) or action.ndim != 3:
+            shape = None if not isinstance(action, torch.Tensor) else tuple(action.shape)
+            raise ValueError(f"sample['action'] must be [B,H,D], got {shape}")
+        expected_action_dim = int(self.action_expert.action_dim)
+        if action.shape[0] != batch_size or action.shape[2] != expected_action_dim:
+            raise ValueError(
+                "sample['action'] must have shape "
+                f"[B,H,{expected_action_dim}] with B={batch_size}, got {tuple(action.shape)}"
+            )
+        if action.shape[1] < 1:
+            raise ValueError("sample['action'] horizon must be positive")
+
+        if not isinstance(context, torch.Tensor) or not isinstance(
+            context_mask, torch.Tensor
+        ):
+            raise TypeError("sample context and context_mask must be torch tensors")
+        if context.ndim != 3 or context_mask.ndim != 2:
+            raise ValueError(
+                "sample context/context_mask must be [B,L,D]/[B,L], got "
+                f"{tuple(context.shape)} and {tuple(context_mask.shape)}"
+            )
+        if (
+            context.shape[0] != batch_size
+            or context_mask.shape[0] != batch_size
+            or context.shape[1] != context_mask.shape[1]
+        ):
+            raise ValueError("sample context/context_mask batch or sequence mismatch")
+
+        if action_is_pad is not None:
+            if not isinstance(action_is_pad, torch.Tensor) or action_is_pad.shape != action.shape[:2]:
+                shape = (
+                    None
+                    if not isinstance(action_is_pad, torch.Tensor)
+                    else tuple(action_is_pad.shape)
+                )
+                raise ValueError(
+                    "sample['action_is_pad'] must have shape "
+                    f"{tuple(action.shape[:2])}, got {shape}"
+                )
+            action_is_pad = action_is_pad.to(
+                device=self.device, dtype=torch.bool, non_blocking=True
+            )
+
+        context = context.to(
+            device=self.device, dtype=self.torch_dtype, non_blocking=True
+        )
+        context_mask = context_mask.to(
+            device=self.device, dtype=torch.bool, non_blocking=True
+        )
+        if self.proprio_encoder is not None:
+            if not isinstance(proprio, torch.Tensor) or proprio.ndim != 3:
+                shape = None if not isinstance(proprio, torch.Tensor) else tuple(proprio.shape)
+                raise ValueError(
+                    "sample['proprio'] must be [B,T,D] when proprio is enabled, "
+                    f"got {shape}"
+                )
+            if proprio.shape[0] != batch_size or proprio.shape[2] != self.proprio_dim:
+                raise ValueError(
+                    "sample['proprio'] batch/action dimension mismatch, got "
+                    f"{tuple(proprio.shape)}"
+                )
+            context, context_mask = self._append_proprio_to_context(
+                context=context,
+                context_mask=context_mask,
+                proprio=proprio[:, 0, :].to(
+                    device=self.device, dtype=self.torch_dtype, non_blocking=True
+                ),
+            )
+
+        current_video = video[:, :, 0:1].to(
+            device=self.device, dtype=self.torch_dtype, non_blocking=True
+        )
+        current_latents = self._encode_video_latents(current_video, tiled=tiled)
+        if not isinstance(current_latents, torch.Tensor) or current_latents.ndim != 5:
+            raise TypeError("VAE must return current-frame latents as [B,C,T,H,W]")
+        if current_latents.shape[0] != batch_size or current_latents.shape[2] != 1:
+            raise ValueError(
+                "current-frame VAE output must preserve batch and one latent frame, got "
+                f"{tuple(current_latents.shape)}"
+            )
+
+        return {
+            "current_latents": current_latents,
+            "context": context,
+            "context_mask": context_mask,
+            "action": action.to(
+                device=self.device, dtype=self.torch_dtype, non_blocking=True
+            ),
+            "action_is_pad": action_is_pad,
+            "fuse_vae_embedding_in_latents": bool(
+                getattr(self.video_expert, "fuse_vae_embedding_in_latents", False)
+            ),
+        }
+
+    def _prefill_action_conditioning(
+        self,
+        *,
+        current_latents: torch.Tensor,
+        context: torch.Tensor,
+        context_mask: torch.Tensor,
+        action_seq_len: int,
+        fuse_vae_embedding_in_latents: bool,
+    ) -> ActionConditioningCache:
+        """Run the frozen current-frame video path exactly once."""
+
+        if isinstance(action_seq_len, bool) or not isinstance(action_seq_len, int):
+            raise TypeError("action_seq_len must be a positive integer")
+        if action_seq_len <= 0:
+            raise ValueError("action_seq_len must be positive")
+
+        with torch.no_grad():
+            timestep_video = torch.zeros(
+                (current_latents.shape[0],),
+                dtype=current_latents.dtype,
+                device=current_latents.device,
+            )
+            video_pre = self.video_expert.pre_dit(
+                x=current_latents,
+                timestep=timestep_video,
+                context=context,
+                context_mask=context_mask,
+                action=None,
+                fuse_vae_embedding_in_latents=fuse_vae_embedding_in_latents,
+            )
+            video_seq_len = int(video_pre["tokens"].shape[1])
+            attention_mask = self._build_mot_attention_mask(
+                video_seq_len=video_seq_len,
+                action_seq_len=action_seq_len,
+                video_tokens_per_frame=int(video_pre["meta"]["tokens_per_frame"]),
+                device=video_pre["tokens"].device,
+            )
+            prefill = self.mot.prefill_video_cache_with_tokens(
+                video_tokens=video_pre["tokens"],
+                video_freqs=video_pre["freqs"],
+                video_t_mod=video_pre["t_mod"],
+                video_context_payload={
+                    "context": video_pre["context"],
+                    "mask": video_pre["context_mask"],
+                },
+                video_attention_mask=attention_mask[:video_seq_len, :video_seq_len],
+            )
+        return ActionConditioningCache(
+            video_kv_cache=prefill.kv_cache,
+            final_video_tokens=prefill.final_tokens,
+            attention_mask=attention_mask,
+            video_seq_len=video_seq_len,
+        )
+
+    def _resolve_action_source(
+        self,
+        *,
+        base_gaussian: torch.Tensor,
+        action_source_context: ActionSourceContext | None,
+        memory_sigma: float,
+        phase: str,
+        final_video_tokens: torch.Tensor | None,
+    ) -> ActionSourceOutput:
+        """Resolve M2's explicit null/memory source.
+
+        ``phase`` and ``final_video_tokens`` are part of the stable hook for
+        later WARM stages.  M2 uses fixed payload only; no candidate-dependent
+        representation is injected into Action DiT context.
+        """
+
+        if phase not in ("train", "infer"):
+            raise ValueError("phase must be 'train' or 'infer'")
+        del final_video_tokens
+        if action_source_context is None:
+            action_source_context = ActionSourceContext(
+                component_indices=torch.zeros(
+                    (base_gaussian.shape[0],),
+                    dtype=torch.long,
+                    device=base_gaussian.device,
+                ),
+                candidate_means=None,
+                candidate_valid_mask=None,
+            )
+        return resolve_action_source(
+            base_gaussian,
+            action_source_context,
+            memory_sigma=memory_sigma,
+        )
+
     def _compute_video_loss_per_sample(
         self,
         pred_video: torch.Tensor,
@@ -564,6 +802,129 @@ class FastWAM(torch.nn.Module):
         loss_dict = {
             "loss_video": self.loss_lambda_video * float(loss_video.detach().item()),
             "loss_action": self.loss_lambda_action * float(loss_action.detach().item()),
+        }
+        return loss_total, loss_dict
+
+    def training_loss_action_only(
+        self,
+        sample,
+        *,
+        action_source_context: ActionSourceContext | None = None,
+        memory_sigma: float = 0.2,
+        tiled: bool = False,
+    ):
+        """Train Action DiT on current-frame cached K/V and a WARM source.
+
+        This is the M2 path.  It intentionally has no video loss and never
+        encodes the demonstrated future.  The source component is deterministic
+        before this call; action-flow loss is stopped at ``source_action``.
+        """
+
+        inputs = self._build_action_only_inputs(sample, tiled=tiled)
+        action = inputs["action"]
+        action_is_pad = inputs["action_is_pad"]
+        batch_size = int(action.shape[0])
+
+        # Preserve FastWAM's random-source ordering.  Selection never consumes
+        # this generator or the global RNG before the paired Gaussian is drawn.
+        base_gaussian = torch.randn_like(action)
+        timestep_action = self.train_action_scheduler.sample_training_t(
+            batch_size=batch_size,
+            device=self.device,
+            dtype=action.dtype,
+        )
+
+        conditioning = self._prefill_action_conditioning(
+            current_latents=inputs["current_latents"],
+            context=inputs["context"],
+            context_mask=inputs["context_mask"],
+            action_seq_len=int(action.shape[1]),
+            fuse_vae_embedding_in_latents=inputs[
+                "fuse_vae_embedding_in_latents"
+            ],
+        )
+        source_output = self._resolve_action_source(
+            base_gaussian=base_gaussian,
+            action_source_context=action_source_context,
+            memory_sigma=memory_sigma,
+            phase="train",
+            final_video_tokens=conditioning.final_video_tokens,
+        )
+        flow_pair = build_action_flow_pair(
+            action,
+            source_output.source,
+            timestep_action,
+            self.train_action_scheduler,
+        )
+
+        action_pre = self.action_expert.pre_dit(
+            action_tokens=flow_pair.noisy_action,
+            timestep=timestep_action,
+            context=inputs["context"],
+            context_mask=inputs["context_mask"],
+        )
+        action_tokens = self.mot.forward_action_with_video_cache(
+            action_tokens=action_pre["tokens"],
+            action_freqs=action_pre["freqs"],
+            action_t_mod=action_pre["t_mod"],
+            action_context_payload={
+                "context": action_pre["context"],
+                "mask": action_pre["context_mask"],
+            },
+            video_kv_cache=conditioning.video_kv_cache,
+            attention_mask=conditioning.attention_mask,
+            video_seq_len=conditioning.video_seq_len,
+        )
+        pred_action = self.action_expert.post_dit(action_tokens, action_pre)
+
+        action_loss_token = F.mse_loss(
+            pred_action.float(),
+            flow_pair.target_velocity.float(),
+            reduction="none",
+        ).mean(dim=2)
+        if action_is_pad is not None:
+            valid = (~action_is_pad).to(
+                device=action_loss_token.device, dtype=action_loss_token.dtype
+            )
+            valid_sum = valid.sum(dim=1).clamp(min=1.0)
+            action_loss_per_sample = (action_loss_token * valid).sum(dim=1) / valid_sum
+        else:
+            action_loss_per_sample = action_loss_token.mean(dim=1)
+
+        action_weight = self.train_action_scheduler.training_weight(
+            timestep_action
+        ).to(action_loss_per_sample.device, dtype=action_loss_per_sample.dtype)
+        loss_action = (action_loss_per_sample * action_weight).mean()
+        loss_total = self.loss_lambda_action * loss_action
+
+        geometry = measure_source_geometry(
+            flow_pair.source_action,
+            action,
+            action_is_pad=action_is_pad,
+        )
+        gaussian_geometry = measure_source_geometry(
+            source_output.base_gaussian,
+            action,
+            action_is_pad=action_is_pad,
+        )
+        gaussian_rms = gaussian_geometry.mean_rms
+        source_rms_reduction = torch.where(
+            gaussian_rms > 0,
+            1.0 - geometry.mean_rms / gaussian_rms.clamp(min=1.0e-12),
+            torch.zeros_like(gaussian_rms),
+        )
+        loss_dict = {
+            "loss_action": self.loss_lambda_action
+            * float(loss_action.detach().item()),
+            "source_memory_rate": float(
+                source_output.memory_mask.float().mean().detach().item()
+            ),
+            "source_rms": float(geometry.mean_rms.detach().item()),
+            "source_l2": float(geometry.mean_l2.detach().item()),
+            "gaussian_source_rms": float(gaussian_rms.detach().item()),
+            "source_rms_reduction": float(
+                source_rms_reduction.detach().item()
+            ),
         }
         return loss_total, loss_dict
 
@@ -918,6 +1279,8 @@ class FastWAM(torch.nn.Module):
         seed: Optional[int] = None,
         rand_device: str = "cpu",
         tiled: bool = False,
+        action_source_context: ActionSourceContext | None = None,
+        memory_sigma: float = 0.2,
     ) -> dict[str, Any]:
         self.eval()
         if str(getattr(self.video_expert, "video_attention_mask_mode", "")) != "first_frame_causal":
@@ -1010,16 +1373,37 @@ class FastWAM(torch.nn.Module):
             video_tokens_per_frame=int(video_pre["meta"]["tokens_per_frame"]),
             device=video_pre["tokens"].device,
         )
-        video_kv_cache = self.mot.prefill_video_cache(
-            video_tokens=video_pre["tokens"],
-            video_freqs=video_pre["freqs"],
-            video_t_mod=video_pre["t_mod"],
-            video_context_payload={
-                "context": video_pre["context"],
-                "mask": video_pre["context_mask"],
-            },
-            video_attention_mask=attention_mask[:video_seq_len, :video_seq_len],
-        )
+        video_payload = {
+            "context": video_pre["context"],
+            "mask": video_pre["context_mask"],
+        }
+        source_output = None
+        if action_source_context is None:
+            # Keep the original baseline call/return path unchanged.
+            video_kv_cache = self.mot.prefill_video_cache(
+                video_tokens=video_pre["tokens"],
+                video_freqs=video_pre["freqs"],
+                video_t_mod=video_pre["t_mod"],
+                video_context_payload=video_payload,
+                video_attention_mask=attention_mask[:video_seq_len, :video_seq_len],
+            )
+        else:
+            prefill = self.mot.prefill_video_cache_with_tokens(
+                video_tokens=video_pre["tokens"],
+                video_freqs=video_pre["freqs"],
+                video_t_mod=video_pre["t_mod"],
+                video_context_payload=video_payload,
+                video_attention_mask=attention_mask[:video_seq_len, :video_seq_len],
+            )
+            video_kv_cache = prefill.kv_cache
+            source_output = self._resolve_action_source(
+                base_gaussian=latents_action,
+                action_source_context=action_source_context,
+                memory_sigma=memory_sigma,
+                phase="infer",
+                final_video_tokens=prefill.final_tokens,
+            )
+            latents_action = source_output.source
 
         infer_timesteps_action, infer_deltas_action = self.infer_action_scheduler.build_inference_schedule(
             num_inference_steps=num_inference_steps,
@@ -1043,9 +1427,17 @@ class FastWAM(torch.nn.Module):
 
             latents_action = self.infer_action_scheduler.step(pred_action, step_delta_action, latents_action)
 
-        return {
+        output = {
             "action": latents_action[0].detach().to(device="cpu", dtype=torch.float32),
         }
+        if source_output is not None:
+            output["source_component"] = source_output.component_indices.detach().to(
+                device="cpu"
+            )
+            output["source_memory_mask"] = source_output.memory_mask.detach().to(
+                device="cpu"
+            )
+        return output
 
     @torch.no_grad()
     def infer(
@@ -1085,6 +1477,26 @@ class FastWAM(torch.nn.Module):
             tiled=tiled,
         )
 
+    def _checkpoint_extra_state(self) -> dict[str, Any]:
+        """Subclass extension point for versioned non-MoT state."""
+
+        return {}
+
+    def _load_checkpoint_extra_state(self, payload: dict[str, Any]) -> None:
+        """Validate/load subclass state after the base model is restored."""
+
+        del payload
+
+    def _preflight_checkpoint_extra_state(self, payload: dict[str, Any]) -> None:
+        """Validate subclass metadata before any model parameters are mutated.
+
+        The default FastWAM checkpoint has no required extension metadata.  A
+        subclass can override this hook to bind a checkpoint to immutable run
+        artifacts before ``load_state_dict`` is allowed to touch the model.
+        """
+
+        del payload
+
     def save_checkpoint(self, path, optimizer=None, step=None):
         payload = {
             "mot": self.mot.state_dict(),
@@ -1093,15 +1505,61 @@ class FastWAM(torch.nn.Module):
         }
         if self.proprio_encoder is not None:
             payload["proprio_encoder"] = self.proprio_encoder.state_dict()
+        extra = self._checkpoint_extra_state()
+        if not isinstance(extra, dict):
+            raise TypeError("_checkpoint_extra_state() must return a dictionary")
+        overlap = set(payload) & set(extra)
+        if overlap:
+            raise ValueError(
+                f"checkpoint extra state collides with base keys: {sorted(overlap)}"
+            )
+        payload.update(extra)
         if optimizer is not None:
             payload["optimizer"] = optimizer.state_dict()
         torch.save(payload, path)
 
-    def load_checkpoint(self, path, optimizer=None):
+    def load_checkpoint(
+        self,
+        path,
+        optimizer=None,
+        *,
+        load_extra_state: bool = True,
+        forbid_extra_keys: tuple[str, ...] = (),
+        strict_model_state: bool = False,
+        exact_proprio_state: bool = False,
+        allow_legacy_dit: bool = True,
+    ):
         payload = torch.load(path, map_location="cpu")
+        if not isinstance(payload, dict):
+            raise TypeError("checkpoint payload must be a dictionary")
+        forbidden = set(forbid_extra_keys) & set(payload)
+        if forbidden:
+            raise ValueError(
+                "checkpoint contains forbidden state keys: "
+                f"{sorted(forbidden)}"
+            )
+        if load_extra_state:
+            self._preflight_checkpoint_extra_state(payload)
+
+        has_proprio_state = "proprio_encoder" in payload
+        expects_proprio_state = self.proprio_encoder is not None
+        if exact_proprio_state and has_proprio_state != expects_proprio_state:
+            expected = "present" if expects_proprio_state else "absent"
+            observed = "present" if has_proprio_state else "absent"
+            raise ValueError(
+                "checkpoint proprio_encoder presence does not match the model: "
+                f"expected {expected}, observed {observed}"
+            )
         if "mot" in payload:
-            self.mot.load_state_dict(payload["mot"], strict=False)
+            self.mot.load_state_dict(
+                payload["mot"], strict=bool(strict_model_state)
+            )
         elif "dit" in payload:
+            if strict_model_state or not allow_legacy_dit:
+                raise ValueError(
+                    "strict checkpoint loading requires a complete `mot` state; "
+                    "legacy `dit` checkpoints are forbidden"
+                )
             logger.warning("Loading legacy `dit` checkpoint into video expert only.")
             self.video_expert.load_state_dict(payload["dit"], strict=False)
         else:
@@ -1113,6 +1571,9 @@ class FastWAM(torch.nn.Module):
                 logger.warning("Checkpoint has no `proprio_encoder` weights; keeping current `proprio_encoder` params.")
         elif "proprio_encoder" in payload:
             logger.warning("Checkpoint contains `proprio_encoder` weights but current model has `proprio_dim=None`; ignoring.")
+
+        if load_extra_state:
+            self._load_checkpoint_extra_state(payload)
 
         if optimizer is not None and "optimizer" in payload:
             optimizer.load_state_dict(payload["optimizer"])

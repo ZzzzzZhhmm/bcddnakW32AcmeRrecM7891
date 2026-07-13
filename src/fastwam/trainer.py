@@ -81,11 +81,7 @@ class Wan22Trainer:
 
         # Freeze non-trainable modules before optimizer/deepspeed initialization.
         # This keeps DiT (+ optional proprio encoder) as trainable when ZeRO builds optimizer state.
-        self._apply_dit_only_train_mode(self.model)
-        trainable_params = list(self.model.dit.parameters())
-        proprio_encoder = getattr(self.model, "proprio_encoder", None)
-        if proprio_encoder is not None:
-            trainable_params.extend(list(proprio_encoder.parameters()))
+        trainable_params = self._apply_dit_only_train_mode(self.model)
         self.optimizer = torch.optim.AdamW(
             trainable_params,
             lr=self.learning_rate,
@@ -285,14 +281,55 @@ class Wan22Trainer:
 
     @staticmethod
     def _apply_dit_only_train_mode(model):
+        configure = getattr(model, "configure_trainable_modules", None)
+        if callable(configure):
+            configured = configure()
+            if configured is None:
+                trainable = [
+                    parameter
+                    for parameter in model.parameters()
+                    if parameter.requires_grad
+                ]
+            else:
+                trainable = list(configured)
+            if not trainable:
+                raise ValueError(
+                    "model.configure_trainable_modules() returned no trainable parameters"
+                )
+            model_parameter_ids = {id(parameter) for parameter in model.parameters()}
+            seen: set[int] = set()
+            for index, parameter in enumerate(trainable):
+                if not isinstance(parameter, torch.nn.Parameter):
+                    raise TypeError(
+                        "configure_trainable_modules() must return torch Parameters; "
+                        f"item {index} has type {type(parameter)}"
+                    )
+                if id(parameter) not in model_parameter_ids:
+                    raise ValueError(
+                        "configure_trainable_modules() returned a parameter not owned by model"
+                    )
+                if id(parameter) in seen:
+                    raise ValueError(
+                        "configure_trainable_modules() returned duplicate parameters"
+                    )
+                if not parameter.requires_grad:
+                    raise ValueError(
+                        "configure_trainable_modules() returned a frozen parameter"
+                    )
+                seen.add(id(parameter))
+            return trainable
+
         model.eval()
         model.requires_grad_(False)
         model.dit.train()
         model.dit.requires_grad_(True)
+        trainable = list(model.dit.parameters())
         proprio_encoder = getattr(model, "proprio_encoder", None)
         if proprio_encoder is not None:
             proprio_encoder.train()
             proprio_encoder.requires_grad_(True)
+            trainable.extend(list(proprio_encoder.parameters()))
+        return trainable
 
     @staticmethod
     def _to_batched_eval_sample(sample):
@@ -363,7 +400,7 @@ class Wan22Trainer:
                     f"`context/context_mask` must be [B,L,D]/[B,L], got {tuple(context.shape)} and {tuple(context_mask.shape)}"
                 )
 
-        return {
+        batched = {
             "video": video,
             "prompt": prompt,
             "action": action,
@@ -372,6 +409,30 @@ class Wan22Trainer:
             "context_mask": context_mask,
             "action_horizon": action_horizon,
         }
+        extra_tensor_ranks = {
+            "action_is_pad": 1,
+            "warm_candidate_mu": 3,
+            "warm_candidate_mask": 1,
+            "warm_candidate_score": 1,
+            "warm_candidate_event_index": 1,
+            "warm_oracle_candidate_index": 0,
+            "warm_memory_enabled": 0,
+        }
+        for key, unbatched_rank in extra_tensor_ranks.items():
+            if key not in sample:
+                continue
+            value = sample[key]
+            if not isinstance(value, torch.Tensor):
+                raise TypeError(f"`sample[{key!r}]` must be a torch.Tensor")
+            if value.ndim == unbatched_rank:
+                value = value.unsqueeze(0)
+            elif value.ndim != unbatched_rank + 1 or value.shape[0] != 1:
+                raise ValueError(
+                    f"`sample[{key!r}]` must have unbatched rank {unbatched_rank} "
+                    f"or leading singleton batch, got {tuple(value.shape)}"
+                )
+            batched[key] = value
+        return batched
 
     @torch.no_grad()
     def evaluate(self):
@@ -379,7 +440,10 @@ class Wan22Trainer:
             return None
 
         model = self.accelerator.unwrap_model(self.model)
-        was_dit_training = model.dit.training
+        action_expert = getattr(model, "action_expert", None)
+        was_train_scope_active = bool(model.dit.training) or bool(
+            action_expert is not None and action_expert.training
+        )
         model.eval()
 
         # eval_index = (self.global_step + self.accelerator.process_index) % len(self.val_dataset)
@@ -389,8 +453,19 @@ class Wan22Trainer:
 
         # 1. training loss
         with self.accelerator.autocast():
-            val_loss, _ = model.training_loss(sample)
-            val_loss = val_loss.float().item()
+            val_loss_tensor, _ = model.training_loss(sample)
+        val_loss_tensor = val_loss_tensor.detach().float().reshape(1)
+        val_loss = float(val_loss_tensor.item())
+
+        if getattr(model, "trainer_evaluation_mode", "full") == "loss_only":
+            gathered = self.accelerator.gather_for_metrics(val_loss_tensor)
+            result = {
+                "val_loss": float(gathered.mean().item()),
+                "evaluation_mode": "loss_only",
+            }
+            if was_train_scope_active:
+                self._set_dit_only_train_mode()
+            return result
         
         prompt = sample["prompt"][0]
         video0 = sample["video"][0] # Tensor [3, T, H, W] in (-1, 1)
@@ -545,7 +620,7 @@ class Wan22Trainer:
         action_l2_mean = gathered_metrics[:, 7].mean().item() if action_l2 is not None else None
         action_l1_mean = gathered_metrics[:, 8].mean().item() if action_l1 is not None else None
 
-        if was_dit_training:
+        if was_train_scope_active:
             self._set_dit_only_train_mode()
 
         result = {
@@ -577,6 +652,13 @@ class Wan22Trainer:
             "epoch": int(self.epoch),
             "batch_in_epoch": int(self.batch_in_epoch),
         }
+        model = self.accelerator.unwrap_model(self.model)
+        metadata = getattr(model, "trainer_state_metadata", None)
+        if callable(metadata):
+            value = metadata()
+            if not isinstance(value, dict):
+                raise TypeError("model.trainer_state_metadata() must return a dict")
+            payload["model_contract"] = value
         with open(state_file, "w", encoding="utf-8") as f:
             json.dump(payload, f, ensure_ascii=True, indent=2)
 
@@ -599,11 +681,23 @@ class Wan22Trainer:
         return {"weights_path": ckpt_path, "state_path": state_path}
 
     def load_training_state(self, state_dir: str):
-        self.accelerator.load_state(input_dir=state_dir)
         state_file = Path(state_dir) / "trainer_state.json"
+        payload = None
+        model = self.accelerator.unwrap_model(self.model)
+        validate_metadata = getattr(model, "validate_trainer_state_metadata", None)
         if state_file.exists():
             with open(state_file, "r", encoding="utf-8") as f:
                 payload = json.load(f)
+            if callable(validate_metadata):
+                validate_metadata(payload.get("model_contract"))
+        elif callable(validate_metadata):
+            raise ValueError(
+                "model requires trainer-state contract metadata, but "
+                f"{state_file} does not exist"
+            )
+
+        self.accelerator.load_state(input_dir=state_dir)
+        if payload is not None:
             self.global_step = int(payload["global_step"])
 
             if "epoch" in payload and "batch_in_epoch" in payload:
@@ -733,26 +827,35 @@ class Wan22Trainer:
                         metrics = self.evaluate()
                         self.accelerator.wait_for_everyone()
                         if metrics is not None and self.accelerator.is_main_process:
-                            description = "[eval] step=%d val_loss=%.4f infer_psnr=%.4f infer_ssim=%.4f" % (
-                                self.global_step,
-                                metrics["val_loss"],
-                                metrics["psnr_rd"],
-                                metrics["ssim_rd"],
-                            )
+                            if metrics.get("evaluation_mode") == "loss_only":
+                                description = "[eval] step=%d val_loss=%.4f mode=loss_only" % (
+                                    self.global_step,
+                                    metrics["val_loss"],
+                                )
+                                eval_payload = {
+                                    "eval/val_loss": float(metrics["val_loss"]),
+                                }
+                            else:
+                                description = "[eval] step=%d val_loss=%.4f infer_psnr=%.4f infer_ssim=%.4f" % (
+                                    self.global_step,
+                                    metrics["val_loss"],
+                                    metrics["psnr_rd"],
+                                    metrics["ssim_rd"],
+                                )
+                                eval_payload = {
+                                    "eval/val_loss": float(metrics["val_loss"]),
+                                    "eval/psnr_rg": float(metrics["psnr_rg"]),
+                                    "eval/ssim_rg": float(metrics["ssim_rg"]),
+                                    "eval/psnr_rd": float(metrics["psnr_rd"]),
+                                    "eval/ssim_rd": float(metrics["ssim_rd"]),
+                                    "eval/psnr_dg": float(metrics["psnr_dg"]),
+                                    "eval/ssim_dg": float(metrics["ssim_dg"]),
+                                }
                             if "action_l2" in metrics:
                                 description += " action_l2=%.4f" % metrics["action_l2"]
                             if "action_l1" in metrics:
                                 description += " action_l1=%.4f" % metrics["action_l1"]
                             logger.info(description)
-                            eval_payload = {
-                                "eval/val_loss": float(metrics["val_loss"]),
-                                "eval/psnr_rg": float(metrics["psnr_rg"]),
-                                "eval/ssim_rg": float(metrics["ssim_rg"]),
-                                "eval/psnr_rd": float(metrics["psnr_rd"]),
-                                "eval/ssim_rd": float(metrics["ssim_rd"]),
-                                "eval/psnr_dg": float(metrics["psnr_dg"]),
-                                "eval/ssim_dg": float(metrics["ssim_dg"]),
-                            }
                             if "action_l2" in metrics:
                                 eval_payload["eval/action_l2"] = float(metrics["action_l2"])
                             if "action_l1" in metrics:

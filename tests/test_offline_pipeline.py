@@ -154,6 +154,56 @@ def test_end_to_end_cache_bank_candidates_and_oracle(tmp_path: Path) -> None:
     assert report.coverage == 1.0
 
 
+def test_train_candidate_cache_requires_stride_one_and_excludes_query_episode(
+    tmp_path: Path,
+) -> None:
+    train = load_feature_cache_collection(
+        [
+            _save(tmp_path / "train", _episode(0)),
+            _save(tmp_path / "train", _episode(1)),
+        ]
+    )
+    bank, _, provenance = build_event_bank_from_collection(
+        train,
+        mining_config=EventMiningConfig(action_horizon=4),
+        start_mode="uniform",
+        data_binding=_binding(),
+    )
+    bank.save(
+        tmp_path / "bank",
+        action_normalizer={"file_sha256": HASHES["normalizer_hash"]},
+        encoder={"file_sha256": HASHES["encoder_hash"]},
+        camera_layout={"file_sha256": HASHES["camera_hash"]},
+        provenance=provenance,
+    )
+    loaded_bank = type(bank).load(tmp_path / "bank")
+
+    cache = build_candidate_cache_from_collection(
+        loaded_bank,
+        train,
+        action_horizon=4,
+        query_stride=1,
+        top_k=4,
+        query_split="train",
+    )
+    assert len(cache) == 10
+    assert all(
+        candidate.event_id.episode_key != query.episode_key
+        for query, row in zip(cache.query_ids, cache.candidates, strict=True)
+        for candidate in row
+    )
+
+    with pytest.raises(OfflinePipelineError, match="query_stride=1"):
+        build_candidate_cache_from_collection(
+            loaded_bank,
+            train,
+            action_horizon=4,
+            query_stride=2,
+            top_k=4,
+            query_split="train",
+        )
+
+
 def test_collection_rejects_contract_and_content_leakage(tmp_path: Path) -> None:
     first_path = _save(tmp_path / "first", _episode(0))
     mismatched = _save(

@@ -24,6 +24,15 @@ logger = get_logger(__name__)
 
 DEFAULT_PROMPT = "A video recorded from a robot's point of view executing the following instruction: {task}"
 
+
+def _sha256_file(path: str) -> str:
+    digest = hashlib.sha256()
+    with open(path, "rb") as handle:
+        for block in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
 class RobotVideoDataset(torch.utils.data.Dataset):
     def __init__(
         self,
@@ -48,6 +57,16 @@ class RobotVideoDataset(torch.utils.data.Dataset):
         override_instruction: Optional[str] = None, # whether to hardcode a specific instruction for all samples, for debugging
         strict_sample_loading: bool = False,
     ):
+        self.pretrained_norm_stats_path = (
+            None
+            if not pretrained_norm_stats
+            else str(os.path.realpath(os.path.expanduser(pretrained_norm_stats)))
+        )
+        # This is populated only after the exact file snapshot has been loaded
+        # successfully and a second hash proves that it did not change during
+        # loading.  WARM uses both fields to bind model-space actions to the
+        # processor that produced them.
+        self.pretrained_norm_stats_sha256 = None
         self.lerobot_dataset = BaseLerobotDataset(
             dataset_dirs=dataset_dirs,
             shape_meta=OmegaConf.to_container(shape_meta, resolve=True),
@@ -109,8 +128,19 @@ class RobotVideoDataset(torch.utils.data.Dataset):
                     torch.distributed.broadcast_object_list(obj_list, src=0)
                     dataset_stats = obj_list[0]
             else:
-                dataset_stats = load_dataset_stats_from_json(pretrained_norm_stats)
-                logger.info(f"Using dataset stats: {pretrained_norm_stats}")
+                stats_path = self.pretrained_norm_stats_path
+                if stats_path is None:  # Defensive; guarded by the branch.
+                    raise RuntimeError("normalization stats path was not resolved")
+                before_sha256 = _sha256_file(stats_path)
+                dataset_stats = load_dataset_stats_from_json(stats_path)
+                after_sha256 = _sha256_file(stats_path)
+                if after_sha256 != before_sha256:
+                    raise RuntimeError(
+                        "normalization stats changed while RobotVideoDataset was "
+                        "loading them"
+                    )
+                self.pretrained_norm_stats_sha256 = before_sha256
+                logger.info(f"Using dataset stats: {stats_path}")
                 if PartialState().is_main_process:
                     work_dir = misc.get_work_dir()
                     save_dataset_stats_to_json(dataset_stats, os.path.join(work_dir, "dataset_stats.json"))

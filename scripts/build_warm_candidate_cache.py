@@ -133,6 +133,15 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Defaults to the canonical action horizon recorded by the bank.",
     )
+    parser.add_argument(
+        "--query-split",
+        choices=("train", "dev"),
+        default="dev",
+        help=(
+            "Catalog split supplying query features. Train caches require "
+            "--query-stride=1 and retain complete-episode/content exclusion."
+        ),
+    )
     parser.add_argument("--query-stride", required=True, type=_positive_int)
     parser.add_argument("--top-k", required=True, type=_positive_int)
     parser.add_argument("--overwrite", action="store_true")
@@ -248,6 +257,8 @@ def _write_json_atomic(
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
+    if args.query_split == "train" and args.query_stride != 1:
+        parser.error("--query-split=train requires --query-stride=1")
     bank_directory = args.bank.expanduser().resolve()
     output_directory = args.output.expanduser().resolve()
     summary_path = None if args.summary is None else args.summary.expanduser().resolve()
@@ -296,7 +307,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         collection,
         catalog,
         audit,
-        expected_split="dev",
+        expected_split=args.query_split,
     )
     train_binding = FeatureDataBinding(
         catalog_sha256=query_binding.catalog_sha256,
@@ -304,7 +315,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         split="train",
     )
     validate_event_bank_data_binding(bank, train_binding)
-    bank_summary = validate_query_collection_against_bank(bank, collection)
+    bank_summary = validate_query_collection_against_bank(
+        bank,
+        collection,
+        query_split=args.query_split,
+    )
     action_horizon = (
         bank_summary.action_horizon
         if args.action_horizon is None
@@ -317,6 +332,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         action_horizon=action_horizon,
         query_stride=args.query_stride,
         top_k=args.top_k,
+        query_split=args.query_split,
     )
     manifest_path = bank_directory / EVENT_BANK_MANIFEST_FILENAME
     if sha256_file(manifest_path) != initial_bank_manifest_hash:
@@ -331,7 +347,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         bank_directory,
         expected_manifest_hash=initial_bank_manifest_hash,
     )
-    validate_query_collection_against_bank(final_bank, collection)
+    validate_query_collection_against_bank(
+        final_bank,
+        collection,
+        query_split=args.query_split,
+    )
     validate_event_bank_data_binding(final_bank, train_binding)
     cache.validate_against_event_bank(final_bank)
     if final_bank.manifest is None:  # Defensive; EventBank.load always sets it.
@@ -345,6 +365,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "action_horizon": action_horizon,
         "query_stride": args.query_stride,
         "top_k": args.top_k,
+        "query_split": args.query_split,
         "query_data_binding": query_binding.to_dict(),
         "episode_exclusion": [
             "global_episode_identity",
@@ -397,7 +418,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         if confirmed_content_hash != event_bank_content_hash:
             raise CandidateCacheBuildError("event-bank content snapshot is inconsistent")
-        validate_query_collection_against_bank(confirmed_bank, collection)
+        validate_query_collection_against_bank(
+            confirmed_bank,
+            collection,
+            query_split=args.query_split,
+        )
         validate_event_bank_data_binding(confirmed_bank, train_binding)
 
         restored = CandidateCache.load(
@@ -425,6 +450,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             "action_horizon": action_horizon,
             "query_stride": args.query_stride,
             "top_k": args.top_k,
+            "query_split": args.query_split,
             "event_bank_manifest_hash": event_bank_manifest_hash,
             "event_bank_content_hash": event_bank_content_hash,
             "query_corpus_hash": collection.content_hash,
