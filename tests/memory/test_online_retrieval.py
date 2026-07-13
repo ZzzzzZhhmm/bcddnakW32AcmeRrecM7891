@@ -717,6 +717,12 @@ def test_query_namespace_and_seed_are_policy_independent_but_ids_are_strict(
     assert online_query_dataset_id(artifacts.online_contract) == (
         online_query_dataset_id(null_contract)
     )
+    rmbench_value = artifacts.online_contract.to_dict()
+    rmbench_value["task_suite"] = "rmbench"
+    rmbench_contract = WarmOnlineRunContract.from_dict(rmbench_value)
+    assert online_query_dataset_id(rmbench_contract).startswith(
+        "warm-online/rmbench/rmbench/"
+    )
     assert derive_online_query_seed(
         17, fixed_id, artifacts.online_contract.evaluation_namespace_sha256
     ) == derive_online_query_seed(

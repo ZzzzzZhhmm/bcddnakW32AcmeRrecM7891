@@ -116,21 +116,43 @@ def _l2_normalize_rows(name: str, value: np.ndarray) -> np.ndarray:
     return _readonly_float32(f"normalized {name}", normalized, rank=2)
 
 
-def factual_gripper_from_state(raw_state: Any) -> np.ndarray:
-    """Compute the default factual gripper signal ``abs(last2).sum``.
+def factual_gripper_from_state(
+    raw_state: Any, *, gripper_indices: Sequence[int] | None = None
+) -> np.ndarray:
+    """Compute a factual scalar gripper signal from explicit state channels.
 
     LIBERO/FastWAM proprioception stores the two gripper fingers in the last
-    two state dimensions.  This signal is observation metadata; it is not the
-    executable gripper command stored in the action vector.
+    two state dimensions and remains the default.  Native RoboTwin qpos uses
+    indices ``(6, 13)``; its profile must pass those indices explicitly.
+    This signal is observation metadata, not an executable command.
     """
 
     state = _readonly_float32("raw_state", raw_state, rank=2)
-    if state.shape[1] < 2:
-        raise FeaturePrecomputeError(
-            "raw_state needs at least two dimensions for the default factual "
-            "gripper signal"
-        )
-    gripper = np.abs(state[:, -2:].astype(np.float64, copy=False)).sum(axis=1)
+    if gripper_indices is None:
+        if state.shape[1] < 2:
+            raise FeaturePrecomputeError(
+                "raw_state needs at least two dimensions for the default factual "
+                "gripper signal"
+            )
+        indices = (state.shape[1] - 2, state.shape[1] - 1)
+    else:
+        indices = tuple(gripper_indices)
+        if (
+            not indices
+            or any(
+                isinstance(index, (bool, np.bool_))
+                or not isinstance(index, (int, np.integer))
+                or int(index) < 0
+                or int(index) >= state.shape[1]
+                for index in indices
+            )
+            or len(set(int(index) for index in indices)) != len(indices)
+        ):
+            raise FeaturePrecomputeError(
+                "gripper_indices must be unique valid state dimensions"
+            )
+        indices = tuple(int(index) for index in indices)
+    gripper = np.abs(state[:, indices].astype(np.float64, copy=False)).sum(axis=1)
     return _readonly_float32("factual_gripper", gripper, rank=1)
 
 
@@ -446,6 +468,7 @@ class FastWAMProcessorAdapter:
         raw_state: Mapping[str, Any] | Any,
         *,
         gripper_state_key: str | None = None,
+        gripper_indices: Sequence[int] | None = None,
     ) -> ProcessedActionState:
         action_fields = _numpy_leaf_mapping("raw_action", raw_action)
         state_fields = _numpy_leaf_mapping("raw_state", raw_state)
@@ -475,7 +498,9 @@ class FastWAMProcessorAdapter:
                     f"gripper_state_key {gripper_state_key!r} is not in raw_state"
                 )
             gripper_source = state_fields[gripper_state_key]
-        factual_gripper = factual_gripper_from_state(gripper_source)
+        factual_gripper = factual_gripper_from_state(
+            gripper_source, gripper_indices=gripper_indices
+        )
 
         batch = {
             "action": {

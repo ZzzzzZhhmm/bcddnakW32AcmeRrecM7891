@@ -70,6 +70,7 @@ _ENCODER_SCHEMA = "warm.feature-encoder"
 _ENCODER_VERSION = 2
 _CAMERA_SCHEMA = "warm.camera-layout"
 _CAMERA_VERSION = 1
+_BENCHMARK_PROFILES = frozenset({"libero", "robotwin"})
 _MAPPING_FIELDS = frozenset({"file_sha256", "contract"})
 _TELEMETRY_FIELDS = (
     "preprocess_s",
@@ -242,8 +243,10 @@ def online_query_dataset_id(contract: WarmOnlineRunContract) -> str:
 
     if not isinstance(contract, WarmOnlineRunContract):
         raise TypeError("contract must be WarmOnlineRunContract")
+    suite = contract.task_suite.lower()
+    benchmark = "rmbench" if suite == "rmbench" or suite.startswith("rmbench_") else "libero"
     return (
-        f"warm-online/libero/{contract.task_suite}/"
+        f"warm-online/{benchmark}/{contract.task_suite}/"
         f"{contract.evaluation_namespace_sha256}"
     )
 
@@ -956,9 +959,20 @@ def _validate_encoder_contract(
 
 def _validate_camera_contract(
     value: Mapping[str, Any],
+    *,
+    benchmark_profile: str = "libero",
 ) -> tuple[tuple[str, ...], tuple[str, ...], str, str]:
+    if benchmark_profile not in _BENCHMARK_PROFILES:
+        raise OnlineArtifactContractError(
+            "benchmark_profile must be exactly 'libero' or 'robotwin'"
+        )
     if value.get("schema") != _CAMERA_SCHEMA or value.get("version") != _CAMERA_VERSION:
         raise OnlineArtifactContractError("unsupported online camera-layout contract")
+    embedded_profile = value.get("benchmark_profile", "libero")
+    if embedded_profile != benchmark_profile:
+        raise OnlineArtifactContractError(
+            "camera-layout benchmark_profile does not match the requested runtime"
+        )
     source_raw = value.get("source_camera_keys")
     mapping_raw = value.get("processor_camera_mapping")
     semantic_source = value.get("semantic_camera")
@@ -983,12 +997,35 @@ def _validate_camera_contract(
         raise OnlineArtifactContractError("processor camera keys must be unique")
     if semantic_source not in source_keys:
         raise OnlineArtifactContractError("semantic_camera is not a source camera")
-    if concat_mode != "horizontal":
-        raise OnlineArtifactContractError(
-            "official M1 LIBERO online retrieval requires horizontal camera concat"
-        )
-    if value.get("per_camera_size") != [224, 224]:
-        raise OnlineArtifactContractError("online cameras must use M1 size [224,224]")
+    if benchmark_profile == "libero":
+        if concat_mode != "horizontal":
+            raise OnlineArtifactContractError(
+                "official M1 LIBERO online retrieval requires horizontal camera concat"
+            )
+        if value.get("per_camera_size") != [224, 224]:
+            raise OnlineArtifactContractError(
+                "LIBERO online cameras must use M1 size [224,224]"
+            )
+    else:
+        if len(source_keys) != 3 or concat_mode != "robotwin":
+            raise OnlineArtifactContractError(
+                "RoboTwin online retrieval requires ordered head/left/right cameras "
+                "and concat_mode='robotwin'"
+            )
+        if semantic_source != source_keys[0]:
+            raise OnlineArtifactContractError(
+                "RoboTwin semantic camera must be the first (head) camera"
+            )
+        if value.get("per_camera_size") != [240, 320]:
+            raise OnlineArtifactContractError(
+                "RoboTwin processor cameras must use [240,320]"
+            )
+        if value.get("dino_semantic_size") != [224, 224] or value.get(
+            "vae_composite_size"
+        ) != [384, 320]:
+            raise OnlineArtifactContractError(
+                "RoboTwin camera contract must bind DINO [224,224] and VAE [384,320]"
+            )
     if value.get("decoded_range") != [0.0, 1.0] or value.get(
         "vae_model_range"
     ) != [-1.0, 1.0]:
@@ -1009,13 +1046,24 @@ def validate_online_encoder_contract(
 
 def validate_online_camera_contract(
     value: Mapping[str, Any],
+    *,
+    benchmark_profile: str = "libero",
 ) -> tuple[tuple[str, ...], tuple[str, ...], str, str]:
-    """Validate and summarize the exact M1 LIBERO camera recipe."""
+    """Validate one explicit LIBERO or RoboTwin online camera recipe."""
 
-    return _validate_camera_contract(value)
+    return _validate_camera_contract(value, benchmark_profile=benchmark_profile)
 
 
-def _validate_processor(processor: Any, processor_keys: tuple[str, ...]) -> None:
+def _validate_processor(
+    processor: Any,
+    processor_keys: tuple[str, ...],
+    *,
+    benchmark_profile: str = "libero",
+) -> None:
+    if benchmark_profile not in _BENCHMARK_PROFILES:
+        raise OnlineArtifactContractError(
+            "benchmark_profile must be exactly 'libero' or 'robotwin'"
+        )
     try:
         if processor.is_train is not False:
             raise OnlineArtifactContractError("online processor must be in eval mode")
@@ -1034,7 +1082,8 @@ def _validate_processor(processor: Any, processor_keys: tuple[str, ...]) -> None
         (str(item.get("key")), tuple(int(v) for v in item.get("shape", ())))
         for item in images
     )
-    expected = tuple((key, (3, 224, 224)) for key in processor_keys)
+    spatial = (240, 320) if benchmark_profile == "robotwin" else (224, 224)
+    expected = tuple((key, (3, *spatial)) for key in processor_keys)
     if signature != expected:
         raise OnlineArtifactContractError(
             f"processor camera metadata {signature!r} != {expected!r}"
@@ -1127,6 +1176,7 @@ class FrozenDinoOnlineRetriever:
         task_vocabulary: tuple[str, ...],
         dino_batch_size: int,
         _artifact_verification_capability: object,
+        benchmark_profile: str = "libero",
     ) -> None:
         if _artifact_verification_capability is not _ARTIFACT_VERIFICATION_CAPABILITY:
             raise OnlineArtifactContractError(
@@ -1142,6 +1192,11 @@ class FrozenDinoOnlineRetriever:
         self._context_mode = context_mode
         self._task_vocabulary = task_vocabulary
         self._dino_batch_size = _positive_int(dino_batch_size, "dino_batch_size")
+        if benchmark_profile not in _BENCHMARK_PROFILES:
+            raise OnlineArtifactContractError(
+                "benchmark_profile must be exactly 'libero' or 'robotwin'"
+            )
+        self._benchmark_profile = benchmark_profile
         self._summary = validate_warm_v1_bank(
             bank,
             expected_action_horizon=online_run_contract.action_horizon,
@@ -1192,7 +1247,13 @@ class FrozenDinoOnlineRetriever:
         dino_torch_dtype: Any | None = None,
         dino_batch_size: int = 1,
         tensor_factory: Callable[[np.ndarray], Any] | None = None,
+        benchmark_profile: str = "libero",
+        spatial_resize: Callable[[np.ndarray, tuple[int, int]], Any] | None = None,
     ) -> "FrozenDinoOnlineRetriever":
+        if benchmark_profile not in _BENCHMARK_PROFILES:
+            raise OnlineArtifactContractError(
+                "benchmark_profile must be exactly 'libero' or 'robotwin'"
+            )
         source_contract = _coerce_source_contract(source_run_contract)
         online_contract = _coerce_online_contract(online_run_contract)
         if online_contract.source_policy != "fixed_context_top1":
@@ -1354,7 +1415,9 @@ class FrozenDinoOnlineRetriever:
                 "encoder runtime fingerprint differs from online contract"
             )
         source_keys, processor_keys, semantic_processor, concat_mode = (
-            _validate_camera_contract(camera_contract)
+            _validate_camera_contract(
+                camera_contract, benchmark_profile=benchmark_profile
+            )
         )
         if audit.audited_camera_keys != source_keys:
             raise OnlineArtifactContractError(
@@ -1364,7 +1427,9 @@ class FrozenDinoOnlineRetriever:
             raise OnlineArtifactContractError(
                 "online task_description is absent from encoder vocabulary"
             )
-        _validate_processor(processor, processor_keys)
+        _validate_processor(
+            processor, processor_keys, benchmark_profile=benchmark_profile
+        )
 
         dino_contract = encoder_contract["dino"]
         assert isinstance(dino_contract, Mapping)
@@ -1431,7 +1496,9 @@ class FrozenDinoOnlineRetriever:
             processor,
             processor_keys,
             concat_mode,
+            benchmark_profile=benchmark_profile,
             tensor_factory=tensor_factory,
+            spatial_resize=spatial_resize,
         )
 
         # Close ordinary replacement windows after every loader/constructor.
@@ -1478,6 +1545,7 @@ class FrozenDinoOnlineRetriever:
             context_mode=context_mode,
             task_vocabulary=vocabulary,
             dino_batch_size=dino_batch_size,
+            benchmark_profile=benchmark_profile,
             _artifact_verification_capability=_ARTIFACT_VERIFICATION_CAPABILITY,
         )
 
@@ -1494,6 +1562,10 @@ class FrozenDinoOnlineRetriever:
         """Attest that construction completed the closed-world artifact loader."""
 
         return True
+
+    @property
+    def benchmark_profile(self) -> str:
+        return self._benchmark_profile
 
     @property
     def task_vocabulary(self) -> tuple[str, ...]:

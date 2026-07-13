@@ -1,0 +1,31 @@
+# @package _global_
+
+defaults:
+  - override /data: rmbench_3cam_warm_train_dev
+  - override /model: warm_robotwin
+  - _self_
+
+data:
+  train:
+    pretrained_norm_stats: ${data.warm_candidates.train.normalization_stats_path}
+    episode_catalog_path: ${data.warm_candidates.train.catalog_path}
+    episode_split: train
+  val:
+    pretrained_norm_stats: ${data.warm_candidates.val.normalization_stats_path}
+    episode_catalog_path: ${data.warm_candidates.val.catalog_path}
+    episode_split: dev
+
+batch_size: 8
+num_workers: 8
+learning_rate: 1.0e-4
+num_epochs: 10
+max_steps: null
+log_every: 10
+save_every: 2000
+eval_every: 0
+gradient_accumulation_steps: 1
+weight_decay: 1.0e-2
+resume: null
+
+model:
+  mot_checkpoint_mixed_attn: true

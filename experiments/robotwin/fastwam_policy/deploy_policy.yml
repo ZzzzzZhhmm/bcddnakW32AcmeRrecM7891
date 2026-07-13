@@ -4,6 +4,7 @@ task_name: null
 task_config: null
 ckpt_setting: null
 seed: 0
+evaluation_namespace: null
 instruction_type: unseen
 eval_num_episodes: 100
 

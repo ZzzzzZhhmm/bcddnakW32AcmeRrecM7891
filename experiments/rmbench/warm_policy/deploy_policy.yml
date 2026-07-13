@@ -1,0 +1,60 @@
+# Official RMBench policy interface fields.
+policy_name: warm_policy
+task_name: null
+task_config: demo_clean
+ckpt_setting: null
+seed: 0
+instruction_type: unseen
+eval_num_episodes: 100
+
+# FastWAM/WARM runtime.
+sim_cfg_path: null
+sim_cfg_name: sim_rmbench.yaml
+sim_task: rmbench_warm_online_3cam384_full
+mixed_precision: bf16
+device: cuda
+dataset_stats_path: null
+action_horizon: 32
+replan_steps: 10
+num_inference_steps: 10
+sigma_shift: null
+text_cfg_scale: 1.0
+negative_prompt: ""
+rand_device: cpu
+tiled: false
+timing_enabled: true
+
+# Closed-world WARM artifact identities.  No formal run supplies defaults.
+warm_online_contract_path: null
+warm_training_attestation_path: null
+warm_training_run_contract_path: null
+warm_validation_run_contract_path: null
+warm_base_checkpoint_path: null
+warm_bank_directory: null
+warm_normalizer_contract_path: null
+warm_encoder_contract_path: null
+warm_camera_contract_path: null
+warm_m1_data_config_path: null
+warm_dino_checkpoint_path: null
+warm_catalog_path: null
+warm_audit_report_path: null
+warm_initial_states_path: null
+warm_task_definition_path: null
+warm_evaluation_namespace: warm-rmbench-full-v1
+warm_top_k: 32
+warm_dino_device: cuda
+warm_dino_batch_size: 1
+warm_telemetry_path: null
+
+# Runtime-only, evidence-attested experiment controls.  The model owns the
+# capability that applies them after validating the immutable BoundOnlineStep.
+warm_ablation_mode: full
+warm_memory_corruption: clean
+warm_experiment_id: null
+
+# Required formal-runtime locations for the three model artifacts already
+# content-bound by the online contract.  The canonical policy projection binds
+# both their normalized paths and their independent contract digests.
+warm_vae_checkpoint_path: null
+warm_text_encoder_path: null
+warm_tokenizer_path: null

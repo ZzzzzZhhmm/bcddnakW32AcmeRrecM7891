@@ -39,6 +39,9 @@ retrospection:
   video_adapter_layers: [9, 19]
   video_adapter_scale: 1.0
   episode_action_chunk_size: 10
+  # LIBERO actions are already model-space deltas and must not be translated.
+  canonical_action_mode: none
+  canonical_gripper_dims: []
   source_sigma_min: 0.2
   residual_rho: 0.25
   consequence_weight: 1.0

@@ -1,0 +1,118 @@
+# @package _global_
+
+defaults:
+  - train
+  - override /task: robotwin_uncond_3cam_384_1e-4
+  - _self_
+
+ckpt: null
+gpu_id: 0
+seed: 0
+
+model:
+  load_text_encoder: true
+  skip_dit_load_from_pretrain: true
+  action_dit_pretrained_path: null
+
+EVALUATION:
+  dataset_stats_path: null
+  # The simulator is an external, read-only code dependency. Do not place it
+  # inside this private repository and disable its push URL before evaluation.
+  rmbench_root: ${oc.env:RMBENCH_ROOT,../external/RMBench-official}
+  require_push_disabled: true
+  code_revision: 57ee09cbc6267bc36ca0ac2d8d1c5c3b245c112c
+
+  # WARM data-preparation tooling writes this attestation outside the official
+  # checkout after downloading the exact pinned Hugging Face snapshot.
+  hf_dataset_revision: 855e90e1213d150bf4889130e83398f107314681
+  hf_revision_marker: ${oc.env:RMBENCH_HF_REVISION_MARKER,null}
+
+  task_manifest_sha256: 3c88b646297e0ce1572d4abc3e2f1c2182f086783602eaf9bca3733cb1d49efe
+  suite: official9  # official9 or pilot3; arbitrary manager subsets are forbidden
+  task_name: null   # set only when invoking eval_rmbench_single.py directly
+  task_config: demo_clean
+  instruction_type: unseen
+  eval_num_episodes: 100
+  # Runner-only seed-namespace bundle used by the no-memory baseline. WARM
+  # resolves the same per-task file from warm_initial_states_path.
+  seed_protocol_root: null
+
+  policy_name: warm_policy
+  policy_kind: warm  # warm or fastwam_baseline
+  policy_source: experiments/rmbench/warm_policy
+  output_dir: ./evaluate_results/rmbench/${EVALUATION.suite}/${now:%Y%m%d_%H%M%S}
+
+  # Values are forwarded as flat overrides to warm_policy/deploy_policy.yml.
+  # Paths that attest the online memory bank are intentionally null by default
+  # so a full WARM run fails closed until server artifacts are supplied.
+  policy_overrides:
+    sim_cfg_path: ${oc.env:WARM_RMBENCH_SIM_CONFIG,configs/sim_rmbench.yaml}
+    sim_task: rmbench_warm_online_3cam384_full
+    mixed_precision: ${mixed_precision}
+    device: cuda
+    dataset_stats_path: null
+    action_horizon: null
+    replan_steps: 10
+    num_inference_steps: ${eval_num_inference_steps}
+    sigma_shift: null
+    text_cfg_scale: 1.0
+    negative_prompt: ""
+    rand_device: cpu
+    tiled: false
+    timing_enabled: false
+    skip_get_obs_within_replan: false
+    warm_online_contract_path: null
+    warm_online_pair_contract_path: null
+    warm_training_attestation_path: null
+    warm_training_run_contract_path: null
+    warm_validation_run_contract_path: null
+    warm_base_checkpoint_path: null
+    warm_bank_directory: null
+    warm_normalizer_contract_path: null
+    warm_encoder_contract_path: null
+    warm_camera_contract_path: null
+    warm_m1_data_config_path: null
+    warm_dino_checkpoint_path: null
+    warm_catalog_path: null
+    warm_audit_report_path: null
+    # These may name suite directories; the single-task runner resolves
+    # <task>.json and <task>.seed_protocol.npy without mutating RMBench.
+    warm_initial_states_path: null
+    warm_ablation_mode: full
+    warm_memory_corruption: clean
+    warm_experiment_id: manual
+    warm_evaluation_namespace: warm-rmbench-full-v1
+    warm_top_k: 32
+
+  # The exact FastWAM comparison uses the same official evaluator, camera
+  # processor, training split, seed, action horizon, and ODE schedule, but no
+  # WARM contract or memory input.  It is launched by the dedicated baseline
+  # server script and is never mixed into a WARM ablation contract bundle.
+  baseline_policy_overrides:
+    sim_cfg_path: ${oc.env:WARM_RMBENCH_SIM_CONFIG,configs/sim_rmbench.yaml}
+    sim_task: rmbench_fastwam_online_3cam384
+    mixed_precision: ${mixed_precision}
+    device: cuda
+    dataset_stats_path: null
+    action_horizon: 32
+    replan_steps: 10
+    num_inference_steps: ${eval_num_inference_steps}
+    evaluation_namespace: warm-rmbench-full-v1
+    sigma_shift: null
+    text_cfg_scale: 1.0
+    negative_prompt: ""
+    rand_device: cpu
+    tiled: false
+    timing_enabled: true
+    skip_get_obs_within_replan: false
+
+MULTIRUN:
+  num_gpus: 8
+  max_tasks_per_gpu: 1
+
+hydra:
+  job:
+    chdir: false
+  run:
+    dir: .
+  output_subdir: null

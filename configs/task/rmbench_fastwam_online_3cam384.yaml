@@ -1,0 +1,20 @@
+# @package _global_
+
+defaults:
+  - override /data: rmbench_3cam
+  - override /model: fastwam
+  - _self_
+
+model:
+  mot_checkpoint_mixed_attn: false
+
+data:
+  train:
+    pretrained_norm_stats: ${EVALUATION.dataset_stats_path}
+
+EVALUATION:
+  task_suite_name: rmbench
+  visualize_future_video: false
+  use_action_ensembler: false
+  action_horizon: 32
+  replan_steps: 10

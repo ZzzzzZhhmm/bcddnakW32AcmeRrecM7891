@@ -177,6 +177,7 @@ class OnlineRetrospectiveEpisodeMemory:
         semantic_dim: int,
         gripper_indices: tuple[int, ...] = (),
         recent_event_capacity: int = 6,
+        episode_namespace: str = "libero-eval",
     ) -> None:
         self._semantic_dim = _nonnegative_int(semantic_dim, "semantic_dim")
         if self._semantic_dim == 0:
@@ -184,6 +185,17 @@ class OnlineRetrospectiveEpisodeMemory:
         self._action_horizon = _nonnegative_int(action_horizon, "action_horizon")
         if self._action_horizon == 0:
             raise ValueError("action_horizon must be positive")
+        if (
+            not isinstance(episode_namespace, str)
+            or not episode_namespace
+            or episode_namespace.strip() != episode_namespace
+            or "\x00" in episode_namespace
+            or ":" in episode_namespace
+        ):
+            raise ValueError(
+                "episode_namespace must be normalized, non-empty, and contain no ':'"
+            )
+        self._episode_namespace = episode_namespace
         self._memory = EpisodeWorkingMemory(
             EpisodeMemoryConfig(
                 action_dim=action_dim,
@@ -206,7 +218,7 @@ class OnlineRetrospectiveEpisodeMemory:
         index = _nonnegative_int(episode_index, "episode_index")
         self._memory.reset()
         self._episode_index = index
-        self._episode_id = f"libero-eval:{index}"
+        self._episode_id = f"{self._episode_namespace}:{index}"
         self._capability = None
         self._last_recorded_frame = None
 

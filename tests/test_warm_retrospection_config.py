@@ -29,6 +29,8 @@ def _config_payload() -> dict[str, object]:
         "reranker_hidden_dim": 12,
         "gate_hidden_dim": 5,
         "episode_action_chunk_size": 2,
+        "canonical_action_mode": "none",
+        "canonical_gripper_dims": (),
         "video_adapter_rank": 2,
         "video_adapter_layers": (1, 3),
         "video_adapter_scale": 1.0,
@@ -90,6 +92,12 @@ def test_retrospection_config_rejects_unknown_and_missing_fields() -> None:
         ("episode_action_chunk_size", 5, "cannot exceed action_horizon"),
         ("video_adapter_rank", 12, "smaller than video_dim"),
         ("video_adapter_layers", (1, 1), "must not contain duplicates"),
+        ("canonical_action_mode", "learned", "must be 'none' or"),
+        (
+            "canonical_gripper_dims",
+            (3,),
+            "must contain valid action indices",
+        ),
         ("video_adapter_scale", 0.0, "positive"),
         ("source_sigma_min", 0.0, "positive"),
         ("residual_rho", float("nan"), "finite"),
@@ -139,6 +147,43 @@ def test_retrospection_config_output_contains_only_finite_numbers() -> None:
     for value in config.to_dict().values():
         if isinstance(value, float):
             assert math.isfinite(value)
+
+
+def test_start_proprio_canonicalization_contract_is_closed() -> None:
+    payload = _config_payload()
+    payload.update(
+        {
+            "proprio_dim": 3,
+            "canonical_action_mode": "start_proprio_delta",
+            "canonical_gripper_dims": [2],
+        }
+    )
+    config = WarmRetrospectionConfig.from_dict(payload)
+
+    assert config.canonical_gripper_dims == (2,)
+    assert WarmRetrospectionConfig.from_dict(config.to_dict()) == config
+
+    mismatched = dict(payload, proprio_dim=4)
+    with pytest.raises(
+        WarmRetrospectionConfigError,
+        match="requires proprio_dim == action_dim",
+    ):
+        WarmRetrospectionConfig.from_dict(mismatched)
+
+    duplicate = dict(payload, canonical_gripper_dims=[2, 2])
+    with pytest.raises(
+        WarmRetrospectionConfigError,
+        match="must not contain duplicates",
+    ):
+        WarmRetrospectionConfig.from_dict(duplicate)
+
+    noncanonical = _config_payload()
+    noncanonical["canonical_gripper_dims"] = [2]
+    with pytest.raises(
+        WarmRetrospectionConfigError,
+        match="must be empty",
+    ):
+        WarmRetrospectionConfig.from_dict(noncanonical)
 
 
 def test_full_training_task_enables_mot_activation_checkpointing() -> None:

@@ -23,6 +23,7 @@ if str(PROJECT_ROOT) not in sys.path:
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
+from fastwam.benchmarks.rmbench import derive_rmbench_policy_query_seed
 from fastwam.datasets.lerobot.processors.fastwam_processor import FastWAMProcessor
 from fastwam.datasets.lerobot.robot_video_dataset import DEFAULT_PROMPT
 from fastwam.datasets.lerobot.utils.normalizer import load_dataset_stats_from_json
@@ -149,6 +150,8 @@ class WorldActionRobotWinPolicy:
         num_inference_steps: int,
         sigma_shift: Optional[float],
         seed: Optional[int],
+        rmbench_task_name: Optional[str],
+        evaluation_namespace: Optional[str],
         text_cfg_scale: float,
         negative_prompt: str,
         rand_device: str,
@@ -172,6 +175,20 @@ class WorldActionRobotWinPolicy:
         self.num_inference_steps = int(num_inference_steps)
         self.sigma_shift = sigma_shift
         self.seed = seed
+        self.rmbench_task_name = (
+            None if _is_none_like(rmbench_task_name) else str(rmbench_task_name)
+        )
+        self.evaluation_namespace = (
+            None
+            if _is_none_like(evaluation_namespace)
+            else str(evaluation_namespace)
+        )
+        if (self.rmbench_task_name is None) != (self.evaluation_namespace is None):
+            raise ValueError(
+                "RMBench task name and evaluation namespace must be provided together"
+            )
+        if self.evaluation_namespace is not None and self.seed is None:
+            raise ValueError("formal RMBench baseline requires a non-negative root seed")
         self.text_cfg_scale = float(text_cfg_scale)
         self.negative_prompt = str(negative_prompt)
         self.rand_device = str(rand_device)
@@ -181,6 +198,7 @@ class WorldActionRobotWinPolicy:
 
         self.pending_actions: deque[np.ndarray] = deque()
         self.episode_count = 0
+        self.active_episode_index: Optional[int] = None
         self.step_count = 0
         self._timing_rollout = {"infer_s": 0.0, "sim_s": 0.0}
 
@@ -239,6 +257,17 @@ class WorldActionRobotWinPolicy:
         proprio = self._normalize_state(state_vector)
 
         prompt = DEFAULT_PROMPT.format(task=instruction)
+        inference_seed = self.seed
+        if self.evaluation_namespace is not None:
+            if self.active_episode_index is None:
+                raise RuntimeError("RMBench baseline replan occurred outside an episode")
+            inference_seed = derive_rmbench_policy_query_seed(
+                int(self.seed),
+                task_name=str(self.rmbench_task_name),
+                episode_index=self.active_episode_index,
+                frame_index=self.step_count,
+                evaluation_namespace=self.evaluation_namespace,
+            )
         infer_kwargs = {
             "prompt": prompt,
             "input_image": image_tensor,
@@ -248,7 +277,7 @@ class WorldActionRobotWinPolicy:
             "text_cfg_scale": self.text_cfg_scale,
             "num_inference_steps": self.num_inference_steps,
             "sigma_shift": self.sigma_shift,
-            "seed": self.seed,
+            "seed": inference_seed,
             "rand_device": self.rand_device,
             "tiled": self.tiled,
         }
@@ -306,6 +335,7 @@ class WorldActionRobotWinPolicy:
 
     def reset(self) -> None:
         self.pending_actions.clear()
+        self.active_episode_index = self.episode_count
         self.episode_count += 1
         self.step_count = 0
         self.reset_timing_rollout()
@@ -381,6 +411,10 @@ def get_model(usr_args: Dict[str, Any]):
         num_inference_steps=num_inference_steps,
         sigma_shift=sigma_shift,
         seed=seed,
+        rmbench_task_name=usr_args.get("task_name")
+        if not _is_none_like(usr_args.get("evaluation_namespace"))
+        else None,
+        evaluation_namespace=usr_args.get("evaluation_namespace"),
         text_cfg_scale=text_cfg_scale,
         negative_prompt=negative_prompt,
         rand_device=rand_device,

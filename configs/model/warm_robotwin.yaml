@@ -1,0 +1,19 @@
+defaults:
+  - warm
+  - _self_
+
+# DINOv2-base CLS (768) + the explicit RMBench nine-task one-hot vocabulary.
+# The remaining widths are inherited from complete WARM and stay shape-derived
+# from the native 14D RoboTwin processor.
+retrospection:
+  context_dim: 777
+  semantic_dim: 768
+  action_dim: 14
+  action_horizon: 32
+  proprio_dim: 14
+  episode_action_chunk_size: 10
+  # Native RoboTwin/RMBench actions are absolute 14D qpos commands.  Translate
+  # the two 6D arm commands by the factual start-state offset while preserving
+  # the left/right gripper commands at indices 6 and 13 exactly.
+  canonical_action_mode: start_proprio_delta
+  canonical_gripper_dims: [6, 13]

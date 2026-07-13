@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build one closed-world contract for a WARM LIBERO online rollout.
+"""Build one closed-world contract for a WARM online rollout.
 
 The online contract is deliberately separate from the stride-one training
 candidate-cache contract.  It binds the exact checkpoint, train event bank,
@@ -40,13 +40,17 @@ from fastwam.models.warm.training_attestation import (
     TrainingAttestationError,
     verify_training_attestation,
 )
+from fastwam.benchmarks.rmbench_runtime import (
+    RMBENCH_RUNTIME_PROJECTION_SCHEMA,
+    RMBENCH_RUNTIME_PROJECTION_VERSION,
+)
 from fastwam.memory.online_retrieval import (
     validate_online_camera_contract,
     validate_online_encoder_contract,
 )
 from fastwam.memory.processor_contract import (
     ProcessorContractError,
-    extract_m1_libero_processor_recipe,
+    extract_m1_processor_recipe,
     load_m1_data_config,
 )
 from fastwam.utils.artifact_claim import artifact_claim
@@ -92,7 +96,23 @@ def _positive_float(value: str) -> float:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Build a contract-bound WARM LIBERO online rollout job."
+        description="Build a contract-bound WARM online rollout job."
+    )
+    parser.add_argument(
+        "--benchmark-profile",
+        choices=("libero", "robotwin"),
+        default="libero",
+        help="Exact camera/action processor profile used by the rollout.",
+    )
+    parser.add_argument(
+        "--resolved-config-binding",
+        choices=("full_eval_config", "rmbench_policy_runtime"),
+        default="full_eval_config",
+        help=(
+            "LIBERO keeps the legacy full resolved-config digest. RMBench "
+            "binds the shared policy-runtime projection, excluding runner-only "
+            "outputs and telemetry paths."
+        ),
     )
     parser.add_argument("--training-run-contract", required=True, type=Path)
     parser.add_argument("--validation-run-contract", required=True, type=Path)
@@ -119,9 +139,20 @@ def build_parser() -> argparse.ArgumentParser:
         "--initial-states",
         required=True,
         type=Path,
-        help="Exact .npy array returned by LIBERO for this task.",
+        help=(
+            "Exact initialization .npy artifact. LIBERO uses its initial-state "
+            "array; RMBench uses the deterministic official seed schedule."
+        ),
     )
-    parser.add_argument("--bddl", required=True, type=Path)
+    parser.add_argument(
+        "--bddl",
+        required=True,
+        type=Path,
+        help=(
+            "Exact task-definition file. LIBERO supplies BDDL; RMBench supplies "
+            "the pinned envs/<task>.py module."
+        ),
+    )
     parser.add_argument("--root-seed", required=True, type=_nonnegative_int)
     parser.add_argument("--top-k", required=True, type=_positive_int)
     parser.add_argument(
@@ -202,6 +233,10 @@ def _validate_resolved_config(
     args: argparse.Namespace,
 ) -> None:
     """Reject a hash-only config binding that contradicts explicit fields."""
+
+    if args.resolved_config_binding == "rmbench_policy_runtime":
+        _validate_rmbench_policy_runtime_projection(value, args)
+        return
 
     warm_online = _config_value(value, "EVALUATION", "warm_online")
     if not isinstance(warm_online, Mapping):
@@ -413,6 +448,135 @@ def _validate_resolved_config(
         raise OnlineContractBuildError(
             "resolved eval config DINO device disagrees with the feature-encoder "
             f"contract: {configured_dino_device!r} != {compute_device!r}"
+        )
+
+
+def _projection_path(value: Any, *, label: str) -> Path:
+    path = _resolved_path_value(value, label=label)
+    if not path.is_absolute():  # pragma: no cover - resolve above is absolute
+        raise OnlineContractBuildError(f"RMBench projection {label} must be absolute")
+    return path
+
+
+def _validate_rmbench_policy_runtime_projection(
+    value: Mapping[str, Any],
+    args: argparse.Namespace,
+) -> None:
+    """Validate the canonical projection shared with the RMBench policy."""
+
+    if args.benchmark_profile != "robotwin":
+        raise OnlineContractBuildError(
+            "rmbench_policy_runtime requires --benchmark-profile robotwin"
+        )
+    if (
+        value.get("schema") != RMBENCH_RUNTIME_PROJECTION_SCHEMA
+        or value.get("schema_version") != RMBENCH_RUNTIME_PROJECTION_VERSION
+        or value.get("benchmark_profile") != "robotwin"
+    ):
+        raise OnlineContractBuildError("RMBench policy-runtime projection schema mismatch")
+    task = value.get("task")
+    experiment = value.get("experiment")
+    action = value.get("action_generation")
+    retrieval = value.get("retrieval")
+    artifacts = value.get("artifact_paths")
+    processor_recipe = value.get("processor_recipe")
+    model_behavior = value.get("model_behavior")
+    if not all(
+        isinstance(item, Mapping)
+        for item in (
+            task,
+            experiment,
+            action,
+            retrieval,
+            artifacts,
+            processor_recipe,
+            model_behavior,
+        )
+    ):
+        raise OnlineContractBuildError(
+            "RMBench policy-runtime projection is missing a required mapping"
+        )
+    assert isinstance(task, Mapping)
+    assert isinstance(action, Mapping)
+    assert isinstance(retrieval, Mapping)
+    assert isinstance(artifacts, Mapping)
+    expected_scalars = (
+        (task.get("suite"), args.task_suite, "task suite"),
+        (task.get("task_id"), args.task_id, "task id"),
+        (task.get("task_description"), args.task_description, "task description"),
+        (task.get("root_seed"), args.root_seed, "root seed"),
+        (action.get("action_horizon"), args.action_horizon, "action horizon"),
+        (action.get("source_policy"), args.source_policy, "source policy"),
+        (action.get("memory_sigma"), args.memory_sigma, "memory sigma"),
+        (retrieval.get("top_k"), args.top_k, "retrieval top-k"),
+    )
+    for actual, expected, label in expected_scalars:
+        if isinstance(expected, float):
+            try:
+                agrees = float(actual) == float(expected)
+            except (TypeError, ValueError):
+                agrees = False
+        else:
+            agrees = actual == expected
+        if not agrees:
+            raise OnlineContractBuildError(
+                f"RMBench policy-runtime {label} disagrees with contract field: "
+                f"{actual!r} != {expected!r}"
+            )
+    namespace = retrieval.get("evaluation_namespace")
+    if namespace != args.evaluation_namespace:
+        raise OnlineContractBuildError(
+            "RMBench policy-runtime evaluation namespace disagrees with contract"
+        )
+    if retrieval.get("enabled") is not True or retrieval.get("mode") != "full_retrospection":
+        raise OnlineContractBuildError(
+            "RMBench policy-runtime must enable full_retrospection"
+        )
+
+    expected_paths = {
+        "online_contract": args.output,
+        "training_attestation": args.training_attestation,
+        "training_run_contract": args.training_run_contract,
+        "validation_run_contract": args.validation_run_contract,
+        "event_bank": args.bank,
+        "normalizer_contract": args.normalizer_contract,
+        "encoder_contract": args.encoder_contract,
+        "camera_contract": args.camera_contract,
+        "m1_data_config": args.data_config,
+        "dino_checkpoint": args.dino_checkpoint,
+        "catalog": args.catalog,
+        "audit_report": args.audit_report,
+        "seed_protocol": args.initial_states,
+        "task_definition": args.bddl,
+        "vae_checkpoint": args.vae_checkpoint,
+        "text_encoder": args.text_encoder,
+        "tokenizer": args.tokenizer,
+        "warm_checkpoint": args.warm_checkpoint,
+        "normalization_stats": args.normalization_stats,
+    }
+    for name, expected in expected_paths.items():
+        actual = _projection_path(artifacts.get(name), label=f"artifact {name}")
+        if actual != Path(expected).expanduser().resolve():
+            raise OnlineContractBuildError(
+                f"RMBench policy-runtime artifact {name} path disagrees with contract"
+            )
+
+    base_checkpoint = _projection_path(
+        artifacts.get("base_checkpoint"), label="artifact base_checkpoint"
+    )
+    if not base_checkpoint.is_file():
+        raise OnlineContractBuildError(
+            "RMBench policy-runtime base checkpoint does not exist"
+        )
+    if model_behavior.get("base_checkpoint_path") is not None and (
+        _projection_path(
+            model_behavior.get("base_checkpoint_path"),
+            label="model base checkpoint",
+        )
+        != base_checkpoint
+    ):
+        raise OnlineContractBuildError(
+            "RMBench model behavior and artifact base checkpoint paths disagree"
         )
 
 
@@ -655,7 +819,9 @@ def _build_contract(args: argparse.Namespace) -> WarmOnlineRunContract:
             "camera contract payload differs from the event-bank manifest"
         )
     validate_online_encoder_contract(encoder_contract)
-    validate_online_camera_contract(camera_contract)
+    validate_online_camera_contract(
+        camera_contract, benchmark_profile=args.benchmark_profile
+    )
     encoder_runtime = encoder_contract.get("runtime")
     if not isinstance(encoder_runtime, Mapping):
         raise OnlineContractBuildError(
@@ -664,7 +830,7 @@ def _build_contract(args: argparse.Namespace) -> WarmOnlineRunContract:
     encoder_runtime_sha = sha256_canonical_json(dict(encoder_runtime))
     try:
         m1_processor_recipe, data_config_sha = load_m1_data_config(
-            data_config_path
+            data_config_path, profile=args.benchmark_profile
         )
     except ProcessorContractError as exc:
         raise OnlineContractBuildError(
@@ -720,14 +886,24 @@ def _build_contract(args: argparse.Namespace) -> WarmOnlineRunContract:
 
     resolved_config = _read_resolved_config(config_path)
     _validate_resolved_config(resolved_config, args)
-    try:
-        resolved_processor_recipe = extract_m1_libero_processor_recipe(
-            resolved_config
-        )
-    except ProcessorContractError as exc:
-        raise OnlineContractBuildError(
-            "resolved rollout processor is not the exact M1 processor recipe"
-        ) from exc
+    if args.resolved_config_binding == "rmbench_policy_runtime":
+        resolved_processor_recipe = resolved_config.get("processor_recipe")
+        retrieval_projection = resolved_config.get("retrieval")
+        if not isinstance(retrieval_projection, Mapping) or (
+            retrieval_projection.get("dino_device") != compute_device
+        ):
+            raise OnlineContractBuildError(
+                "RMBench policy-runtime DINO device differs from encoder contract"
+            )
+    else:
+        try:
+            resolved_processor_recipe = extract_m1_processor_recipe(
+                resolved_config, profile=args.benchmark_profile
+            )
+        except ProcessorContractError as exc:
+            raise OnlineContractBuildError(
+                "resolved rollout processor is not the exact M1 processor recipe"
+            ) from exc
     if resolved_processor_recipe != m1_processor_recipe:
         raise OnlineContractBuildError(
             "resolved rollout processor recipe differs from the M1 data config"
@@ -736,15 +912,21 @@ def _build_contract(args: argparse.Namespace) -> WarmOnlineRunContract:
         raise OnlineContractBuildError(
             "M1 data config does not match the feature-encoder contract"
         )
-    base_checkpoint_path = _resolved_path_value(
-        _config_value(
-            resolved_config,
-            "EVALUATION",
-            "warm_online",
-            "base_checkpoint_path",
-        ),
-        label="online base checkpoint",
-    )
+    if args.resolved_config_binding == "rmbench_policy_runtime":
+        base_checkpoint_path = _projection_path(
+            _config_value(resolved_config, "artifact_paths", "base_checkpoint"),
+            label="online base checkpoint",
+        )
+    else:
+        base_checkpoint_path = _resolved_path_value(
+            _config_value(
+                resolved_config,
+                "EVALUATION",
+                "warm_online",
+                "base_checkpoint_path",
+            ),
+            label="online base checkpoint",
+        )
     if sha256_file(base_checkpoint_path) != source.base_checkpoint_sha256:
         raise OnlineContractBuildError(
             "resolved base checkpoint does not match the training run contract"
@@ -886,15 +1068,21 @@ def _assert_contract_inputs_unchanged(
     _validate_resolved_config(config, args)
     if sha256_canonical_json(config) != contract.resolved_eval_config_sha256:
         raise OnlineContractBuildError("resolved eval config changed during build")
-    base_checkpoint_path = _resolved_path_value(
-        _config_value(
-            config,
-            "EVALUATION",
-            "warm_online",
-            "base_checkpoint_path",
-        ),
-        label="online base checkpoint",
-    )
+    if args.resolved_config_binding == "rmbench_policy_runtime":
+        base_checkpoint_path = _projection_path(
+            _config_value(config, "artifact_paths", "base_checkpoint"),
+            label="online base checkpoint",
+        )
+    else:
+        base_checkpoint_path = _resolved_path_value(
+            _config_value(
+                config,
+                "EVALUATION",
+                "warm_online",
+                "base_checkpoint_path",
+            ),
+            label="online base checkpoint",
+        )
     if sha256_file(base_checkpoint_path) != source.base_checkpoint_sha256:
         raise OnlineContractBuildError("base checkpoint changed during contract build")
     if _initial_states_digest(

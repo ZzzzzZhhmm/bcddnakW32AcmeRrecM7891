@@ -81,6 +81,21 @@ The end-to-end commands for the learned consequence-aligned model are in
 documents remain the isolated retrieval/source diagnostics and should not be
 mistaken for the complete-model launch recipe.
 
+The official RMBench path is likewise server-only and uses these closed
+launchers from the clean private commit:
+
+```text
+scripts/prepare_warm_rmbench_artifacts.sh
+scripts/train_warm_rmbench_server.sh
+scripts/evaluate_warm_rmbench_server.sh
+scripts/run_warm_rmbench_matrix.py
+```
+
+All four refuse mutable formal outputs. Their shared guard permits only the
+configured WARM `origin`, verifies the pinned external checkout has push URL
+`DISABLED`, and defaults experiment/model hubs to offline mode. Large converted
+RMBench data and matrix results remain external artifacts, not Git content.
+
 ## Promotion sequence
 
 1. Local CPU tests and compile checks pass.

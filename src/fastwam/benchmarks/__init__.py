@@ -1,0 +1,17 @@
+"""Pinned benchmark protocols used by WARM evaluation entrypoints."""
+
+from .rmbench import (
+    RMBENCH_CODE_REVISION,
+    RMBENCH_HF_DATASET_REVISION,
+    RMBENCH_PILOT_TASKS,
+    RMBENCH_TASKS,
+    RMBENCH_TASK_MANIFEST_SHA256,
+)
+
+__all__ = [
+    "RMBENCH_CODE_REVISION",
+    "RMBENCH_HF_DATASET_REVISION",
+    "RMBENCH_PILOT_TASKS",
+    "RMBENCH_TASKS",
+    "RMBENCH_TASK_MANIFEST_SHA256",
+]

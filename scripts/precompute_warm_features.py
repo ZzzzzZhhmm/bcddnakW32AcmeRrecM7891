@@ -77,6 +77,12 @@ def build_parser() -> argparse.ArgumentParser:
         )
     )
     parser.add_argument("--data-config", required=True, type=Path)
+    parser.add_argument(
+        "--benchmark-profile",
+        choices=("libero", "robotwin"),
+        default="libero",
+        help="Closed processor/camera/action profile; never inferred from shapes.",
+    )
     parser.add_argument("--catalog", required=True, type=Path)
     parser.add_argument("--audit-report", required=True, type=Path)
     parser.add_argument(
@@ -110,12 +116,11 @@ def build_parser() -> argparse.ArgumentParser:
             "observation.images.wrist_image."
         ),
     )
+    parser.add_argument("--semantic-camera", default=None)
     parser.add_argument(
-        "--semantic-camera",
-        default="observation.images.image",
-    )
-    parser.add_argument(
-        "--concat-mode", choices=("horizontal", "vertical"), default="horizontal"
+        "--concat-mode",
+        choices=("horizontal", "vertical", "robotwin"),
+        default="horizontal",
     )
     parser.add_argument(
         "--context-mode",
@@ -295,6 +300,7 @@ class PrecomputePlan:
         return {
             "schema": PLAN_SCHEMA,
             "version": PLAN_VERSION,
+            "benchmark_profile": args.benchmark_profile,
             "catalog_sha256": self.catalog.content_sha256,
             "audit_report_sha256": self.audit.report_sha256,
             "dataset_roots": [str(path) for path in self.roots],
@@ -349,9 +355,10 @@ def _build_plan(args: argparse.Namespace) -> PrecomputePlan:
         raise WarmFeaturePrecomputeError(
             "--timestamp-tolerance-s must be finite and non-negative"
         )
-    if args.concat_mode != "horizontal":
+    required_concat = "horizontal" if args.benchmark_profile == "libero" else "robotwin"
+    if args.concat_mode != required_concat:
         raise WarmFeaturePrecomputeError(
-            "WARM M1 LIBERO supports only FastWAM's horizontal two-camera layout"
+            f"{args.benchmark_profile} profile requires concat-mode={required_concat}"
         )
     if (
         not isinstance(args.dino_revision, str)
@@ -419,13 +426,26 @@ def _build_plan(args: argparse.Namespace) -> PrecomputePlan:
         stats_raw = stats_path.read_bytes()
         stats_manifest_raw = stats_manifest_path.read_bytes()
         train_sources = _expected_train_episode_sources(catalog, audit)
-        stats_artifact = load_train_stats_artifact(
-            stats_path.parent,
-            expected_catalog_sha256=catalog.content_sha256,
-            expected_audit_report_sha256=audit.report_sha256,
-            expected_data_config_sha256=config_sha256,
-            expected_train_episodes=train_sources,
-        )
+        if args.benchmark_profile == "libero":
+            stats_artifact = load_train_stats_artifact(
+                stats_path.parent,
+                expected_catalog_sha256=catalog.content_sha256,
+                expected_audit_report_sha256=audit.report_sha256,
+                expected_data_config_sha256=config_sha256,
+                expected_train_episodes=train_sources,
+            )
+        else:
+            from fastwam.memory.robotwin_train_stats import (
+                load_robotwin_train_stats_artifact,
+            )
+
+            stats_artifact = load_robotwin_train_stats_artifact(
+                stats_path.parent,
+                expected_catalog_sha256=catalog.content_sha256,
+                expected_audit_report_sha256=audit.report_sha256,
+                expected_data_config_sha256=config_sha256,
+                expected_train_episodes=train_sources,
+            )
         if stats_raw != stats_path.read_bytes() or stats_manifest_raw != (
             stats_manifest_path.read_bytes()
         ):
@@ -440,9 +460,13 @@ def _build_plan(args: argparse.Namespace) -> PrecomputePlan:
         raise WarmFeaturePrecomputeError(
             "cannot snapshot train-only normalization artifact"
         ) from exc
-    if stats_artifact.stats.action_dim != 7 or stats_artifact.stats.state_dim != 8:
+    expected_dims = (7, 8) if args.benchmark_profile == "libero" else (14, 14)
+    if (
+        stats_artifact.stats.action_dim,
+        stats_artifact.stats.state_dim,
+    ) != expected_dims:
         raise WarmFeaturePrecomputeError(
-            "train-only normalization artifact must contain LIBERO 7D action and 8D state"
+            "train-only normalization dimensions disagree with benchmark profile"
         )
     expected_train_frames = sum(
         record.length for record in catalog.episodes if record.split == "train"
@@ -467,29 +491,35 @@ def _build_plan(args: argparse.Namespace) -> PrecomputePlan:
         splits,
         max_per_split=args.max_episodes_per_split,
     )
+    default_cameras = (
+        (
+            "observation.images.image",
+            "observation.images.wrist_image",
+        )
+        if args.benchmark_profile == "libero"
+        else (
+            "observation.images.cam_high",
+            "observation.images.cam_left_wrist",
+            "observation.images.cam_right_wrist",
+        )
+    )
     cameras = tuple(
         dict.fromkeys(
-            args.camera
-            or (
-                "observation.images.image",
-                "observation.images.wrist_image",
-            )
+            args.camera or default_cameras
         )
     )
     if not cameras or any(not camera.strip() for camera in cameras):
         raise WarmFeaturePrecomputeError("camera keys must be non-empty")
-    expected_cameras = (
-        "observation.images.image",
-        "observation.images.wrist_image",
-    )
+    expected_cameras = default_cameras
     if cameras != expected_cameras:
         raise WarmFeaturePrecomputeError(
-            "WARM M1 LIBERO requires the exact FastWAM camera order "
+            f"WARM M1 {args.benchmark_profile} requires the exact camera order "
             f"{expected_cameras!r}"
         )
-    if args.semantic_camera != expected_cameras[0]:
+    semantic_camera = args.semantic_camera or expected_cameras[0]
+    if semantic_camera != expected_cameras[0]:
         raise WarmFeaturePrecomputeError(
-            "WARM M1 effect semantics must use observation.images.image"
+            "WARM M1 effect semantics must use the profile's head/external camera"
         )
     if audit.audited_camera_keys != cameras:
         raise WarmFeaturePrecomputeError(
@@ -537,7 +567,7 @@ def _build_plan(args: argparse.Namespace) -> PrecomputePlan:
         vae_checkpoint_sha256=vae_hash,
         output=output,
         camera_keys=cameras,
-        semantic_camera=args.semantic_camera,
+        semantic_camera=semantic_camera,
         incomplete_smoke=args.max_episodes_per_split is not None,
     )
 
@@ -608,7 +638,9 @@ def _torch_dtype(name: str) -> Any:
     }[name]
 
 
-def _load_processor(data_config: Path, stats_path: Path) -> Any:
+def _load_processor(
+    data_config: Path, stats_path: Path, *, benchmark_profile: str = "libero"
+) -> Any:
     from hydra.utils import instantiate
     from omegaconf import OmegaConf
     from fastwam.datasets.lerobot.utils.normalizer import (
@@ -619,6 +651,25 @@ def _load_processor(data_config: Path, stats_path: Path) -> Any:
     wrapped = OmegaConf.create({"data": raw})
     OmegaConf.resolve(wrapped)
     train = wrapped.data.train
+    if benchmark_profile == "robotwin":
+        from fastwam.memory.processor_contract import (
+            extract_m1_robotwin_processor_recipe,
+            validate_processor_instance,
+        )
+
+        recipe_value = OmegaConf.to_container(wrapped, resolve=True)
+        if not isinstance(recipe_value, Mapping):
+            raise WarmFeaturePrecomputeError("resolved RoboTwin data config is invalid")
+        recipe = extract_m1_robotwin_processor_recipe(recipe_value)
+        processor = instantiate(wrapped.data.train.processor)
+        processor.set_normalizer_from_stats(
+            load_dataset_stats_from_json(str(stats_path))
+        )
+        processor.eval()
+        validate_processor_instance(processor, recipe)
+        return processor
+    if benchmark_profile != "libero":
+        raise WarmFeaturePrecomputeError("unknown benchmark profile")
     image_meta = tuple(train.shape_meta.images)
     image_keys = tuple(str(item.key) for item in image_meta)
     image_shapes = tuple(tuple(int(value) for value in item.shape) for item in image_meta)
@@ -787,6 +838,32 @@ def _validate_libero_processor(processor: Any) -> str:
     return normalization_mode
 
 
+def _validate_robotwin_processor(processor: Any) -> str:
+    if int(processor.action_output_dim) != 14 or int(processor.proprio_output_dim) != 14:
+        raise WarmFeaturePrecomputeError(
+            "RoboTwin M1 requires native action_dim=14 and proprio_dim=14"
+        )
+    action_meta = tuple(
+        (str(item["key"]), int(item["raw_shape"]), int(item["shape"]))
+        for item in processor.shape_meta["action"]
+    )
+    state_meta = tuple(
+        (str(item["key"]), int(item["raw_shape"]), int(item["shape"]))
+        for item in processor.shape_meta["state"]
+    )
+    if action_meta != (("default", 14, 14),) or state_meta != (("default", 14, 14),):
+        raise WarmFeaturePrecomputeError("RoboTwin processor metadata must stay 14D")
+    if processor.action_state_transforms is not None:
+        raise WarmFeaturePrecomputeError("RoboTwin qpos preprocessing must be identity")
+    if bool(processor.use_stepwise_action_norm) or str(processor.norm_default_mode) != "z-score":
+        raise WarmFeaturePrecomputeError("RoboTwin M1 requires global z-score normalization")
+    if processor.norm_exception_mode not in (None, {}):
+        raise WarmFeaturePrecomputeError("RoboTwin M1 forbids normalization exceptions")
+    if processor.delta_action_dim_mask not in (None, {}):
+        raise WarmFeaturePrecomputeError("RoboTwin qpos must not use a delta-action mask")
+    return "global:z-score"
+
+
 def _processor_camera_key(source_key: str) -> str:
     prefix = "observation.images."
     if not source_key.startswith(prefix) or len(source_key) == len(prefix):
@@ -853,8 +930,16 @@ def _run_server_precompute(args: argparse.Namespace, plan: PrecomputePlan) -> No
             if sha256_file(config_copy) != plan.data_config_sha256:
                 raise WarmFeaturePrecomputeError("data-config copy hash mismatch")
 
-            processor = _load_processor(config_copy, stats_copy)
-            normalization_mode = _validate_libero_processor(processor)
+            processor = _load_processor(
+                config_copy,
+                stats_copy,
+                benchmark_profile=args.benchmark_profile,
+            )
+            normalization_mode = (
+                _validate_libero_processor(processor)
+                if args.benchmark_profile == "libero"
+                else _validate_robotwin_processor(processor)
+            )
             processor_adapter = FastWAMProcessorAdapter(processor, tensor_backend="torch")
             camera_mapping = {
                 source: _processor_camera_key(source) for source in plan.camera_keys
@@ -870,6 +955,7 @@ def _run_server_precompute(args: argparse.Namespace, plan: PrecomputePlan) -> No
                 processor,
                 processor_camera_keys,
                 args.concat_mode,
+                benchmark_profile=args.benchmark_profile,
             )
             before_dino_hash = _tree_sha256(
                 args.dino_checkpoint.expanduser().resolve()
@@ -911,16 +997,32 @@ def _run_server_precompute(args: argparse.Namespace, plan: PrecomputePlan) -> No
             task_to_index = {
                 task: index for index, task in enumerate(plan.task_vocabulary)
             }
-            action_contract = ActionSpaceContract(
-                action_dim=7,
-                arm_dims=(0, 1, 2, 3, 4, 5),
-                gripper_dims=(6,),
-                gripper_threshold=0.0,
-                normalization_mode=normalization_mode,
-                normalization_stats_sha256=plan.stats_sha256,
-                control_mode="libero_delta_eef_axis_angle_plus_gripper",
-                embodiment="libero_panda",
-            ).to_dict()
+            action_dim = 7 if args.benchmark_profile == "libero" else 14
+            arm_dims = (
+                (0, 1, 2, 3, 4, 5)
+                if args.benchmark_profile == "libero"
+                else (0, 1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12)
+            )
+            gripper_dims = (6,) if args.benchmark_profile == "libero" else (6, 13)
+            if args.benchmark_profile == "robotwin":
+                from fastwam.memory.robotwin_artifacts import (
+                    robotwin_qpos_action_contract,
+                )
+
+                action_contract = robotwin_qpos_action_contract(
+                    plan.stats_sha256
+                ).to_dict()
+            else:
+                action_contract = ActionSpaceContract(
+                    action_dim=action_dim,
+                    arm_dims=arm_dims,
+                    gripper_dims=gripper_dims,
+                    gripper_threshold=0.0,
+                    normalization_mode=normalization_mode,
+                    normalization_stats_sha256=plan.stats_sha256,
+                    control_mode="libero_delta_eef_axis_angle_plus_gripper",
+                    embodiment="libero_panda",
+                ).to_dict()
             encoder_contract: dict[str, Any] = {
                 "schema": ENCODER_CONTRACT_SCHEMA,
                 "version": ENCODER_CONTRACT_VERSION,
@@ -979,18 +1081,35 @@ def _run_server_precompute(args: argparse.Namespace, plan: PrecomputePlan) -> No
                     "per_frame_singleton_time": bool(args.include_vae),
                     "spatial_pool": [4, 8] if args.include_vae else None,
                 },
-                "factual_gripper": "abs(raw_state_last2).sum",
+                "factual_gripper": (
+                    "abs(raw_state_last2).sum"
+                    if args.benchmark_profile == "libero"
+                    else "abs(raw_state_indices_6_13).sum"
+                ),
             }
             camera_contract: dict[str, Any] = {
                 "schema": CAMERA_CONTRACT_SCHEMA,
                 "version": CAMERA_CONTRACT_VERSION,
+                "benchmark_profile": args.benchmark_profile,
                 "source_camera_keys": list(plan.camera_keys),
                 "processor_camera_mapping": camera_mapping,
                 "semantic_camera": plan.semantic_camera,
                 "concat_mode": args.concat_mode,
                 "decoded_range": [0.0, 1.0],
                 "baseline_quantization": "validated_0_1_times_255_to_uint8",
-                "per_camera_size": [224, 224],
+                "per_camera_size": (
+                    [224, 224]
+                    if args.benchmark_profile == "libero"
+                    else [240, 320]
+                ),
+                **(
+                    {}
+                    if args.benchmark_profile == "libero"
+                    else {
+                        "dino_semantic_size": [224, 224],
+                        "vae_composite_size": [384, 320],
+                    }
+                ),
                 "vae_model_range": [-1.0, 1.0],
                 "timestamp_source": "parquet.timestamp",
                 "timestamp_tolerance_s": args.timestamp_tolerance_s,
@@ -1025,7 +1144,13 @@ def _run_server_precompute(args: argparse.Namespace, plan: PrecomputePlan) -> No
                     timestamp_tolerance_s=args.timestamp_tolerance_s,
                     video_backend=args.video_backend,
                 )
-                processed = processor_adapter.process(full.actions, full.states)
+                processed = processor_adapter.process(
+                    full.actions,
+                    full.states,
+                    gripper_indices=(
+                        None if args.benchmark_profile == "libero" else (6, 13)
+                    ),
+                )
                 processor_images = {
                     camera_mapping[source]: full.images[source]
                     for source in plan.camera_keys

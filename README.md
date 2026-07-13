@@ -13,13 +13,15 @@ no-long-memory path.
 
 ## Implementation status
 
-The complete local code path is implemented: automatic factual feature/event
-preparation, immutable bank and candidate contracts, causally matched offline
-and online episode working memory, the complete learned WARM model, checkpoint
-serialization, and single-checkpoint online LIBERO evaluation. **It has not yet
-received large-scale GPU training or simulator validation.** Local CPU and
-synthetic contract tests establish software behavior only; they do not claim
-learning effectiveness, benchmark success, latency, or non-regression.
+The complete local software path is implemented for LIBERO and the pinned
+official RMBench protocol: automatic factual feature/event preparation,
+immutable bank and candidate contracts, causally matched offline and online
+episode working memory, the complete learned WARM model, checkpoint
+serialization, benchmark policies, a same-data FastWAM comparison, and
+reproducible server launchers. **It has
+not yet received large-scale GPU training or simulator validation.** Local CPU
+and synthetic contract tests establish software behavior only; they do not
+claim learning effectiveness, benchmark success, latency, or non-regression.
 
 Start here:
 
@@ -62,10 +64,12 @@ The implemented full path deliberately keeps several boundaries explicit:
 - Action DiT, compact WARM modules, and rank-16 residual adapters at Video DiT
   layers 9/19 are trainable; the 5B Video DiT backbone, VAE, and text encoder
   remain frozen, with an isolated video-only co-training loss;
-- event actions are stored in FastWAM's normalized model action space. The
-  current code does not claim geometric action canonicalization, and its
-  bounded residual uses normalized action units unless explicit scales are
-  supplied--not an inferred dataset-standard-deviation transform.
+- LIBERO event actions remain in FastWAM's normalized model action space. The
+  14D RMBench/RoboTwin profile additionally applies a reversible
+  start-proprioception translation to arm channels while preserving the two
+  gripper channels. Neither profile claims object/goal-frame geometric
+  canonicalization or cross-embodiment transfer; bounded residuals use
+  normalized action units unless explicit scales are supplied.
 
 No checkpoint, dataset, feature tensor, or simulator workload is downloaded or
 executed on the Windows workstation. Mandatory Linux/CUDA gates are specified

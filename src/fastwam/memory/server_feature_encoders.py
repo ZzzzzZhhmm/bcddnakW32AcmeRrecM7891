@@ -36,6 +36,13 @@ from .feature_precompute import (
 
 _PINNED_REVISION = re.compile(r"[0-9a-fA-F]{7,64}\Z")
 _IMAGE_SIZE = (224, 224)
+LIBERO_IMAGE_PROFILE = "libero"
+ROBOTWIN_IMAGE_PROFILE = "robotwin"
+_IMAGE_PROFILES = frozenset({LIBERO_IMAGE_PROFILE, ROBOTWIN_IMAGE_PROFILE})
+_ROBOTWIN_PROCESSOR_SIZE = (240, 320)
+_ROBOTWIN_HEAD_SIZE = (256, 320)
+_ROBOTWIN_WRIST_SIZE = (128, 160)
+_ROBOTWIN_COMPOSITE_SIZE = (384, 320)
 
 
 class ServerFeatureEncodingError(FeaturePrecomputeError):
@@ -121,6 +128,35 @@ def _default_tensor_factory(value: np.ndarray) -> Any:
     return torch.as_tensor(value)
 
 
+def _benchmark_profile(value: object) -> str:
+    if not isinstance(value, str) or value not in _IMAGE_PROFILES:
+        raise ServerFeatureEncodingError(
+            "benchmark_profile must be exactly 'libero' or 'robotwin'"
+        )
+    return value
+
+
+def _default_spatial_resize(value: np.ndarray, size: tuple[int, int]) -> np.ndarray:
+    """Match ``RobotVideoDataset``'s bilinear antialiased tensor resize."""
+
+    try:
+        torch = importlib.import_module("torch")
+        transforms_f = importlib.import_module("torchvision.transforms.functional")
+    except ImportError as exc:  # pragma: no cover - server dependency path
+        raise RuntimeError(
+            "RoboTwin image preprocessing requires torch and torchvision on the "
+            "feature server; inject spatial_resize for a contract test"
+        ) from exc
+    tensor = torch.as_tensor(np.ascontiguousarray(value, dtype=np.float32))
+    resized = transforms_f.resize(
+        tensor,
+        size=list(size),
+        interpolation=transforms_f.InterpolationMode.BILINEAR,
+        antialias=True,
+    )
+    return np.asarray(_to_numpy("spatially resized camera", resized))
+
+
 def _validate_camera_keys(camera_keys: Sequence[str]) -> tuple[str, ...]:
     if isinstance(camera_keys, (str, bytes)):
         raise TypeError("camera_keys must be a sequence of camera names")
@@ -146,6 +182,7 @@ class PreparedFastWAMImages:
     vae_frames: np.ndarray
     camera_keys: tuple[str, ...]
     concat_mode: str
+    benchmark_profile: str = LIBERO_IMAGE_PROFILE
 
     def __post_init__(self) -> None:
         if not isinstance(self.camera_frames, MappingProxyType):
@@ -190,7 +227,14 @@ class PreparedFastWAMImages:
             raise ServerFeatureEncodingError(
                 "vae_frames must be immutable float32 [N,3,H,W]"
             )
-        if self.concat_mode == "horizontal":
+        profile = _benchmark_profile(self.benchmark_profile)
+        if profile == ROBOTWIN_IMAGE_PROFILE:
+            if self.concat_mode != "robotwin" or len(self.camera_keys) != 3:
+                raise ServerFeatureEncodingError(
+                    "RoboTwin prepared images require three cameras and robotwin layout"
+                )
+            expected_spatial = _ROBOTWIN_COMPOSITE_SIZE
+        elif self.concat_mode == "horizontal":
             expected_spatial = (224, 224 * len(self.camera_keys))
         elif self.concat_mode == "vertical":
             expected_spatial = (224 * len(self.camera_keys), 224)
@@ -216,7 +260,10 @@ class FastWAMImageAdapter:
             never invoked.
         camera_keys: Ordered camera keys.  This order also defines camera
             concatenation.
-        concat_mode: ``"horizontal"`` or ``"vertical"``.
+        concat_mode: ``"horizontal"``/``"vertical"`` for LIBERO, or the
+            exact ``"robotwin"`` head-over-wrists composite.
+        benchmark_profile: Explicit artifact profile.  The default preserves
+            the original LIBERO behavior.
         tensor_factory: Optional NumPy-uint8-to-tensor adapter for tests.  The
             production default lazily calls ``torch.as_tensor``.
 
@@ -231,22 +278,39 @@ class FastWAMImageAdapter:
         camera_keys: Sequence[str],
         concat_mode: str,
         *,
+        benchmark_profile: str = LIBERO_IMAGE_PROFILE,
         tensor_factory: Callable[[np.ndarray], Any] | None = None,
+        spatial_resize: Callable[[np.ndarray, tuple[int, int]], Any] | None = None,
     ) -> None:
         try:
             inspect.getattr_static(processor, "val_transforms")
         except AttributeError as exc:
             raise TypeError("processor is missing required 'val_transforms'") from exc
-        if concat_mode not in {"horizontal", "vertical"}:
+        profile = _benchmark_profile(benchmark_profile)
+        allowed_layouts = (
+            {"robotwin"}
+            if profile == ROBOTWIN_IMAGE_PROFILE
+            else {"horizontal", "vertical"}
+        )
+        if concat_mode not in allowed_layouts:
             raise ServerFeatureEncodingError(
-                "concat_mode must be 'horizontal' or 'vertical'"
+                f"concat_mode {concat_mode!r} is invalid for {profile!r} profile"
             )
         if tensor_factory is not None and not callable(tensor_factory):
             raise TypeError("tensor_factory must be callable")
+        if spatial_resize is not None and not callable(spatial_resize):
+            raise TypeError("spatial_resize must be callable")
         self._processor = processor
         self._camera_keys = _validate_camera_keys(camera_keys)
+        if profile == ROBOTWIN_IMAGE_PROFILE and len(self._camera_keys) != 3:
+            raise ServerFeatureEncodingError(
+                "RoboTwin image profile requires exactly three ordered cameras: "
+                "head, left wrist, right wrist"
+            )
         self._concat_mode = concat_mode
+        self._benchmark_profile = profile
         self._tensor_factory = tensor_factory or _default_tensor_factory
+        self._spatial_resize = spatial_resize or _default_spatial_resize
 
     @property
     def camera_keys(self) -> tuple[str, ...]:
@@ -255,6 +319,10 @@ class FastWAMImageAdapter:
     @property
     def concat_mode(self) -> str:
         return self._concat_mode
+
+    @property
+    def benchmark_profile(self) -> str:
+        return self._benchmark_profile
 
     def _transforms_for(self, camera_key: str) -> tuple[Callable[[Any], Any], ...]:
         transforms = self._processor.val_transforms
@@ -282,8 +350,8 @@ class FastWAMImageAdapter:
             )
         return result
 
-    def preprocess(self, images: Mapping[str, Any]) -> dict[str, np.ndarray]:
-        """Return canonical factual camera frames in ``[0,1]``.
+    def _validation_frames(self, images: Mapping[str, Any]) -> dict[str, np.ndarray]:
+        """Apply only the baseline per-camera validation transform path.
 
         The input must be the full reader's float RGB mapping in ``[0,1]``.
         Values are passed through the exact baseline ``*255 -> uint8``
@@ -302,6 +370,11 @@ class FastWAMImageAdapter:
 
         result: dict[str, np.ndarray] = {}
         rows: int | None = None
+        expected_size = (
+            _ROBOTWIN_PROCESSOR_SIZE
+            if self._benchmark_profile == ROBOTWIN_IMAGE_PROFILE
+            else _IMAGE_SIZE
+        )
         for key in self._camera_keys:
             raw = np.asarray(images[key])
             if raw.dtype != np.float32:
@@ -338,10 +411,11 @@ class FastWAMImageAdapter:
                 raise ServerFeatureEncodingError(
                     f"validation transforms for {key!r} must output floating point"
                 )
-            if array.shape != (rows, 3, *_IMAGE_SIZE):
+            if array.shape != (rows, 3, *expected_size):
                 raise ServerFeatureEncodingError(
                     f"validation transforms for {key!r} must output "
-                    f"[{rows},3,224,224], got {array.shape}"
+                    f"[{rows},3,{expected_size[0]},{expected_size[1]}], "
+                    f"got {array.shape}"
                 )
             if not np.isfinite(array).all() or np.any(array < 0.0) or np.any(array > 1.0):
                 raise ServerFeatureEncodingError(
@@ -350,8 +424,45 @@ class FastWAMImageAdapter:
             result[key] = _immutable_array(array, dtype=np.dtype(np.float32))
         return result
 
+    def _resize(self, value: np.ndarray, size: tuple[int, int], *, field: str) -> np.ndarray:
+        resized = np.asarray(self._spatial_resize(value, size))
+        expected = (value.shape[0], 3, *size)
+        if resized.shape != expected or not np.issubdtype(resized.dtype, np.floating):
+            raise ServerFeatureEncodingError(
+                f"{field} resize must return floating {expected}, got "
+                f"{resized.shape} {resized.dtype}"
+            )
+        if not np.isfinite(resized).all() or np.any(resized < 0.0) or np.any(resized > 1.0):
+            raise ServerFeatureEncodingError(
+                f"{field} resize must preserve finite [0,1] pixels"
+            )
+        return _immutable_array(resized, dtype=np.dtype(np.float32))
+
+    def preprocess(self, images: Mapping[str, Any]) -> dict[str, np.ndarray]:
+        """Return canonical 224-square per-camera DINO audit frames.
+
+        LIBERO's validation path already emits 224-square tensors.  RoboTwin's
+        baseline path emits 240x320 tensors; each is resized only for this
+        semantic/audit branch.  The VAE branch is independently assembled from
+        the untouched 240x320 validation outputs in :meth:`prepare`.
+        """
+
+        baseline = self._validation_frames(images)
+        if self._benchmark_profile == LIBERO_IMAGE_PROFILE:
+            return baseline
+        return {
+            key: self._resize(value, _IMAGE_SIZE, field=f"DINO camera {key!r}")
+            for key, value in baseline.items()
+        }
+
     def vae_frames(self, processed_images: Mapping[str, Any]) -> np.ndarray:
         """Concatenate preprocessed cameras and map ``[0,1]`` to ``[-1,1]``."""
+
+        if self._benchmark_profile == ROBOTWIN_IMAGE_PROFILE:
+            raise ServerFeatureEncodingError(
+                "RoboTwin VAE frames require the independent 240x320 baseline "
+                "branch; call prepare(raw_images)"
+            )
 
         if not isinstance(processed_images, Mapping):
             raise TypeError("processed_images must be a camera-keyed mapping")
@@ -390,14 +501,42 @@ class FastWAMImageAdapter:
     def prepare(self, images: Mapping[str, Any]) -> PreparedFastWAMImages:
         """Preprocess per-camera images and construct the matching VAE frames."""
 
-        camera_frames = self.preprocess(images)
-        vae = self.vae_frames(camera_frames)
+        if self._benchmark_profile == LIBERO_IMAGE_PROFILE:
+            camera_frames = self.preprocess(images)
+            vae = self.vae_frames(camera_frames)
+        else:
+            baseline = self._validation_frames(images)
+            camera_frames = {
+                key: self._resize(value, _IMAGE_SIZE, field=f"DINO camera {key!r}")
+                for key, value in baseline.items()
+            }
+            head_key, left_key, right_key = self._camera_keys
+            head = self._resize(
+                baseline[head_key], _ROBOTWIN_HEAD_SIZE, field="RoboTwin head"
+            )
+            left = self._resize(
+                baseline[left_key], _ROBOTWIN_WRIST_SIZE, field="RoboTwin left wrist"
+            )
+            right = self._resize(
+                baseline[right_key], _ROBOTWIN_WRIST_SIZE, field="RoboTwin right wrist"
+            )
+            bottom = np.concatenate([left, right], axis=-1)
+            composite = np.concatenate([head, bottom], axis=-2)
+            if composite.shape[-2:] != _ROBOTWIN_COMPOSITE_SIZE:
+                raise ServerFeatureEncodingError(
+                    "RoboTwin composite does not match RobotVideoDataset [384,320]"
+                )
+            vae = _immutable_array(
+                composite * np.float32(2.0) - np.float32(1.0),
+                dtype=np.dtype(np.float32),
+            )
         immutable_mapping = MappingProxyType(dict(camera_frames))
         return PreparedFastWAMImages(
             camera_frames=immutable_mapping,
             vae_frames=vae,
             camera_keys=self._camera_keys,
             concat_mode=self._concat_mode,
+            benchmark_profile=self._benchmark_profile,
         )
 
 

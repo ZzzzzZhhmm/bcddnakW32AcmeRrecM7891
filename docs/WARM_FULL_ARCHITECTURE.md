@@ -3,10 +3,11 @@
 ## Status and scope
 
 This document describes the complete WARM path implemented in this repository.
-The preprocessing, training, checkpoint, causal working-memory, and online
-LIBERO paths are present and covered by local CPU/synthetic contract tests.
-Large-scale CUDA training, learned-checkpoint evaluation, simulator success,
-latency, and non-regression are **not yet established**. Follow
+The preprocessing, training, checkpoint, causal working-memory, online LIBERO,
+and pinned official RMBench paths are present and covered by local
+CPU/synthetic contract tests. Large-scale CUDA training, learned-checkpoint
+evaluation, simulator success, latency, and non-regression are **not yet
+established**. Follow
 [`WARM_FULL_SERVER_RUNBOOK.md`](WARM_FULL_SERVER_RUNBOOK.md) to produce that
 evidence from an exact clean private commit.
 
@@ -46,18 +47,27 @@ dimensions. The fixed coarse context is:
 768-dimensional frozen DINOv2 CLS + 40-dimensional task one-hot = 808
 ```
 
+The explicit RMBench profile is deliberately separate: it uses the official
+nine-task vocabulary, three factual 240 x 320 cameras composed through the
+RoboTwin 384 x 320 processor layout, 33 observations, a 32-step chunk, and
+14-dimensional bimanual qpos/proprioception. Its fixed coarse context is
+`768 DINO CLS + 9 task one-hot = 777`. Artifacts and checkpoints from these two
+profiles are shape- and provenance-incompatible and cannot be mixed.
+
 The implementation uses ordinary FastWAM demonstrations and automatically
 derives its evidence. Required raw fields are RGB, actions, proprioception,
 gripper state, task identity/text, and episode boundaries. It requires no
 manual event, subtask, mask, segmentation, depth, pose, or contact annotation.
 
-Event actions are the exact FastWAM-normalized model-space chunks stored by the
-immutable bank. The current implementation does **not** perform object-frame,
-goal-frame, EEF-frame, or other geometric action canonicalization. The learned
-adapter adds an elementwise bounded residual in normalized action units. Its
-default scale is one normalized unit per action dimension; it must not be
-described as a dataset-standard-deviation bound unless explicit scales are
-actually supplied.
+Event actions are FastWAM-normalized model-space chunks stored by the immutable
+bank. LIBERO uses them directly. The separate 14D RMBench/RoboTwin profile
+reversibly translates the two arm commands by the candidate/current starting
+proprioception offset and leaves gripper indices 6 and 13 untouched. This is a
+start-state alignment, not object-frame, goal-frame, EEF-frame, geometric, or
+cross-embodiment canonicalization. The learned adapter adds an elementwise
+bounded residual in normalized action units. Its default scale is one
+normalized unit per action dimension; it must not be described as a
+dataset-standard-deviation bound unless explicit scales are actually supplied.
 
 ## 2. Immutable offline artifacts
 

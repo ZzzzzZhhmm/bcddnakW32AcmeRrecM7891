@@ -1,0 +1,62 @@
+defaults:
+  - rmbench_3cam
+  - _self_
+
+train:
+  global_sample_stride: 1
+  val_set_proportion: 0.0
+  is_training_set: true
+  strict_sample_loading: true
+  skip_padding_as_possible: false
+  episode_catalog_path: null
+  episode_split: train
+  pretrained_norm_stats: null
+
+val:
+  _target_: ${data.train._target_}
+  dataset_dirs: ${data.train.dataset_dirs}
+  shape_meta: ${data.train.shape_meta}
+  num_frames: ${data.train.num_frames}
+  global_sample_stride: 1
+  action_video_freq_ratio: ${data.train.action_video_freq_ratio}
+  video_size: ${data.train.video_size}
+  camera_key: ${data.train.camera_key}
+  val_set_proportion: 0.0
+  is_training_set: false
+  strict_sample_loading: true
+  skip_padding_as_possible: false
+  concat_multi_camera: ${data.train.concat_multi_camera}
+  processor: ${data.train.processor}
+  text_embedding_cache_dir: ${data.train.text_embedding_cache_dir}
+  context_len: ${data.train.context_len}
+  episode_catalog_path: null
+  episode_split: dev
+  pretrained_norm_stats: null
+
+warm_candidates:
+  train:
+    bank_directory: null
+    candidate_directory: null
+    catalog_path: null
+    normalization_stats_path: null
+    audit_report_path: null
+    expected_query_corpus_sha256: null
+    retrospective_feature_list: null
+    retrospective_feature_directory: null
+    retrospective_recent_event_capacity: 6
+    retrospective_action_summary_capacity: 2
+    retrospective_action_summary_chunk_size: 10
+    retrospective_gripper_indices: [6, 13]
+  val:
+    bank_directory: null
+    candidate_directory: null
+    catalog_path: null
+    normalization_stats_path: null
+    audit_report_path: null
+    expected_query_corpus_sha256: null
+    retrospective_feature_list: null
+    retrospective_feature_directory: null
+    retrospective_recent_event_capacity: 6
+    retrospective_action_summary_capacity: 2
+    retrospective_action_summary_chunk_size: 10
+    retrospective_gripper_indices: [6, 13]

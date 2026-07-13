@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from dataclasses import replace
 import os
+from types import SimpleNamespace
 
+import numpy as np
 import pytest
 
 
@@ -18,12 +20,36 @@ else:
 
 
 import fastwam.runtime as runtime  # noqa: E402
+from fastwam.datasets.warm_candidates import (  # noqa: E402
+    WARM_CANDIDATE_MASK,
+    WARM_CANDIDATE_MU,
+)
+from fastwam.datasets.warm_retrospective import (  # noqa: E402
+    WARM_CANDIDATE_CONTEXT,
+    WARM_CANDIDATE_EFFECT_DELTA,
+    WARM_CANDIDATE_EFFECT_PRE,
+    WARM_CANDIDATE_START_PROPRIO,
+    WARM_CANDIDATE_SUPPORT,
+    WARM_CANDIDATE_TIMING,
+    WARM_CURRENT_CONTEXT,
+    WARM_CURRENT_SEMANTIC,
+    WARM_EPISODE_ACTION_MASK,
+    WARM_EPISODE_ACTION_SUMMARIES,
+    WARM_EPISODE_MASK,
+    WARM_EPISODE_TOKENS,
+    WARM_FUTURE_VALID,
+    WARM_TARGET_EFFECT,
+)
 from fastwam.models.warm.retrospection_config import (  # noqa: E402
     WarmRetrospectionConfig,
 )
 from fastwam.models.warm.retrospection_model import (  # noqa: E402
     RetrospectiveSourceContext,
+    WarmRetrospectionError,
     WarmRetrospectionFastWAM,
+    _apply_inference_memory_corruption,
+    _warp_candidate_actions,
+    _wrong_event_indices,
 )
 from tests.test_warm_source_model_torch import (  # noqa: E402
     ACTION_DIM,
@@ -116,6 +142,9 @@ def _source_context(*, with_teachers: bool) -> RetrospectiveSourceContext:
         "query_context": torch.tensor([[1.0, 0.0], [0.0, 1.0]]),
         "candidate_context": candidate_context,
         "candidate_actions": actions,
+        "candidate_start_proprio": torch.zeros(
+            batch, candidates, PROPRIO_DIM
+        ),
         "candidate_effect_pre": effect_pre,
         "candidate_effect_delta": effect_delta,
         "candidate_timing": timing,
@@ -154,6 +183,100 @@ def _source_context(*, with_teachers: bool) -> RetrospectiveSourceContext:
             }
         )
     return RetrospectiveSourceContext(**common)
+
+
+def test_start_proprio_warp_shifts_arms_preserves_gripper_and_masks_padding() -> None:
+    config = replace(
+        _config(),
+        proprio_dim=ACTION_DIM,
+        canonical_action_mode="start_proprio_delta",
+        canonical_gripper_dims=(1,),
+    )
+    actions = torch.tensor(
+        [[[[1.0, 9.0], [2.0, 8.0]], [[50.0, 60.0], [70.0, 80.0]]]]
+    )
+    starts = torch.tensor([[[2.0, 30.0], [100.0, 200.0]]])
+    current = torch.tensor([[5.0, -10.0]])
+    valid = torch.tensor([[True, False]])
+
+    warped = _warp_candidate_actions(actions, starts, current, valid, config)
+
+    assert torch.equal(
+        warped[0, 0], torch.tensor([[4.0, 9.0], [5.0, 8.0]])
+    )
+    assert torch.count_nonzero(warped[0, 1]).item() == 0
+
+
+def test_training_context_carries_factual_candidate_start_proprio() -> None:
+    model = _model()
+    source = _source_context(with_teachers=True)
+    starts = torch.arange(
+        2 * 2 * PROPRIO_DIM, dtype=torch.float32
+    ).reshape(2, 2, PROPRIO_DIM)
+    starts[~source.candidate_valid_mask] = 0.0
+    sample = {
+        "action": source.target_action,
+        "action_is_pad": ~source.target_action_valid_mask,
+        "proprio": torch.zeros(2, 1, PROPRIO_DIM),
+        "warm_query_split": ["dev", "dev"],
+        WARM_CANDIDATE_MU: source.candidate_actions,
+        WARM_CANDIDATE_MASK: source.candidate_valid_mask,
+        WARM_CANDIDATE_START_PROPRIO: starts,
+        WARM_CANDIDATE_CONTEXT: source.candidate_context,
+        WARM_CANDIDATE_EFFECT_PRE: source.candidate_effect_pre,
+        WARM_CANDIDATE_EFFECT_DELTA: source.candidate_effect_delta,
+        WARM_CANDIDATE_TIMING: source.candidate_timing,
+        WARM_CANDIDATE_SUPPORT: source.candidate_support,
+        WARM_CURRENT_CONTEXT: source.query_context,
+        WARM_CURRENT_SEMANTIC: source.current_semantic_teacher,
+        WARM_TARGET_EFFECT: source.target_effect,
+        WARM_FUTURE_VALID: source.future_valid_mask,
+        WARM_EPISODE_TOKENS: source.episode_tokens,
+        WARM_EPISODE_MASK: source.episode_mask,
+        WARM_EPISODE_ACTION_SUMMARIES: source.episode_action_summaries,
+        WARM_EPISODE_ACTION_MASK: source.episode_action_mask,
+    }
+
+    context = model._training_source_context(sample)
+
+    assert torch.equal(context.candidate_start_proprio, starts)
+
+
+def test_online_context_carries_factual_candidate_start_proprio() -> None:
+    model = _model()
+    valid = np.asarray([True, False], dtype=np.bool_)
+    starts = np.asarray(
+        [[1.0, 2.0, 3.0], [0.0, 0.0, 0.0]], dtype=np.float32
+    )
+    online_step = SimpleNamespace(
+        context_key=np.zeros((CONTEXT_DIM,), dtype=np.float32),
+        candidate_means=np.zeros(
+            (2, ACTION_HORIZON, ACTION_DIM), dtype=np.float32
+        ),
+    )
+    facts = SimpleNamespace(
+        candidate_valid_mask=valid,
+        context_keys=np.zeros((2, CONTEXT_DIM), dtype=np.float32),
+        effect_pre=np.zeros((2, 4, SEMANTIC_DIM), dtype=np.float32),
+        effect_delta=np.zeros((2, 4, SEMANTIC_DIM), dtype=np.float32),
+        start_proprio=starts,
+        gripper_timing=np.zeros((2, 4), dtype=np.float32),
+        support=valid.astype(np.float32),
+    )
+
+    context = model._context_from_online_facts(
+        online_step=online_step,
+        facts=facts,
+        episode_tokens=None,
+        episode_mask=None,
+        episode_action_summaries=None,
+        episode_action_mask=None,
+    )
+
+    assert torch.equal(
+        context.candidate_start_proprio,
+        torch.from_numpy(starts).unsqueeze(0),
+    )
 
 
 def _resolve(model, context, *, phase: str):
@@ -224,6 +347,173 @@ def test_full_training_source_exposes_finite_auxiliary_losses() -> None:
         bool(torch.isfinite(value).item())
         for value in output.auxiliary_metrics.values()
     )
+
+
+def test_online_experiment_controls_are_closed_and_lock_after_inference() -> None:
+    model = _model()
+    with pytest.raises(WarmRetrospectionError, match="ablation_mode"):
+        model.configure_online_experiment(
+            ablation_mode="unknown",
+            memory_corruption="clean",
+            experiment_id="bad",
+        )
+    with pytest.raises(WarmRetrospectionError, match="memory_corruption"):
+        model.configure_online_experiment(
+            ablation_mode="full",
+            memory_corruption="random",
+            experiment_id="bad",
+        )
+    with pytest.raises(WarmRetrospectionError, match="experiment_id"):
+        model.configure_online_experiment(
+            ablation_mode="full",
+            memory_corruption="clean",
+            experiment_id="../escape",
+        )
+
+    model.configure_online_experiment(
+        ablation_mode="context_only",
+        memory_corruption="clean",
+        experiment_id="context_only",
+    )
+    _resolve(model, _source_context(with_teachers=False), phase="infer")
+    # Exact repetition is safe for policy setup retries.
+    model.configure_online_experiment(
+        ablation_mode="context_only",
+        memory_corruption="clean",
+        experiment_id="context_only",
+    )
+    with pytest.raises(WarmRetrospectionError, match="locked"):
+        model.configure_online_experiment(
+            ablation_mode="full",
+            memory_corruption="clean",
+            experiment_id="full_warm",
+        )
+
+
+def test_context_only_keeps_memory_conditioning_but_source_is_exact_gaussian() -> None:
+    model = _model().eval()
+    model.configure_online_experiment(
+        ablation_mode="context_only",
+        memory_corruption="clean",
+        experiment_id="context_only",
+    )
+
+    gaussian, output = _resolve(
+        model, _source_context(with_teachers=False), phase="infer"
+    )
+
+    assert torch.equal(output.source, gaussian)
+    assert output.conditioning_tokens is not None
+    assert output.conditioning_tokens.shape == (2, 12, TEXT_DIM)
+    assert output.component_indices.tolist() == [0, 0]
+    assert output.memory_mask.tolist() == [False, False]
+    assert torch.count_nonzero(output.source_gate).item() == 0
+    diagnostics = model._last_retrospection_diagnostics
+    assert diagnostics["candidate_indices"].tolist() == [0, -1]
+    assert diagnostics["ablation_mode"] == "context_only"
+    assert diagnostics["experiment_id"] == "context_only"
+
+
+def test_source_only_uses_source_without_consequence_or_memory_context() -> None:
+    model = _model().eval()
+    model.configure_online_experiment(
+        ablation_mode="source_only_no_consequence",
+        memory_corruption="clean",
+        experiment_id="source_only_no_consequence",
+    )
+
+    gaussian, output = _resolve(
+        model, _source_context(with_teachers=False), phase="infer"
+    )
+
+    assert output.conditioning_tokens is None
+    assert output.component_indices.tolist() == [1, 0]
+    assert output.memory_mask.tolist() == [True, False]
+    assert not torch.equal(output.source[0], gaussian[0])
+    diagnostics = model._last_retrospection_diagnostics
+    assert torch.count_nonzero(diagnostics["consistency"]).item() == 0
+    assert diagnostics["ablation_mode"] == "source_only_no_consequence"
+
+
+def test_online_payload_corruptions_are_deterministic_and_keep_padding_zero() -> None:
+    actions = torch.arange(1, 17, dtype=torch.float32).reshape(1, 2, 4, 2)
+    pre = torch.arange(1, 9, dtype=torch.float32).reshape(1, 2, 2, 2)
+    delta = pre * 0.1
+    timing = torch.tensor([[[0.25, 1.0, 0.75, 1.0], [9.0, 9.0, 9.0, 9.0]]])
+    valid = torch.tensor([[True, False]])
+
+    reversed_payload = _apply_inference_memory_corruption(
+        actions=actions,
+        effect_pre=pre,
+        effect_delta=delta,
+        timing=timing,
+        valid=valid,
+        mode="reversed_action",
+    )
+    assert torch.equal(reversed_payload.actions[0, 0], actions[0, 0].flip(0))
+
+    shifted = _apply_inference_memory_corruption(
+        actions=actions,
+        effect_pre=pre,
+        effect_delta=delta,
+        timing=timing,
+        valid=valid,
+        mode="phase_shift",
+    )
+    assert torch.equal(shifted.actions[0, 0], torch.roll(actions[0, 0], 2, 0))
+    assert torch.equal(shifted.timing[0, 0], torch.tensor([0.75, 1.0, 0.25, 1.0]))
+
+    mismatched = _apply_inference_memory_corruption(
+        actions=actions,
+        effect_pre=pre,
+        effect_delta=delta,
+        timing=timing,
+        valid=valid,
+        mode="effect_mismatch",
+    )
+    assert torch.equal(mismatched.effect_delta[0, 0], -delta[0, 0])
+    for payload in (reversed_payload, shifted, mismatched):
+        assert torch.count_nonzero(payload.actions[0, 1]).item() == 0
+        assert torch.count_nonzero(payload.effect_pre[0, 1]).item() == 0
+        assert torch.count_nonzero(payload.effect_delta[0, 1]).item() == 0
+        assert torch.count_nonzero(payload.timing[0, 1]).item() == 0
+
+
+def test_wrong_event_selects_distinct_slot_and_null_fallback() -> None:
+    selected = torch.tensor([1, 0, -1], dtype=torch.long)
+    valid = torch.tensor(
+        [[True, True, True], [True, False, False], [False, False, False]]
+    )
+
+    forced, fallback = _wrong_event_indices(selected, valid)
+
+    assert forced.tolist() == [0, -1, -1]
+    assert fallback.tolist() == [False, True, True]
+
+
+def test_online_controls_do_not_change_training_source_semantics() -> None:
+    model = _model().eval()
+    context = _source_context(with_teachers=True)
+    torch.manual_seed(777)
+    gaussian_full, output_full = _resolve(model, context, phase="train")
+
+    model.configure_online_experiment(
+        ablation_mode="context_only",
+        memory_corruption="reversed_action",
+        experiment_id="training_is_unchanged",
+    )
+    torch.manual_seed(777)
+    gaussian_controlled, output_controlled = _resolve(model, context, phase="train")
+
+    assert torch.equal(gaussian_full, gaussian_controlled)
+    assert torch.equal(output_full.source, output_controlled.source)
+    assert torch.equal(
+        output_full.conditioning_tokens, output_controlled.conditioning_tokens
+    )
+    diagnostics = model._last_retrospection_diagnostics
+    assert diagnostics["ablation_mode"] == "full"
+    assert diagnostics["memory_corruption"] == "clean"
+    assert diagnostics["configured_ablation_mode"] == "context_only"
 
 
 def test_null_conditioning_and_required_transition_ignore_candidates() -> None:

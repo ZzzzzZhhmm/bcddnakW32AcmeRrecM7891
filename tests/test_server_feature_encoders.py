@@ -13,6 +13,7 @@ from fastwam.memory.server_feature_encoders import (
     DinoV2FactualEncoder,
     FastWAMImageAdapter,
     PreparedFastWAMImages,
+    ROBOTWIN_IMAGE_PROFILE,
     ServerFeatureEncodingError,
 )
 
@@ -123,6 +124,86 @@ def test_image_adapter_rejects_wrong_camera_contract_or_transform_range() -> Non
         adapter.preprocess({"image": _camera_frames(1.01)})
     with pytest.raises(ServerFeatureEncodingError, match=r"finite \[0,1\]"):
         adapter.preprocess({"image": _camera_frames(0.5)})
+
+
+class _RobotwinToFloat:
+    def __call__(self, value: np.ndarray) -> np.ndarray:
+        assert value.dtype == np.uint8
+        assert value.shape[-2:] == (240, 320)
+        return value.astype(np.float32) / 255.0
+
+
+def _constant_resize(value: np.ndarray, size: tuple[int, int]) -> np.ndarray:
+    """Sufficient reference resize for constant-image layout parity."""
+
+    rows, channels = value.shape[:2]
+    scalar = value[:, :, :1, :1]
+    return np.broadcast_to(scalar, (rows, channels, *size)).copy()
+
+
+def test_robotwin_dual_path_matches_robot_video_dataset_composite_layout() -> None:
+    processor = SimpleNamespace(val_transforms=[_RobotwinToFloat()])
+    adapter = FastWAMImageAdapter(
+        processor,
+        ("cam_high", "cam_left_wrist", "cam_right_wrist"),
+        "robotwin",
+        benchmark_profile=ROBOTWIN_IMAGE_PROFILE,
+        tensor_factory=lambda value: value,
+        spatial_resize=_constant_resize,
+    )
+    frames = {
+        "cam_high": np.full((2, 3, 240, 320), 0.25, dtype=np.float32),
+        "cam_left_wrist": np.full((2, 3, 240, 320), 0.5, dtype=np.float32),
+        "cam_right_wrist": np.full((2, 3, 240, 320), 0.75, dtype=np.float32),
+    }
+
+    prepared = adapter.prepare(frames)
+
+    assert prepared.benchmark_profile == "robotwin"
+    assert prepared.concat_mode == "robotwin"
+    assert adapter.benchmark_profile == "robotwin"
+    assert prepared.camera_frames["cam_high"].shape == (2, 3, 224, 224)
+    assert prepared.vae_frames.shape == (2, 3, 384, 320)
+    # Exact RobotVideoDataset ordering: full-width head, then left/right wrists.
+    head = np.float32(int(0.25 * 255.0) / 255.0 * 2.0 - 1.0)
+    left = np.float32(int(0.5 * 255.0) / 255.0 * 2.0 - 1.0)
+    right = np.float32(int(0.75 * 255.0) / 255.0 * 2.0 - 1.0)
+    np.testing.assert_allclose(prepared.vae_frames[:, :, :256, :], head, atol=1e-7)
+    np.testing.assert_allclose(
+        prepared.vae_frames[:, :, 256:, :160], left, atol=1e-7
+    )
+    np.testing.assert_allclose(
+        prepared.vae_frames[:, :, 256:, 160:], right, atol=1e-7
+    )
+    for value in (*prepared.camera_frames.values(), prepared.vae_frames):
+        assert value.dtype == np.float32
+        assert not value.flags.writeable
+
+
+def test_robotwin_profile_rejects_non_exact_layout_and_direct_vae_shortcut() -> None:
+    processor = SimpleNamespace(val_transforms=[_RobotwinToFloat()])
+    with pytest.raises(ServerFeatureEncodingError, match="exactly three"):
+        FastWAMImageAdapter(
+            processor,
+            ("head", "left"),
+            "robotwin",
+            benchmark_profile="robotwin",
+        )
+    adapter = FastWAMImageAdapter(
+        processor,
+        ("head", "left", "right"),
+        "robotwin",
+        benchmark_profile="robotwin",
+        tensor_factory=lambda value: value,
+        spatial_resize=_constant_resize,
+    )
+    with pytest.raises(ServerFeatureEncodingError, match="call prepare"):
+        adapter.vae_frames(
+            {
+                key: np.zeros((1, 3, 224, 224), dtype=np.float32)
+                for key in adapter.camera_keys
+            }
+        )
 
 
 class _FakeTensor:

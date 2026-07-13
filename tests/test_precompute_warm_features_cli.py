@@ -615,7 +615,7 @@ def test_server_precompute_cpu_integration_publishes_atomic_feature_artifact(
     monkeypatch.setattr(
         precompute_cli,
         "_load_processor",
-        lambda data_config, stats_path: processor,
+        lambda data_config, stats_path, *, benchmark_profile: processor,
     )
     monkeypatch.setattr(
         precompute_cli,
@@ -710,7 +710,15 @@ def test_server_precompute_cpu_integration_publishes_atomic_feature_artifact(
     RealImageAdapter = encoder_module.FastWAMImageAdapter
 
     class _CPUImageAdapter(RealImageAdapter):
-        def __init__(self, processor: Any, camera_keys: Any, concat_mode: str) -> None:
+        def __init__(
+            self,
+            processor: Any,
+            camera_keys: Any,
+            concat_mode: str,
+            *,
+            benchmark_profile: str,
+        ) -> None:
+            assert benchmark_profile == "libero"
             super().__init__(
                 processor,
                 camera_keys,

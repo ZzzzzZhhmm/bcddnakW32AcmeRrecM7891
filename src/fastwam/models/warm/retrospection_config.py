@@ -56,6 +56,13 @@ class WarmRetrospectionConfig:
     reranker_hidden_dim: int = 128
     gate_hidden_dim: int = 16
     episode_action_chunk_size: int = 1
+    # ``none`` preserves the original LIBERO model-space action payload.
+    # ``start_proprio_delta`` is the closed RoboTwin/RMBench contract: stored
+    # absolute joint commands are translated from the event's factual start
+    # state to the current factual start state.  Gripper command channels are
+    # deliberately excluded from the translation.
+    canonical_action_mode: str = "none"
+    canonical_gripper_dims: tuple[int, ...] = ()
     video_adapter_rank: int = 1
     video_adapter_layers: tuple[int, ...] = ()
     video_adapter_scale: float = 1.0
@@ -139,6 +146,48 @@ class WarmRetrospectionConfig:
         if self.episode_action_chunk_size > self.action_horizon:
             raise WarmRetrospectionConfigError(
                 "episode_action_chunk_size cannot exceed action_horizon"
+            )
+        if (
+            not isinstance(self.canonical_action_mode, str)
+            or self.canonical_action_mode
+            not in {"none", "start_proprio_delta"}
+        ):
+            raise WarmRetrospectionConfigError(
+                "canonical_action_mode must be 'none' or 'start_proprio_delta'"
+            )
+        raw_gripper_dims = self.canonical_gripper_dims
+        if not isinstance(raw_gripper_dims, (list, tuple)):
+            raise WarmRetrospectionConfigError(
+                "canonical_gripper_dims must be a list or tuple"
+            )
+        gripper_dims: list[int] = []
+        for value in raw_gripper_dims:
+            if (
+                isinstance(value, bool)
+                or not isinstance(value, int)
+                or not 0 <= value < self.action_dim
+            ):
+                raise WarmRetrospectionConfigError(
+                    "canonical_gripper_dims must contain valid action indices"
+                )
+            gripper_dims.append(int(value))
+        if len(set(gripper_dims)) != len(gripper_dims):
+            raise WarmRetrospectionConfigError(
+                "canonical_gripper_dims must not contain duplicates"
+            )
+        object.__setattr__(
+            self, "canonical_gripper_dims", tuple(sorted(gripper_dims))
+        )
+        if self.canonical_action_mode == "none" and gripper_dims:
+            raise WarmRetrospectionConfigError(
+                "canonical_gripper_dims must be empty when canonical_action_mode='none'"
+            )
+        if (
+            self.canonical_action_mode == "start_proprio_delta"
+            and self.proprio_dim != self.action_dim
+        ):
+            raise WarmRetrospectionConfigError(
+                "start_proprio_delta requires proprio_dim == action_dim"
             )
         for field in (
             "source_sigma_min",

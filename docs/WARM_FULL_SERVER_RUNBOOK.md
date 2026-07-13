@@ -27,7 +27,7 @@ The Linux GPU server runs:
 - H=32 event-bank and candidate-cache construction;
 - checkpoint loading and forward/backward smoke tests;
 - full WARM training;
-- online retrieval parity and LIBERO rollout evaluation.
+- online retrieval parity plus LIBERO and official RMBench rollout evaluation.
 
 Datasets, checkpoints, feature caches, event banks, rollout videos, and
 credentials stay outside Git. Only source, configs, tests, and small reports
@@ -237,12 +237,16 @@ export RUN_ID=warm-full-v1-$(git rev-parse --short HEAD)
 bash scripts/train_warm_full_server.sh \
   output_dir=/server/runs/warm_full/$RUN_ID \
   wandb.enabled=true \
+  wandb.mode=offline \
   wandb.project=WARM \
   wandb.name=$RUN_ID
 ```
 
 Extra Hydra overrides after the script name are forwarded unchanged. Do not
 override artifact identities, action horizon, model target, or train/dev split.
+Offline logging is the default privacy boundary. Network logging is not part
+of the formal recipe; if it is deliberately enabled for a private workspace,
+record that exception and keep credentials out of shell history and Git.
 Every accepted checkpoint must have the trainer-produced `.training.json`
 attestation beside it. A weights file without that sidecar is not a formal
 WARM checkpoint.
@@ -309,7 +313,150 @@ identity. Compare against the exact FastWAM base checkpoint and the frozen M2
 source-only result. Do not compare to a baseline trained with a different
 normalizer, split, or action horizon.
 
-## 8. Benchmark promotion
+## 8. Official RMBench data, training, and evaluation
+
+RMBench uses a separate, pinned simulator checkout and the exact official nine
+tasks. It does not reuse RoboTwin helper tasks as paper scores. The code pin is
+`57ee09cbc6267bc36ca0ac2d8d1c5c3b245c112c`; the Hugging Face data pin is
+`855e90e1213d150bf4889130e83398f107314681`. The external checkout's push URL
+must be the literal `DISABLED`, while the WARM checkout must have exactly one
+identical fetch/push remote pointing to the private `ZzzzzZhhmm/WARM` repository
+through its canonical SSH or HTTPS URL. Set `WARM_EXPECTED_ORIGIN` when a
+server uses one specific transport. Every formal launcher rejects a dirty
+checkout or an existing output directory.
+
+Define local, immutable inputs (all paths are examples):
+
+```bash
+export WARM_EXPECTED_ORIGIN=git@github.com:ZzzzzZhhmm/WARM.git
+export WARM_CODE_REVISION=$(git rev-parse HEAD)
+export RMBENCH_ROOT=/server/external/RMBench-official
+git -C "$RMBENCH_ROOT" remote set-url --push origin DISABLED
+export RMBENCH_SOURCE_ROOT=/server/datasets/rmbench_hf_snapshot
+export RMBENCH_HF_REVISION_MARKER=/server/datasets/rmbench_hf_revision.json
+export RMBENCH_LEROBOT_ROOT=/server/datasets/rmbench_lerobot_v1
+export WARM_ARTIFACT_ROOT=/server/artifacts/warm_rmbench_v1
+export FASTWAM_BASE_CHECKPOINT=/server/checkpoints/fastwam/final.pt
+export WARM_DINO_CHECKPOINT=/server/checkpoints/dinov2-base-pinned
+export WARM_DINO_REVISION=<exact-40-character-DINO-Hub-commit>
+export WARM_VAE_CHECKPOINT=/server/checkpoints/wan22/Wan2.2_VAE.safetensors
+```
+
+The HF marker is JSON containing at least the exact `repo_id` and `revision`;
+the official runner validates it instead of trusting a configured string.
+Build the complete dataset/artifact chain once:
+
+```bash
+bash scripts/prepare_warm_rmbench_artifacts.sh
+```
+
+This performs the strict 450-episode conversion (50 demonstrations for each
+of nine tasks), task-stratified whole-episode train/dev split, three-camera
+byte audit, native 14D qpos/action statistics, DINO and Wan-VAE preprocessing,
+H=32 event-bank construction, oracle diagnostic, stride-one candidate caches,
+and independent train/dev source contracts. No masks, subtask labels, pose,
+depth, or manual event annotation are introduced.
+
+Precompute the shared text cache, then train both the complete model and the
+same-data no-memory baseline.  The latter is not the released checkpoint used
+unchanged: it starts from the same released FastWAM base weights and is adapted
+on exactly the converted RMBench train split, processor, action statistics, and
+action horizon used by WARM.
+
+```bash
+export RMBENCH_TEXT_CACHE=/server/artifacts/text/rmbench
+mkdir -p "$RMBENCH_TEXT_CACHE"
+python scripts/precompute_text_embeds.py \
+  task=rmbench_warm_3cam384_1e-4 overwrite=false
+export WARM_TRAIN_OUTPUT=/server/runs/warm_rmbench/full_v1
+export FASTWAM_RMBENCH_TRAIN_OUTPUT=/server/runs/warm_rmbench/fastwam_same_data_v1
+export NPROC_PER_NODE=8
+export WANDB_MODE=offline
+bash scripts/train_warm_rmbench_server.sh
+bash scripts/train_fastwam_rmbench_server.sh
+```
+
+The text-embedding command consumes the same local, pinned Wan text encoder and
+tokenizer configured for FastWAM; formal offline mode must find those snapshots
+locally rather than downloading an unpinned model during the run.
+
+For evaluation, select the WARM checkpoint and its trainer-published sidecar,
+plus the independently trained same-data FastWAM checkpoint.  Build the closed
+online bundle once; it contains every registered matrix cell and task as well
+as the deterministic candidate-seed namespace.  The seed files are lower-bound
+protocols, not a claim about seeds accepted after the official setup/expert
+filters.
+
+```bash
+export WARM_CHECKPOINT=/server/runs/warm_rmbench/full_v1/checkpoints/weights/step_<N>.pt
+export WARM_TRAINING_ATTESTATION=${WARM_CHECKPOINT%.pt}.training.json
+export FASTWAM_RMBENCH_CHECKPOINT=/server/runs/warm_rmbench/fastwam_same_data_v1/checkpoints/weights/step_<N>.pt
+export WARM_RMBENCH_ONLINE_CONTRACT=/server/artifacts/warm_rmbench_v1/online
+export WARM_TEXT_ENCODER=/server/checkpoints/wan21/text_encoder
+export WARM_TOKENIZER=/server/checkpoints/wan21/tokenizer
+export WARM_RMBENCH_SUITE=official9
+bash scripts/build_warm_rmbench_contract_bundle_server.sh
+
+# Establish the accepted-seed reference with the same-data FastWAM baseline.
+export FASTWAM_RMBENCH_EVAL_ROOT=/server/eval/warm_rmbench/fastwam_same_data_v1
+bash scripts/evaluate_fastwam_rmbench_server.sh
+export WARM_RMBENCH_ACCEPTED_SEED_REFERENCE="$FASTWAM_RMBENCH_EVAL_ROOT/summary.json"
+
+# Optional single full-WARM run; the matrix below also evaluates this cell.
+export WARM_EVAL_ROOT=/server/eval/warm_rmbench/full_warm
+export WARM_NUM_GPUS=8
+bash scripts/evaluate_warm_rmbench_server.sh
+```
+
+The contract variable names the bundle root, not one task file. Its closed
+layout is:
+
+```text
+online/<experiment_id>/<task_name>.json
+online/seeds/<task_name>.seed_protocol.npy
+```
+
+The standard launch uses experiment ID `full_warm`; the registered matrix uses
+each checked-in cell ID. Every per-task contract binds that cell's experiment
+controls, ODE count, resolved policy config, task module, checkpoint, and
+shared deterministic seed namespace. Missing cells fail before simulator load.
+Each completed task additionally stores and hashes the 100 seeds actually
+accepted by the official evaluator. Formal WARM cells must match the baseline
+reference sequence exactly; this is stricter and more truthful than treating
+the pre-run lower bounds as accepted seeds.
+
+The official score is exactly 100 rollouts for each of the nine registered
+tasks. `pilot3` is only a smoke suite and is never reported as the official
+nine-task score. Outputs are written to WARM-owned storage, never into the
+external public checkout.
+
+The checked-in matrix fixes context-only, source-only without consequence,
+full WARM, four memory corruptions, and 2/4/8/10 ODE steps:
+
+```bash
+export WARM_EVAL_MATRIX_ROOT=/server/eval/warm_rmbench/matrix_v1
+test -f "$WARM_RMBENCH_ACCEPTED_SEED_REFERENCE"
+python scripts/run_warm_rmbench_matrix.py --plan-only
+python scripts/run_warm_rmbench_matrix.py
+```
+
+Every matrix cell reruns the same official suite and seed with a new immutable
+output root. The final `matrix_results.json` binds each manager summary by
+SHA-256. To debug cheaply without changing the registered matrix, select a
+cell and use the smoke suite:
+
+```bash
+python scripts/run_warm_rmbench_matrix.py \
+  --suite pilot3 --experiment full_warm \
+  --output-root /server/eval/warm_rmbench/pilot_full
+```
+
+`WANDB_MODE=offline`, `HF_HUB_OFFLINE=1`, `TRANSFORMERS_OFFLINE=1`, and
+`HF_DATASETS_OFFLINE=1` are launcher defaults. Any non-offline experiment
+logging additionally requires the explicit `WARM_ALLOW_NETWORK_LOGGING=1`
+exception.
+
+## 9. Benchmark promotion
 
 Use standard LIBERO first to prove non-regression and action-pattern reuse.
 Then add memory-focused evaluation (RMBench or an equivalent reproducible
@@ -334,7 +481,7 @@ random memory and hard effect-incompatible memory corruption
 2/4/8/10 Action DiT integration steps
 ```
 
-## 9. Local and server acceptance gates
+## 10. Local and server acceptance gates
 
 Local workstation:
 

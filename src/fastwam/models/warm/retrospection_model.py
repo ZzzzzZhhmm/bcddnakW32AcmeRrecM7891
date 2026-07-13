@@ -9,6 +9,7 @@ only then does a gated event action reshape the Action DiT source.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import re
 from typing import Any, Mapping, Sequence
 
 import numpy as np
@@ -24,6 +25,7 @@ from fastwam.datasets.warm_retrospective import (
     WARM_CANDIDATE_CONTEXT,
     WARM_CANDIDATE_EFFECT_DELTA,
     WARM_CANDIDATE_EFFECT_PRE,
+    WARM_CANDIDATE_START_PROPRIO,
     WARM_CANDIDATE_SUPPORT,
     WARM_CANDIDATE_TIMING,
     WARM_CURRENT_CONTEXT,
@@ -78,11 +80,38 @@ from .video_adapter import build_video_layer_adapters
 
 
 WARM_RETROSPECTION_CHECKPOINT_SCHEMA = "warm.retrospection-checkpoint"
-WARM_RETROSPECTION_CHECKPOINT_VERSION = 2
+WARM_RETROSPECTION_CHECKPOINT_VERSION = 3
+WARM_ONLINE_ABLATION_MODES = frozenset(
+    {"full", "context_only", "source_only_no_consequence"}
+)
+WARM_ONLINE_MEMORY_CORRUPTIONS = frozenset(
+    {"clean", "wrong_event", "reversed_action", "phase_shift", "effect_mismatch"}
+)
+_EXPERIMENT_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,127}")
 
 
 class WarmRetrospectionError(ValueError):
     """Raised when the complete WARM path loses a factual contract."""
+
+
+@dataclass(frozen=True, slots=True)
+class OnlineExperimentControls:
+    """Closed, runtime-only controls for one reproducible online experiment."""
+
+    ablation_mode: str
+    memory_corruption: str
+    experiment_id: str
+
+
+@dataclass(frozen=True, slots=True)
+class _CorruptedCandidatePayload:
+    """Inference-only candidate payload with exact padding preserved."""
+
+    actions: torch.Tensor
+    effect_pre: torch.Tensor
+    effect_delta: torch.Tensor
+    timing: torch.Tensor
+    applied: torch.Tensor
 
 
 @dataclass(frozen=True, slots=True)
@@ -92,6 +121,7 @@ class RetrospectiveSourceContext:
     query_context: torch.Tensor
     candidate_context: torch.Tensor
     candidate_actions: torch.Tensor
+    candidate_start_proprio: torch.Tensor
     candidate_effect_pre: torch.Tensor
     candidate_effect_delta: torch.Tensor
     candidate_timing: torch.Tensor
@@ -131,6 +161,70 @@ def _candidate_action_summary(actions: torch.Tensor) -> torch.Tensor:
     return torch.cat((mean, final, variation), dim=-1)
 
 
+def _warp_candidate_actions(
+    candidate_actions: torch.Tensor,
+    candidate_start_proprio: torch.Tensor,
+    current_proprio: torch.Tensor,
+    candidate_valid_mask: torch.Tensor,
+    config: WarmRetrospectionConfig,
+) -> torch.Tensor:
+    """Map stored event actions to the current factual robot start state.
+
+    The operation is intentionally closed rather than learned.  In
+    ``start_proprio_delta`` mode both actions and proprioception are the same
+    normalized native absolute-qpos representation.  Arm command dimensions
+    receive the current-minus-event start offset; discrete/continuous gripper
+    command dimensions remain byte-for-byte unchanged.  Invalid padded slots
+    are restored to exact zeros after warping.
+    """
+
+    if candidate_actions.ndim != 4:
+        raise WarmRetrospectionError("candidate_actions must be [B,K,H,Da]")
+    batch, candidates, _, action_dim = candidate_actions.shape
+    expected_start = (batch, candidates, config.proprio_dim)
+    if tuple(candidate_start_proprio.shape) != expected_start:
+        raise WarmRetrospectionError(
+            "candidate_start_proprio must have shape "
+            f"{expected_start}, got {tuple(candidate_start_proprio.shape)}"
+        )
+    if tuple(current_proprio.shape) != (batch, config.proprio_dim):
+        raise WarmRetrospectionError(
+            "current_proprio must have shape "
+            f"{(batch, config.proprio_dim)}, got {tuple(current_proprio.shape)}"
+        )
+    if tuple(candidate_valid_mask.shape) != (batch, candidates):
+        raise WarmRetrospectionError(
+            "candidate_valid_mask must match candidate [B,K] dimensions"
+        )
+    if candidate_valid_mask.dtype != torch.bool:
+        raise WarmRetrospectionError("candidate_valid_mask must be bool")
+    if action_dim != config.action_dim:
+        raise WarmRetrospectionError(
+            "candidate action width does not match retrospection config"
+        )
+
+    warped = candidate_actions
+    if config.canonical_action_mode == "start_proprio_delta":
+        # Config validation proves proprio_dim == action_dim in this mode.
+        offset = current_proprio[:, None, :] - candidate_start_proprio
+        arm_mask = torch.ones(
+            (config.action_dim,),
+            dtype=candidate_actions.dtype,
+            device=candidate_actions.device,
+        )
+        if config.canonical_gripper_dims:
+            arm_mask[list(config.canonical_gripper_dims)] = 0.0
+        warped = candidate_actions + offset[:, :, None, :].to(
+            dtype=candidate_actions.dtype
+        ) * arm_mask.view(1, 1, 1, -1)
+    elif config.canonical_action_mode != "none":  # defensive after config load
+        raise WarmRetrospectionError("unsupported canonical_action_mode")
+
+    return warped * candidate_valid_mask[:, :, None, None].to(
+        dtype=warped.dtype
+    )
+
+
 def _mean_effect(tokens: torch.Tensor) -> torch.Tensor:
     return tokens.mean(dim=-2)
 
@@ -148,6 +242,126 @@ def _gather_candidate(
         rows = torch.nonzero(valid, as_tuple=False).squeeze(1)
         output[rows] = values[rows, indices[rows]]
     return output
+
+
+def _apply_inference_memory_corruption(
+    *,
+    actions: torch.Tensor,
+    effect_pre: torch.Tensor,
+    effect_delta: torch.Tensor,
+    timing: torch.Tensor,
+    valid: torch.Tensor,
+    mode: str,
+) -> _CorruptedCandidatePayload:
+    """Apply a deterministic inference corruption without touching facts.
+
+    ``wrong_event`` is a selection corruption and is therefore handled after
+    the clean candidate ranking has been computed.  All payload corruptions
+    are functional: the bound online facts remain immutable, and invalid
+    candidate slots are restored to exact zeros before any learned module can
+    consume them.
+    """
+
+    if mode not in WARM_ONLINE_MEMORY_CORRUPTIONS:
+        raise WarmRetrospectionError(f"unsupported memory_corruption {mode!r}")
+    if actions.ndim != 4 or valid.ndim != 2 or actions.shape[:2] != valid.shape:
+        raise WarmRetrospectionError(
+            "online candidate actions/mask must have shapes [B,K,H,D] and [B,K]"
+        )
+    if valid.dtype != torch.bool or valid.device != actions.device:
+        raise WarmRetrospectionError(
+            "online candidate mask must be bool on the action device"
+        )
+    batch, candidates = valid.shape
+    for field, value in (
+        ("effect_pre", effect_pre),
+        ("effect_delta", effect_delta),
+        ("timing", timing),
+    ):
+        if value.ndim < 3 or value.shape[:2] != (batch, candidates):
+            raise WarmRetrospectionError(
+                f"online {field} must begin with candidate dimensions [B,K]"
+            )
+        if value.device != actions.device or value.dtype != actions.dtype:
+            raise WarmRetrospectionError(
+                f"online {field} must share action device and dtype"
+            )
+
+    corrupted_actions = actions
+    corrupted_pre = effect_pre
+    corrupted_delta = effect_delta
+    corrupted_timing = timing
+    applied = torch.zeros((batch,), dtype=torch.bool, device=actions.device)
+    has_candidate = valid.any(dim=1)
+
+    if mode == "reversed_action":
+        corrupted_actions = torch.flip(actions, dims=(2,))
+        applied = has_candidate
+    elif mode == "phase_shift":
+        shift = max(1, actions.shape[2] // 2)
+        corrupted_actions = torch.roll(actions, shifts=shift, dims=2)
+        corrupted_timing = timing.clone()
+        # Timing is encoded as repeated [phase, validity] pairs.  Shift only
+        # factual phases and leave absent-event sentinels at exact zero.
+        for phase_index in range(0, timing.shape[-1] - 1, 2):
+            validity = timing[..., phase_index + 1] > 0.5
+            shifted = torch.remainder(timing[..., phase_index] + 0.5, 1.0)
+            corrupted_timing[..., phase_index] = torch.where(
+                validity, shifted, torch.zeros_like(shifted)
+            )
+        applied = has_candidate
+    elif mode == "effect_mismatch":
+        # A sign reversal is deterministic and remains a mismatch even when a
+        # row has only one candidate (unlike candidate permutation).
+        corrupted_delta = -effect_delta
+        applied = has_candidate
+
+    action_mask = valid[:, :, None, None].to(dtype=actions.dtype)
+    effect_mask = valid.reshape(
+        batch, candidates, *((1,) * (effect_delta.ndim - 2))
+    ).to(dtype=effect_delta.dtype)
+    pre_mask = valid.reshape(
+        batch, candidates, *((1,) * (effect_pre.ndim - 2))
+    ).to(dtype=effect_pre.dtype)
+    timing_mask = valid.reshape(
+        batch, candidates, *((1,) * (timing.ndim - 2))
+    ).to(dtype=timing.dtype)
+    return _CorruptedCandidatePayload(
+        actions=corrupted_actions * action_mask,
+        effect_pre=corrupted_pre * pre_mask,
+        effect_delta=corrupted_delta * effect_mask,
+        timing=corrupted_timing * timing_mask,
+        applied=applied,
+    )
+
+
+def _wrong_event_indices(
+    selected_indices: torch.Tensor,
+    valid: torch.Tensor,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Choose a deterministic distinct valid slot, or explicit null fallback."""
+
+    if (
+        selected_indices.ndim != 1
+        or valid.ndim != 2
+        or selected_indices.shape[0] != valid.shape[0]
+        or selected_indices.dtype != torch.long
+        or valid.dtype != torch.bool
+        or selected_indices.device != valid.device
+    ):
+        raise WarmRetrospectionError("wrong-event selection inputs are incompatible")
+    forced = torch.full_like(selected_indices, -1)
+    fallback = torch.ones_like(selected_indices, dtype=torch.bool)
+    for row in range(valid.shape[0]):
+        slots = torch.nonzero(valid[row], as_tuple=False).flatten()
+        selected = int(selected_indices[row].item())
+        alternatives = slots[slots != selected]
+        if alternatives.numel() > 0:
+            # Lowest distinct physical slot is stable across devices and does
+            # not depend on approximate ANN score ties.
+            forced[row] = alternatives[0]
+            fallback[row] = False
+    return forced, fallback
 
 
 class WarmRetrospectionFastWAM(WarmSourceFastWAM):
@@ -271,7 +485,13 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
                 requested_layers=cfg.video_adapter_layers,
             )
         self.warm_retrospection_config = cfg
-        self._last_retrospection_diagnostics: dict[str, torch.Tensor] = {}
+        self._last_retrospection_diagnostics: dict[str, Any] = {}
+        self._warm_online_experiment_controls = OnlineExperimentControls(
+            ablation_mode="full",
+            memory_corruption="clean",
+            experiment_id="default",
+        )
+        self._warm_online_experiment_locked = False
         self.to(device=self.device, dtype=self.torch_dtype)
 
     def _require_retrospection(self) -> WarmRetrospectionConfig:
@@ -279,6 +499,65 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
         if not isinstance(config, WarmRetrospectionConfig):
             raise RuntimeError("WarmRetrospectionFastWAM has not been configured")
         return config
+
+    def configure_online_experiment(
+        self,
+        *,
+        ablation_mode: str,
+        memory_corruption: str,
+        experiment_id: str,
+    ) -> None:
+        """Bind one closed RMBench/runtime experiment before first inference.
+
+        These controls are intentionally absent from checkpoint state: they
+        change evaluation semantics, never learned weights.  Rebinding after
+        inference would make a result stream ambiguous, so only an idempotent
+        repeat of the exact same controls is accepted once inference starts.
+        """
+
+        self._require_retrospection()
+        if not isinstance(ablation_mode, str) or (
+            ablation_mode not in WARM_ONLINE_ABLATION_MODES
+        ):
+            raise WarmRetrospectionError(
+                "ablation_mode must be one of "
+                f"{sorted(WARM_ONLINE_ABLATION_MODES)}"
+            )
+        if not isinstance(memory_corruption, str) or (
+            memory_corruption not in WARM_ONLINE_MEMORY_CORRUPTIONS
+        ):
+            raise WarmRetrospectionError(
+                "memory_corruption must be one of "
+                f"{sorted(WARM_ONLINE_MEMORY_CORRUPTIONS)}"
+            )
+        if (
+            not isinstance(experiment_id, str)
+            or _EXPERIMENT_ID.fullmatch(experiment_id) is None
+        ):
+            raise WarmRetrospectionError(
+                "experiment_id must match [A-Za-z0-9][A-Za-z0-9_.-]{0,127}"
+            )
+        controls = OnlineExperimentControls(
+            ablation_mode=ablation_mode,
+            memory_corruption=memory_corruption,
+            experiment_id=experiment_id,
+        )
+        current = self._online_experiment_controls()
+        if bool(getattr(self, "_warm_online_experiment_locked", False)):
+            if controls != current:
+                raise WarmRetrospectionError(
+                    "online experiment controls are locked after first inference"
+                )
+            return
+        self._warm_online_experiment_controls = controls
+
+    def _online_experiment_controls(self) -> OnlineExperimentControls:
+        value = getattr(self, "_warm_online_experiment_controls", None)
+        if not isinstance(value, OnlineExperimentControls):
+            # Compatibility for a fully configured checkpoint created before
+            # runtime experiment controls were introduced.
+            return OnlineExperimentControls("full", "clean", "default")
+        return value
 
     def configure_trainable_modules(self):
         """Adapt Action DiT, WARM modules, and selected Video DiT adapters.
@@ -403,6 +682,9 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             sample, WARM_CANDIDATE_MU, dtype=self.torch_dtype
         )
         valid = self._tensor(sample, WARM_CANDIDATE_MASK, dtype=torch.bool)
+        candidate_start_proprio = self._tensor(
+            sample, WARM_CANDIDATE_START_PROPRIO, dtype=self.torch_dtype
+        )
         candidate_effect = self._tensor(
             sample, WARM_CANDIDATE_EFFECT_DELTA, dtype=self.torch_dtype
         )
@@ -437,8 +719,25 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
         # Pick an actually incompatible raw event for hard-negative rows: the
         # farthest valid action/effect candidate, excluding the best when
         # alternatives exist.  The curriculum token breaks deterministic ties.
+        sample_proprio = self._tensor(sample, "proprio", dtype=self.torch_dtype)
+        if (
+            sample_proprio.ndim != 3
+            or sample_proprio.shape[0] != batch
+            or sample_proprio.shape[2] != cfg.proprio_dim
+        ):
+            raise WarmRetrospectionError(
+                "sample proprio must be [B,T,proprio_dim]"
+            )
+        current_proprio = sample_proprio[:, 0]
+        warped_candidate_actions = _warp_candidate_actions(
+            candidate_actions,
+            candidate_start_proprio,
+            current_proprio,
+            valid,
+            cfg,
+        )
         raw_action_distance = (
-            candidate_actions.float() - action.unsqueeze(1).float()
+            warped_candidate_actions.float() - action.unsqueeze(1).float()
         ).square().mean(dim=(-1, -2))
         raw_effect_distance = (
             _mean_effect(candidate_effect).float()
@@ -506,6 +805,8 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             ),
             candidate_actions=candidate_actions
             * effective[:, :, None, None].to(dtype=candidate_actions.dtype),
+            candidate_start_proprio=candidate_start_proprio
+            * effective[:, :, None].to(dtype=candidate_start_proprio.dtype),
             candidate_effect_pre=masked(
                 WARM_CANDIDATE_EFFECT_PRE, dtype=self.torch_dtype
             ),
@@ -594,6 +895,15 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
         ctx = action_source_context
         if phase not in {"train", "infer"}:
             raise WarmRetrospectionError("phase must be train or infer")
+        configured_controls = self._online_experiment_controls()
+        if phase == "infer":
+            self._warm_online_experiment_locked = True
+            ablation_mode = configured_controls.ablation_mode
+            memory_corruption = configured_controls.memory_corruption
+        else:
+            # Evaluation controls must never alter optimization semantics.
+            ablation_mode = "full"
+            memory_corruption = "clean"
         if world_token_streams is None or len(world_token_streams) != 2:
             raise WarmRetrospectionError(
                 "complete WARM requires the two Video DiT tap streams"
@@ -605,13 +915,28 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             raise WarmRetrospectionError("complete WARM requires text context")
         if current_proprio is None:
             raise WarmRetrospectionError("complete WARM requires proprioception")
+        candidate_payload = _apply_inference_memory_corruption(
+            actions=ctx.candidate_actions,
+            effect_pre=ctx.candidate_effect_pre,
+            effect_delta=ctx.candidate_effect_delta,
+            timing=ctx.candidate_timing,
+            valid=ctx.candidate_valid_mask,
+            mode=memory_corruption,
+        )
+        warped_candidate_actions = _warp_candidate_actions(
+            candidate_payload.actions,
+            ctx.candidate_start_proprio,
+            current_proprio,
+            ctx.candidate_valid_mask,
+            cfg,
+        )
         world_mask = torch.ones(
             early.shape[:2], dtype=torch.bool, device=early.device
         )
         bridge = self.semantic_bridge(early, late, world_mask)
         valid = ctx.candidate_valid_mask
         event_mask = valid[:, :, None].expand(
-            -1, -1, ctx.candidate_effect_delta.shape[2]
+            -1, -1, candidate_payload.effect_delta.shape[2]
         )
         semantic_mask = torch.ones(
             bridge.semantic_tokens.shape[:2],
@@ -648,15 +973,21 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             semantic_mask=semantic_mask,
             episode_tokens=episode_tokens,
             episode_mask=episode_mask,
-            event_pre_tokens=torch.zeros_like(ctx.candidate_effect_pre),
-            event_delta_tokens=torch.zeros_like(ctx.candidate_effect_delta),
+            event_pre_tokens=torch.zeros_like(candidate_payload.effect_pre),
+            event_delta_tokens=torch.zeros_like(candidate_payload.effect_delta),
             event_token_mask=no_event_mask,
             text_tokens=text_context,
             text_mask=text_context_mask,
         )
+        source_only = ablation_mode == "source_only_no_consequence"
+        event_delta_input = (
+            torch.zeros_like(candidate_payload.effect_delta)
+            if source_only
+            else candidate_payload.effect_delta
+        )
         event = self.retrospective_event_adapter(
-            warped_actions=ctx.candidate_actions,
-            gripper_timing=ctx.candidate_timing,
+            warped_actions=warped_candidate_actions,
+            gripper_timing=candidate_payload.timing,
             candidate_valid_mask=valid,
             world_tokens=bridge.world_tokens,
             world_mask=bridge.token_mask,
@@ -664,17 +995,17 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             proprio=current_proprio,
             text_tokens=text_context,
             text_mask=text_context_mask,
-            event_delta_tokens=ctx.candidate_effect_delta,
+            event_delta_tokens=event_delta_input,
             event_delta_mask=event_mask,
         )
-        observed_effect = _mean_effect(ctx.candidate_effect_delta)
+        observed_effect = _mean_effect(candidate_payload.effect_delta)
         action_summary = _candidate_action_summary(event.adapted_action_mean)
         reranker_scores = self.utility_reranker(
             ctx.query_context,
             ctx.candidate_context,
             action_summary,
-            observed_effect,
-            ctx.candidate_timing,
+            torch.zeros_like(observed_effect) if source_only else observed_effect,
+            candidate_payload.timing,
             valid,
         )
         transition_gist = self.retrospective_gist.future_projection(
@@ -685,18 +1016,40 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             transition_gist,
             magnitude_weight=cfg.magnitude_weight,
         )
+        selection_consistency = (
+            torch.zeros_like(consistency) if source_only else consistency
+        )
         selection = select_consequence_candidate(
             reranker_scores,
-            consistency,
+            selection_consistency,
             ctx.candidate_support,
             valid,
-            consequence_weight=cfg.consequence_weight,
+            consequence_weight=0.0 if source_only else cfg.consequence_weight,
             support_weight=cfg.support_weight,
             # Candidate-only ranking logits have no absolute null calibration;
             # the separately utility-supervised gate owns continuous fallback.
             automatic_null=False,
             forced_candidate_indices=ctx.forced_candidate_indices,
         )
+        corruption_fallback = torch.zeros_like(
+            selection.memory_mask, dtype=torch.bool
+        )
+        if phase == "infer" and memory_corruption == "wrong_event":
+            forced_wrong, corruption_fallback = _wrong_event_indices(
+                selection.candidate_indices, valid
+            )
+            selection = select_consequence_candidate(
+                reranker_scores,
+                selection_consistency,
+                ctx.candidate_support,
+                valid,
+                consequence_weight=(
+                    0.0 if source_only else cfg.consequence_weight
+                ),
+                support_weight=cfg.support_weight,
+                automatic_null=False,
+                forced_candidate_indices=forced_wrong,
+            )
         selected_mean = _gather_candidate(
             event.adapted_action_mean, selection.candidate_indices
         )
@@ -710,7 +1063,12 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             dim=(-1, -2)
         ).sqrt().to(dtype=base_gaussian.dtype)
         gate = self.source_confidence_gate(selection, deformation)
-        gate_value = gate.probability.to(dtype=base_gaussian.dtype)
+        relevance_gate = gate.probability.to(dtype=base_gaussian.dtype)
+        gate_value = (
+            torch.zeros_like(relevance_gate)
+            if ablation_mode == "context_only"
+            else relevance_gate
+        )
         source = (
             gate_value[:, None, None]
             * (selected_mean + cfg.source_sigma_min * base_gaussian)
@@ -721,42 +1079,47 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             event.action_context_tokens, selection.candidate_indices
         )
         selected_event_pre = _gather_candidate(
-            ctx.candidate_effect_pre, selection.candidate_indices
+            candidate_payload.effect_pre, selection.candidate_indices
         ).unsqueeze(1)
         selected_event_delta = _gather_candidate(
-            ctx.candidate_effect_delta, selection.candidate_indices
+            candidate_payload.effect_delta, selection.candidate_indices
         ).unsqueeze(1)
         selected_event_mask = selection.memory_mask[:, None, None].expand(
-            -1, 1, ctx.candidate_effect_delta.shape[2]
+            -1, 1, candidate_payload.effect_delta.shape[2]
         )
-        predictive_gist = self.retrospective_gist(
-            world_tokens=bridge.world_tokens,
-            world_mask=bridge.token_mask,
-            semantic_tokens=bridge.semantic_tokens,
-            semantic_mask=semantic_mask,
-            episode_tokens=episode_tokens,
-            episode_mask=episode_mask,
-            event_pre_tokens=selected_event_pre,
-            event_delta_tokens=selected_event_delta,
-            event_token_mask=selected_event_mask,
-            text_tokens=text_context,
-            text_mask=text_context_mask,
-        )
-        # Null/gate-zero is candidate-independent all the way through Action
-        # DiT conditioning, not merely at the source tensor.  Gate gradients
-        # are owned by the explicit utility target, not by action prompting.
-        conditioning_gate = gate_value.detach()[:, None, None]
-        blended_gist_tokens = required_gist.gist_tokens + conditioning_gate * (
-            predictive_gist.gist_tokens - required_gist.gist_tokens
-        )
-        conditioning = torch.cat(
-            (
-                self.gist_to_text(blended_gist_tokens),
-                self.action_context_to_text(selected_action_context)
-                * conditioning_gate,
-            ),
-            dim=1,
-        )
+        if source_only:
+            # This ablation modifies only the action-flow source.  It neither
+            # selects by predicted consequence nor appends memory tokens to
+            # the Action DiT condition sequence.
+            conditioning = None
+        else:
+            predictive_gist = self.retrospective_gist(
+                world_tokens=bridge.world_tokens,
+                world_mask=bridge.token_mask,
+                semantic_tokens=bridge.semantic_tokens,
+                semantic_mask=semantic_mask,
+                episode_tokens=episode_tokens,
+                episode_mask=episode_mask,
+                event_pre_tokens=selected_event_pre,
+                event_delta_tokens=selected_event_delta,
+                event_token_mask=selected_event_mask,
+                text_tokens=text_context,
+                text_mask=text_context_mask,
+            )
+            # Context-only retains the learned memory relevance even though
+            # its action-flow source is exactly Gaussian.
+            conditioning_gate = relevance_gate.detach()[:, None, None]
+            blended_gist_tokens = required_gist.gist_tokens + conditioning_gate * (
+                predictive_gist.gist_tokens - required_gist.gist_tokens
+            )
+            conditioning = torch.cat(
+                (
+                    self.gist_to_text(blended_gist_tokens),
+                    self.action_context_to_text(selected_action_context)
+                    * conditioning_gate,
+                ),
+                dim=1,
+            )
 
         zero = base_gaussian.sum() * 0.0
         losses = {
@@ -797,9 +1160,10 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
                 else ctx.forced_candidate_indices < 0
             )
             utility = build_action_effect_utility_targets(
-                # Immutable stored payload defines the ranking label; the
-                # learnable bounded adapter cannot move its own target.
-                ctx.candidate_actions,
+                # The deterministic factual start-state warp defines the
+                # contextualized ranking label; the learnable bounded adapter
+                # still cannot move its own target.
+                warped_candidate_actions,
                 ctx.target_action,
                 observed_effect,
                 target_effect,
@@ -870,6 +1234,19 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             + cfg.loss_gate * losses["gate"]
             + cfg.loss_adaptation * losses["adaptation"]
         )
+        source_memory_mask = (
+            torch.zeros_like(selection.memory_mask)
+            if ablation_mode == "context_only"
+            else selection.memory_mask
+        )
+        source_component_indices = torch.where(
+            source_memory_mask,
+            selection.component_indices,
+            torch.zeros_like(selection.component_indices),
+        )
+        corruption_applied = candidate_payload.applied
+        if phase == "infer" and memory_corruption == "wrong_event":
+            corruption_applied = valid.any(dim=1)
         metrics = {
             "loss_warm_retrieval": losses["retrieval"],
             "loss_warm_bridge": losses["bridge"],
@@ -879,16 +1256,26 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             "loss_warm_adaptation": losses["adaptation"],
             "warm_gate_mean": gate_value.mean(),
             "warm_selected_memory_rate": selection.memory_mask.float().mean(),
-            "warm_consequence_mean": consistency[valid].mean()
+            "warm_consequence_mean": selection_consistency[valid].mean()
             if bool(valid.any().item())
             else zero,
         }
         self._last_retrospection_diagnostics = {
             "candidate_indices": selection.candidate_indices.detach(),
             "gate": gate_value.detach(),
-            "consistency": consistency.detach(),
+            "memory_relevance_gate": relevance_gate.detach(),
+            "source_memory_mask": source_memory_mask.detach(),
+            "consistency": selection_consistency.detach(),
+            "predicted_consistency": consistency.detach(),
             "reranker_scores": reranker_scores.detach(),
             "required_transition": transition_gist.detach(),
+            "configured_ablation_mode": configured_controls.ablation_mode,
+            "configured_memory_corruption": configured_controls.memory_corruption,
+            "ablation_mode": ablation_mode,
+            "memory_corruption": memory_corruption,
+            "experiment_id": configured_controls.experiment_id,
+            "corruption_applied": corruption_applied.detach(),
+            "corruption_fallback": corruption_fallback.detach(),
         }
         if phase == "infer":
             if current_video_latent is None:
@@ -922,8 +1309,8 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
         return ActionSourceOutput(
             source=source,
             base_gaussian=base_gaussian,
-            component_indices=selection.component_indices.detach(),
-            memory_mask=selection.memory_mask.detach(),
+            component_indices=source_component_indices.detach(),
+            memory_mask=source_memory_mask.detach(),
             selected_means=selected_mean.detach(),
             memory_sigma=float(cfg.source_sigma_min),
             conditioning_tokens=conditioning,
@@ -956,6 +1343,7 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             "context_keys": (expected_k, cfg.context_dim),
             "effect_pre": (expected_k, 4, cfg.semantic_dim),
             "effect_delta": (expected_k, 4, cfg.semantic_dim),
+            "start_proprio": (expected_k, cfg.proprio_dim),
             "gripper_timing": (expected_k, cfg.timing_dim),
             "support": (expected_k,),
         }
@@ -1056,6 +1444,9 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             candidate_actions=tensor(
                 online_step.candidate_means, self.torch_dtype
             ),
+            candidate_start_proprio=tensor(
+                facts.start_proprio, self.torch_dtype
+            ),
             candidate_effect_pre=tensor(facts.effect_pre, self.torch_dtype),
             candidate_effect_delta=tensor(
                 facts.effect_delta, self.torch_dtype
@@ -1149,12 +1540,22 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             memory_sigma=self._require_retrospection().source_sigma_min,
         )
         diagnostics = self._last_retrospection_diagnostics
+        controls = self._online_experiment_controls()
         output["warm_retrospection"] = {
             "selected_candidate_index": int(
                 diagnostics["candidate_indices"].reshape(-1)[0].cpu().item()
             ),
             "gate": float(diagnostics["gate"].reshape(-1)[0].cpu().item()),
             "online_step_sha256": online_step.step_sha256,
+            "ablation_mode": controls.ablation_mode,
+            "memory_corruption": controls.memory_corruption,
+            "experiment_id": controls.experiment_id,
+            "corruption_applied": bool(
+                diagnostics["corruption_applied"].reshape(-1)[0].cpu().item()
+            ),
+            "corruption_fallback": bool(
+                diagnostics["corruption_fallback"].reshape(-1)[0].cpu().item()
+            ),
         }
         selected_index = int(
             diagnostics["candidate_indices"].reshape(-1)[0].cpu().item()
@@ -1163,20 +1564,49 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
         selected_event = (
             online_step.event_ids[selected_index] if memory_selected else None
         )
+        source_memory_selected = bool(
+            diagnostics["source_memory_mask"].reshape(-1)[0].cpu().item()
+        )
         output["warm_online_telemetry"] = _json_safe(
             {
+                "experiment": {
+                    "experiment_id": controls.experiment_id,
+                    "ablation_mode": controls.ablation_mode,
+                    "memory_corruption": controls.memory_corruption,
+                    "corruption_applied": bool(
+                        diagnostics["corruption_applied"]
+                        .reshape(-1)[0]
+                        .cpu()
+                        .item()
+                    ),
+                    "corruption_fallback": bool(
+                        diagnostics["corruption_fallback"]
+                        .reshape(-1)[0]
+                        .cpu()
+                        .item()
+                    ),
+                },
                 "retrieval": _fixed_retrieval_telemetry(online_step),
                 "source": {
                     "policy": "consequence_aligned_retrospection",
-                    "component": selected_index + 1 if memory_selected else 0,
+                    "component": (
+                        selected_index + 1 if source_memory_selected else 0
+                    ),
                     "selected_rank": selected_index if memory_selected else None,
                     "selected_event_id": _event_id_json(selected_event),
-                    "memory_selected": memory_selected,
+                    "candidate_selected": memory_selected,
+                    "memory_selected": source_memory_selected,
                     "memory_sigma": float(
                         self._require_retrospection().source_sigma_min
                     ),
                     "gate": float(
                         diagnostics["gate"].reshape(-1)[0].cpu().item()
+                    ),
+                    "memory_relevance_gate": float(
+                        diagnostics["memory_relevance_gate"]
+                        .reshape(-1)[0]
+                        .cpu()
+                        .item()
                     ),
                     "derived_seed": int(online_step.derived_seed),
                 },
@@ -1312,7 +1742,10 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
 
 
 __all__ = [
+    "OnlineExperimentControls",
     "RetrospectiveSourceContext",
+    "WARM_ONLINE_ABLATION_MODES",
+    "WARM_ONLINE_MEMORY_CORRUPTIONS",
     "WARM_RETROSPECTION_CHECKPOINT_SCHEMA",
     "WARM_RETROSPECTION_CHECKPOINT_VERSION",
     "WarmRetrospectionError",

@@ -120,7 +120,10 @@ try:
         select_source_components,
     )
     from .retrospection_model import (
+        OnlineExperimentControls,
         RetrospectiveSourceContext,
+        WARM_ONLINE_ABLATION_MODES,
+        WARM_ONLINE_MEMORY_CORRUPTIONS,
         WarmRetrospectionError,
         WarmRetrospectionFastWAM,
     )
@@ -139,7 +142,10 @@ else:
             "measure_source_geometry",
             "resolve_action_source",
             "select_source_components",
+            "OnlineExperimentControls",
             "RetrospectiveSourceContext",
+            "WARM_ONLINE_ABLATION_MODES",
+            "WARM_ONLINE_MEMORY_CORRUPTIONS",
             "WarmRetrospectionError",
             "WarmRetrospectionFastWAM",
         ]

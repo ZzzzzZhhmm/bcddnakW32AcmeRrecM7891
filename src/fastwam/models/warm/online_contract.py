@@ -118,7 +118,14 @@ def _positive_float(value: object, field: str) -> float:
 
 @dataclass(frozen=True, slots=True)
 class WarmOnlineRunContract:
-    """All immutable identities needed for one LIBERO online rollout job."""
+    """All immutable identities needed for one benchmark rollout job.
+
+    ``initial_states_sha256`` binds the benchmark's deterministic
+    initialization artifact (LIBERO initial states or an RMBench seed plan),
+    while ``bddl_sha256`` binds its executable task definition (BDDL or the
+    pinned RMBench environment module).  The names remain stable for v1
+    compatibility; their exact interpretation is attested by ``task_suite``.
+    """
 
     training_run_contract_sha256: str
     validation_run_contract_sha256: str

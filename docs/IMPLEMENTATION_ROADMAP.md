@@ -1,5 +1,12 @@
 # WARM implementation roadmap
 
+> **Current boundary:** the local software deliverables for the complete WARM
+> path, LIBERO integration, and pinned official RMBench integration are
+> implemented.  The numerical acceptance gates below are deliberately still
+> open until the exact committed revision is run on the Linux/CUDA server.  A
+> checked box in code cannot substitute for oracle statistics, trained
+> checkpoints, simulator success, corruption robustness, or latency evidence.
+
 ## Operating rules
 
 - All development and Git history stay in the private `ZzzzzZhhmm/WARM`

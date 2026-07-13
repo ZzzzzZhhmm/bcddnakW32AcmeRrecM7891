@@ -274,9 +274,26 @@ def scan_lerobot_datasets(
             data_path = root / relpath
             if require_episode_data and not data_path.is_file():
                 raise FileNotFoundError(f"Missing episode table: {data_path}")
-            raw_tasks = row.get("tasks", ())
-            if isinstance(raw_tasks, str):
-                raw_tasks = (raw_tasks,)
+            # RMBench uses episode-specific natural-language instructions for
+            # the LeRobot ``task_index`` and policy prompt, while WARM
+            # retrieval needs the stable nine-way benchmark task identity.
+            # A converter may therefore provide an explicit catalog-only
+            # identity without changing the standard LeRobot task vocabulary.
+            warm_task_identity = row.get("warm_task_identity")
+            if warm_task_identity is not None:
+                if (
+                    not isinstance(warm_task_identity, str)
+                    or not warm_task_identity
+                    or warm_task_identity.strip() != warm_task_identity
+                ):
+                    raise ValueError(
+                        "warm_task_identity must be a non-empty normalized string"
+                    )
+                raw_tasks = (warm_task_identity,)
+            else:
+                raw_tasks = row.get("tasks", ())
+                if isinstance(raw_tasks, str):
+                    raw_tasks = (raw_tasks,)
             episodes.append(
                 EpisodeRecord(
                     dataset_id=dataset_id,
