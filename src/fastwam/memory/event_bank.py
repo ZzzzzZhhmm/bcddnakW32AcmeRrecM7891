@@ -25,6 +25,7 @@ from .manifest import (
     sha256_array,
     sha256_file,
 )
+from .payload_names import FEATURE_EPISODE_SHA256, SOURCE_EPISODE_SHA256
 from .schema import (
     EVENT_BANK_SCHEMA,
     EVENT_BANK_SCHEMA_VERSION,
@@ -128,7 +129,7 @@ class EventBank:
         Float32 matrix ``[N, key_dim]``. Rows need not be pre-normalized.
     payloads:
         Named C-compatible NumPy tensors whose first dimension is ``N``.
-        Typical names are ``model_space_action``, ``effect_tokens`` and
+        Typical names are ``model_space_action``, ``effect_pre``/``effect_post`` and
         ``start_proprio``. Values are copied into immutable contiguous arrays.
     """
 
@@ -225,12 +226,15 @@ class EventBank:
         top_k: int = 32,
         *,
         exclude_episode: EventId | EpisodeKey | None = None,
+        exclude_source_episode_sha256: str | None = None,
+        exclude_feature_episode_sha256: str | None = None,
     ) -> tuple[SearchResult, ...]:
-        """Return exact cosine neighbors, optionally leaving one episode out.
+        """Return exact cosine neighbors with optional identity/content exclusion.
 
         Exclusion uses ``(dataset_id, dataset_index, episode_index)`` and thus
         removes every start frame from the query episode, not just the query
-        event itself.
+        event itself. Source- and feature-content hashes additionally remove
+        duplicates stored under a different episode identity.
         """
 
         if isinstance(top_k, bool) or not isinstance(top_k, int):
@@ -254,10 +258,56 @@ class EventBank:
         episode_key = (
             None if exclude_episode is None else coerce_episode_key(exclude_episode)
         )
+        excluded_content: list[tuple[np.ndarray, np.ndarray]] = []
+        for option_name, digest_value, payload_name in (
+            (
+                "exclude_source_episode_sha256",
+                exclude_source_episode_sha256,
+                SOURCE_EPISODE_SHA256,
+            ),
+            (
+                "exclude_feature_episode_sha256",
+                exclude_feature_episode_sha256,
+                FEATURE_EPISODE_SHA256,
+            ),
+        ):
+            if digest_value is None:
+                continue
+            if (
+                not isinstance(digest_value, str)
+                or re.fullmatch(r"[0-9a-f]{64}", digest_value) is None
+            ):
+                raise EventBankError(
+                    f"{option_name} must be a lowercase SHA-256 digest"
+                )
+            try:
+                hash_rows = self.payload(payload_name)
+            except KeyError as exc:
+                raise EventBankError(
+                    f"event bank has no {payload_name!r} payload"
+                ) from exc
+            if hash_rows.dtype != np.dtype(np.uint8) or hash_rows.shape != (
+                len(self),
+                32,
+            ):
+                raise EventBankError(
+                    f"{payload_name} must have dtype uint8 and shape "
+                    f"{(len(self), 32)}"
+                )
+            excluded_content.append(
+                (
+                    hash_rows,
+                    np.frombuffer(bytes.fromhex(digest_value), dtype=np.uint8),
+                )
+            )
         allowed = np.fromiter(
             (
-                episode_key is None or event_id.episode_key != episode_key
-                for event_id in self._event_ids
+                (episode_key is None or event_id.episode_key != episode_key)
+                and all(
+                    not np.array_equal(hash_rows[index], excluded_hash)
+                    for hash_rows, excluded_hash in excluded_content
+                )
+                for index, event_id in enumerate(self._event_ids)
             ),
             dtype=np.bool_,
             count=len(self),
@@ -307,15 +357,15 @@ class EventBank:
         action_normalizer: Mapping[str, Any],
         encoder: Mapping[str, Any],
         camera_layout: Mapping[str, Any],
-        overwrite: bool = False,
+        provenance: Mapping[str, Any],
     ) -> EventBankManifest:
-        """Atomically write the reference NPZ payload and its manifest."""
+        """Atomically publish one immutable NPZ payload and manifest."""
 
         directory = Path(directory)
         directory.mkdir(parents=True, exist_ok=True)
         payload_path = directory / PAYLOAD_FILENAME
         manifest_path = directory / MANIFEST_FILENAME
-        if not overwrite and (payload_path.exists() or manifest_path.exists()):
+        if payload_path.exists() or manifest_path.exists():
             raise FileExistsError(f"event bank already exists in {directory}")
 
         arrays = self._storage_arrays()
@@ -337,6 +387,7 @@ class EventBank:
                 action_normalizer=action_normalizer,
                 encoder=encoder,
                 camera_layout=camera_layout,
+                provenance=provenance,
                 arrays={name: ArraySpec.from_array(array) for name, array in arrays.items()},
                 content_hashes=hashes,
             )
@@ -361,6 +412,7 @@ class EventBank:
         expected_action_normalizer: Mapping[str, Any] | None = None,
         expected_encoder: Mapping[str, Any] | None = None,
         expected_camera_layout: Mapping[str, Any] | None = None,
+        expected_provenance: Mapping[str, Any] | None = None,
     ) -> "EventBank":
         """Load only after schema, hash, member, dtype and shape validation."""
 
@@ -375,6 +427,7 @@ class EventBank:
             ("action_normalizer", expected_action_normalizer, manifest.action_normalizer),
             ("encoder", expected_encoder, manifest.encoder),
             ("camera_layout", expected_camera_layout, manifest.camera_layout),
+            ("provenance", expected_provenance, manifest.provenance),
         ):
             if expected is not None:
                 try:

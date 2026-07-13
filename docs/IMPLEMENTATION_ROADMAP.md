@@ -34,9 +34,11 @@ No-go: do not implement memory against a baseline that cannot be reproduced.
 Deliverables:
 
 - full-episode LeRobot reader;
-- dataset audit report for fps, episode/task count, cameras, action/state fields,
-  padding, success metadata, and hashes;
+- byte-complete dataset audit for parquet plus ordered external/wrist MP4s;
 - stratified 45-train/5-dev episode split per LIBERO task;
+- immutable train-only FastWAM global-min/max artifact and provenance manifest;
+- import-safe server precompute CLI for factual DINOv2 and optional Wan VAE
+  features, with a fixed catalog-bound train+dev task vocabulary;
 - uniform, change-point, and hybrid fixed-horizon event extractors;
 - immutable bank schema and exact-search backend;
 - leave-episode-out offline candidate cache;
@@ -44,7 +46,10 @@ Deliverables:
 
 Acceptance:
 
-- zero episode overlap and zero duplicate content hash across splits;
+- zero episode overlap and zero exact parquet/camera/source/feature duplicate
+  hash across splits;
+- dev/test rows cannot affect normalization statistics or key vocabulary;
+- every official feature collection exactly covers its requested catalog split;
 - all chunks preserve FastWAM action horizon and normalization contract;
 - top-32 oracle candidate action distance is at least 15-20% lower than plain
   context top-1 and recent-action prior;
@@ -174,13 +179,12 @@ rate, latency, peak GPU memory, bank I/O, and trainable parameters.
 
 ## Compute assumptions
 
-The current Windows workstation has an RTX 4060 Laptop GPU with 8 GB VRAM,
-Python 3.13, and no project PyTorch/Conda environment. It is suitable for source
-editing, metadata audits, small visual-feature preprocessing, and CPU/unit
-tests, but not FastWAM 5B/6B training or representative inference.
+The Windows workstation is a source-development machine only.  It is used for
+editing, metadata/contract checks, and deterministic CPU unit tests; do not run
+checkpoint feature encoding, simulator rollouts, or FastWAM 5B/6B training on
+it.  Those jobs run from an exact private Git commit on the Linux CUDA server.
 
 Plan the first full LIBERO memory-profile run on a Linux CUDA node. Until a
 100-step peak-memory profile exists, budget the official conservative baseline:
 one eight-GPU node. Adapter-only training may reduce this, but that is a measured
 optimization rather than a promise.
-

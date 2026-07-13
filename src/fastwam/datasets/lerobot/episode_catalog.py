@@ -10,8 +10,10 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, replace
 from hashlib import sha256
 import json
+import os
 from pathlib import Path
 from typing import Iterable, Mapping, Sequence
+from uuid import uuid4
 
 
 CATALOG_SCHEMA_VERSION = 1
@@ -166,12 +168,22 @@ class EpisodeCatalog:
     def save(self, path: str | Path) -> None:
         target = Path(path)
         target.parent.mkdir(parents=True, exist_ok=True)
+        if target.exists():
+            raise FileExistsError(f"episode catalog already exists at {target}")
         document = self._payload()
         document["content_sha256"] = self.content_sha256
-        target.write_text(
-            json.dumps(document, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
-            encoding="utf-8",
-        )
+        temporary = target.parent / f".{target.name}.{uuid4().hex}.tmp"
+        try:
+            with temporary.open("w", encoding="utf-8", newline="\n") as handle:
+                handle.write(
+                    json.dumps(document, ensure_ascii=False, indent=2, sort_keys=True)
+                    + "\n"
+                )
+                handle.flush()
+                os.fsync(handle.fileno())
+            os.replace(temporary, target)
+        finally:
+            temporary.unlink(missing_ok=True)
 
     @classmethod
     def load(cls, path: str | Path) -> "EpisodeCatalog":

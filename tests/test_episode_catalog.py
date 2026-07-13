@@ -67,6 +67,8 @@ def test_catalog_roundtrip_and_tamper_detection(tmp_path: Path) -> None:
     catalog.save(path)
 
     assert EpisodeCatalog.load(path) == catalog
+    with pytest.raises(FileExistsError):
+        catalog.save(path)
 
     document = json.loads(path.read_text(encoding="utf-8"))
     document["episodes"][0]["length"] += 1

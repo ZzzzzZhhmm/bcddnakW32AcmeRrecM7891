@@ -1,18 +1,23 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 import inspect
-from typing import Any
+from pathlib import Path
+import time
+from typing import TYPE_CHECKING, Any
 
 import torch
-import time
 
 from .io import ModelConfig, hash_model_file, load_state_dict
 from .state_dict_converters import (
     wan_video_vae_state_dict_converter,
 )
-from ..wan_video_dit import WanVideoDiT
-from ..wan_video_text_encoder import HuggingfaceTokenizer, WanTextEncoder
-from ..wan_video_vae import WanVideoVAE38
 from fastwam.utils.logging_config import get_logger
+
+if TYPE_CHECKING:
+    from ..wan_video_dit import WanVideoDiT
+    from ..wan_video_text_encoder import HuggingfaceTokenizer, WanTextEncoder
+    from ..wan_video_vae import WanVideoVAE38
 
 logger = get_logger(__name__)
 SKIPPED_PRETRAIN_SENTINEL = "SKIPPED_PRETRAIN"
@@ -30,30 +35,61 @@ class Wan22LoadedComponents:
     tokenizer_path: str | None
 
 
+@dataclass(frozen=True, slots=True)
+class Wan22LoadedVAE:
+    """A VAE-only Wan2.2 load result with checkpoint provenance.
+
+    This deliberately contains no Video DiT, text encoder, or tokenizer.  It
+    is the supported entry point for offline factual-frame feature extraction.
+    """
+
+    vae: WanVideoVAE38
+    vae_path: str
+    device: str
+    torch_dtype: torch.dtype
+
+
 WAN22_MODEL_REGISTRY = [
     {
         # Example: ModelConfig(model_id="Wan-AI/Wan2.1-T2V-14B", origin_file_pattern="models_t5_umt5-xxl-enc-bf16.pth")
         "model_hash": "9c8818c2cbea55eca56c7b447df170da",
         "model_name": "wan_video_text_encoder",
-        "model_class": WanTextEncoder,
     },
     {
         # Example: ModelConfig(model_id="Wan-AI/Wan2.2-TI2V-5B", origin_file_pattern="diffusion_pytorch_model*.safetensors")
         "model_hash": "1f5ab7703c6fc803fdded85ff040c316",
         "model_name": "wan_video_dit",
-        "model_class": WanVideoDiT,
     },
     {
         # Example: ModelConfig(model_id="Wan-AI/Wan2.2-TI2V-5B", origin_file_pattern="Wan2.2_VAE.pth")
         "model_hash": "e1de6c02cdac79f8b739f4d3698cd216",
         "model_name": "wan_video_vae",
-        "model_class": WanVideoVAE38,
         "state_dict_converter": wan_video_vae_state_dict_converter,
     },
 ]
 
 
+def _resolve_model_class(model_name: str):
+    """Import only the implementation requested by the current load path."""
+
+    if model_name == "wan_video_vae":
+        from ..wan_video_vae import WanVideoVAE38
+
+        return WanVideoVAE38
+    if model_name == "wan_video_dit":
+        from ..wan_video_dit import WanVideoDiT
+
+        return WanVideoDiT
+    if model_name == "wan_video_text_encoder":
+        from ..wan_video_text_encoder import WanTextEncoder
+
+        return WanTextEncoder
+    raise ValueError(f"Unsupported registered Wan2.2 model name: {model_name!r}")
+
+
 def _validate_dit_config(dit_config: dict[str, Any]) -> dict[str, Any]:
+    from ..wan_video_dit import WanVideoDiT
+
     if not isinstance(dit_config, dict):
         raise ValueError(f"`dit_config` must be a dict, got {type(dit_config)}")
 
@@ -106,7 +142,7 @@ def _load_registered_model(
             f"Model hash: {model_hash}. This standalone package follows DiffSynth hash-based loading."
         )
 
-    model_class = matched_config["model_class"]
+    model_class = _resolve_model_class(model_name)
     model_kwargs = dict(matched_config.get("extra_kwargs", {}))
     if model_kwargs_override is not None:
         model_kwargs.update(model_kwargs_override)
@@ -136,6 +172,88 @@ def _resolve_configs(model_id: str, tokenizer_model_id: str, redirect_common_fil
         text_config.model_id, text_config.origin_file_pattern = redirect_dict[text_config.origin_file_pattern]
         vae_config.model_id, vae_config.origin_file_pattern = redirect_dict[vae_config.origin_file_pattern]
     return dit_config, text_config, vae_config, tokenizer_config
+
+
+def _resolve_vae_config(
+    *,
+    model_id: str,
+    redirect_common_files: bool,
+    vae_path: str | Path | None,
+) -> ModelConfig:
+    """Resolve only the Wan2.2 VAE checkpoint, never a DiT/text artifact."""
+
+    if vae_path is not None:
+        path = Path(vae_path).expanduser()
+        if not path.is_file():
+            raise FileNotFoundError(f"Wan2.2 VAE checkpoint does not exist: {path}")
+        return ModelConfig(path=str(path.resolve()))
+
+    config = ModelConfig(
+        model_id=model_id,
+        origin_file_pattern="Wan2.2_VAE.pth",
+    )
+    if redirect_common_files:
+        config.model_id = "DiffSynth-Studio/Wan-Series-Converted-Safetensors"
+        config.origin_file_pattern = "Wan2.2_VAE.safetensors"
+    return config
+
+
+def _single_checkpoint_path(value: str | list[str] | None) -> str:
+    if isinstance(value, list):
+        if len(value) != 1:
+            raise ValueError(
+                "Wan2.2 VAE loading requires exactly one checkpoint file, "
+                f"resolved {len(value)} files"
+            )
+        value = value[0]
+    if not isinstance(value, str) or not value:
+        raise ValueError("Wan2.2 VAE checkpoint did not resolve to a file")
+    return value
+
+
+def load_wan22_vae_only(
+    device: str = "cuda",
+    torch_dtype: torch.dtype = torch.bfloat16,
+    model_id: str = "Wan-AI/Wan2.2-TI2V-5B",
+    redirect_common_files: bool = True,
+    vae_path: str | Path | None = None,
+) -> Wan22LoadedVAE:
+    """Load only the frozen Wan2.2 VAE for factual-frame encoding.
+
+    Unlike :func:`load_wan22_ti2v_5b_components`, this function never resolves,
+    downloads, constructs, or loads a Video DiT, text encoder, or tokenizer.
+    ``vae_path`` can point at an already provisioned checkpoint on a server;
+    otherwise the existing DiffSynth ``ModelConfig`` download policy is used.
+    """
+
+    if not isinstance(device, str) or not device.strip():
+        raise ValueError("device must be a non-empty string")
+    if not isinstance(model_id, str) or not model_id.strip():
+        raise ValueError("model_id must be a non-empty string")
+
+    logger.info("Loading Wan2.2 VAE only...")
+    start = time.time()
+    vae_config = _resolve_vae_config(
+        model_id=model_id,
+        redirect_common_files=bool(redirect_common_files),
+        vae_path=vae_path,
+    )
+    vae_config.download_if_necessary()
+    resolved_path = _single_checkpoint_path(vae_config.path)
+    vae = _load_registered_model(
+        resolved_path,
+        "wan_video_vae",
+        torch_dtype=torch_dtype,
+        device=device,
+    )
+    vae.eval().requires_grad_(False)
+    logger.info("Finished loading Wan2.2 VAE in %.2f seconds.", time.time() - start)
+    return Wan22LoadedVAE(
+        vae=vae,
+        vae_path=str(Path(resolved_path).resolve()),
+        device=device,
+        torch_dtype=torch_dtype,
+    )
 
 
 def load_wan22_ti2v_5b_components(
@@ -168,6 +286,8 @@ def load_wan22_ti2v_5b_components(
         tokenizer_config.download_if_necessary()
 
     if skip_dit_load_from_pretrain:
+        from ..wan_video_dit import WanVideoDiT
+
         logger.info(
             "Skipping pretrained video DiT load (`skip_dit_load_from_pretrain=True`); "
             "initializing video expert randomly and expecting checkpoint override."
@@ -189,6 +309,8 @@ def load_wan22_ti2v_5b_components(
     text_encoder_path: str | None = None
     tokenizer_path: str | None = None
     if load_text_encoder:
+        from ..wan_video_text_encoder import HuggingfaceTokenizer
+
         text_encoder = _load_registered_model(
             text_config.path,
             "wan_video_text_encoder",

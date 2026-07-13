@@ -24,12 +24,26 @@ def _bank() -> EventBank:
     actions = actions_base[:, :, ::-1]
     effects = np.arange(12, dtype=np.float32).reshape(4, 3)
     valid = np.array([[True, False], [True, True], [False, True], [True, True]])
+    source_hashes = np.stack(
+        [
+            np.frombuffer(bytes.fromhex(value * 64), dtype=np.uint8)
+            for value in ("1", "1", "2", "3")
+        ]
+    )
+    feature_hashes = np.stack(
+        [
+            np.frombuffer(bytes.fromhex(value * 64), dtype=np.uint8)
+            for value in ("a", "a", "b", "b")
+        ]
+    )
     return EventBank.from_arrays(
         event_ids,
         context_keys,
         model_space_action=actions,
         effect_tokens=effects,
         timing_valid=valid,
+        source_episode_sha256=source_hashes,
+        feature_episode_sha256=feature_hashes,
     )
 
 
@@ -40,6 +54,11 @@ def _metadata() -> dict[str, dict[str, object]]:
         "camera_layout": {
             "views": ["agentview", "robot0_eye_in_hand"],
             "effect_view": "agentview",
+        },
+        "provenance": {
+            "catalog_sha256": "a" * 64,
+            "feature_collection_sha256": "b" * 64,
+            "mining": {"action_horizon": 3, "start_mode": "uniform"},
         },
     }
 
@@ -69,6 +88,7 @@ def test_event_bank_round_trip_preserves_ids_payloads_and_contract(tmp_path) -> 
         expected_action_normalizer=metadata["action_normalizer"],
         expected_encoder=metadata["encoder"],
         expected_camera_layout=metadata["camera_layout"],
+        expected_provenance=metadata["provenance"],
     )
 
     assert restored.event_ids == bank.event_ids
@@ -87,9 +107,13 @@ def test_event_bank_round_trip_preserves_ids_payloads_and_contract(tmp_path) -> 
         "_event_start_frame",
         "context_key",
         "effect_tokens",
+        "feature_episode_sha256",
         "model_space_action",
+        "source_episode_sha256",
         "timing_valid",
     }
+    with pytest.raises(FileExistsError):
+        bank.save(tmp_path, **metadata)
 
 
 def test_load_rejects_payload_file_hash_tampering(tmp_path) -> None:
@@ -134,3 +158,27 @@ def test_search_rejects_invalid_query_and_duplicate_event_ids() -> None:
             [event_id, event_id],
             np.ones((2, 1), dtype=np.float32),
         )
+
+
+def test_search_can_exclude_duplicate_source_content_across_episode_ids() -> None:
+    bank = _bank()
+    results = bank.search(
+        np.asarray([1.0, 0.0], dtype=np.float32),
+        top_k=10,
+        exclude_episode=("libero", 0, 4),
+        exclude_source_episode_sha256="2" * 64,
+    )
+
+    assert [item.index for item in results] == [3]
+
+
+def test_search_can_exclude_duplicate_feature_content_across_episode_ids() -> None:
+    bank = _bank()
+    results = bank.search(
+        np.asarray([1.0, 0.0], dtype=np.float32),
+        top_k=10,
+        exclude_episode=("libero", 0, 5),
+        exclude_feature_episode_sha256="b" * 64,
+    )
+
+    assert [item.index for item in results] == [0, 1]

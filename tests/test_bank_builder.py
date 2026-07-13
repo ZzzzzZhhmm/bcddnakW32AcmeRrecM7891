@@ -23,6 +23,8 @@ def _episode(dataset_index: int, episode_index: int, *, action_dim: int = 2) -> 
         dataset_index=dataset_index,
         episode_index=episode_index,
         task_index=dataset_index,
+        source_episode_sha256=f"{(dataset_index + 1) * 1000 + episode_index:064x}",
+        feature_episode_sha256=f"{(dataset_index + 1) * 100000 + episode_index:064x}",
         model_actions=actions,
         proprio=proprio,
         gripper=gripper,
@@ -40,8 +42,12 @@ def test_builder_keeps_exact_fixed_horizon_actions_and_factual_effects() -> None
     )
 
     assert len(bank) == 2
-    np.testing.assert_array_equal(bank.payload("model_action")[0], episode.model_actions[0:4])
-    np.testing.assert_array_equal(bank.payload("model_action")[1], episode.model_actions[4:8])
+    np.testing.assert_array_equal(
+        bank.payload("model_space_action")[0], episode.model_actions[0:4]
+    )
+    np.testing.assert_array_equal(
+        bank.payload("model_space_action")[1], episode.model_actions[4:8]
+    )
     np.testing.assert_array_equal(bank.payload("effect_pre")[0], episode.semantic_features[0])
     np.testing.assert_array_equal(bank.payload("effect_post")[0], episode.semantic_features[4])
     assert bank.payload("contains_forced_gripper").tolist() == [True, False]
@@ -74,6 +80,8 @@ def test_episode_features_require_terminal_factual_semantic_state() -> None:
             dataset_index=episode.dataset_index,
             episode_index=episode.episode_index,
             task_index=episode.task_index,
+            source_episode_sha256=episode.source_episode_sha256,
+            feature_episode_sha256=episode.feature_episode_sha256,
             model_actions=episode.model_actions,
             proprio=episode.proprio,
             gripper=episode.gripper,
@@ -87,4 +95,66 @@ def test_builder_rejects_action_layout_mismatch() -> None:
         build_event_bank(
             [_episode(0, 0, action_dim=2), _episode(0, 1, action_dim=3)],
             mining_config=EventMiningConfig(action_horizon=4),
+        )
+
+
+def test_builder_preserves_spatial_semantic_tokens() -> None:
+    base = _episode(0, 0)
+    spatial = np.stack([base.semantic_features, base.semantic_features + 1.0], axis=1)
+    episode = EpisodeFeatures(
+        dataset_id=base.dataset_id,
+        dataset_index=base.dataset_index,
+        episode_index=base.episode_index,
+        task_index=base.task_index,
+        source_episode_sha256=base.source_episode_sha256,
+        feature_episode_sha256=base.feature_episode_sha256,
+        model_actions=base.model_actions,
+        proprio=base.proprio,
+        gripper=base.gripper,
+        context_keys=base.context_keys,
+        semantic_features=spatial,
+    )
+
+    bank = build_event_bank(
+        [episode],
+        mining_config=EventMiningConfig(action_horizon=4),
+        start_mode="uniform",
+    )
+
+    assert bank.payload("effect_pre").shape == (2, 2, 4)
+    np.testing.assert_array_equal(bank.payload("effect_post")[0], spatial[4])
+
+
+def test_episode_features_require_t_plus_one_states_and_nonzero_keys() -> None:
+    base = _episode(0, 0)
+    with pytest.raises(ValueError, match=r"proprio must have T\+1"):
+        EpisodeFeatures(
+            dataset_id=base.dataset_id,
+            dataset_index=base.dataset_index,
+            episode_index=base.episode_index,
+            task_index=base.task_index,
+            source_episode_sha256=base.source_episode_sha256,
+            feature_episode_sha256=base.feature_episode_sha256,
+            model_actions=base.model_actions,
+            proprio=base.proprio[:-1],
+            gripper=base.gripper,
+            context_keys=base.context_keys,
+            semantic_features=base.semantic_features,
+        )
+
+    zero_keys = np.array(base.context_keys, copy=True)
+    zero_keys[3] = 0.0
+    with pytest.raises(ValueError, match="first invalid frame=3"):
+        EpisodeFeatures(
+            dataset_id=base.dataset_id,
+            dataset_index=base.dataset_index,
+            episode_index=base.episode_index,
+            task_index=base.task_index,
+            source_episode_sha256=base.source_episode_sha256,
+            feature_episode_sha256=base.feature_episode_sha256,
+            model_actions=base.model_actions,
+            proprio=base.proprio,
+            gripper=base.gripper,
+            context_keys=zero_keys,
+            semantic_features=base.semantic_features,
         )

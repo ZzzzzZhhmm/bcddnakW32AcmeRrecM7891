@@ -13,7 +13,7 @@ from typing import Any, Mapping, TypeAlias
 
 
 EVENT_BANK_SCHEMA = "warm.event-bank"
-EVENT_BANK_SCHEMA_VERSION = 1
+EVENT_BANK_SCHEMA_VERSION = 2
 
 EpisodeKey: TypeAlias = tuple[str, int, int]
 

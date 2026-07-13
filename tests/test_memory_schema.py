@@ -48,6 +48,7 @@ def test_manifest_has_required_contract_and_round_trips_json(tmp_path) -> None:
         action_normalizer={"type": "quantile", "stats_sha256": "1" * 64},
         encoder={"id": "dinov2", "revision": "pinned"},
         camera_layout={"views": ["external", "wrist"], "effect_view": "external"},
+        provenance={"catalog_sha256": "2" * 64, "start_mode": "uniform"},
         arrays={"context_key": ArraySpec.from_array(array)},
         content_hashes={
             "events.npz": _digest(),
@@ -60,7 +61,7 @@ def test_manifest_has_required_contract_and_round_trips_json(tmp_path) -> None:
     raw = json.loads(path.read_text(encoding="utf-8"))
 
     assert raw["schema"] == "warm.event-bank"
-    assert raw["version"] == 1
+    assert raw["version"] == 2
     assert raw["action_normalizer"]["type"] == "quantile"
     assert raw["encoder"]["revision"] == "pinned"
     assert raw["camera_layout"]["effect_view"] == "external"
@@ -74,6 +75,7 @@ def test_manifest_rejects_missing_per_array_hash() -> None:
             action_normalizer={},
             encoder={},
             camera_layout={},
+            provenance={},
             arrays={"context_key": ArraySpec("<f4", (1, 2))},
             content_hashes={"events.npz": _digest()},
             num_events=1,

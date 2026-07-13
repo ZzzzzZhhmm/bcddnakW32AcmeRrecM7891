@@ -3,24 +3,54 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import re
 from typing import Sequence
 
 import numpy as np
 
 from .event_bank import EventBank
 from .event_mining import EventMiningConfig, StartMode, mine_episode_events
+from .payload_names import (
+    CONTAINS_FORCED_GRIPPER,
+    EFFECT_POST,
+    EFFECT_PRE,
+    EVENT_SCORE,
+    FEATURE_EPISODE_SHA256,
+    MODEL_SPACE_ACTION,
+    OBSERVED_GRIPPER_STATE,
+    SOURCE_EPISODE_SHA256,
+    START_PROPRIO,
+    TASK_INDEX,
+)
 from .schema import EventId
 
 
-def _float32_time_array(name: str, value: np.ndarray, *, rank: int = 2) -> np.ndarray:
+_SHA256 = re.compile(r"^[0-9a-f]{64}$")
+
+
+def _float32_time_array(
+    name: str,
+    value: np.ndarray,
+    *,
+    exact_rank: int | None = None,
+    min_rank: int = 2,
+) -> np.ndarray:
     array = np.asarray(value)
     if array.dtype != np.dtype(np.float32):
         raise TypeError(f"{name} must use float32, got {array.dtype}")
-    if array.ndim != rank or any(dimension <= 0 for dimension in array.shape):
-        raise ValueError(f"{name} must be a non-empty rank-{rank} array, got {array.shape}")
+    if exact_rank is not None and array.ndim != exact_rank:
+        raise ValueError(
+            f"{name} must be a non-empty rank-{exact_rank} array, got {array.shape}"
+        )
+    if array.ndim < min_rank or any(dimension <= 0 for dimension in array.shape):
+        raise ValueError(
+            f"{name} must be non-empty with rank >= {min_rank}, got {array.shape}"
+        )
     if not np.isfinite(array).all():
         raise ValueError(f"{name} must contain only finite values")
-    return np.ascontiguousarray(array)
+    result = np.array(array, copy=True, order="C")
+    result.flags.writeable = False
+    return result
 
 
 @dataclass(frozen=True, slots=True)
@@ -37,26 +67,43 @@ class EpisodeFeatures:
     dataset_index: int
     episode_index: int
     task_index: int
+    source_episode_sha256: str
     model_actions: np.ndarray
     proprio: np.ndarray
     gripper: np.ndarray
     context_keys: np.ndarray
     semantic_features: np.ndarray
     vae_features: np.ndarray | None = None
+    feature_episode_sha256: str | None = None
 
     def __post_init__(self) -> None:
         # EventId owns the canonical scalar validation contract.
-        EventId(self.dataset_id, self.dataset_index, self.episode_index, 0)
+        identity = EventId(self.dataset_id, self.dataset_index, self.episode_index, 0)
         if isinstance(self.task_index, bool) or not isinstance(
             self.task_index, (int, np.integer)
         ):
             raise TypeError("task_index must be an integer")
         if int(self.task_index) < 0:
             raise ValueError("task_index must be non-negative")
+        if (
+            not isinstance(self.source_episode_sha256, str)
+            or _SHA256.fullmatch(self.source_episode_sha256) is None
+        ):
+            raise ValueError(
+                "source_episode_sha256 must be a lowercase 64-character SHA-256 digest"
+            )
+        if self.feature_episode_sha256 is not None and (
+            not isinstance(self.feature_episode_sha256, str)
+            or _SHA256.fullmatch(self.feature_episode_sha256) is None
+        ):
+            raise ValueError(
+                "feature_episode_sha256 must be a lowercase 64-character "
+                "SHA-256 digest or None"
+            )
 
-        actions = _float32_time_array("model_actions", self.model_actions)
-        proprio = _float32_time_array("proprio", self.proprio)
-        context = _float32_time_array("context_keys", self.context_keys)
+        actions = _float32_time_array("model_actions", self.model_actions, exact_rank=2)
+        proprio = _float32_time_array("proprio", self.proprio, exact_rank=2)
+        context = _float32_time_array("context_keys", self.context_keys, exact_rank=2)
         semantics = _float32_time_array("semantic_features", self.semantic_features)
         gripper = np.asarray(self.gripper)
         if gripper.dtype != np.dtype(np.float32):
@@ -64,7 +111,7 @@ class EpisodeFeatures:
         if gripper.ndim == 2 and gripper.shape[1] == 1:
             gripper = gripper[:, 0]
         if gripper.ndim != 1 or gripper.size == 0 or not np.isfinite(gripper).all():
-            raise ValueError("gripper must be a finite [T] or [T+1] float32 array")
+            raise ValueError("gripper must be a finite [T+1] float32 array")
 
         steps = actions.shape[0]
         for name, array in (
@@ -72,8 +119,8 @@ class EpisodeFeatures:
             ("context_keys", context),
             ("gripper", gripper),
         ):
-            if array.shape[0] not in (steps, steps + 1):
-                raise ValueError(f"{name} must have T or T+1 entries for T actions")
+            if array.shape[0] != steps + 1:
+                raise ValueError(f"{name} must have T+1 factual states for T actions")
         if semantics.shape[0] != steps + 1:
             raise ValueError(
                 "semantic_features must have T+1 factual states for T actions"
@@ -82,16 +129,32 @@ class EpisodeFeatures:
         vae = None
         if self.vae_features is not None:
             vae = _float32_time_array("vae_features", self.vae_features)
-            if vae.shape[0] not in (steps, steps + 1):
-                raise ValueError("vae_features must have T or T+1 entries for T actions")
+            if vae.shape[0] != steps + 1:
+                raise ValueError("vae_features must have T+1 factual states for T actions")
 
+        context_norms = np.linalg.norm(context.astype(np.float64), axis=1)
+        if np.any(context_norms <= 0.0):
+            bad_index = int(np.flatnonzero(context_norms <= 0.0)[0])
+            raise ValueError(
+                "context_keys must have non-zero cosine norm at every factual state; "
+                f"first invalid frame={bad_index}"
+            )
+
+        readonly_gripper = np.array(gripper, copy=True, order="C")
+        readonly_gripper.flags.writeable = False
+
+        object.__setattr__(self, "dataset_id", identity.dataset_id)
+        object.__setattr__(self, "dataset_index", identity.dataset_index)
+        object.__setattr__(self, "episode_index", identity.episode_index)
         object.__setattr__(self, "task_index", int(self.task_index))
+        object.__setattr__(self, "source_episode_sha256", self.source_episode_sha256)
         object.__setattr__(self, "model_actions", actions)
         object.__setattr__(self, "proprio", proprio)
-        object.__setattr__(self, "gripper", np.ascontiguousarray(gripper))
+        object.__setattr__(self, "gripper", readonly_gripper)
         object.__setattr__(self, "context_keys", context)
         object.__setattr__(self, "semantic_features", semantics)
         object.__setattr__(self, "vae_features", vae)
+        object.__setattr__(self, "feature_episode_sha256", self.feature_episode_sha256)
 
 
 def _assert_shared_shape(
@@ -141,8 +204,15 @@ def build_event_bank(
     task_indices: list[int] = []
     event_scores: list[float] = []
     contains_forced_gripper: list[bool] = []
+    source_episode_hashes: list[np.ndarray] = []
+    feature_episode_hashes: list[np.ndarray] = []
 
     for episode in episode_list:
+        if episode.feature_episode_sha256 is None:
+            raise ValueError(
+                "feature_episode_sha256 is required before building an event bank; "
+                "load episodes through the verified feature-cache collection"
+            )
         result = mine_episode_events(
             episode.model_actions,
             episode.proprio,
@@ -175,6 +245,12 @@ def build_event_bank(
             contains_forced_gripper.append(
                 any(index in forced_set for index in range(start, stop))
             )
+            source_episode_hashes.append(
+                np.frombuffer(bytes.fromhex(episode.source_episode_sha256), dtype=np.uint8)
+            )
+            feature_episode_hashes.append(
+                np.frombuffer(bytes.fromhex(episode.feature_episode_sha256), dtype=np.uint8)
+            )
 
     if not event_ids:
         raise ValueError(
@@ -184,20 +260,36 @@ def build_event_bank(
     return EventBank.from_arrays(
         event_ids,
         np.ascontiguousarray(np.stack(keys).astype(np.float32, copy=False)),
-        model_action=np.ascontiguousarray(np.stack(action_chunks).astype(np.float32, copy=False)),
-        effect_pre=np.ascontiguousarray(np.stack(effect_pre).astype(np.float32, copy=False)),
-        effect_post=np.ascontiguousarray(np.stack(effect_post).astype(np.float32, copy=False)),
-        start_proprio=np.ascontiguousarray(
-            np.stack(start_proprio).astype(np.float32, copy=False)
-        ),
-        gripper_state=np.ascontiguousarray(
-            np.stack(gripper_sequence).astype(np.float32, copy=False)
-        ),
-        task_index=np.ascontiguousarray(np.asarray(task_indices, dtype=np.int64)),
-        event_score=np.ascontiguousarray(np.asarray(event_scores, dtype=np.float32)),
-        contains_forced_gripper=np.ascontiguousarray(
-            np.asarray(contains_forced_gripper, dtype=np.bool_)
-        ),
+        **{
+            MODEL_SPACE_ACTION: np.ascontiguousarray(
+                np.stack(action_chunks).astype(np.float32, copy=False)
+            ),
+            EFFECT_PRE: np.ascontiguousarray(
+                np.stack(effect_pre).astype(np.float32, copy=False)
+            ),
+            EFFECT_POST: np.ascontiguousarray(
+                np.stack(effect_post).astype(np.float32, copy=False)
+            ),
+            START_PROPRIO: np.ascontiguousarray(
+                np.stack(start_proprio).astype(np.float32, copy=False)
+            ),
+            OBSERVED_GRIPPER_STATE: np.ascontiguousarray(
+                np.stack(gripper_sequence).astype(np.float32, copy=False)
+            ),
+            TASK_INDEX: np.ascontiguousarray(np.asarray(task_indices, dtype=np.int64)),
+            EVENT_SCORE: np.ascontiguousarray(
+                np.asarray(event_scores, dtype=np.float32)
+            ),
+            CONTAINS_FORCED_GRIPPER: np.ascontiguousarray(
+                np.asarray(contains_forced_gripper, dtype=np.bool_)
+            ),
+            SOURCE_EPISODE_SHA256: np.ascontiguousarray(
+                np.stack(source_episode_hashes)
+            ),
+            FEATURE_EPISODE_SHA256: np.ascontiguousarray(
+                np.stack(feature_episode_hashes)
+            ),
+        },
     )
 
 

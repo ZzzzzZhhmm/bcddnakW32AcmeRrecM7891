@@ -14,7 +14,9 @@ The upstream MIT copyright and license text must remain in every copy or
 substantial derivative. Keeping that attribution does not create an upstream
 GitHub fork, pull request, or public development record.
 
-WARM-specific code should live under `src/warm`, with the imported FastWAM
-package retained as an attributed compatibility baseline until checkpoint and
-evaluation parity are established.
-
+WARM-specific memory and offline-pipeline modules live under
+`src/fastwam/memory` so they can share the baseline package's action/data
+contracts without a second shadow package. Model integrations will remain
+explicitly named WARM components inside `src/fastwam`; the imported baseline is
+retained as an attributed compatibility layer until checkpoint and evaluation
+parity are established.

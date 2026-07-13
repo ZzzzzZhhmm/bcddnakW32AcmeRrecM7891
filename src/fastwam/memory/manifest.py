@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import hashlib
 import json
+import os
 from pathlib import Path
 from types import MappingProxyType
 from typing import Any, Mapping
@@ -54,6 +55,20 @@ def sha256_array(array: np.ndarray) -> str:
     digest.update(b"\0")
     digest.update(memoryview(contiguous).cast("B"))
     return digest.hexdigest()
+
+
+def sha256_canonical_json(value: Mapping[str, Any]) -> str:
+    """Hash one finite JSON object using WARM's canonical serialization."""
+
+    plain = _plain_json_mapping(value, "value")
+    encoded = json.dumps(
+        plain,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+        allow_nan=False,
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
 
 
 @dataclass(frozen=True, slots=True)
@@ -132,6 +147,7 @@ class EventBankManifest:
     action_normalizer: Mapping[str, Any]
     encoder: Mapping[str, Any]
     camera_layout: Mapping[str, Any]
+    provenance: Mapping[str, Any]
     arrays: Mapping[str, ArraySpec]
     content_hashes: Mapping[str, str]
     num_events: int
@@ -156,6 +172,7 @@ class EventBankManifest:
         action_normalizer = _plain_json_mapping(self.action_normalizer, "action_normalizer")
         encoder = _plain_json_mapping(self.encoder, "encoder")
         camera_layout = _plain_json_mapping(self.camera_layout, "camera_layout")
+        provenance = _plain_json_mapping(self.provenance, "provenance")
 
         if not isinstance(self.arrays, Mapping) or not self.arrays:
             raise ManifestError("arrays must be a non-empty mapping")
@@ -189,6 +206,7 @@ class EventBankManifest:
         object.__setattr__(self, "action_normalizer", MappingProxyType(action_normalizer))
         object.__setattr__(self, "encoder", MappingProxyType(encoder))
         object.__setattr__(self, "camera_layout", MappingProxyType(camera_layout))
+        object.__setattr__(self, "provenance", MappingProxyType(provenance))
         object.__setattr__(self, "arrays", MappingProxyType(dict(sorted(arrays.items()))))
         object.__setattr__(self, "content_hashes", MappingProxyType(dict(sorted(hashes.items()))))
 
@@ -203,6 +221,7 @@ class EventBankManifest:
             ),
             "encoder": _plain_json_mapping(self.encoder, "encoder"),
             "camera_layout": _plain_json_mapping(self.camera_layout, "camera_layout"),
+            "provenance": _plain_json_mapping(self.provenance, "provenance"),
             "arrays": {name: spec.to_dict() for name, spec in self.arrays.items()},
             "content_hashes": dict(self.content_hashes),
         }
@@ -219,6 +238,7 @@ class EventBankManifest:
             "action_normalizer",
             "encoder",
             "camera_layout",
+            "provenance",
             "arrays",
             "content_hashes",
         }
@@ -238,6 +258,7 @@ class EventBankManifest:
             action_normalizer=value["action_normalizer"],
             encoder=value["encoder"],
             camera_layout=value["camera_layout"],
+            provenance=value["provenance"],
             arrays=arrays,
             content_hashes=value["content_hashes"],
         )
@@ -247,7 +268,10 @@ class EventBankManifest:
         encoded = json.dumps(
             self.to_dict(), sort_keys=True, indent=2, ensure_ascii=False, allow_nan=False
         )
-        path.write_text(encoded + "\n", encoding="utf-8")
+        with path.open("wb") as handle:
+            handle.write((encoded + "\n").encode("utf-8"))
+            handle.flush()
+            os.fsync(handle.fileno())
 
     @classmethod
     def read(cls, path: str | Path) -> "EventBankManifest":

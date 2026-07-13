@@ -16,6 +16,18 @@ specification, roadmap, and evaluation protocol are in:
 - `docs/IMPLEMENTATION_ROADMAP.md`
 - `docs/DATA_AND_EVAL_PROTOCOL.md`
 - `docs/LOCAL_AND_SERVER_WORKFLOW.md`
+- `docs/M1_OFFLINE_PIPELINE.md`
+
+The canonical local working copy is `F:\WARM\code`. The Windows workstation
+is used for implementation and CPU contract tests; feature encoding, FastWAM
+training, and simulator evaluation run on the Linux GPU server from an exact
+private Git commit.
+
+Current engineering milestone: M1's audited full-episode data path,
+train-only normalization artifact, server feature-precompute entrypoint,
+immutable event/candidate caches, and dev oracle evaluator are implemented.
+No checkpoint, dataset, feature tensor, or simulator workload is downloaded or
+executed on the Windows workstation.
 
 The baseline was imported from FastWAM revision
 `45d8e1458921d83f8ad6cf9ce993d371208dabd0`; see `BASELINE.md`, `LICENSE`, and

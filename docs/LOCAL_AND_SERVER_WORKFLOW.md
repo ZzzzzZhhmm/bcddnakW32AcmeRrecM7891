@@ -58,7 +58,8 @@ Every server run records:
 Git commit SHA
 bank manifest SHA-256
 episode catalog SHA-256
-dataset/normalizer revision
+full parquet/camera audit SHA-256
+train-only normalizer stats and manifest SHA-256
 base checkpoint hash
 resolved Hydra configuration
 Python/CUDA/PyTorch/driver versions
