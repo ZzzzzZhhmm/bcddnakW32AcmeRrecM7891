@@ -1,11 +1,14 @@
 #!/bin/bash
 # ACP entrypoint for WARM LIBERO experiments.
 #
-# 提交为 ACP 任务的 command script。整体流程分四种 RUN_KIND，按顺序推进：
+# 提交为 ACP 任务的 command script。整体流程分五种 RUN_KIND，按顺序推进：
 #   1. download_dino      下载并 pin DINOv2-base 快照（一次性，需要联网）
-#   2. prepare_artifacts  构建 M1/M2 不可变产物链（catalog/audit/统计/DINO+VAE
-#                         特征/H=32 事件库/oracle 门/stride-1 候选缓存/contract）
-#                         单卡 GPU 即可，跑一次即可，产物不可覆盖
+#   2. prepare_artifacts  从零构建 M1/M2 不可变产物链（catalog/audit/统计/
+#                         DINO+VAE 特征/H=32 事件库/oracle 门/stride-1 候选
+#                         缓存/contract），单卡 GPU 即可，产物不可覆盖
+#   2b. prepare_m2        M1 已建成时只补 M2（候选缓存 + contract），可断点
+#                         续跑：已完成的产物自动跳过，半成品目录会报错并提示
+#                         手动删除。适合 M1 完成后中断、再在 tmux 里续跑 M2。
 #   3. oracle_check       打印 oracle 门报告（top-32 oracle 动作距离需比
 #                         context top-1 低约 15-20% 才继续训练，否则先修检索）
 #   4. train              正式训练（多卡，zero1/zero2 自动选择）
@@ -81,7 +84,7 @@ LOCAL_CACHE_ROOT="${LOCAL_CACHE_ROOT:-/tmp/${USER:-warm}/warm_cache}"
 LOG_ROOT="${LOG_ROOT:-${PROJECT_DIR}/tmp/acp_logs}"
 
 # TODO: 本次 ACP 任务要做什么，见文件头说明。
-# 可选值: download_dino | prepare_artifacts | oracle_check | train
+# 可选值: download_dino | prepare_artifacts | prepare_m2 | oracle_check | train
 RUN_KIND="${RUN_KIND:-train}"
 
 # TODO: 训练任务名（configs/task/*.yaml 的文件名去掉 .yaml），消融组合见文件头。
@@ -573,6 +576,111 @@ PY
     ;;
 
   # ------------------------------------------------------------------
+  # M1 已建成时只补 M2：train/dev stride-1 候选缓存 + source run contract。
+  # 与 prepare_warm_full_artifacts.sh 的 M2 段完全同参。可断点续跑：
+  # 候选缓存以 candidate_manifest.json + summary 判定完成，contract 以
+  # 文件存在判定完成；检测到半成品（有目录无 manifest）会报错并提示删除。
+  # ------------------------------------------------------------------
+  prepare_m2)
+    require_clean_git || exit 2
+    for path in "${M1}/libero_catalog.json" "${M1}/libero_audit.json" \
+                "${M1}/features/train_features.list" "${M1}/features/dev_features.list" \
+                "${EVENT_BANK}" "${M1}/oracle/hybrid_h32.json"; do
+      if [[ ! -e "${path}" ]]; then
+        echo "ERROR: required M1 artifact not found: ${path} (run prepare_artifacts first)"
+        exit 2
+      fi
+    done
+    if [[ ! -f "${FASTWAM_BASE_CHECKPOINT}" ]]; then
+      echo "ERROR: base checkpoint not found: ${FASTWAM_BASE_CHECKPOINT}"
+      exit 2
+    fi
+    export M1 M2 EVENT_BANK FASTWAM_BASE_CHECKPOINT
+    export TRAIN_CACHE DEV_CACHE TRAIN_CONTRACT DEV_CONTRACT
+    M2_SCRIPT="${LOG_DIR}/prepare_m2.sh"
+    cat > "${M2_SCRIPT}" <<'M2SH'
+#!/usr/bin/env bash
+set -euo pipefail
+
+CATALOG="${M1}/libero_catalog.json"
+AUDIT="${M1}/libero_audit.json"
+FEATURES="${M1}/features"
+TRAIN_SUMMARY="${M2}/candidates/hybrid_h32_train_k32.summary.json"
+DEV_SUMMARY="${M2}/candidates/hybrid_h32_dev_k32.summary.json"
+
+mkdir -p "${M2}/candidates" "${M2}/contracts"
+
+# 候选缓存的完成标志是 candidate_manifest.json（构建器最后阶段才写入）。
+# 目录存在但缺 manifest 说明上次构建被中断，属于半成品，必须手动删除后重跑。
+cache_state() {
+  local dir="$1" summary="$2"
+  if [[ -f "${dir}/candidate_manifest.json" && -f "${summary}" ]]; then
+    echo complete
+  elif [[ -e "${dir}" || -e "${summary}" ]]; then
+    echo partial
+  else
+    echo absent
+  fi
+}
+
+build_cache() {
+  local split="$1" dir="$2" summary="$3" feature_list="$4"
+  case "$(cache_state "${dir}" "${summary}")" in
+    complete)
+      echo "SKIP: ${split} candidate cache already complete: ${dir}"
+      return 0
+      ;;
+    partial)
+      echo "ERROR: partial ${split} candidate cache from an interrupted run."
+      echo "Remove it manually, then rerun:"
+      echo "  rm -rf '${dir}' '${summary}'"
+      return 2
+      ;;
+  esac
+  python scripts/build_warm_candidate_cache.py \
+    --bank "${EVENT_BANK}" \
+    --catalog "${CATALOG}" \
+    --audit-report "${AUDIT}" \
+    --feature-list "${feature_list}" \
+    --output "${dir}" \
+    --query-split "${split}" \
+    --query-stride 1 \
+    --top-k 32 \
+    --summary "${summary}"
+}
+
+build_contract() {
+  local split="$1" cache="$2" contract="$3"
+  if [[ -f "${contract}" ]]; then
+    echo "SKIP: ${split} contract already exists: ${contract}"
+    return 0
+  fi
+  python scripts/build_warm_source_run_contract.py \
+    --bank "${EVENT_BANK}" \
+    --candidate-cache "${cache}" \
+    --base-checkpoint "${FASTWAM_BASE_CHECKPOINT}" \
+    --output "${contract}" \
+    --query-split "${split}" \
+    --expected-action-horizon 32 \
+    --expected-action-dim 7
+}
+
+build_cache train "${TRAIN_CACHE}" "${TRAIN_SUMMARY}" "${FEATURES}/train_features.list"
+build_cache dev   "${DEV_CACHE}"   "${DEV_SUMMARY}"   "${FEATURES}/dev_features.list"
+build_contract train "${TRAIN_CACHE}" "${TRAIN_CONTRACT}"
+build_contract dev   "${DEV_CACHE}"   "${DEV_CONTRACT}"
+
+printf '%s\n' \
+  "WARM M2 artifacts published without overwrite:" \
+  "  train cache:    ${TRAIN_CACHE}" \
+  "  dev cache:      ${DEV_CACHE}" \
+  "  train contract: ${TRAIN_CONTRACT}" \
+  "  dev contract:   ${DEV_CONTRACT}"
+M2SH
+    CMD=(bash "${M2_SCRIPT}")
+    ;;
+
+  # ------------------------------------------------------------------
   # 决策辅助：打印 oracle 门报告。top-32 oracle 动作距离应比 context top-1
   # 低约 15-20%，未达标先修检索表示/切分，不要继续烧 5B 训练时间。
   # ------------------------------------------------------------------
@@ -685,7 +793,7 @@ PY
 
   *)
     echo "ERROR: Unsupported RUN_KIND=${RUN_KIND}"
-    echo "Expected one of: download_dino, prepare_artifacts, oracle_check, train"
+    echo "Expected one of: download_dino, prepare_artifacts, prepare_m2, oracle_check, train"
     exit 2
     ;;
 esac
