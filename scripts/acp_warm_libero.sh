@@ -434,6 +434,18 @@ fi
 export PATH="${CONDA_ENV_DIR}/bin:${PATH}"
 export PYTHONPATH="${PROJECT_DIR}/src:${PYTHONPATH:-}"
 
+# ACP 容器常以 root 运行而仓库属主是提交用户，git 会因 dubious ownership 拒绝
+# 读取。用任务级全局配置文件声明 safe.directory，不改动用户真实的 ~/.gitconfig。
+if ! git -C "${PROJECT_DIR}" rev-parse HEAD >/dev/null 2>&1; then
+  GIT_SAFE_CONFIG="${JOB_LOCAL_CACHE_ROOT}/gitconfig"
+  printf '[safe]\n\tdirectory = %s\n' "${PROJECT_DIR}" > "${GIT_SAFE_CONFIG}"
+  export GIT_CONFIG_GLOBAL="${GIT_SAFE_CONFIG}"
+  if ! git -C "${PROJECT_DIR}" rev-parse HEAD >/dev/null 2>&1; then
+    echo "ERROR: git cannot read ${PROJECT_DIR} even with safe.directory injected."
+    exit 2
+  fi
+fi
+
 export DIFFSYNTH_MODEL_BASE_PATH
 export HF_HOME="${CACHE_ROOT}/huggingface"
 export HUGGINGFACE_HUB_CACHE="${HF_HOME}/hub"
