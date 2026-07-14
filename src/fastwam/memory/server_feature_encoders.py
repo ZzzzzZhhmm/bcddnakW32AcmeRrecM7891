@@ -36,6 +36,9 @@ from .feature_precompute import (
 
 _PINNED_REVISION = re.compile(r"[0-9a-fA-F]{7,64}\Z")
 _IMAGE_SIZE = (224, 224)
+# float32 rounding headroom for convex-combination resamplers on saturated
+# pixels; anything beyond this is treated as a real contract violation.
+_PIXEL_ROUNDING_TOLERANCE = 1e-5
 LIBERO_IMAGE_PROFILE = "libero"
 ROBOTWIN_IMAGE_PROFILE = "robotwin"
 _IMAGE_PROFILES = frozenset({LIBERO_IMAGE_PROFILE, ROBOTWIN_IMAGE_PROFILE})
@@ -417,10 +420,18 @@ class FastWAMImageAdapter:
                     f"[{rows},3,{expected_size[0]},{expected_size[1]}], "
                     f"got {array.shape}"
                 )
-            if not np.isfinite(array).all() or np.any(array < 0.0) or np.any(array > 1.0):
+            # Antialiased bilinear resize of saturated pixels can overshoot
+            # [0,1] by float rounding (about 1e-7). Tolerate only that noise
+            # and clamp; genuinely out-of-range outputs are still rejected.
+            if (
+                not np.isfinite(array).all()
+                or np.any(array < -_PIXEL_ROUNDING_TOLERANCE)
+                or np.any(array > 1.0 + _PIXEL_ROUNDING_TOLERANCE)
+            ):
                 raise ServerFeatureEncodingError(
                     f"validation transforms for {key!r} must output finite [0,1] pixels"
                 )
+            array = np.clip(array, 0.0, 1.0)
             result[key] = _immutable_array(array, dtype=np.dtype(np.float32))
         return result
 
@@ -432,10 +443,15 @@ class FastWAMImageAdapter:
                 f"{field} resize must return floating {expected}, got "
                 f"{resized.shape} {resized.dtype}"
             )
-        if not np.isfinite(resized).all() or np.any(resized < 0.0) or np.any(resized > 1.0):
+        if (
+            not np.isfinite(resized).all()
+            or np.any(resized < -_PIXEL_ROUNDING_TOLERANCE)
+            or np.any(resized > 1.0 + _PIXEL_ROUNDING_TOLERANCE)
+        ):
             raise ServerFeatureEncodingError(
                 f"{field} resize must preserve finite [0,1] pixels"
             )
+        resized = np.clip(resized, 0.0, 1.0)
         return _immutable_array(resized, dtype=np.dtype(np.float32))
 
     def preprocess(self, images: Mapping[str, Any]) -> dict[str, np.ndarray]:
