@@ -619,14 +619,14 @@ class DinoV2FactualEncoder:
             )
 
         image_size = _size_pair(expected_image_size, field="expected_image_size")
+        # The snapshot's pretraining resolution (e.g. 518 for facebook/
+        # dinov2-base) does not have to equal the WARM inference resolution:
+        # Dinov2 interpolates position embeddings at forward time. The strict
+        # token-count contract in encode() still fails closed if the model
+        # does not produce the expected patch grid for ``image_size`` inputs.
         config_image_size = getattr(config, "image_size", None)
         if config_image_size is not None:
-            configured = _size_pair(config_image_size, field="model.config.image_size")
-            if configured != image_size:
-                raise ServerFeatureEncodingError(
-                    "expected image size disagrees with DINO config: "
-                    f"{image_size} != {configured}"
-                )
+            _size_pair(config_image_size, field="model.config.image_size")
         patch_size = _size_pair(
             getattr(config, "patch_size", None), field="model.config.patch_size"
         )
