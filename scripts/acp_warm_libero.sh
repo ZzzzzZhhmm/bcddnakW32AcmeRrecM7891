@@ -6,9 +6,10 @@
 #   2. prepare_artifacts  从零构建 M1/M2 不可变产物链（catalog/audit/统计/
 #                         DINO+VAE 特征/H=32 事件库/oracle 门/stride-1 候选
 #                         缓存/contract），单卡 GPU 即可，产物不可覆盖
-#   2b. prepare_m2        M1 已建成时只补 M2（候选缓存 + contract），可断点
-#                         续跑：已完成的产物自动跳过，半成品目录会报错并提示
-#                         手动删除。适合 M1 完成后中断、再在 tmux 里续跑 M2。
+#   2b. prepare_m2        M1 特征/事件库已建成时续跑剩余产物：oracle 门报告
+#                         （缺失时补跑）+ 候选缓存 + contract。可断点续跑：
+#                         已完成的产物自动跳过，半成品缓存目录会报错并提示
+#                         手动删除。适合 prepare_artifacts 中断后在 tmux 续跑。
 #   3. oracle_check       打印 oracle 门报告（top-32 oracle 动作距离需比
 #                         context top-1 低约 15-20% 才继续训练，否则先修检索）
 #   4. train              正式训练（多卡，zero1/zero2 自动选择）
@@ -576,16 +577,18 @@ PY
     ;;
 
   # ------------------------------------------------------------------
-  # M1 已建成时只补 M2：train/dev stride-1 候选缓存 + source run contract。
-  # 与 prepare_warm_full_artifacts.sh 的 M2 段完全同参。可断点续跑：
-  # 候选缓存以 candidate_manifest.json + summary 判定完成，contract 以
-  # 文件存在判定完成；检测到半成品（有目录无 manifest）会报错并提示删除。
+  # M1 特征/事件库已建成时续跑剩余产物：oracle 门报告（缺失时补跑）
+  # + train/dev stride-1 候选缓存 + source run contract。
+  # 与 prepare_warm_full_artifacts.sh 对应段完全同参。可断点续跑：
+  # oracle/contract 以文件存在判定完成（两者均为原子写出），候选缓存以
+  # candidate_manifest.json + summary 判定完成；检测到半成品缓存目录
+  # （有目录无 manifest）会报错并提示删除。
   # ------------------------------------------------------------------
   prepare_m2)
     require_clean_git || exit 2
     for path in "${M1}/libero_catalog.json" "${M1}/libero_audit.json" \
                 "${M1}/features/train_features.list" "${M1}/features/dev_features.list" \
-                "${EVENT_BANK}" "${M1}/oracle/hybrid_h32.json"; do
+                "${EVENT_BANK}"; do
       if [[ ! -e "${path}" ]]; then
         echo "ERROR: required M1 artifact not found: ${path} (run prepare_artifacts first)"
         exit 2
@@ -605,10 +608,26 @@ set -euo pipefail
 CATALOG="${M1}/libero_catalog.json"
 AUDIT="${M1}/libero_audit.json"
 FEATURES="${M1}/features"
+ORACLE_REPORT="${M1}/oracle/hybrid_h32.json"
 TRAIN_SUMMARY="${M2}/candidates/hybrid_h32_train_k32.summary.json"
 DEV_SUMMARY="${M2}/candidates/hybrid_h32_dev_k32.summary.json"
 
-mkdir -p "${M2}/candidates" "${M2}/contracts"
+mkdir -p "${M1}/oracle" "${M2}/candidates" "${M2}/contracts"
+
+# oracle 报告在计算完成后才原子写出，文件存在即代表这一步已完成。
+if [[ -f "${ORACLE_REPORT}" ]]; then
+  echo "SKIP: oracle report already exists: ${ORACLE_REPORT}"
+else
+  python scripts/evaluate_warm_oracle.py \
+    --bank "${EVENT_BANK}" \
+    --feature-list "${FEATURES}/dev_features.list" \
+    --catalog "${CATALOG}" \
+    --audit-report "${AUDIT}" \
+    --output "${ORACLE_REPORT}" \
+    --query-stride 4 \
+    --top-k 1,4,8,16,32 \
+    --arm-loss mse
+fi
 
 # 候选缓存的完成标志是 candidate_manifest.json（构建器最后阶段才写入）。
 # 目录存在但缺 manifest 说明上次构建被中断，属于半成品，必须手动删除后重跑。
