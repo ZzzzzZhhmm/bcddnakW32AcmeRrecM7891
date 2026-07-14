@@ -140,6 +140,10 @@ export WANDB_MODE="${WANDB_MODE:-offline}"
 # HF offline。download_dino 会强制置 0，其余任务默认离线。
 HF_OFFLINE="${HF_OFFLINE:-1}"
 
+# TODO: HF 端点。集群通常无法直连 huggingface.co，默认走 hf-mirror.com 镜像；
+# 仅 download_dino 使用（镜像与官方 hub 的 commit SHA 一致）。
+HF_DOWNLOAD_ENDPOINT="${HF_DOWNLOAD_ENDPOINT:-https://hf-mirror.com}"
+
 # 特征预计算旋钮（仅 prepare_artifacts 使用）
 WARM_PRECOMPUTE_DEVICE="${WARM_PRECOMPUTE_DEVICE:-cuda}"
 WARM_PRECOMPUTE_DTYPE="${WARM_PRECOMPUTE_DTYPE:-bfloat16}"
@@ -491,6 +495,7 @@ case "${RUN_KIND}" in
   # 一次性：下载并 pin DINOv2-base 快照，写 revision marker
   # ------------------------------------------------------------------
   download_dino)
+    export HF_ENDPOINT="${HF_DOWNLOAD_ENDPOINT}"
     export WARM_DINO_CHECKPOINT WARM_DINO_REVISION
     DOWNLOAD_SCRIPT="${LOG_DIR}/download_dino.py"
     cat > "${DOWNLOAD_SCRIPT}" <<'PY'
