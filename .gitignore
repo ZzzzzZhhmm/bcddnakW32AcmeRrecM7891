@@ -297,3 +297,6 @@ events.out.tfevents*
 wandb/
 onelogger.err
 onelogger.log
+
+# ACP job logs
+tmp/
