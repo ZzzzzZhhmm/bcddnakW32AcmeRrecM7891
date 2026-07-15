@@ -384,6 +384,14 @@ def capture_training_runtime(accelerator: object) -> dict[str, Any]:
             raise TrainingAttestationError(
                 "Accelerate DeepSpeed mode has no canonical deepspeed_config"
             )
+        raw_config = dict(raw_config)
+        steps_per_print = raw_config.get("steps_per_print")
+        if isinstance(steps_per_print, float) and math.isinf(steps_per_print):
+            # Accelerate's DeepSpeedPlugin unconditionally injects float("inf")
+            # here to silence DeepSpeed stdout logging. It is a logging cadence
+            # rather than a numerical training fact and cannot be represented
+            # in canonical JSON, so it is excluded from the attested config.
+            del raw_config["steps_per_print"]
         deepspeed_config = _plain_json_object(raw_config)
         zero = deepspeed_config.get("zero_optimization")
         if not isinstance(zero, Mapping):
