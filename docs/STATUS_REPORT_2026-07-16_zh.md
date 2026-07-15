@@ -32,12 +32,12 @@
 | M0 基线与可复现 | 完成 | FastWAM 基线权重、环境、许可证均就位（此前已有） |
 | M1 数据审计与 oracle 事件库 | **完成，验收门通过** | 见第 3 节数据 |
 | M2 产物（候选缓存 + contract） | **完成** | 见第 3 节数据 |
-| M2 训练（source-only） | 冒烟门调试中 | 首次冒烟暴露一个 attestation bug，已修复，正在复跑 |
+| M2 训练（source-only） | **冒烟门通过** | 首次冒烟暴露一个 attestation bug，修复后单卡 1 步全流程通过 |
 | M3-M7 | 未开始 | 完整 WARM 的模块代码已实现，等训练验证 |
 
 对应 runbook 章节：第 1-3 节（克隆、输入定义、特征/事件库/候选/contract
-构建）全部完成；第 4 节（Hydra 全量解析）已通过；当前处于第 5 节（GPU
-冒烟门）；下一步是第 6 节（正式训练，ACP 多卡）。
+构建）全部完成；第 4 节（Hydra 全量解析）通过；第 5 节（GPU 冒烟门）
+**通过**；下一步是第 6 节（正式训练，ACP 多卡）。
 
 ## 3. 产物链详情与质量数据
 
@@ -155,12 +155,20 @@ float64 键矩阵与范数加载后缓存一次。排序逻辑（stable argsort�
 `accelerate/utils/dataclasses.py:1290`，用途仅为关闭 DeepSpeed stdout
 日志），而 WARM 的 attestation 要求配置可序列化为规范 JSON（禁止
 inf/nan）。修复为在捕获运行时配置时剔除该注入值（它是日志节奏而非数值
-训练事实，不影响可复现性），attestation 相关 21 个单测通过。修复后的
-冒烟正在复跑中，结果以 tmux 会话 `warm_smoke` 与
-`tmp/acp_logs/train_*/console.log` 为准。
+训练事实，不影响可复现性），attestation 相关 21 个单测通过。
 
-冒烟需要验证的完整清单见 runbook 第 5 节（checkpoint 加载、双 token 流、
-gate 归零路径、有限梯度、存取 checkpoint 等）。
+**修复后冒烟门已通过**（2026-07-16 凌晨，退出码 0）：单卡完成 1 个完整
+优化步——基线 checkpoint 加载、contract 哈希核验、前向/反向/优化器更新、
+checkpoint 保存（`runs/libero_warm_source_2cam224_1e-4/20260715_181530_*/
+checkpoints/weights/step_000001.pt`）以及配套的 `.training.json`
+attestation 全部成功；单卡显存峰值约 20.1 GB（batch_size=1，ZeRO-2）。
+runbook 第 5 节的冒烟清单（checkpoint 加载、有限梯度、存取 checkpoint
+等）已满足，可以提交正式 ACP 训练。
+
+另注：第二次冒烟曾因 "formal WARM checkpoint publication requires a
+clean Git worktree" 失败——训练器在发布 checkpoint 时强制要求干净工作树
+（当时本报告文档尚未提交所致），这是设计行为；ACP 提交前确保所有改动已
+提交即可。
 
 ## 7. 下一步计划与 ACP 启动命令
 
