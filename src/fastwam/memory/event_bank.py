@@ -176,6 +176,14 @@ class EventBank:
         self._key_norms = norms
         self._payloads = MappingProxyType(dict(sorted(stored_payloads.items())))
         self._manifest: EventBankManifest | None = None
+        # Lazy per-bank search index (see _ensure_search_index). Rebuilding the
+        # float64 key matrix and identity columns on every search made each
+        # lookup O(N) in Python and dominated offline cache builds.
+        self._search_keys_float64: np.ndarray | None = None
+        self._search_dataset_codes: np.ndarray | None = None
+        self._search_dataset_code_map: dict[str, int] | None = None
+        self._search_dataset_indices: np.ndarray | None = None
+        self._search_episode_indices: np.ndarray | None = None
 
     @classmethod
     def from_arrays(
@@ -219,6 +227,36 @@ class EventBank:
         if index < 0 or index >= len(self):
             raise IndexError(index)
         return MappingProxyType({name: value[index] for name, value in self._payloads.items()})
+
+    def _ensure_search_index(self) -> None:
+        """Build the cached columnar search index on first use.
+
+        The cache holds the float64 key matrix plus integer identity columns
+        so exclusion masks and cosine scores are pure vectorized NumPy work.
+        All cached arrays are derived from immutable inputs, so laziness never
+        changes search results.
+        """
+
+        if self._search_keys_float64 is not None:
+            return
+        dataset_code_map: dict[str, int] = {}
+        dataset_codes = np.empty(len(self._event_ids), dtype=np.int64)
+        dataset_indices = np.empty(len(self._event_ids), dtype=np.int64)
+        episode_indices = np.empty(len(self._event_ids), dtype=np.int64)
+        for index, event_id in enumerate(self._event_ids):
+            code = dataset_code_map.setdefault(event_id.dataset_id, len(dataset_code_map))
+            dataset_codes[index] = code
+            dataset_indices[index] = event_id.dataset_index
+            episode_indices[index] = event_id.episode_index
+        for array in (dataset_codes, dataset_indices, episode_indices):
+            array.flags.writeable = False
+        keys_float64 = self._context_keys.astype(np.float64)
+        keys_float64.flags.writeable = False
+        self._search_dataset_code_map = dataset_code_map
+        self._search_dataset_codes = dataset_codes
+        self._search_dataset_indices = dataset_indices
+        self._search_episode_indices = episode_indices
+        self._search_keys_float64 = keys_float64
 
     def search(
         self,
@@ -300,25 +338,32 @@ class EventBank:
                     np.frombuffer(bytes.fromhex(digest_value), dtype=np.uint8),
                 )
             )
-        allowed = np.fromiter(
-            (
-                (episode_key is None or event_id.episode_key != episode_key)
-                and all(
-                    not np.array_equal(hash_rows[index], excluded_hash)
-                    for hash_rows, excluded_hash in excluded_content
+        self._ensure_search_index()
+        assert self._search_keys_float64 is not None
+        assert self._search_dataset_code_map is not None
+        assert self._search_dataset_codes is not None
+        assert self._search_dataset_indices is not None
+        assert self._search_episode_indices is not None
+
+        allowed = np.ones(len(self), dtype=np.bool_)
+        if episode_key is not None:
+            dataset_id, dataset_index, episode_index = episode_key
+            dataset_code = self._search_dataset_code_map.get(dataset_id)
+            if dataset_code is not None:
+                allowed &= ~(
+                    (self._search_dataset_codes == dataset_code)
+                    & (self._search_dataset_indices == dataset_index)
+                    & (self._search_episode_indices == episode_index)
                 )
-                for index, event_id in enumerate(self._event_ids)
-            ),
-            dtype=np.bool_,
-            count=len(self),
-        )
+        for hash_rows, excluded_hash in excluded_content:
+            allowed &= ~(hash_rows == excluded_hash).all(axis=1)
         candidate_indices = np.flatnonzero(allowed)
         if candidate_indices.size == 0:
             return ()
 
-        scores = (
-            self._context_keys.astype(np.float64, copy=False) @ query_float
-        ) / (self._key_norms * query_norm)
+        scores = (self._search_keys_float64 @ query_float) / (
+            self._key_norms * query_norm
+        )
         candidate_scores = scores[candidate_indices]
         # Stable sorting makes equal-score behavior reproducible in bank row order.
         order = np.argsort(-candidate_scores, kind="stable")[:top_k]
