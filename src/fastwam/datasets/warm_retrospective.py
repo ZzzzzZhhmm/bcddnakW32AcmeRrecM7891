@@ -32,6 +32,7 @@ from fastwam.memory.online_episode_memory import (
     OnlineRetrospectiveEpisodeMemory,
 )
 from fastwam.memory.runtime_candidates import RuntimeCandidateResolver
+from fastwam.utils.logging_config import get_logger
 
 from .warm_candidates import (
     RuntimeCandidateDatasetAdapter,
@@ -57,6 +58,8 @@ WARM_EPISODE_TOKENS = "warm_episode_tokens"
 WARM_EPISODE_MASK = "warm_episode_mask"
 WARM_EPISODE_ACTION_SUMMARIES = "warm_episode_action_summaries"
 WARM_EPISODE_ACTION_MASK = "warm_episode_action_mask"
+
+logger = get_logger(__name__)
 
 WARM_RETROSPECTIVE_FIELDS = (
     WARM_CANDIDATE_CONTEXT,
@@ -291,6 +294,7 @@ def _causal_event_frames_by_query(
                 frame_index=0,
                 factual_payload=_factual_payload(features, 0),
                 executed_actions_since_previous=None,
+                include_snapshot_sha256=False,
             )
             last_recorded = 0
         for frame in range(residue, observation_count, action_chunk_size):
@@ -307,11 +311,12 @@ def _causal_event_frames_by_query(
                 frame_index=frame,
                 factual_payload=_factual_payload(features, frame),
                 executed_actions_since_previous=actions,
+                include_snapshot_sha256=False,
             )
             if bool(evidence["event_written"]):
                 writes.append(frame)
             last_recorded = frame
-        memory.end_episode()
+        memory.end_episode(include_snapshot_sha256=False)
     if set(result) != set(range(observation_count)):
         raise RetrospectiveFeatureStoreError(
             "causal episode replay did not cover every factual query frame"
@@ -474,8 +479,13 @@ class RetrospectiveFeatureStore:
             raise RetrospectiveFeatureStoreError(
                 "complete WARM semantic features must have shape [T,N,D]"
             )
-        event_frames = {
-            key: _causal_event_frames_by_query(
+        logger.info(
+            "Building causal retrospective replay index for %d episodes",
+            len(records),
+        )
+        event_frames: dict[tuple[str, int, int], Mapping[int, tuple[int, ...]]] = {}
+        for record_index, (key, record) in enumerate(records.items(), start=1):
+            event_frames[key] = _causal_event_frames_by_query(
                 record.features,
                 action_horizon=int(action_horizon),
                 action_chunk_size=int(action_summary_chunk_size),
@@ -484,8 +494,12 @@ class RetrospectiveFeatureStore:
                 gripper_indices=parsed_gripper_tuple,
                 recent_event_capacity=int(recent_event_capacity),
             )
-            for key, record in records.items()
-        }
+            if record_index % 100 == 0 or record_index == len(records):
+                logger.info(
+                    "Causal retrospective replay index: %d/%d episodes",
+                    record_index,
+                    len(records),
+                )
         self._collection = collection
         self._records = MappingProxyType(records)
         self._event_frames = MappingProxyType(event_frames)

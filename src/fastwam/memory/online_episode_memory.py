@@ -441,15 +441,23 @@ class OnlineRetrospectiveEpisodeMemory:
         frame_index: int,
         factual_payload: Mapping[str, Any],
         executed_actions_since_previous: Any | None,
+        include_snapshot_sha256: bool = True,
     ) -> dict[str, Any]:
         """Commit one model-certified *current real observation* after inference.
 
         ``executed_actions_since_previous`` must be exactly the prefix sent to
         the environment since the preceding replan.  On the initial
         observation it must be empty because no policy action precedes it.
+
+        ``include_snapshot_sha256=False`` is reserved for deterministic
+        offline replay that consumes only update/event counters. It avoids
+        serializing large factual VAE arrays after every frame while leaving
+        the online/audited default unchanged.
         """
 
         self._require_active()
+        if not isinstance(include_snapshot_sha256, bool):
+            raise TypeError("include_snapshot_sha256 must be a boolean")
         frame = _nonnegative_int(frame_index, "frame_index")
         if self._last_recorded_frame is not None and frame <= self._last_recorded_frame:
             raise EpisodeMemoryLifecycleError(
@@ -513,6 +521,9 @@ class OnlineRetrospectiveEpisodeMemory:
                 "change_score": None,
                 "write_threshold": None,
             }
+            observation_updates = 0
+            event_writes = 0
+            event_merges = 0
         else:
             if actions.ndim != 2 or actions.shape[1] != self._memory.config.action_dim:
                 raise OnlineEpisodeMemoryError(
@@ -536,20 +547,31 @@ class OnlineRetrospectiveEpisodeMemory:
                     update.event_status.repeated_attempt_count
                 ),
             }
+            observation_updates = int(update.counters.observation_updates)
+            event_writes = int(update.counters.event_writes)
+            event_merges = int(update.counters.event_merges)
         self._last_recorded_frame = frame
-        snapshot = self._memory.snapshot()
+        snapshot_sha256 = (
+            self._memory.snapshot().sha256
+            if include_snapshot_sha256
+            else None
+        )
         return {
             **update_evidence,
-            "snapshot_sha256_after_record": snapshot.sha256,
-            "observation_updates": snapshot.counters.observation_updates,
-            "event_writes": snapshot.counters.event_writes,
-            "event_merges": snapshot.counters.event_merges,
+            "snapshot_sha256_after_record": snapshot_sha256,
+            "observation_updates": observation_updates,
+            "event_writes": event_writes,
+            "event_merges": event_merges,
         }
 
-    def end_episode(self) -> dict[str, Any]:
+    def end_episode(
+        self, *, include_snapshot_sha256: bool = True
+    ) -> dict[str, Any]:
         """Seal current history and invalidate its capability."""
 
         self._require_active()
+        if not isinstance(include_snapshot_sha256, bool):
+            raise TypeError("include_snapshot_sha256 must be a boolean")
         if self._capability is None:
             evidence = {
                 "snapshot_sha256": None,
@@ -560,7 +582,9 @@ class OnlineRetrospectiveEpisodeMemory:
         else:
             snapshot = self._memory.end_episode(self._capability)
             evidence = {
-                "snapshot_sha256": snapshot.sha256,
+                "snapshot_sha256": (
+                    snapshot.sha256 if include_snapshot_sha256 else None
+                ),
                 "observation_updates": snapshot.counters.observation_updates,
                 "event_writes": snapshot.counters.event_writes,
                 "event_merges": snapshot.counters.event_merges,

@@ -3,7 +3,10 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from fastwam.memory.episode_memory import EpisodeMemoryLifecycleError
+from fastwam.memory.episode_memory import (
+    EpisodeMemoryLifecycleError,
+    EpisodeMemorySnapshot,
+)
 from fastwam.memory.online_episode_memory import (
     OnlineEpisodeMemoryError,
     OnlineRetrospectiveEpisodeMemory,
@@ -51,6 +54,37 @@ def test_history_is_empty_until_first_model_certified_factual_observation() -> N
     model_kwargs = history.model_kwargs()
     assert model_kwargs["episode_tokens"].flags.writeable
     assert model_kwargs["episode_mask"].flags.writeable
+
+
+def test_offline_replay_can_skip_expensive_snapshot_serialization(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    runtime = _runtime()
+    runtime.begin_episode(0)
+
+    def fail_digest(_snapshot: EpisodeMemorySnapshot) -> str:
+        raise AssertionError("offline replay must not serialize a snapshot")
+
+    monkeypatch.setattr(EpisodeMemorySnapshot, "sha256", property(fail_digest))
+    initial = runtime.record_factual_observation(
+        frame_index=0,
+        factual_payload=_payload(0.0),
+        executed_actions_since_previous=None,
+        include_snapshot_sha256=False,
+    )
+    update = runtime.record_factual_observation(
+        frame_index=4,
+        factual_payload=_payload(1.0),
+        executed_actions_since_previous=np.ones((4, 7), dtype=np.float32),
+        include_snapshot_sha256=False,
+    )
+    sealed = runtime.end_episode(include_snapshot_sha256=False)
+
+    assert initial["snapshot_sha256_after_record"] is None
+    assert initial["observation_updates"] == 0
+    assert update["snapshot_sha256_after_record"] is None
+    assert update["observation_updates"] == 1
+    assert sealed["snapshot_sha256"] is None
 
 
 def test_exact_executed_prefix_is_committed_only_after_next_real_observation() -> None:
