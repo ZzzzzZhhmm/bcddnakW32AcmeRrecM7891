@@ -193,6 +193,7 @@ def test_resolves_fixed_width_rows_and_safely_gathers_actions(tmp_path: Path) ->
     assert resolver.query_split == "train"
     assert resolver.query_stride == 1
     assert resolver.action_horizon == 4
+    assert resolver.semantic_effect_shape == (2, 2)
     assert resolver.bank_manifest_sha256 == sha256_file(
         bank_path / MANIFEST_FILENAME
     )

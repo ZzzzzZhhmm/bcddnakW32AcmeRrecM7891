@@ -31,7 +31,7 @@ from .candidate_cache import (
 )
 from .event_bank import MANIFEST_FILENAME as BANK_MANIFEST_FILENAME, EventBank
 from .manifest import sha256_file
-from .payload_names import MODEL_SPACE_ACTION
+from .payload_names import EFFECT_PRE, MODEL_SPACE_ACTION
 from .schema import EventId
 
 
@@ -532,7 +532,9 @@ class RuntimeCandidateResolver:
 
     @property
     def semantic_effect_shape(self) -> tuple[int, ...]:
-        return tuple(int(value) for value in self._bank.payload[EFFECT_PRE].shape[1:])
+        return tuple(
+            int(value) for value in self._bank.payload(EFFECT_PRE).shape[1:]
+        )
 
     @property
     def query_catalog_sha256(self) -> str:
