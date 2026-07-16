@@ -101,8 +101,10 @@ RMBench data and matrix results remain external artifacts, not Git content.
 1. Local CPU tests and compile checks pass.
 2. Fast-forward the exact commit to the private `ZzzzzZhhmm/WARM` `main`
    branch.
-3. Clone or pull that exact private `main` commit on the GPU server; never
-   copy an uncommitted working tree.
+3. Clone or pull that exact private `main` commit on the GPU server for formal
+   experiments. During manual-copy debugging only, set
+   `ALLOW_DIRTY_WARM_TRAINING=true`; those checkpoints are deliberately
+   unattested and cannot be promoted as formal evidence.
 4. Build or verify external artifacts against their manifests.
 5. Run GPU smoke tests and record the resolved environment.
 6. Run the current milestone's go/no-go experiment.

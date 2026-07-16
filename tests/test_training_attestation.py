@@ -411,3 +411,26 @@ def test_full_retrospection_preserves_closed_source_attestation_schema() -> None
     method = source[start : source.index("\n\n\n__all__", start)]
     assert "return super().training_attestation_metadata()" in method
     assert 'value["retrospection_config_sha256"]' not in method
+
+
+def test_dirty_debug_mode_is_explicit_and_unattested() -> None:
+    root = Path(__file__).resolve().parents[1]
+    trainer = (root / "src/fastwam/trainer.py").read_text(encoding="utf-8")
+    train_config = (root / "configs/train.yaml").read_text(encoding="utf-8")
+    acp_script = (root / "scripts/acp_warm_libero.sh").read_text(
+        encoding="utf-8"
+    )
+
+    assert "allow_unattested_warm_checkpoints: false" in train_config
+    assert "if self.allow_unattested_warm_checkpoints:" in trainer
+    assert "saving WARM debug" in trainer
+    assert (
+        'ALLOW_DIRTY_WARM_TRAINING="${ALLOW_DIRTY_WARM_TRAINING:-false}"'
+        in acp_script
+    )
+    assert '&& "${RUN_KIND}" == "train"' in acp_script
+    assert '&& "${TASK_NAME}" == libero_warm_*' in acp_script
+    assert (
+        'WARM_OVERRIDES+=("allow_unattested_warm_checkpoints=true")'
+        in acp_script
+    )

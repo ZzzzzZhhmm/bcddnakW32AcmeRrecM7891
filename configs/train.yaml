@@ -31,6 +31,11 @@ max_grad_norm: 1.0
 weight_decay: 0.0
 resume: null
 
+# Explicit debug escape hatch for manually synchronized server worktrees.
+# When true, WARM checkpoints are saved normally but no formal
+# ``.training.json`` attestation is published. Formal experiments keep false.
+allow_unattested_warm_checkpoints: false
+
 # wandb
 wandb:
   enabled: false

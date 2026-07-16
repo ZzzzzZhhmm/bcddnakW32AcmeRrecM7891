@@ -136,6 +136,11 @@ EVAL_EVERY="${EVAL_EVERY:-null}"
 # 脚本会再次强制检查）。仅调试冒烟时可设 false。
 REQUIRE_CLEAN_GIT="${REQUIRE_CLEAN_GIT:-true}"
 
+# 手动覆盖服务器源码时使用。true 会跳过 clean-worktree 门，并让 Trainer
+# 保存普通调试 checkpoint 而不发布正式 .training.json attestation。
+# 正式论文训练必须保持 false。
+ALLOW_DIRTY_WARM_TRAINING="${ALLOW_DIRTY_WARM_TRAINING:-false}"
+
 # wandb（默认 offline，正式配方不联网记日志）
 WANDB_ENABLED="${WANDB_ENABLED:-true}"
 WANDB_PROJECT="${WANDB_PROJECT:-WARM}"
@@ -328,6 +333,12 @@ validate_lerobot_dir() {
 }
 
 require_clean_git() {
+  if [[ "${ALLOW_DIRTY_WARM_TRAINING}" == "true" \
+        && "${RUN_KIND}" == "train" \
+        && "${TASK_NAME}" == libero_warm_* ]]; then
+    echo "WARNING: ALLOW_DIRTY_WARM_TRAINING=true; debug checkpoints will be unattested."
+    return 0
+  fi
   if [[ "${REQUIRE_CLEAN_GIT}" != "true" ]]; then
     echo "WARNING: REQUIRE_CLEAN_GIT=false; this run is not admissible as formal evidence."
     return 0
@@ -400,6 +411,10 @@ validate_optional_positive_integer NUM_EPOCHS "${NUM_EPOCHS}" || exit 2
 validate_optional_nonnegative_integer LOG_EVERY "${LOG_EVERY}" || exit 2
 validate_optional_nonnegative_integer SAVE_EVERY "${SAVE_EVERY}" || exit 2
 validate_optional_nonnegative_integer EVAL_EVERY "${EVAL_EVERY}" || exit 2
+if [[ "${ALLOW_DIRTY_WARM_TRAINING}" != "true" && "${ALLOW_DIRTY_WARM_TRAINING}" != "false" ]]; then
+  echo "ERROR: ALLOW_DIRTY_WARM_TRAINING must be true or false, got ${ALLOW_DIRTY_WARM_TRAINING}"
+  exit 2
+fi
 warn_if_gpu_request_mismatch || exit 2
 
 if [[ ! -d "${PROJECT_DIR}" ]]; then
@@ -766,6 +781,9 @@ M2SH
         "data.warm_candidates.train.retrospective_feature_list=${M1}/features/train_features.list"
         "data.warm_candidates.val.retrospective_feature_list=${M1}/features/dev_features.list"
       )
+    fi
+    if [[ "${ALLOW_DIRTY_WARM_TRAINING}" == "true" ]]; then
+      WARM_OVERRIDES+=("allow_unattested_warm_checkpoints=true")
     fi
 
     # Hydra 全量解析预检：失败则不启动多卡任务

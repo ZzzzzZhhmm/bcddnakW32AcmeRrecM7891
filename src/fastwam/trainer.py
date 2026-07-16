@@ -49,6 +49,10 @@ class Wan22Trainer:
         self.seed = int(cfg.seed)
         
         self.resume = cfg.resume
+        allow_unattested = cfg.get("allow_unattested_warm_checkpoints", False)
+        if not isinstance(allow_unattested, bool):
+            raise TypeError("allow_unattested_warm_checkpoints must be a boolean")
+        self.allow_unattested_warm_checkpoints = allow_unattested
         self.mixed_precision = str(cfg.mixed_precision).strip().lower()
         if self.mixed_precision not in {"no", "fp16", "bf16"}:
             raise ValueError(
@@ -154,6 +158,13 @@ class Wan22Trainer:
             attested_model, "training_attestation_metadata", None
         )
         if not callable(metadata_fn):
+            return None
+
+        if self.allow_unattested_warm_checkpoints:
+            logger.warning(
+                "allow_unattested_warm_checkpoints=true: saving WARM debug "
+                "checkpoints without formal .training.json attestations"
+            )
             return None
 
         # V1 attests a fresh optimizer/scheduler trajectory from the immutable

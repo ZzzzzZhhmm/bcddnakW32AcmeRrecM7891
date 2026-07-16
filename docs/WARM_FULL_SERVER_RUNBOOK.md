@@ -87,6 +87,13 @@ export PYTHONPATH=src
 Record that SHA. Do not train from an uncommitted directory or copy a mutable
 worktree from the workstation.
 
+For a manual-copy smoke/debug cycle, the ACP launcher accepts the explicit
+`ALLOW_DIRTY_WARM_TRAINING=true` escape hatch. It bypasses the clean-worktree
+gate and saves ordinary checkpoints, but deliberately omits formal
+`.training.json` attestations. Such checkpoints are suitable for graph/OOM/
+runtime debugging only and must not be used for formal comparisons or online
+contract publication.
+
 ## 2. Define server inputs
 
 ```bash
