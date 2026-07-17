@@ -40,12 +40,22 @@ class Wan22Trainer:
         self.num_epochs = int(cfg.num_epochs)
         max_steps = cfg.max_steps
         self.max_steps = int(max_steps) if max_steps is not None else None
+        run_steps = cfg.get("run_steps", None)
+        self.run_steps = int(run_steps) if run_steps is not None else None
+        if self.run_steps is not None and self.run_steps <= 0:
+            raise ValueError("run_steps must be a positive integer or null")
         self.log_every = int(cfg.log_every)
         self.save_every = int(cfg.save_every)
         self.eval_every = int(cfg.eval_every)
         self.eval_num_inference_steps = int(cfg.eval_num_inference_steps)
         self.gradient_accumulation_steps = int(cfg.gradient_accumulation_steps)
         self.max_grad_norm = float(cfg.max_grad_norm)
+        self.max_nonfinite_gradient_skips = int(
+            cfg.get("max_nonfinite_gradient_skips", 3)
+        )
+        if self.max_nonfinite_gradient_skips <= 0:
+            raise ValueError("max_nonfinite_gradient_skips must be positive")
+        self._consecutive_nonfinite_gradient_skips = 0
         self.seed = int(cfg.seed)
         
         self.resume = cfg.resume
@@ -930,12 +940,26 @@ class Wan22Trainer:
         if self.max_steps is None:
             raise ValueError("`max_steps` must be set before entering the while-step training loop.")
 
-        logger.info("Starting training with max_steps=%d.", self.max_steps)
+        run_target_step = self.max_steps
+        if self.run_steps is not None:
+            run_target_step = min(
+                self.max_steps,
+                self.global_step + self.run_steps,
+            )
+        logger.info(
+            "Starting training with scheduler_max_steps=%d run_target_step=%d "
+            "run_steps=%s warmup_steps=%d initial_lr=%.3e.",
+            self.max_steps,
+            run_target_step,
+            self.run_steps,
+            self.scheduler_warmup_steps,
+            float(self.optimizer.param_groups[0]["lr"]),
+        )
         data_iter = iter(self.train_loader)
         self.run_start_step = self.global_step
         self.run_start_time = time.perf_counter()
 
-        while self.global_step < self.max_steps:
+        while self.global_step < run_target_step:
             try:
                 sample = next(data_iter)
                 self.batch_in_epoch += 1
@@ -955,6 +979,40 @@ class Wan22Trainer:
 
                 if self.accelerator.sync_gradients:
                     grad_norm = self.accelerator.clip_grad_norm_(self.model.parameters(), self.max_grad_norm)
+                    grad_norm_tensor = torch.as_tensor(
+                        grad_norm,
+                        device=loss.device,
+                        dtype=torch.float32,
+                    ).detach().reshape(1)
+                    finite_grad_flags = self.accelerator.gather(
+                        torch.isfinite(grad_norm_tensor).to(dtype=torch.int32)
+                    )
+                    if not bool(torch.all(finite_grad_flags != 0).item()):
+                        gathered_grad_norms = self.accelerator.gather(
+                            grad_norm_tensor
+                        ).detach().cpu().tolist()
+                        self._consecutive_nonfinite_gradient_skips += 1
+                        self.optimizer.zero_grad(set_to_none=True)
+                        if self.accelerator.is_main_process:
+                            logger.warning(
+                                "Skipping optimizer update at global_step=%d: "
+                                "non-finite distributed gradient norm(s)=%s "
+                                "consecutive_skips=%d/%d",
+                                self.global_step,
+                                gathered_grad_norms,
+                                self._consecutive_nonfinite_gradient_skips,
+                                self.max_nonfinite_gradient_skips,
+                            )
+                        if (
+                            self._consecutive_nonfinite_gradient_skips
+                            >= self.max_nonfinite_gradient_skips
+                        ):
+                            raise FloatingPointError(
+                                "repeated non-finite distributed gradients; "
+                                "optimizer update was blocked before parameter corruption"
+                            )
+                        continue
+                    self._consecutive_nonfinite_gradient_skips = 0
                     self.optimizer.step()
                     if not self.accelerator.optimizer_step_was_skipped:
                         self.scheduler.step()
@@ -970,7 +1028,6 @@ class Wan22Trainer:
                         global_loss_metrics[key] = float(
                             self.accelerator.gather(metric_tensor).mean().item()
                         )
-                    grad_norm_tensor = torch.tensor(grad_norm, device=loss.device, dtype=torch.float32)
                     global_grad_norm = float(self.accelerator.gather(grad_norm_tensor).mean().item())
 
                     current_lr = float(self.optimizer.param_groups[0]["lr"])
@@ -986,7 +1043,8 @@ class Wan22Trainer:
                         if global_loss_metrics:
                             detail_str = " ".join([f"{k}={v:.4f}" for k, v in sorted(global_loss_metrics.items())])
                             description += detail_str + " "
-                        description += "lr=%.2e speed=%.2f step/s, %.2f samples/s eta=%s" % (
+                        description += "grad_norm=%.4f lr=%.2e speed=%.2f step/s, %.2f samples/s eta=%s" % (
+                            global_grad_norm,
                             current_lr,
                             steps_per_sec,
                             steps_per_sec * self.batch_size * self.accelerator.num_processes,
@@ -1059,16 +1117,24 @@ class Wan22Trainer:
                                 ckpt_info["state_path"],
                             )
 
-                    if self.global_step >= self.max_steps:
+                    if self.global_step >= run_target_step:
                         ckpt_info = (
                             checkpoint_saved_this_step
                             if checkpoint_saved_this_step is not None
                             else self.save_checkpoint()
                         )
                         if self.accelerator.is_main_process:
+                            reason = (
+                                "max_steps reached"
+                                if self.global_step >= self.max_steps
+                                else "run_steps reached"
+                            )
                             logger.info(
-                                "[done] max_steps reached step=%d weights=%s state=%s",
+                                "[done] %s step=%d scheduler_max_steps=%d "
+                                "weights=%s state=%s",
+                                reason,
                                 self.global_step,
+                                self.max_steps,
                                 ckpt_info["weights_path"],
                                 ckpt_info["state_path"],
                             )

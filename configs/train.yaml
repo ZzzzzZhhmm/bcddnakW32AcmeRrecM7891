@@ -18,6 +18,10 @@ lr_scheduler_type: "cosine"
 learning_rate: 1.0e-4
 num_epochs: 1
 max_steps: null
+# Optional per-invocation stop limit. Unlike ``max_steps``, this does not
+# shorten the optimizer/scheduler trajectory. Use it for smoke tests and
+# wall-time-bounded resume segments.
+run_steps: null
 log_every: 10
 save_every: 100
 eval_every: 50
@@ -28,6 +32,11 @@ gradient_accumulation_steps: 1
 mixed_precision: "bf16" # one of: [no, fp16, bf16]
 seed: 42
 max_grad_norm: 1.0
+# Never let one overflowing distributed gradient update corrupt every rank.
+# The offending synchronized update is skipped; repeated failures abort with
+# an explicit numerical error instead of surfacing one step later as NaN
+# activations.
+max_nonfinite_gradient_skips: 3
 weight_decay: 0.0
 resume: null
 

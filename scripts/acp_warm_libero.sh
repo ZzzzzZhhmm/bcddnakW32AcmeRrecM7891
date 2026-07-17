@@ -122,10 +122,11 @@ GRADIENT_ACCUMULATION_STEPS="${GRADIENT_ACCUMULATION_STEPS:-task}"
 # （完整 WARM 默认 true 且必须开启；M2/基线默认 false，OOM 时可设 true）。
 MOT_CHECKPOINT_MIXED_ATTN="${MOT_CHECKPOINT_MIXED_ATTN:-task}"
 
-# TODO: 运行时长与断点。长 ACP 任务建议设 MAX_STEPS 保证 walltime 内干净退出，
-# 下一段用 RESUME 指向 runs/.../checkpoints/state/step_NNNNNN 续跑。
-# 留 null 则沿用任务配置（warm 任务 num_epochs=10）。
+# MAX_STEPS 定义完整 optimizer/scheduler 轨迹。不要用 MAX_STEPS=1/2 做
+# smoke test，否则会消除 5% warmup 并改变首步更新。RUN_STEPS 只限制本次
+# invocation 的更新步数，同时保留完整 scheduler，适合 smoke 与 walltime 分段。
 MAX_STEPS="${MAX_STEPS:-null}"
+RUN_STEPS="${RUN_STEPS:-null}"
 RESUME="${RESUME:-null}"
 NUM_EPOCHS="${NUM_EPOCHS:-null}"
 LOG_EVERY="${LOG_EVERY:-null}"
@@ -317,13 +318,6 @@ resolve_zero_stage() {
   fi
 }
 
-append_optional_override() {
-  local key="$1" value="$2"
-  if [[ -n "${value}" && "${value}" != "null" && "${value}" != "none" && "${value}" != "task" ]]; then
-    CMD+=("${key}=${value}")
-  fi
-}
-
 validate_lerobot_dir() {
   local dir="$1"
   if [[ ! -f "${dir}/meta/tasks.jsonl" || ! -f "${dir}/meta/info.json" ]]; then
@@ -407,6 +401,7 @@ require_no_todo FASTWAM_BASE_CHECKPOINT "${FASTWAM_BASE_CHECKPOINT}" || exit 2
 require_no_todo LOG_ROOT "${LOG_ROOT}" || exit 2
 
 validate_optional_positive_integer MAX_STEPS "${MAX_STEPS}" || exit 2
+validate_optional_positive_integer RUN_STEPS "${RUN_STEPS}" || exit 2
 validate_optional_positive_integer NUM_EPOCHS "${NUM_EPOCHS}" || exit 2
 validate_optional_nonnegative_integer LOG_EVERY "${LOG_EVERY}" || exit 2
 validate_optional_nonnegative_integer SAVE_EVERY "${SAVE_EVERY}" || exit 2
@@ -786,11 +781,31 @@ M2SH
       WARM_OVERRIDES+=("allow_unattested_warm_checkpoints=true")
     fi
 
+    # Preflight 与实际 launcher 共用同一组 override，确保保存的 resolved
+    # config 准确反映 batch/accum/scheduler/run limit。
+    TRAINING_OVERRIDES=()
+    add_training_override() {
+      local key="$1" value="$2"
+      if [[ -n "${value}" && "${value}" != "null" && "${value}" != "none" && "${value}" != "task" ]]; then
+        TRAINING_OVERRIDES+=("${key}=${value}")
+      fi
+    }
+    add_training_override "batch_size" "${RESOLVED_BATCH_SIZE}"
+    add_training_override "gradient_accumulation_steps" "${RESOLVED_GRADIENT_ACCUMULATION_STEPS}"
+    add_training_override "model.mot_checkpoint_mixed_attn" "${MOT_CHECKPOINT_MIXED_ATTN}"
+    add_training_override "max_steps" "${MAX_STEPS}"
+    add_training_override "run_steps" "${RUN_STEPS}"
+    add_training_override "resume" "${RESUME}"
+    add_training_override "num_epochs" "${NUM_EPOCHS}"
+    add_training_override "log_every" "${LOG_EVERY}"
+    add_training_override "save_every" "${SAVE_EVERY}"
+    add_training_override "eval_every" "${EVAL_EVERY}"
+
     # Hydra 全量解析预检：失败则不启动多卡任务
     if [[ "${PREFLIGHT_RESOLVE}" == "true" ]]; then
       echo "========== PREFLIGHT RESOLVE =========="
       python scripts/train.py "task=${TASK_NAME}" \
-        "${WARM_OVERRIDES[@]}" "${EXTRA_ARGS[@]}" \
+        "${WARM_OVERRIDES[@]}" "${TRAINING_OVERRIDES[@]}" "${EXTRA_ARGS[@]}" \
         --cfg job --resolve > "${LOG_DIR}/resolved_config.preflight.yaml"
       PREFLIGHT_CODE=$?
       if [[ "${PREFLIGHT_CODE}" -ne 0 ]]; then
@@ -815,16 +830,8 @@ M2SH
       "wandb.project=${WANDB_PROJECT}"
       "wandb.mode=${WANDB_MODE}"
       "${WARM_OVERRIDES[@]}"
+      "${TRAINING_OVERRIDES[@]}"
     )
-    append_optional_override "batch_size" "${RESOLVED_BATCH_SIZE}"
-    append_optional_override "gradient_accumulation_steps" "${RESOLVED_GRADIENT_ACCUMULATION_STEPS}"
-    append_optional_override "model.mot_checkpoint_mixed_attn" "${MOT_CHECKPOINT_MIXED_ATTN}"
-    append_optional_override "max_steps" "${MAX_STEPS}"
-    append_optional_override "resume" "${RESUME}"
-    append_optional_override "num_epochs" "${NUM_EPOCHS}"
-    append_optional_override "log_every" "${LOG_EVERY}"
-    append_optional_override "save_every" "${SAVE_EVERY}"
-    append_optional_override "eval_every" "${EVAL_EVERY}"
     CMD+=("${EXTRA_ARGS[@]}")
     ;;
 

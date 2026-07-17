@@ -201,7 +201,8 @@ bash scripts/acp_warm_libero.sh
 
 ACP 注意事项：
 
-- 任务有 walltime 上限时加 `MAX_STEPS=<步数> SAVE_EVERY=<间隔>`，下一段用
+- 任务有 walltime 上限时加 `RUN_STEPS=<本段步数> SAVE_EVERY=<间隔>`；不要用
+  `MAX_STEPS` 截短本段，否则会同时压缩完整 scheduler/warmup。下一段用
   `RESUME=runs/<task>/<run_id>/checkpoints/state/step_NNNNNN` 续跑；
 - 卡数不足 8 时改 `NPROC_PER_NODE`（脚本自动切 ZeRO-2），可用
   `PER_DEVICE_BATCH_SIZE=8 GRADIENT_ACCUMULATION_STEPS=auto` 维持全局

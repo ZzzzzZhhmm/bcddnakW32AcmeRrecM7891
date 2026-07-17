@@ -213,7 +213,7 @@ Run the full model for one optimizer step before a long job:
 export NPROC_PER_NODE=1
 export RUN_ID=smoke-$(git rev-parse --short HEAD)
 bash scripts/train_warm_full_server.sh \
-  batch_size=1 num_workers=0 max_steps=1 \
+  batch_size=1 num_workers=0 run_steps=1 \
   save_every=1 log_every=1 eval_every=0 \
   output_dir=/server/runs/warm_full_smoke/$RUN_ID
 ```
