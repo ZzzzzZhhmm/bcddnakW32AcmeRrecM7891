@@ -200,6 +200,28 @@ def test_gate_starts_at_bias_minus_two_and_uses_utility_supervision() -> None:
     assert final.bias.grad.abs().item() > 0.0
 
 
+def test_masked_utility_kl_never_builds_nonfinite_padded_gradients() -> None:
+    scores = torch.tensor(
+        [[2.0, -3.0, 99.0], [4.0, -2.0, 1.0]],
+        requires_grad=True,
+    )
+    targets = torch.tensor(
+        [[0.75, 0.25, 0.0], [0.0, 0.0, 0.0]],
+    )
+    valid = torch.tensor(
+        [[True, True, False], [False, False, False]],
+    )
+
+    loss = utility_kl_divergence(scores, targets, valid)
+    loss.backward()
+
+    assert torch.isfinite(loss)
+    assert scores.grad is not None
+    assert torch.isfinite(scores.grad).all()
+    assert torch.count_nonzero(scores.grad[0, 2:]).item() == 0
+    assert torch.count_nonzero(scores.grad[1]).item() == 0
+
+
 def test_all_null_gate_loss_is_differentiable_zero() -> None:
     selection = select_consequence_candidate(
         torch.empty(2, 0),

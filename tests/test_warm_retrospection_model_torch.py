@@ -48,6 +48,7 @@ from fastwam.models.warm.retrospection_model import (  # noqa: E402
     WarmRetrospectionError,
     WarmRetrospectionFastWAM,
     _apply_inference_memory_corruption,
+    _smooth_rms,
     _warp_candidate_actions,
     _wrong_event_indices,
 )
@@ -66,6 +67,27 @@ from tests.test_warm_source_model_torch import (  # noqa: E402
 SEMANTIC_DIM = 4
 PROPRIO_DIM = 3
 CONTEXT_DIM = 2
+
+
+def test_smooth_rms_is_zero_and_has_finite_zero_gradient_at_origin() -> None:
+    residual = torch.zeros(3, 4, 2, requires_grad=True)
+
+    deformation = _smooth_rms(residual, dims=(-1, -2))
+    deformation.sum().backward()
+
+    assert torch.equal(deformation, torch.zeros(3))
+    assert residual.grad is not None
+    assert torch.isfinite(residual.grad).all()
+    assert torch.count_nonzero(residual.grad).item() == 0
+
+
+def test_smooth_rms_matches_ordinary_rms_away_from_origin() -> None:
+    residual = torch.tensor([[[3.0, 4.0]]])
+    expected = residual.square().mean(dim=(-1, -2)).sqrt()
+
+    actual = _smooth_rms(residual, dims=(-1, -2))
+
+    torch.testing.assert_close(actual, expected, atol=2.0e-6, rtol=1.0e-6)
 
 
 def _config() -> WarmRetrospectionConfig:
@@ -347,6 +369,33 @@ def test_full_training_source_exposes_finite_auxiliary_losses() -> None:
         bool(torch.isfinite(value).item())
         for value in output.auxiliary_metrics.values()
     )
+
+
+def test_full_auxiliary_backward_has_only_finite_gradients() -> None:
+    model = _model()
+    model.configure_trainable_modules()
+    final_gate = model.source_confidence_gate.network[-1]
+    assert isinstance(final_gate, torch.nn.Linear)
+    # The production gate starts with a zero final weight.  Exercise the first
+    # state after that weight has learned, when gradients reach the exactly
+    # zero-initialized event residual through the deformation-norm feature.
+    with torch.no_grad():
+        final_gate.weight.fill_(0.1)
+
+    _, output = _resolve(
+        model, _source_context(with_teachers=True), phase="train"
+    )
+    output.auxiliary_loss.backward()
+
+    gradients = [
+        gradient
+        for parameter in model.parameters()
+        if parameter.requires_grad
+        for gradient in [parameter.grad]
+        if gradient is not None
+    ]
+    assert gradients
+    assert all(bool(torch.isfinite(gradient).all().item()) for gradient in gradients)
 
 
 def test_online_experiment_controls_are_closed_and_lock_after_inference() -> None:

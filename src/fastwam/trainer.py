@@ -11,6 +11,7 @@ from uuid import uuid4
 import numpy as np
 import torch
 from accelerate import Accelerator
+from accelerate.utils import DistributedType
 from omegaconf import DictConfig, OmegaConf
 from PIL import Image
 from torch.optim.lr_scheduler import ConstantLR, CosineAnnealingLR, LinearLR, SequentialLR
@@ -100,8 +101,10 @@ class Wan22Trainer:
         if self.val_dataset is not None:
             self._assert_dataset_length_consistent(self.val_dataset, "val_dataset")
 
-        # Freeze non-trainable modules before optimizer/deepspeed initialization.
-        # This keeps DiT (+ optional proprio encoder) as trainable when ZeRO builds optimizer state.
+        # Apply the model-owned trainable-module contract before
+        # optimizer/DeepSpeed initialization.  Complete WARM returns Action
+        # DiT, compact retrospective modules, selected video adapters, and
+        # the optional proprio bridge while leaving the 5B backbone frozen.
         trainable_params = self._apply_dit_only_train_mode(self.model)
         self.optimizer = torch.optim.AdamW(
             trainable_params,
@@ -146,6 +149,7 @@ class Wan22Trainer:
         self.model, self.optimizer, self.train_loader, self.scheduler = self.accelerator.prepare(
             self.model, self.optimizer, self.train_loader, self.scheduler
         )
+        self._validate_deepspeed_numerics_contract()
         # Formal provenance must describe the actual objects and distributed
         # runtime returned by Accelerate/DeepSpeed, not only the pre-prepare
         # Python recipe.
@@ -163,6 +167,63 @@ class Wan22Trainer:
 
         val_size = len(self.val_dataset) if self.val_dataset is not None else len(self.train_dataset)
         logger.info("Train/val dataset size: %d/%d", len(self.train_dataset), val_size)
+
+    def _is_deepspeed(self) -> bool:
+        return self.accelerator.distributed_type == DistributedType.DEEPSPEED
+
+    def _validate_deepspeed_numerics_contract(self) -> None:
+        """Fail early unless BF16 DeepSpeed can block a corrupt update.
+
+        Accelerate's DeepSpeed wrapper performs ``engine.step()`` from inside
+        ``accelerator.backward`` on a synchronized microbatch.  Consequently,
+        a gradient check performed after ``backward`` is too late.  DeepSpeed
+        BF16 gradient-overflow checking must therefore be an explicit runtime
+        contract, not merely a JSON-file intention.
+        """
+
+        if not self._is_deepspeed():
+            return
+        runtime = getattr(self.model, "_config", None)
+        if runtime is None:
+            raise RuntimeError("DeepSpeed engine has no resolved runtime config")
+        bf16 = getattr(runtime, "bfloat16_config", None)
+        overflow_guard = getattr(bf16, "check_grad_overflow", None)
+        gradient_clipping = getattr(runtime, "gradient_clipping", None)
+        engine_optimizer = getattr(self.model, "optimizer", None)
+        if self.mixed_precision == "bf16" and overflow_guard is not True:
+            raise RuntimeError(
+                "BF16 DeepSpeed requires bf16.check_grad_overflow=true; "
+                f"resolved value={overflow_guard!r}"
+            )
+        if self.mixed_precision == "bf16" and not hasattr(
+            engine_optimizer, "overflow"
+        ):
+            raise RuntimeError(
+                "BF16 DeepSpeed optimizer does not expose the overflow flag "
+                "required by Accelerator.optimizer_step_was_skipped"
+            )
+        optimizer_guard = getattr(
+            engine_optimizer, "check_grad_overflow", None
+        )
+        if self.mixed_precision == "bf16" and optimizer_guard is not True:
+            raise RuntimeError(
+                "BF16 DeepSpeed optimizer did not enable gradient-overflow "
+                f"checking; resolved optimizer value={optimizer_guard!r}"
+            )
+        if gradient_clipping is None or not np.isclose(
+            float(gradient_clipping), self.max_grad_norm, rtol=0.0, atol=1.0e-12
+        ):
+            raise RuntimeError(
+                "DeepSpeed gradient_clipping disagrees with max_grad_norm: "
+                f"resolved={gradient_clipping!r} expected={self.max_grad_norm}"
+            )
+        if self.accelerator.is_main_process:
+            logger.info(
+                "DeepSpeed numerics contract passed: bf16_overflow_guard=%s "
+                "gradient_clipping=%.4f step_owner=deepspeed_backward",
+                overflow_guard,
+                float(gradient_clipping),
+            )
 
     def _validate_prepared_trainable_state(self) -> None:
         """Audit finite and synchronized trainable weights after DeepSpeed.
@@ -237,6 +298,72 @@ class Wan22Trainer:
                 len(trainable),
                 trainable_numel,
                 world_size,
+            )
+
+    def _validate_critical_trainable_state(self, *, stage: str) -> None:
+        """Cheap post-update finite audit for newly introduced WARM modules."""
+
+        model = self.accelerator.unwrap_model(self.model)
+        critical_fragments = (
+            "proprio_encoder",
+            "semantic_bridge",
+            "retrospective_gist",
+            "retrospective_event_adapter",
+            "utility_reranker",
+            "source_confidence_gate",
+            "episode_action_projection",
+            "gist_to_text",
+            "action_context_to_text",
+            "video_layer_adapters",
+        )
+        critical = [
+            (name, parameter)
+            for name, parameter in model.named_parameters()
+            if parameter.requires_grad
+            and any(fragment in name for fragment in critical_fragments)
+        ]
+        if not critical:
+            return
+        checks = torch.stack(
+            [torch.isfinite(parameter.detach()).all() for _, parameter in critical]
+        )
+        local_finite = checks.all().to(dtype=torch.int32).reshape(1)
+        finite_by_rank = self.accelerator.gather(local_finite)
+        if bool(torch.all(finite_by_rank != 0).item()):
+            return
+        local_values = checks.detach().cpu().tolist()
+        bad_names = [
+            name
+            for (name, _), finite in zip(critical, local_values)
+            if not finite
+        ]
+        raise FloatingPointError(
+            "critical trainable parameters became non-finite after an update: "
+            f"stage={stage} rank={self.accelerator.process_index} "
+            f"local_bad={bad_names[:32]} "
+            f"finite_flags={finite_by_rank.detach().cpu().tolist()}"
+        )
+
+    def _record_skipped_update(self, *, reason: str, sample) -> None:
+        self._consecutive_nonfinite_gradient_skips += 1
+        self.optimizer.zero_grad(set_to_none=True)
+        if self.accelerator.is_main_process:
+            logger.warning(
+                "Skipping optimizer update at global_step=%d: reason=%s "
+                "consecutive_skips=%d/%d sample_identity=%s",
+                self.global_step,
+                reason,
+                self._consecutive_nonfinite_gradient_skips,
+                self.max_nonfinite_gradient_skips,
+                self._sample_identity(sample),
+            )
+        if (
+            self._consecutive_nonfinite_gradient_skips
+            >= self.max_nonfinite_gradient_skips
+        ):
+            raise FloatingPointError(
+                "repeated non-finite distributed gradients; DeepSpeed/AMP "
+                "blocked the optimizer update before parameter corruption"
             )
 
     @staticmethod
@@ -466,11 +593,15 @@ class Wan22Trainer:
             raise FileNotFoundError(f"Resume checkpoint not found: {resume}")
         logger.info("Loading weight checkpoint only: %s", resume)
         self.accelerator.unwrap_model(self.model).load_checkpoint(str(resume_path), optimizer=None)
-        logger.warning("Loaded .pt weights only; optimizer/scheduler/step were not restored under ZeRO2.")
+        logger.warning(
+            "Loaded .pt weights only; distributed optimizer/scheduler/step "
+            "state was not restored."
+        )
 
     def _set_dit_only_train_mode(self):
-        # Match DiffSynth's freeze_except("dit"): only DiT stays trainable/in-train-mode.
-        logger.info("Setting DiT to train mode and freezing other model components.")
+        logger.info(
+            "Applying model trainable-module contract and freezing all other components."
+        )
         model = self.accelerator.unwrap_model(self.model)
         self._apply_dit_only_train_mode(model)
 
@@ -935,6 +1066,9 @@ class Wan22Trainer:
             "global_step": int(self.global_step),
             "epoch": int(self.epoch),
             "batch_in_epoch": int(self.batch_in_epoch),
+            "consecutive_nonfinite_gradient_skips": int(
+                self._consecutive_nonfinite_gradient_skips
+            ),
         }
         model = self.accelerator.unwrap_model(self.model)
         metadata = getattr(model, "trainer_state_metadata", None)
@@ -987,6 +1121,9 @@ class Wan22Trainer:
         self.accelerator.load_state(input_dir=state_dir)
         if payload is not None:
             self.global_step = int(payload["global_step"])
+            self._consecutive_nonfinite_gradient_skips = int(
+                payload.get("consecutive_nonfinite_gradient_skips", 0)
+            )
 
             if "epoch" in payload and "batch_in_epoch" in payload:
                 self.epoch = int(payload["epoch"])
@@ -1027,8 +1164,6 @@ class Wan22Trainer:
 
     def train(self):
         self._set_dit_only_train_mode()
-
-        unwrapped_model = self.accelerator.unwrap_model(self.model)
 
         if self.max_steps is None:
             raise ValueError("`max_steps` must be set before entering the while-step training loop.")
@@ -1099,39 +1234,81 @@ class Wan22Trainer:
                         device=loss.device,
                         dtype=torch.float32,
                     ).detach().reshape(1)
-                    finite_grad_flags = self.accelerator.gather(
-                        torch.isfinite(grad_norm_tensor).to(dtype=torch.int32)
-                    )
-                    if not bool(torch.all(finite_grad_flags != 0).item()):
-                        gathered_grad_norms = self.accelerator.gather(
-                            grad_norm_tensor
-                        ).detach().cpu().tolist()
-                        self._consecutive_nonfinite_gradient_skips += 1
-                        self.optimizer.zero_grad(set_to_none=True)
-                        if self.accelerator.is_main_process:
-                            logger.warning(
-                                "Skipping optimizer update at global_step=%d: "
-                                "non-finite distributed gradient norm(s)=%s "
-                                "consecutive_skips=%d/%d",
-                                self.global_step,
-                                gathered_grad_norms,
-                                self._consecutive_nonfinite_gradient_skips,
-                                self.max_nonfinite_gradient_skips,
-                            )
-                        if (
-                            self._consecutive_nonfinite_gradient_skips
-                            >= self.max_nonfinite_gradient_skips
+                    gathered_grad_norms = self.accelerator.gather(
+                        grad_norm_tensor
+                    ).detach()
+                    finite_grad_flags = torch.isfinite(gathered_grad_norms)
+                    if self._is_deepspeed():
+                        # In Accelerate DeepSpeed mode engine.step() already
+                        # ran inside accelerator.backward().  The BF16
+                        # overflow guard is the only pre-update protection.
+                        local_skipped = torch.tensor(
+                            [int(self.accelerator.optimizer_step_was_skipped)],
+                            device=loss.device,
+                            dtype=torch.int32,
+                        )
+                        skipped_by_rank = self.accelerator.gather(local_skipped)
+                        if not bool(
+                            torch.all(skipped_by_rank == skipped_by_rank[0]).item()
                         ):
-                            raise FloatingPointError(
-                                "repeated non-finite distributed gradients; "
-                                "optimizer update was blocked before parameter corruption"
+                            raise RuntimeError(
+                                "DeepSpeed overflow decision differs across ranks: "
+                                f"{skipped_by_rank.detach().cpu().tolist()}"
                             )
-                        continue
-                    self._consecutive_nonfinite_gradient_skips = 0
-                    self.optimizer.step()
-                    if not self.accelerator.optimizer_step_was_skipped:
+                        if bool(skipped_by_rank[0].item()):
+                            self._record_skipped_update(
+                                reason="deepspeed_bf16_gradient_overflow",
+                                sample=sample,
+                            )
+                            continue
+                        if not bool(torch.all(finite_grad_flags).item()):
+                            raise FloatingPointError(
+                                "DeepSpeed applied an update despite a non-finite "
+                                "global gradient norm; parameters may be corrupt: "
+                                f"norms={gathered_grad_norms.cpu().tolist()}"
+                            )
+                        self._validate_critical_trainable_state(
+                            stage=f"global_step_{self.global_step + 1}"
+                        )
                         self.scheduler.step()
-                    self.optimizer.zero_grad(set_to_none=True)
+                        self.optimizer.zero_grad(set_to_none=True)
+                    elif not bool(torch.all(finite_grad_flags).item()):
+                        self._record_skipped_update(
+                            reason=(
+                                "nonfinite_gradient_norms="
+                                f"{gathered_grad_norms.cpu().tolist()}"
+                            ),
+                            sample=sample,
+                        )
+                        continue
+                    else:
+                        self.optimizer.step()
+                        local_skipped = torch.tensor(
+                            [int(self.accelerator.optimizer_step_was_skipped)],
+                            device=loss.device,
+                            dtype=torch.int32,
+                        )
+                        skipped_by_rank = self.accelerator.gather(local_skipped)
+                        if not bool(
+                            torch.all(skipped_by_rank == skipped_by_rank[0]).item()
+                        ):
+                            raise RuntimeError(
+                                "AMP overflow decision differs across ranks: "
+                                f"{skipped_by_rank.detach().cpu().tolist()}"
+                            )
+                        if bool(skipped_by_rank[0].item()):
+                            self._record_skipped_update(
+                                reason="amp_gradient_overflow",
+                                sample=sample,
+                            )
+                            continue
+                        self.scheduler.step()
+                        self.optimizer.zero_grad(set_to_none=True)
+                        self._validate_critical_trainable_state(
+                            stage=f"global_step_{self.global_step + 1}"
+                        )
+
+                    self._consecutive_nonfinite_gradient_skips = 0
                     self.global_step += 1
                     checkpoint_saved_this_step = None
                     global_loss = float(
@@ -1143,7 +1320,7 @@ class Wan22Trainer:
                         global_loss_metrics[key] = float(
                             self.accelerator.gather(metric_tensor).mean().item()
                         )
-                    global_grad_norm = float(self.accelerator.gather(grad_norm_tensor).mean().item())
+                    global_grad_norm = float(gathered_grad_norms.mean().item())
 
                     current_lr = float(self.optimizer.param_groups[0]["lr"])
 
@@ -1162,7 +1339,10 @@ class Wan22Trainer:
                             global_grad_norm,
                             current_lr,
                             steps_per_sec,
-                            steps_per_sec * self.batch_size * self.accelerator.num_processes,
+                            steps_per_sec
+                            * self.batch_size
+                            * self.accelerator.num_processes
+                            * self.gradient_accumulation_steps,
                             eta_str,
                         )
                         logger.info(description)
@@ -1172,7 +1352,12 @@ class Wan22Trainer:
                             "train/grad_norm": global_grad_norm,
                             "train/lr": current_lr,
                             "performance/steps_per_sec": steps_per_sec,
-                            "performance/samples_per_sec": steps_per_sec * self.batch_size * self.accelerator.num_processes,
+                            "performance/samples_per_sec": (
+                                steps_per_sec
+                                * self.batch_size
+                                * self.accelerator.num_processes
+                                * self.gradient_accumulation_steps
+                            ),
                         }
                         for key, value in global_loss_metrics.items():
                             wandb_payload[f"train/{key}"] = value

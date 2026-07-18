@@ -229,6 +229,36 @@ def _mean_effect(tokens: torch.Tensor) -> torch.Tensor:
     return tokens.mean(dim=-2)
 
 
+def _smooth_rms(
+    value: torch.Tensor,
+    *,
+    dims: tuple[int, ...],
+    epsilon: float = 1.0e-6,
+) -> torch.Tensor:
+    """Differentiable RMS that is finite at an exactly-zero residual.
+
+    The event adapter intentionally zero-initializes its residual head.  A
+    bare ``sqrt(mean(x**2))`` has an infinite derivative at that exact
+    initialization and produces ``0 * inf -> NaN`` during the first
+    backward.  The shifted smooth norm keeps both the value and gradient zero
+    at the origin while converging to the ordinary RMS away from it.
+    """
+
+    if not isinstance(value, torch.Tensor) or not value.is_floating_point():
+        raise TypeError("value must be a floating-point tensor")
+    if not dims:
+        raise ValueError("dims must not be empty")
+    if not np.isfinite(epsilon) or epsilon <= 0.0:
+        raise ValueError("epsilon must be positive and finite")
+    value_f = value.float()
+    mean_square = value_f.square().mean(dim=dims)
+    # Algebraically equal to sqrt(mean_square + eps**2) - eps, but this
+    # rationalized form is exactly zero at the origin and avoids subtracting
+    # two nearly equal floating-point values.
+    root = torch.sqrt(mean_square + float(epsilon) ** 2)
+    return mean_square / (root + float(epsilon))
+
+
 def _gather_candidate(
     values: torch.Tensor,
     indices: torch.Tensor,
@@ -1059,9 +1089,10 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
         selected_residual = _gather_candidate(
             event.action_residual, selection.candidate_indices
         )
-        deformation = selected_residual.float().square().mean(
-            dim=(-1, -2)
-        ).sqrt().to(dtype=base_gaussian.dtype)
+        deformation = _smooth_rms(
+            selected_residual,
+            dims=(-1, -2),
+        ).to(dtype=base_gaussian.dtype)
         gate = self.source_confidence_gate(selection, deformation)
         relevance_gate = gate.probability.to(dtype=base_gaussian.dtype)
         gate_value = (

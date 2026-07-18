@@ -529,9 +529,18 @@ def utility_kl_divergence(
         row_scores.masked_fill(~row_mask, -torch.inf), dim=-1
     )
     safe_target_log = row_targets.clamp_min(torch.finfo(row_targets.dtype).tiny).log()
+    active = row_mask & (row_targets > 0.0)
+    # Never evaluate 0 * (+inf) on padded candidates.  Although torch.where
+    # masks the forward value, constructing that inactive NaN branch can
+    # still poison gradients in fused/autocast kernels.
+    active_log_probabilities = torch.where(
+        active,
+        log_probabilities,
+        torch.zeros_like(log_probabilities),
+    )
     terms = torch.where(
-        row_mask & (row_targets > 0.0),
-        row_targets * (safe_target_log - log_probabilities),
+        active,
+        row_targets * (safe_target_log - active_log_probabilities),
         torch.zeros_like(row_targets),
     )
     row_losses = terms.sum(dim=-1)
@@ -576,7 +585,9 @@ def consequence_consistency(
         return effects.new_empty((batch_size, 0))
     effects_f = effects.float()
     gist_f = gist.float().unsqueeze(1).expand(-1, candidate_count, -1)
-    cosine = F.cosine_similarity(effects_f, gist_f, dim=-1, eps=eps)
+    cosine = F.cosine_similarity(
+        effects_f, gist_f, dim=-1, eps=eps
+    ).clamp(min=-1.0, max=1.0)
     effect_norm = torch.linalg.vector_norm(effects_f, dim=-1)
     gist_norm = torch.linalg.vector_norm(gist_f, dim=-1)
     magnitude_penalty = (

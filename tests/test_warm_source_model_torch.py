@@ -21,6 +21,7 @@ else:
     torch = pytest.importorskip("torch")
 
 
+from accelerate.utils import DistributedType
 from fastwam.models.wan22.fastwam import FastWAM
 from fastwam.models.wan22.mot import MoT, VideoPrefillOutput
 from fastwam.memory.event_bank import EventBank
@@ -1140,6 +1141,53 @@ def test_trainer_trainable_hook_includes_optional_proprio_only() -> None:
     assert not model.video_expert.training
     assert not any(parameter.requires_grad for parameter in model.video_expert.parameters())
     assert not any(parameter.requires_grad for parameter in model.vae.parameters())
+
+
+def test_proprio_append_reports_the_corrupt_producer() -> None:
+    model = _new_model(policy="gaussian_null", proprio_dim=3)
+    context = torch.zeros(2, 4, TEXT_DIM)
+    context_mask = torch.ones(2, 4, dtype=torch.bool)
+    proprio = torch.zeros(2, 3)
+
+    bad_input = proprio.clone()
+    bad_input[0, 0] = torch.nan
+    with pytest.raises(FloatingPointError, match="current_proprio"):
+        model._append_proprio_to_context(context, context_mask, bad_input)
+
+    with torch.no_grad():
+        model.proprio_encoder.weight[0, 0] = torch.nan
+    with pytest.raises(FloatingPointError, match="proprio_encoder.weight"):
+        model._append_proprio_to_context(context, context_mask, proprio)
+
+
+def test_deepspeed_numerics_contract_requires_observable_overflow_state() -> None:
+    trainer = object.__new__(Wan22Trainer)
+    trainer.mixed_precision = "bf16"
+    trainer.max_grad_norm = 1.0
+    trainer.model = SimpleNamespace(
+        _config=SimpleNamespace(
+            bfloat16_config=SimpleNamespace(check_grad_overflow=True),
+            gradient_clipping=1.0,
+        ),
+        optimizer=SimpleNamespace(
+            overflow=False,
+            check_grad_overflow=True,
+        ),
+    )
+    trainer.accelerator = SimpleNamespace(
+        distributed_type=DistributedType.DEEPSPEED,
+        is_main_process=False,
+    )
+
+    trainer._validate_deepspeed_numerics_contract()
+    del trainer.model.optimizer.overflow
+    with pytest.raises(RuntimeError, match="overflow flag"):
+        trainer._validate_deepspeed_numerics_contract()
+
+    trainer.model.optimizer.overflow = False
+    trainer.model.optimizer.check_grad_overflow = False
+    with pytest.raises(RuntimeError, match="did not enable"):
+        trainer._validate_deepspeed_numerics_contract()
 
 
 class _AcceleratorStub:

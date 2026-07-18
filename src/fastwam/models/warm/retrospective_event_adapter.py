@@ -585,7 +585,7 @@ class RetrospectiveEventAdapter(nn.Module):
             detached_target.float(),
             dim=-1,
             eps=self.config.cosine_eps,
-        )
+        ).clamp(min=-1.0, max=1.0)
         predicted_norm = torch.linalg.vector_norm(predicted.float(), dim=-1)
         target_norm = torch.linalg.vector_norm(detached_target.float(), dim=-1)
         magnitude = F.smooth_l1_loss(

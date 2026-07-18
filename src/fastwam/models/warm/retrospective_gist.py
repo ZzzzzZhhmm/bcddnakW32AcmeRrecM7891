@@ -385,7 +385,7 @@ class RetrospectiveGistAdapter(nn.Module):
             target_f,
             dim=-1,
             eps=self.config.cosine_eps,
-        )
+        ).clamp(min=-1.0, max=1.0)
         magnitude = F.smooth_l1_loss(
             torch.log1p(torch.linalg.vector_norm(predicted_f, dim=-1)),
             torch.log1p(torch.linalg.vector_norm(target_f, dim=-1)),

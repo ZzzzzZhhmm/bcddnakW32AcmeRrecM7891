@@ -261,7 +261,7 @@ class SemanticQueryBridge(nn.Module):
             teacher.detach().float(),
             dim=-1,
             eps=self.config.cosine_eps,
-        )
+        ).clamp(min=-1.0, max=1.0)
         return (1.0 - cosine[mask]).mean()
 
 

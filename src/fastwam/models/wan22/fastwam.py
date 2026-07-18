@@ -282,9 +282,14 @@ class FastWAM(torch.nn.Module):
             raise ValueError(
                 f"`proprio` last dim must be {self.proprio_dim}, got {proprio.shape[1]}"
             )
+        _require_finite_tensor(context, field="text_context_before_proprio")
+        _require_finite_tensor(proprio, field="current_proprio")
+        for name, parameter in self.proprio_encoder.named_parameters():
+            _require_finite_tensor(parameter, field=f"proprio_encoder.{name}")
         proprio_token = self.proprio_encoder(
             proprio.to(device=self.device, dtype=context.dtype).unsqueeze(1)
         ).to(dtype=context.dtype) # [B, 1, D]
+        _require_finite_tensor(proprio_token, field="proprio_context_token")
         proprio_mask = torch.ones((context_mask.shape[0], 1), dtype=torch.bool, device=context_mask.device)
         return (
             torch.cat([context, proprio_token], dim=1),
@@ -554,6 +559,7 @@ class FastWAM(torch.nn.Module):
             device=self.device, dtype=torch.bool, non_blocking=True
         )
         current_proprio = None
+        _require_finite_tensor(context, field="text_context_before_proprio")
         if self.proprio_encoder is not None:
             if not isinstance(proprio, torch.Tensor) or proprio.ndim != 3:
                 shape = None if not isinstance(proprio, torch.Tensor) else tuple(proprio.shape)
