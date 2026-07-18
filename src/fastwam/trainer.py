@@ -23,12 +23,44 @@ from .utils.pytorch_utils import set_global_seed
 from .utils.samplers import ResumableEpochSampler
 from .utils.video_io import save_mp4
 from .utils.video_metrics import pil_frames_to_video_tensor, video_psnr, video_ssim
+from .training_config import validate_training_config
 
 logger = get_logger(__name__)
 
 
 class Wan22Trainer:
+    @classmethod
+    def create(cls, model, train_dataset, val_dataset=None, *, cfg: DictConfig):
+        """Construct a trainer while retaining access for failure teardown.
+
+        Python does not return an object whose ``__init__`` raised.  Allocating
+        first lets us close an Accelerator/DeepSpeed process group when a late
+        initialization check (for example formal-resume verification) fails.
+        """
+
+        trainer = cls.__new__(cls)
+        trainer._closed = False
+        try:
+            cls.__init__(
+                trainer,
+                model,
+                train_dataset,
+                val_dataset,
+                cfg=cfg,
+            )
+        except BaseException:
+            try:
+                trainer.close()
+            except Exception:
+                logger.exception(
+                    "Trainer cleanup failed after an initialization error"
+                )
+            raise
+        return trainer
+
     def __init__(self, model, train_dataset, val_dataset=None, *, cfg: DictConfig):
+        self._closed = False
+        validate_training_config(cfg)
         self.model = model
         self.train_dataset = train_dataset
         self.val_dataset = val_dataset
@@ -516,10 +548,56 @@ class Wan22Trainer:
         self.wandb_run.log(payload, step=self.global_step)
 
     def _finish_wandb(self):
-        if self.wandb_run is None:
+        if getattr(self, "wandb_run", None) is None:
             return
         self.wandb_run.finish()
         self.wandb_run = None
+
+    def close(self) -> None:
+        """Flush process-local logging and tear down distributed state once."""
+
+        if getattr(self, "_closed", False):
+            return
+        self._closed = True
+        try:
+            self._finish_wandb()
+        finally:
+            # Accelerator owns the process group created by Accelerate/
+            # DeepSpeed.  Explicit teardown prevents NCCL resources from
+            # leaking at normal completion and on Python-level exceptions.
+            accelerator = getattr(self, "accelerator", None)
+            if accelerator is not None:
+                accelerator.end_training()
+
+    def _run_main_process_step(self, label: str, callback):
+        """Run a filesystem publication on rank zero and share its outcome.
+
+        A rank-zero exception immediately followed by a barrier leaves every
+        other rank waiting forever.  Broadcasting a small result envelope
+        makes checkpoint/metadata failures deterministic on all ranks.
+        """
+
+        envelope: list[object] = [None]
+        if self.accelerator.is_main_process:
+            try:
+                envelope[0] = {"ok": True, "value": callback()}
+            except Exception as error:
+                logger.exception("%s failed on rank 0", label)
+                envelope[0] = {
+                    "ok": False,
+                    "error_type": type(error).__name__,
+                    "error": str(error),
+                }
+        if torch.distributed.is_initialized():
+            torch.distributed.broadcast_object_list(envelope, src=0)
+        result = envelope[0]
+        if not isinstance(result, dict) or result.get("ok") is not True:
+            if isinstance(result, dict):
+                detail = f"{result.get('error_type')}: {result.get('error')}"
+            else:
+                detail = "rank 0 did not publish a result"
+            raise RuntimeError(f"{label} failed on rank 0: {detail}")
+        return result.get("value")
 
     def _build_loader(self, dataset, worker_init_fn=None):
         self.train_sampler = ResumableEpochSampler(
@@ -1178,17 +1256,18 @@ class Wan22Trainer:
         step_tag = f"step_{self.global_step:06d}"
 
         self.accelerator.wait_for_everyone()
-        ckpt_path = None
-        if self.accelerator.is_main_process:
-            ckpt_path = self._save_weights_checkpoint(step_tag=step_tag)
-        self.accelerator.wait_for_everyone()
+        ckpt_path = self._run_main_process_step(
+            "weights/attestation publication",
+            lambda: self._save_weights_checkpoint(step_tag=step_tag),
+        )
 
         state_path = os.path.join(self.state_dir, step_tag)
         ensure_dir(state_path)
         self.accelerator.save_state(output_dir=state_path)
-        if self.accelerator.is_main_process:
-            self._save_trainer_state(state_path)
-        self.accelerator.wait_for_everyone()
+        self._run_main_process_step(
+            "trainer-state metadata publication",
+            lambda: self._save_trainer_state(state_path),
+        )
 
         return {
             "weights_path": ckpt_path,
@@ -1279,6 +1358,18 @@ class Wan22Trainer:
             self.scheduler_warmup_steps,
             float(self.optimizer.param_groups[0]["lr"]),
         )
+        if self.global_step >= run_target_step:
+            # A completed full-state resume is a valid idempotent invocation.
+            # Re-publishing the same formal checkpoint would correctly trip
+            # the no-overwrite guard, so return without touching artifacts.
+            logger.info(
+                "[done] no optimizer steps remain: current_step=%d "
+                "run_target_step=%d scheduler_max_steps=%d",
+                self.global_step,
+                run_target_step,
+                self.max_steps,
+            )
+            return
         data_iter = iter(self.train_loader)
         self.run_start_step = self.global_step
         self.run_start_time = time.perf_counter()

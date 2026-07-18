@@ -6,11 +6,15 @@ fixed retrieved source, while complete WARM learns transition gist, action
 utility reranking, bounded event adaptation, consequence consistency, and a
 confidence gate before constructing the stochastic Action DiT source.
 
-The end-to-end source path is implemented. It has **not** yet been validated by
-large-scale GPU training or simulator evaluation; every result produced before
-the server gates below is software evidence, not an empirical model claim. See
+The end-to-end source path is implemented. As of 2026-07-19 it has completed a
+one-update CUDA smoke and 40 optimizer updates across two four-H100 segments,
+including checkpoint/resume-state publication. It has **not** yet completed full training
+or simulator evaluation; these probes are execution evidence, not an empirical
+model claim. See
 [`WARM_FULL_ARCHITECTURE.md`](WARM_FULL_ARCHITECTURE.md) for the exact model,
 causal-memory, gradient, and fallback contracts implemented by the code.
+The post-probe interface and resume audit is recorded in
+[`TRAINING_CHAIN_AUDIT_2026-07-19.md`](TRAINING_CHAIN_AUDIT_2026-07-19.md).
 
 ## What runs locally and what runs on the server
 
@@ -237,6 +241,18 @@ The smoke gate must verify, on CUDA:
 Do not interpret one smoke step as evidence of task performance.
 
 ## 6. Full training
+
+The current single-node recipes preserve effective global batch 128:
+
+```text
+4 x H100: ZeRO2, batch_size=8, gradient_accumulation_steps=4
+8 x H100: ZeRO1, batch_size=8, gradient_accumulation_steps=2
+```
+
+Keep `max_steps=null`, `run_steps=null`, `num_epochs=10`,
+`mot_checkpoint_mixed_attn=true`, and `save_every=2000` for the formal run.
+The ACP wrapper validates this geometry and is intentionally single-node; use
+the lower Accelerate launchers under a real scheduler for multi-node jobs.
 
 ```bash
 export NPROC_PER_NODE=8

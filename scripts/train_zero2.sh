@@ -18,6 +18,23 @@ if ! is_integer "${NUM_MACHINES}" || ! is_integer "${MACHINE_RANK}"; then
   echo "Error: NUM_MACHINES (${NUM_MACHINES}) and MACHINE_RANK (${MACHINE_RANK}) must be integers." >&2
   exit 1
 fi
+if (( NUM_MACHINES < 1 || MACHINE_RANK < 0 || MACHINE_RANK >= NUM_MACHINES )); then
+  echo "Error: require NUM_MACHINES>=1 and 0<=MACHINE_RANK<NUM_MACHINES; got ${NUM_MACHINES}/${MACHINE_RANK}." >&2
+  exit 1
+fi
+if ! is_integer "${NPROC_PER_NODE}" || (( NPROC_PER_NODE < 1 )); then
+  echo "Error: nproc_per_node must be a positive integer, got ${NPROC_PER_NODE}." >&2
+  exit 1
+fi
+if ! is_integer "${MAIN_PROCESS_PORT}" || (( MAIN_PROCESS_PORT < 1 || MAIN_PROCESS_PORT > 65535 )); then
+  echo "Error: MASTER_PORT must be an integer in [1,65535], got ${MAIN_PROCESS_PORT}." >&2
+  exit 1
+fi
+if (( NUM_MACHINES > 1 )) && [[ -z "${MAIN_PROCESS_IP}" || "${MAIN_PROCESS_IP}" == "127.0.0.1" || "${MAIN_PROCESS_IP}" == "localhost" ]]; then
+  echo "Error: multi-node launch requires MASTER_ADDR reachable from every node." >&2
+  exit 1
+fi
+TOTAL_PROCESSES=$((NPROC_PER_NODE * NUM_MACHINES))
 
 extract_task_basename() {
   local cfg="$1"
@@ -105,11 +122,15 @@ PY
   fi
 fi
 
-echo "[launch] nproc_per_node=${NPROC_PER_NODE} num_machines=${NUM_MACHINES} machine_rank=${MACHINE_RANK} run_id=${RUN_ID}"
+echo "[launch] nproc_per_node=${NPROC_PER_NODE} total_processes=${TOTAL_PROCESSES} num_machines=${NUM_MACHINES} machine_rank=${MACHINE_RANK} master=${MAIN_PROCESS_IP}:${MAIN_PROCESS_PORT} run_id=${RUN_ID}"
 
 accelerate launch \
   --config_file scripts/accelerate_configs/accelerate_zero2_ds.yaml \
-  --num_processes "${NPROC_PER_NODE}" \
+  --num_processes "${TOTAL_PROCESSES}" \
+  --num_machines "${NUM_MACHINES}" \
+  --machine_rank "${MACHINE_RANK}" \
+  --main_process_ip "${MAIN_PROCESS_IP}" \
+  --main_process_port "${MAIN_PROCESS_PORT}" \
   scripts/train.py \
   "output_dir=./runs/${TASK_BASENAME}/${RUN_ID}" \
   "wandb.name=${TASK_BASENAME}" \

@@ -102,6 +102,11 @@ SOURCE_POLICY="${SOURCE_POLICY:-fixed_context_top1}"
 # TODO: 按 ACP 分配的 GPU 资源修改。NPROC_PER_NODE 必须等于可见 GPU 数。
 export CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES:-0,1,2,3,4,5,6,7}"
 NPROC_PER_NODE="${NPROC_PER_NODE:-8}"
+# This ACP wrapper owns one shared log/preflight file and is therefore a
+# single-node orchestrator.  The lower-level train_zero{1,2}.sh launchers do
+# support explicit Accelerate multi-node topology, but must be invoked by a
+# scheduler that supplies one MACHINE_RANK per node.
+NNODES="${NNODES:-1}"
 
 # TODO: DeepSpeed stage。auto: >=8 卡用 ZeRO1（对齐上游 FastWAM 论文配方），
 # <8 卡用 ZeRO2（优化器/梯度分片更激进，更省显存）。也可强制填 1 或 2。
@@ -217,6 +222,14 @@ validate_optional_nonnegative_integer() {
   fi
 }
 
+validate_boolean() {
+  local name="$1" value="$2"
+  if [[ "${value}" != "true" && "${value}" != "false" ]]; then
+    echo "ERROR: ${name} must be true or false, got ${value}"
+    return 1
+  fi
+}
+
 count_visible_devices() {
   local csv="${1// /}"
   if [[ -z "${csv}" || "${csv}" == "all" ]]; then
@@ -231,6 +244,15 @@ count_visible_devices() {
 warn_if_gpu_request_mismatch() {
   if ! is_positive_integer "${NPROC_PER_NODE}"; then
     echo "ERROR: NPROC_PER_NODE must be a positive integer, got ${NPROC_PER_NODE}"
+    return 1
+  fi
+  if ! is_positive_integer "${NNODES}"; then
+    echo "ERROR: NNODES must be a positive integer, got ${NNODES}"
+    return 1
+  fi
+  if [[ "${NNODES}" != "1" ]]; then
+    echo "ERROR: acp_warm_libero.sh is a single-node orchestrator (NNODES=1)."
+    echo "       Use train_zero1.sh/train_zero2.sh directly under a multi-node scheduler."
     return 1
   fi
   local visible_count
@@ -251,6 +273,31 @@ task_kind() {
     libero_warm_*)        echo "warm_full" ;;
     libero_uncond_*|libero_joint_*|libero_idm_*) echo "fastwam" ;;
     *) echo "unknown" ;;
+  esac
+}
+
+validate_source_policy_for_kind() {
+  local kind="$1"
+  case "${kind}" in
+    warm_full)
+      if [[ "${SOURCE_POLICY}" != "fixed_context_top1" ]]; then
+        echo "ERROR: complete WARM requires SOURCE_POLICY=fixed_context_top1; got ${SOURCE_POLICY}."
+        return 1
+      fi
+      if [[ "${MOT_CHECKPOINT_MIXED_ATTN}" == "false" ]]; then
+        echo "ERROR: complete WARM requires model.mot_checkpoint_mixed_attn=true for the 33-frame co-training pass."
+        return 1
+      fi
+      ;;
+    warm_source)
+      case "${SOURCE_POLICY}" in
+        gaussian_null|fixed_context_top1|oracle_action_top1) ;;
+        *)
+          echo "ERROR: source-only WARM does not support SOURCE_POLICY=${SOURCE_POLICY}."
+          return 1
+          ;;
+      esac
+      ;;
   esac
 }
 
@@ -276,7 +323,7 @@ resolve_training_batching() {
       echo "ERROR: TARGET_GLOBAL_BATCH_SIZE must be a positive integer, got ${TARGET_GLOBAL_BATCH_SIZE}"
       return 1
     fi
-    local micro_global=$(( RESOLVED_BATCH_SIZE * NPROC_PER_NODE ))
+    local micro_global=$(( RESOLVED_BATCH_SIZE * NPROC_PER_NODE * NNODES ))
     RESOLVED_GRADIENT_ACCUMULATION_STEPS="$(ceil_div "${TARGET_GLOBAL_BATCH_SIZE}" "${micro_global}")"
   else
     if ! is_positive_integer "${GRADIENT_ACCUMULATION_STEPS}"; then
@@ -289,7 +336,11 @@ resolve_training_batching() {
   if [[ "${RESOLVED_BATCH_SIZE}" == "task" || "${RESOLVED_GRADIENT_ACCUMULATION_STEPS}" == "task" ]]; then
     RESOLVED_EFFECTIVE_GLOBAL_BATCH_SIZE="task-config"
   else
-    RESOLVED_EFFECTIVE_GLOBAL_BATCH_SIZE=$(( RESOLVED_BATCH_SIZE * NPROC_PER_NODE * RESOLVED_GRADIENT_ACCUMULATION_STEPS ))
+    RESOLVED_EFFECTIVE_GLOBAL_BATCH_SIZE=$(( RESOLVED_BATCH_SIZE * NPROC_PER_NODE * NNODES * RESOLVED_GRADIENT_ACCUMULATION_STEPS ))
+    if [[ "${GRADIENT_ACCUMULATION_STEPS}" == "auto" \
+          && "${RESOLVED_EFFECTIVE_GLOBAL_BATCH_SIZE}" -ne "${TARGET_GLOBAL_BATCH_SIZE}" ]]; then
+      echo "WARNING: TARGET_GLOBAL_BATCH_SIZE=${TARGET_GLOBAL_BATCH_SIZE} is not divisible by the micro global batch; resolved effective batch=${RESOLVED_EFFECTIVE_GLOBAL_BATCH_SIZE}."
+    fi
   fi
 }
 
@@ -416,9 +467,13 @@ validate_optional_positive_integer NUM_EPOCHS "${NUM_EPOCHS}" || exit 2
 validate_optional_nonnegative_integer LOG_EVERY "${LOG_EVERY}" || exit 2
 validate_optional_nonnegative_integer SAVE_EVERY "${SAVE_EVERY}" || exit 2
 validate_optional_nonnegative_integer EVAL_EVERY "${EVAL_EVERY}" || exit 2
-if [[ "${ALLOW_DIRTY_WARM_TRAINING}" != "true" && "${ALLOW_DIRTY_WARM_TRAINING}" != "false" ]]; then
-  echo "ERROR: ALLOW_DIRTY_WARM_TRAINING must be true or false, got ${ALLOW_DIRTY_WARM_TRAINING}"
-  exit 2
+validate_boolean ALLOW_DIRTY_WARM_TRAINING "${ALLOW_DIRTY_WARM_TRAINING}" || exit 2
+validate_boolean REQUIRE_CLEAN_GIT "${REQUIRE_CLEAN_GIT}" || exit 2
+validate_boolean WANDB_ENABLED "${WANDB_ENABLED}" || exit 2
+validate_boolean PREFLIGHT_RESOLVE "${PREFLIGHT_RESOLVE}" || exit 2
+validate_boolean STRICT_LOG_SCAN "${STRICT_LOG_SCAN}" || exit 2
+if [[ "${MOT_CHECKPOINT_MIXED_ATTN}" != "task" ]]; then
+  validate_boolean MOT_CHECKPOINT_MIXED_ATTN "${MOT_CHECKPOINT_MIXED_ATTN}" || exit 2
 fi
 warn_if_gpu_request_mismatch || exit 2
 
@@ -502,6 +557,7 @@ echo "SOURCE_POLICY=${SOURCE_POLICY}"
 echo "WARM_ARTIFACT_ROOT=${WARM_ARTIFACT_ROOT}"
 echo "CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES}"
 echo "NPROC_PER_NODE=${NPROC_PER_NODE}"
+echo "NNODES=${NNODES}"
 echo "LOG_DIR=${LOG_DIR}"
 echo "GIT_COMMIT=$(git rev-parse HEAD 2>/dev/null || echo unknown)"
 
@@ -520,8 +576,32 @@ TRAIN_STATS="${M1}/train_stats/dataset_stats.json"
 
 EXTRA_ARGS=()
 if [[ -n "${HYDRA_EXTRA_ARGS}" ]]; then
-  # shellcheck disable=SC2206
-  EXTRA_ARGS=(${HYDRA_EXTRA_ARGS})
+  # Parse quoted Hydra values without eval, pathname expansion, or accidental
+  # whitespace loss.  The resulting NUL-delimited file is job-local.
+  EXTRA_ARGS_FILE="${JOB_LOCAL_CACHE_ROOT}/hydra_extra_args.nul"
+  if ! HYDRA_EXTRA_ARGS_RAW="${HYDRA_EXTRA_ARGS}" python - "${EXTRA_ARGS_FILE}" <<'PY'
+import os
+import shlex
+import sys
+from pathlib import Path
+
+try:
+    values = shlex.split(os.environ["HYDRA_EXTRA_ARGS_RAW"], posix=True)
+except ValueError as error:
+    raise SystemExit(f"invalid HYDRA_EXTRA_ARGS quoting: {error}") from error
+for value in values:
+    if "\x00" in value or "\n" in value or "\r" in value:
+        raise SystemExit("HYDRA_EXTRA_ARGS entries cannot contain NUL/newline characters")
+Path(sys.argv[1]).write_bytes(
+    b"".join(value.encode("utf-8") + b"\x00" for value in values)
+)
+PY
+  then
+    echo "ERROR: failed to parse HYDRA_EXTRA_ARGS"
+    exit 2
+  fi
+  mapfile -d '' -t EXTRA_ARGS < "${EXTRA_ARGS_FILE}"
+  rm -f "${EXTRA_ARGS_FILE}"
 fi
 
 CMD=()
@@ -740,6 +820,7 @@ M2SH
       echo "ERROR: TASK_NAME=${TASK_NAME} is not a trainable LIBERO task for this script."
       exit 2
     fi
+    validate_source_policy_for_kind "${KIND}" || exit 2
     require_clean_git || exit 2
     resolve_training_batching || exit 2
     resolve_zero_stage || exit 2
@@ -830,6 +911,7 @@ M2SH
     echo "TRAIN_SCRIPT=${TRAIN_SCRIPT}"
     echo "PER_DEVICE_BATCH_SIZE=${RESOLVED_BATCH_SIZE}"
     echo "GRADIENT_ACCUMULATION_STEPS=${RESOLVED_GRADIENT_ACCUMULATION_STEPS}"
+    echo "WORLD_SIZE=$((NPROC_PER_NODE * NNODES))"
     echo "EFFECTIVE_GLOBAL_BATCH_SIZE=${RESOLVED_EFFECTIVE_GLOBAL_BATCH_SIZE}"
 
     export RUN_ID="${RUN_ID:-${RUN_STAMP}_${SOURCE_POLICY}}"

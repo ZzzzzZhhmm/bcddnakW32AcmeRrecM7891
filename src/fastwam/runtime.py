@@ -16,6 +16,7 @@ from einops import repeat
 from omegaconf import OmegaConf
 
 from .trainer import Wan22Trainer
+from .training_config import validate_training_config
 from .utils.logging_config import get_logger, setup_logging
 from .utils.video_io import save_mp4
 from .utils import misc
@@ -756,6 +757,9 @@ def _publish_resolved_training_config(cfg: DictConfig) -> Path:
 
 
 def run_training(cfg: DictConfig):
+    # Fail before loading the 5B Video DiT and 1B Action DiT when an override
+    # cannot define a valid optimizer loop.
+    validate_training_config(cfg)
     setup_logging(
         log_level=logging.INFO,
         is_main_process=torch.distributed.get_rank() == 0 if torch.distributed.is_initialized() else True,
@@ -801,13 +805,24 @@ def run_training(cfg: DictConfig):
         if val_ds is not train_ds:
             validate_validation_dataset(val_ds)
 
-    trainer = Wan22Trainer(
+    trainer = Wan22Trainer.create(
         cfg=cfg,
         model=model,
         train_dataset=train_ds,
         val_dataset=val_ds,
     )
-    trainer.train()
+    try:
+        trainer.train()
+    except BaseException:
+        # Teardown must not replace the original forward/backward/checkpoint
+        # exception with a secondary NCCL or tracker shutdown failure.
+        try:
+            trainer.close()
+        except Exception:
+            logger.exception("Training cleanup failed after the primary error")
+        raise
+    else:
+        trainer.close()
 
 def run_inference(cfg: DictConfig):
     setup_logging(log_level=logging.INFO)
