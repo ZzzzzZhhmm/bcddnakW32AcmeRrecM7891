@@ -18,7 +18,7 @@ else:
 
 
 from fastwam.models.wan22.fastwam import FastWAM  # noqa: E402
-from fastwam.models.wan22.mot import MoT  # noqa: E402
+from fastwam.models.wan22.mot import MoT, MoTNonFiniteError  # noqa: E402
 from fastwam.models.warm.video_adapter import (  # noqa: E402
     ResidualVideoLayerAdapter,
     resolve_video_adapter_layers,
@@ -74,6 +74,34 @@ def test_mot_adapter_hook_is_selected_layer_only() -> None:
     assert torch.equal(untouched, tokens)
     assert adapted.shape == tokens.shape
     assert not torch.equal(adapted, tokens)
+
+
+def test_mot_adapter_hook_localizes_nonfinite_input_and_output() -> None:
+    adapters = torch.nn.ModuleDict(
+        {"1": ResidualVideoLayerAdapter(hidden_dim=4, rank=1)}
+    )
+    bad_input = torch.zeros(2, 3, 4)
+    bad_input[1, 2, 3] = torch.nan
+    with pytest.raises(
+        MoTNonFiniteError,
+        match=r"layer=1 stage=pre_adapter.*affected_batch_rows=\[1\]",
+    ):
+        MoT._apply_optional_layer_adapter(
+            layer_adapters=adapters, layer_idx=1, tokens=bad_input
+        )
+
+    with torch.no_grad():
+        adapters["1"].down.weight.fill_(1.0)
+        adapters["1"].up.weight.fill_(torch.inf)
+    with pytest.raises(
+        MoTNonFiniteError,
+        match=r"layer=1 stage=post_adapter",
+    ):
+        MoT._apply_optional_layer_adapter(
+            layer_adapters=adapters,
+            layer_idx=1,
+            tokens=torch.ones(2, 3, 4),
+        )
 
 
 def test_complete_warm_sums_disjoint_action_and_video_losses(

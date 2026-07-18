@@ -37,8 +37,29 @@ def _token_stream(
         raise SemanticBridgeError(f"{field} must have non-empty B and N")
     if not value.is_floating_point():
         raise TypeError(f"{field} must have a floating dtype")
-    if not bool(torch.isfinite(value).all().item()):
-        raise SemanticBridgeError(f"{field} must contain only finite values")
+    finite = torch.isfinite(value)
+    if not bool(finite.all().item()):
+        bad = ~finite
+        affected_rows = torch.nonzero(
+            bad.reshape(value.shape[0], -1).any(dim=1), as_tuple=False
+        ).flatten()
+        finite_values = value[finite]
+        finite_range = "empty"
+        if finite_values.numel():
+            finite_range = (
+                f"[{float(finite_values.min().item()):.6g},"
+                f"{float(finite_values.max().item()):.6g}]"
+            )
+        raise SemanticBridgeError(
+            f"{field} contains non-finite values: shape={tuple(value.shape)} "
+            f"dtype={value.dtype} device={value.device} "
+            f"bad={int(bad.sum().item())}/{value.numel()} "
+            f"nan={int(torch.isnan(value).sum().item())} "
+            f"posinf={int(torch.isposinf(value).sum().item())} "
+            f"neginf={int(torch.isneginf(value).sum().item())} "
+            f"affected_batch_rows={affected_rows.detach().cpu().tolist()} "
+            f"finite_range={finite_range}"
+        )
     return value
 
 

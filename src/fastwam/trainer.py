@@ -156,9 +156,102 @@ class Wan22Trainer:
         self.wandb_run = None
         self._init_wandb()
         self._resume_or_load_checkpoint()
+        # Validate the state that will actually enter the first forward.  Keep
+        # this after resume loading so a corrupt or rank-divergent checkpoint
+        # cannot bypass the audit.
+        self._validate_prepared_trainable_state()
 
         val_size = len(self.val_dataset) if self.val_dataset is not None else len(self.train_dataset)
         logger.info("Train/val dataset size: %d/%d", len(self.train_dataset), val_size)
+
+    def _validate_prepared_trainable_state(self) -> None:
+        """Audit finite and synchronized trainable weights after DeepSpeed.
+
+        Base checkpoints do not contain newly introduced WARM modules.  This
+        check makes rank divergence or an optimizer-wrapper initialization
+        fault fail before the first expensive data forward.
+        """
+
+        model = self.accelerator.unwrap_model(self.model)
+        trainable = [
+            (name, parameter)
+            for name, parameter in model.named_parameters()
+            if parameter.requires_grad
+        ]
+        if not trainable:
+            raise RuntimeError("prepared model has no trainable parameters")
+
+        finite_checks: list[torch.Tensor] = []
+        probes: list[torch.Tensor] = []
+        trainable_numel = 0
+        for name, parameter in trainable:
+            detached = parameter.detach()
+            trainable_numel += int(detached.numel())
+            finite_checks.append(torch.isfinite(detached).all())
+            flat = detached.reshape(-1)
+            if flat.numel() == 0:
+                continue
+            positions = sorted({0, int(flat.numel() // 2), int(flat.numel() - 1)})
+            probes.append(flat[positions].to(dtype=torch.float32))
+
+        # Stack all device checks before synchronizing once.  Calling .item()
+        # per tensor is very expensive for a billion-parameter action expert.
+        local_checks = torch.stack(finite_checks)
+        local_finite = local_checks.all().to(dtype=torch.int32)
+        finite_by_rank = self.accelerator.gather(local_finite.reshape(1))
+        if not bool(torch.all(finite_by_rank != 0).item()):
+            check_values = local_checks.detach().cpu().tolist()
+            bad_names = [
+                name
+                for (name, _), is_finite in zip(trainable, check_values)
+                if not is_finite
+            ]
+            raise FloatingPointError(
+                "prepared trainable parameters contain non-finite values: "
+                f"local_bad={bad_names[:20]} finite_flags="
+                f"{finite_by_rank.detach().cpu().tolist()}"
+            )
+
+        if not probes:
+            raise RuntimeError("prepared trainable parameters are all empty")
+        probe = torch.cat(probes)
+        gathered = self.accelerator.gather(probe.unsqueeze(0))
+        world_size = int(self.accelerator.num_processes)
+        gathered = gathered.reshape(world_size, -1)
+        # ``torch.equal`` returns Python bool; keep the comparison explicit so
+        # diagnostics report the exact divergent ranks.
+        divergent_ranks = [
+            rank
+            for rank in range(1, world_size)
+            if not torch.equal(gathered[0], gathered[rank])
+        ]
+        if divergent_ranks:
+            raise RuntimeError(
+                "trainable parameter initialization differs across ranks after "
+                f"Accelerate/DeepSpeed prepare; divergent_ranks={divergent_ranks}"
+            )
+        if self.accelerator.is_main_process:
+            logger.info(
+                "Prepared trainable-state audit passed: tensors=%d params=%d "
+                "world_size=%d finite=true synchronized=true",
+                len(trainable),
+                trainable_numel,
+                world_size,
+            )
+
+    @staticmethod
+    def _sample_identity(sample) -> dict[str, object]:
+        identity: dict[str, object] = {}
+        if not isinstance(sample, dict):
+            return identity
+        for key in ("idx", "dataset_index", "episode_index", "frame_index"):
+            value = sample.get(key)
+            if isinstance(value, torch.Tensor):
+                flat = value.detach().cpu().reshape(-1)
+                identity[key] = flat[:32].tolist()
+            elif isinstance(value, (str, int, float, bool)):
+                identity[key] = value
+        return identity
 
     def _prepare_warm_training_attestation_context(self):
         """Create immutable provenance from the actual live trainer state."""
@@ -973,8 +1066,30 @@ class Wan22Trainer:
             with self.accelerator.accumulate(self.model):
                 train_model = self.model if hasattr(self.model, "training_loss") else self.accelerator.unwrap_model(self.model)
 
-                with self.accelerator.autocast():
-                    loss, loss_dict = train_model.training_loss(sample)
+                try:
+                    with self.accelerator.autocast():
+                        loss, loss_dict = train_model.training_loss(sample)
+                except Exception:
+                    logger.exception(
+                        "Training forward failed before backward: rank=%d "
+                        "global_step=%d epoch=%d batch_in_epoch=%d sample_identity=%s",
+                        int(self.accelerator.process_index),
+                        self.global_step,
+                        self.epoch,
+                        self.batch_in_epoch,
+                        self._sample_identity(sample),
+                    )
+                    raise
+                if not isinstance(loss, torch.Tensor) or loss.ndim != 0:
+                    raise TypeError("training_loss must return a scalar loss tensor")
+                if not bool(torch.isfinite(loss.detach()).item()):
+                    raise FloatingPointError(
+                        "non-finite loss blocked before backward: "
+                        f"rank={self.accelerator.process_index} "
+                        f"global_step={self.global_step} "
+                        f"sample_identity={self._sample_identity(sample)} "
+                        f"loss_dict={loss_dict}"
+                    )
                 self.accelerator.backward(loss)
 
                 if self.accelerator.sync_gradients:

@@ -14,16 +14,24 @@ def _resolve_global_rank() -> int:
     return int(os.environ.get("RANK", os.environ.get("SLURM_PROCID", os.environ.get("LOCAL_RANK", "0"))))
 
 
-def set_global_seed(seed: int, get_worker_init_fn: bool = False) -> Optional[Callable[[int], None]]:
+def set_global_seed(
+    seed: int,
+    get_worker_init_fn: bool = False,
+    *,
+    rank_offset: bool = True,
+) -> Optional[Callable[[int], None]]:
     """Sets seed for all randomness libraries (mostly random, numpy, torch) and produces a `worker_init_fn`"""
     assert np.iinfo(np.uint32).min < seed < np.iinfo(np.uint32).max, "Seed outside the np.uint32 bounds!"
 
     # Set Seed as an Environment Variable
     os.environ["EXPERIMENT_GLOBAL_SEED"] = str(seed)
 
-    # Process-specific seeding: offset by global rank so each process gets a different seed
+    # Model construction must use the same seed on every rank so newly added
+    # modules (which are absent from a base checkpoint) start identically.
+    # Data/optimization RNG streams should remain rank-specific.  Callers make
+    # that distinction explicit through ``rank_offset``.
     global_rank = _resolve_global_rank()
-    process_seed = seed + global_rank
+    process_seed = seed + global_rank if rank_offset else seed
 
     random.seed(process_seed)
     np.random.seed(process_seed)

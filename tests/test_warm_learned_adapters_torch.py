@@ -73,6 +73,24 @@ def test_semantic_bridge_rejects_misaligned_streams_and_empty_sample() -> None:
         )
 
 
+def test_semantic_bridge_nonfinite_diagnostic_identifies_affected_rows() -> None:
+    config = SemanticBridgeConfig(
+        early_dim=4, late_dim=4, semantic_dim=4, num_heads=2
+    )
+    module = WorldFeatureSemanticBridge(config)
+    early = torch.randn(2, 3, 4)
+    early[1, 0, 2] = torch.inf
+    with pytest.raises(
+        SemanticBridgeError,
+        match=r"early_tokens.*posinf=1.*affected_batch_rows=\[1\]",
+    ):
+        module(
+            early,
+            torch.randn(2, 3, 4),
+            torch.ones(2, 3, dtype=torch.bool),
+        )
+
+
 def _gist_inputs():
     return {
         "world_tokens": torch.randn(2, 5, 6),

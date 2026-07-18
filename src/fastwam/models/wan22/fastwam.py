@@ -23,6 +23,39 @@ from .schedulers.scheduler_continuous import WanContinuousFlowMatchScheduler
 logger = get_logger(__name__)
 
 
+def _require_finite_tensor(value: torch.Tensor, *, field: str) -> None:
+    """Fail at the producer boundary instead of propagating opaque NaNs."""
+
+    if not isinstance(value, torch.Tensor) or not value.is_floating_point():
+        raise TypeError(f"{field} must be a floating tensor")
+    finite = torch.isfinite(value)
+    if bool(finite.all().item()):
+        return
+    bad = ~finite
+    if value.ndim == 0:
+        affected_rows = torch.tensor([0], device=value.device)
+    else:
+        affected_rows = torch.nonzero(
+            bad.reshape(value.shape[0], -1).any(dim=1), as_tuple=False
+        ).flatten()
+    finite_values = value[finite]
+    finite_range = "empty"
+    if finite_values.numel():
+        finite_range = (
+            f"[{float(finite_values.min().item()):.6g},"
+            f"{float(finite_values.max().item()):.6g}]"
+        )
+    raise FloatingPointError(
+        f"{field} contains non-finite values: shape={tuple(value.shape)} "
+        f"dtype={value.dtype} bad={int(bad.sum().item())}/{value.numel()} "
+        f"nan={int(torch.isnan(value).sum().item())} "
+        f"posinf={int(torch.isposinf(value).sum().item())} "
+        f"neginf={int(torch.isneginf(value).sum().item())} "
+        f"affected_batch_rows={affected_rows.detach().cpu().tolist()} "
+        f"finite_range={finite_range}"
+    )
+
+
 @dataclass(frozen=True, slots=True)
 class ActionConditioningCache:
     """Safe first-frame state reused by every Action DiT flow step."""
@@ -354,7 +387,9 @@ class FastWAM(torch.nn.Module):
                 )
         
         input_video = video.to(device=self.device, dtype=self.torch_dtype, non_blocking=True)
+        _require_finite_tensor(input_video, field="training_video")
         input_latents = self._encode_video_latents(input_video, tiled=tiled)
+        _require_finite_tensor(input_latents, field="training_vae_latents")
 
         first_frame_latents = None
         fuse_flag = False
@@ -367,6 +402,7 @@ class FastWAM(torch.nn.Module):
                 f"`context/context_mask` must be [B,L,D]/[B,L], got {tuple(context.shape)} and {tuple(context_mask.shape)}"
             )
         context = context.to(device=self.device, dtype=self.torch_dtype, non_blocking=True)
+        _require_finite_tensor(context, field="training_text_context")
         context_mask = context_mask.to(device=self.device, dtype=torch.bool, non_blocking=True)
         if self.proprio_encoder is not None:
             if proprio is None:
@@ -378,12 +414,18 @@ class FastWAM(torch.nn.Module):
                     f"`sample['proprio']` last dim must be {self.proprio_dim}, got {proprio.shape[2]}"
                 )
             proprio = proprio[:, 0, :] # [B, D]
+            _require_finite_tensor(
+                proprio.to(device=self.device, dtype=self.torch_dtype),
+                field="training_current_proprio",
+            )
             context, context_mask = self._append_proprio_to_context(
                 context=context,
                 context_mask=context_mask,
                 proprio=proprio.to(device=self.device, dtype=self.torch_dtype),
             )
         action = action.to(device=self.device, dtype=self.torch_dtype, non_blocking=True)
+        _require_finite_tensor(action, field="training_target_action")
+        _require_finite_tensor(context, field="training_augmented_context")
 
         if action_is_pad is not None:
             action_is_pad = action_is_pad.to(device=self.device, dtype=torch.bool, non_blocking=True)
@@ -536,6 +578,14 @@ class FastWAM(torch.nn.Module):
         current_video = video[:, :, 0:1].to(
             device=self.device, dtype=self.torch_dtype, non_blocking=True
         )
+        _require_finite_tensor(current_video, field="current_video")
+        _require_finite_tensor(context, field="action_text_context")
+        _require_finite_tensor(
+            action.to(device=self.device, dtype=self.torch_dtype),
+            field="target_action",
+        )
+        if current_proprio is not None:
+            _require_finite_tensor(current_proprio, field="current_proprio")
         current_latents = self._encode_video_latents(current_video, tiled=tiled)
         if not isinstance(current_latents, torch.Tensor) or current_latents.ndim != 5:
             raise TypeError("VAE must return current-frame latents as [B,C,T,H,W]")
@@ -544,6 +594,7 @@ class FastWAM(torch.nn.Module):
                 "current-frame VAE output must preserve batch and one latent frame, got "
                 f"{tuple(current_latents.shape)}"
             )
+        _require_finite_tensor(current_latents, field="current_vae_latents")
 
         return {
             "current_latents": current_latents,
@@ -589,6 +640,12 @@ class FastWAM(torch.nn.Module):
                 action=None,
                 fuse_vae_embedding_in_latents=fuse_vae_embedding_in_latents,
             )
+            for field, value in (
+                ("video_pre.tokens", video_pre["tokens"]),
+                ("video_pre.t_mod", video_pre["t_mod"]),
+                ("video_pre.context", video_pre["context"]),
+            ):
+                _require_finite_tensor(value, field=field)
             video_seq_len = int(video_pre["tokens"].shape[1])
             attention_mask = self._build_mot_attention_mask(
                 video_seq_len=video_seq_len,
@@ -776,6 +833,8 @@ class FastWAM(torch.nn.Module):
         )
         if inputs["first_frame_latents"] is not None:
             latents[:, :, 0:1] = inputs["first_frame_latents"]
+        _require_finite_tensor(latents, field="video_noised_latents")
+        _require_finite_tensor(target_video, field="video_flow_target")
 
         video_pre = self.video_expert.pre_dit(
             x=latents,
@@ -787,6 +846,12 @@ class FastWAM(torch.nn.Module):
                 "fuse_vae_embedding_in_latents"
             ],
         )
+        for field, value in (
+            ("video_only_pre.tokens", video_pre["tokens"]),
+            ("video_only_pre.t_mod", video_pre["t_mod"]),
+            ("video_only_pre.context", video_pre["context"]),
+        ):
+            _require_finite_tensor(value, field=field)
         video_tokens = video_pre["tokens"]
         video_mask = self.video_expert.build_video_to_video_mask(
             video_seq_len=int(video_tokens.shape[1]),
@@ -818,10 +883,12 @@ class FastWAM(torch.nn.Module):
             image_is_pad=inputs["image_is_pad"],
             include_initial_video_step=include_initial_video_step,
         )
+        _require_finite_tensor(loss_per_sample, field="video_loss_per_sample")
         weight = self.train_video_scheduler.training_weight(timestep_video).to(
             loss_per_sample.device, dtype=loss_per_sample.dtype
         )
         loss_video = (loss_per_sample * weight).mean()
+        _require_finite_tensor(loss_video, field="video_loss")
         weighted = self.loss_lambda_video * loss_video
         return weighted, {
             "loss_video": self.loss_lambda_video

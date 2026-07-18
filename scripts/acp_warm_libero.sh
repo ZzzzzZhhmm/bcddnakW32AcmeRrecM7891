@@ -299,7 +299,14 @@ resolve_zero_stage() {
       RESOLVED_ZERO_STAGE="${ZERO_STAGE}"
       ;;
     auto)
-      if (( NPROC_PER_NODE >= 8 )); then
+      # Complete WARM has a verified ZeRO-1 forward/update path on H100.  Four
+      # repeated ZeRO-2 probes failed before their first optimizer update at
+      # the layer-9 world tap.  Four 80GB H100s can afford ZeRO-1: stage 2 only
+      # saves replicated trainable gradients, not the frozen 5B parameters or
+      # activation memory that dominate this workload.
+      if [[ "${KIND:-}" == "warm_full" ]] && (( NPROC_PER_NODE >= 4 )); then
+        RESOLVED_ZERO_STAGE="1"
+      elif (( NPROC_PER_NODE >= 8 )); then
         RESOLVED_ZERO_STAGE="1"
       else
         RESOLVED_ZERO_STAGE="2"
@@ -310,6 +317,9 @@ resolve_zero_stage() {
       return 1
       ;;
   esac
+  if [[ "${KIND:-}" == "warm_full" && "${RESOLVED_ZERO_STAGE}" == "2" ]]; then
+    echo "WARNING: complete WARM + ZeRO-2 is experimental and failed the 2026-07-17 four-H100 probes. Prefer ZERO_STAGE=1."
+  fi
   # WARM 的 train_zero{1,2}.sh 各自硬编码对应 accelerate 配置文件
   if [[ "${RESOLVED_ZERO_STAGE}" == "1" ]]; then
     TRAIN_SCRIPT="scripts/train_zero1.sh"

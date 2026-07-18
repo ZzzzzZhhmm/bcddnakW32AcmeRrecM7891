@@ -12,6 +12,42 @@ from fastwam.utils.logging_config import get_logger
 logger = get_logger(__name__)
 
 
+class MoTNonFiniteError(FloatingPointError):
+    """Raised at the first instrumented Video DiT boundary with bad values."""
+
+
+def _require_finite_tokens(
+    tokens: torch.Tensor,
+    *,
+    layer_idx: int,
+    stage: str,
+) -> None:
+    finite = torch.isfinite(tokens)
+    if bool(finite.all().item()):
+        return
+    bad = ~finite
+    affected_rows = torch.nonzero(
+        bad.reshape(tokens.shape[0], -1).any(dim=1), as_tuple=False
+    ).flatten()
+    finite_values = tokens[finite]
+    finite_range = "empty"
+    if finite_values.numel():
+        finite_range = (
+            f"[{float(finite_values.min().item()):.6g},"
+            f"{float(finite_values.max().item()):.6g}]"
+        )
+    raise MoTNonFiniteError(
+        "Video DiT produced non-finite tokens at "
+        f"layer={layer_idx} stage={stage}: shape={tuple(tokens.shape)} "
+        f"dtype={tokens.dtype} bad={int(bad.sum().item())}/{tokens.numel()} "
+        f"nan={int(torch.isnan(tokens).sum().item())} "
+        f"posinf={int(torch.isposinf(tokens).sum().item())} "
+        f"neginf={int(torch.isneginf(tokens).sum().item())} "
+        f"affected_batch_rows={affected_rows.detach().cpu().tolist()} "
+        f"finite_range={finite_range}"
+    )
+
+
 @dataclass(frozen=True, slots=True)
 class VideoPrefillOutput:
     """Layer-wise video K/V plus the final first-frame world tokens."""
@@ -436,11 +472,20 @@ class MoT(nn.Module):
         key = str(int(layer_idx))
         if key not in layer_adapters:
             return tokens
+        # These are also the two semantic tap layers.  Checking immediately
+        # before and after the adapter distinguishes a failing frozen backbone
+        # from an unstable trainable adapter without scanning all 30 layers.
+        _require_finite_tokens(
+            tokens, layer_idx=layer_idx, stage="pre_adapter"
+        )
         adapted = layer_adapters[key](tokens)
         if not isinstance(adapted, torch.Tensor) or adapted.shape != tokens.shape:
             raise ValueError("video layer adapter must preserve [B,S,D] shape")
         if adapted.device != tokens.device or adapted.dtype != tokens.dtype:
             raise TypeError("video layer adapter must preserve device and dtype")
+        _require_finite_tokens(
+            adapted, layer_idx=layer_idx, stage="post_adapter"
+        )
         return adapted
 
     def forward_action_with_video_cache(

@@ -714,7 +714,21 @@ def run_training(cfg: DictConfig):
     with open(Path(cfg.output_dir) / "config.yaml", "w") as f:
         OmegaConf.save(config_payload, f)
 
+    # Accelerate launches one Python process per rank before DeepSpeed is
+    # initialized.  Seed model construction identically here; otherwise WARM
+    # modules that do not exist in the immutable FastWAM checkpoint can be
+    # initialized differently on every rank.  Wan22Trainer deliberately
+    # reseeds with a rank offset after construction for independent training
+    # RNG streams and dataloader workers.
+    from .utils.pytorch_utils import set_global_seed
+
+    set_global_seed(int(cfg.seed), rank_offset=False)
     model_device = _resolve_train_device()
+    logger.info(
+        "Using rank-invariant model initialization seed=%d on device=%s",
+        int(cfg.seed),
+        model_device,
+    )
     mixed_precision = _normalize_mixed_precision(cfg.mixed_precision)
     model_dtype = _mixed_precision_to_model_dtype(mixed_precision)
     model = instantiate(cfg.model, model_dtype=model_dtype, device=model_device)
