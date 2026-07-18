@@ -1653,11 +1653,12 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
 
     def _retrospection_state(self) -> dict[str, Any]:
         cfg = self._require_retrospection()
+        config = cfg.to_json_dict()
         return {
             "schema": WARM_RETROSPECTION_CHECKPOINT_SCHEMA,
             "version": WARM_RETROSPECTION_CHECKPOINT_VERSION,
-            "config": cfg.to_dict(),
-            "config_sha256": sha256_canonical_json(cfg.to_dict()),
+            "config": config,
+            "config_sha256": sha256_canonical_json(config),
         }
 
     def _checkpoint_extra_state(self) -> dict[str, Any]:
@@ -1680,10 +1681,44 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
         return payload
 
     def _validate_retrospection_state(self, value: object) -> None:
-        expected = self._retrospection_state()
-        if not isinstance(value, Mapping) or dict(value) != expected:
+        fields = {"schema", "version", "config", "config_sha256"}
+        if not isinstance(value, Mapping) or set(value) != fields:
+            actual = set(value) if isinstance(value, Mapping) else set()
             raise ValueError(
-                "checkpoint retrospection architecture does not match configured WARM"
+                "invalid retrospection checkpoint fields; "
+                f"missing={sorted(fields - actual)}, "
+                f"extra={sorted(actual - fields)}"
+            )
+        if (
+            value["schema"] != WARM_RETROSPECTION_CHECKPOINT_SCHEMA
+            or value["version"] != WARM_RETROSPECTION_CHECKPOINT_VERSION
+        ):
+            raise ValueError("unsupported retrospection checkpoint schema/version")
+        config_value = value["config"]
+        if not isinstance(config_value, Mapping):
+            raise ValueError("retrospection checkpoint config must be a mapping")
+        try:
+            loaded = WarmRetrospectionConfig.from_dict(config_value)
+        except (TypeError, ValueError) as error:
+            raise ValueError("invalid retrospection checkpoint config") from error
+        loaded_json = loaded.to_json_dict()
+        loaded_sha256 = sha256_canonical_json(loaded_json)
+        if value["config_sha256"] != loaded_sha256:
+            raise ValueError("retrospection checkpoint config_sha256 is invalid")
+
+        configured = self._require_retrospection()
+        if loaded != configured:
+            loaded_dict = loaded.to_dict()
+            configured_dict = configured.to_dict()
+            differing = sorted(
+                field
+                for field in configured_dict
+                if loaded_dict[field] != configured_dict[field]
+            )
+            raise ValueError(
+                "checkpoint retrospection architecture does not match "
+                "configured WARM: "
+                + ", ".join(differing)
             )
 
     def _preflight_checkpoint_extra_state(self, payload: dict[str, Any]) -> None:

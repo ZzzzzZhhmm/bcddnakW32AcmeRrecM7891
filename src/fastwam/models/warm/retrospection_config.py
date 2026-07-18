@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
+import json
 import math
 from typing import Any, Mapping
 
@@ -228,6 +229,29 @@ class WarmRetrospectionConfig:
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
+
+    def to_json_dict(self) -> dict[str, Any]:
+        """Return the canonical JSON-domain representation of this config.
+
+        Architecture fields are normalized to immutable tuples in memory,
+        while JSON necessarily serializes them as arrays.  Checkpoint and
+        trainer-state contracts must compare parsed semantics rather than raw
+        tuple/list container types.
+        """
+
+        encoded = json.dumps(
+            self.to_dict(),
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=True,
+            allow_nan=False,
+        )
+        value = json.loads(encoded)
+        if not isinstance(value, dict):  # pragma: no cover - asdict is a dict
+            raise WarmRetrospectionConfigError(
+                "retrospection config did not encode a JSON object"
+            )
+        return value
 
     @classmethod
     def from_dict(cls, value: Mapping[str, Any]) -> "WarmRetrospectionConfig":

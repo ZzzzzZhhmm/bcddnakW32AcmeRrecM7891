@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
+import json
 import os
 from types import SimpleNamespace
 
@@ -20,6 +21,7 @@ else:
 
 
 import fastwam.runtime as runtime  # noqa: E402
+from fastwam.memory.manifest import sha256_canonical_json  # noqa: E402
 from fastwam.datasets.warm_candidates import (  # noqa: E402
     WARM_CANDIDATE_MASK,
     WARM_CANDIDATE_MU,
@@ -134,6 +136,28 @@ def _model() -> WarmRetrospectionFastWAM:
     )
     model.configure_warm_retrospection(_config())
     return model
+
+
+def test_retrospection_trainer_metadata_survives_json_round_trip() -> None:
+    model = _model()
+    metadata = json.loads(json.dumps(model.trainer_state_metadata()))
+
+    model.validate_trainer_state_metadata(metadata)
+
+    corrupted_hash = json.loads(json.dumps(metadata))
+    corrupted_hash["warm_retrospection"]["config_sha256"] = "0" * 64
+    with pytest.raises(ValueError, match="config_sha256 is invalid"):
+        model.validate_trainer_state_metadata(corrupted_hash)
+
+    incompatible = json.loads(json.dumps(metadata))
+    incompatible["warm_retrospection"]["config"]["video_adapter_layers"] = []
+    incompatible["warm_retrospection"]["config_sha256"] = (
+        sha256_canonical_json(
+            incompatible["warm_retrospection"]["config"]
+        )
+    )
+    with pytest.raises(ValueError, match="video_adapter_layers"):
+        model.validate_trainer_state_metadata(incompatible)
 
 
 def _source_context(*, with_teachers: bool) -> RetrospectiveSourceContext:

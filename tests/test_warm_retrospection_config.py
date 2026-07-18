@@ -62,6 +62,16 @@ def test_retrospection_config_round_trip_is_closed_and_lossless() -> None:
     assert WarmRetrospectionConfig.from_dict(config.to_dict()) == config
 
 
+def test_retrospection_config_json_domain_normalizes_sequence_containers() -> None:
+    config = WarmRetrospectionConfig.from_dict(_config_payload())
+
+    serialized = config.to_json_dict()
+
+    assert serialized["video_adapter_layers"] == [1, 3]
+    assert serialized["canonical_gripper_dims"] == []
+    assert WarmRetrospectionConfig.from_dict(serialized) == config
+
+
 def test_retrospection_config_rejects_unknown_and_missing_fields() -> None:
     unknown = _config_payload()
     unknown["silently_ignored_architecture_knob"] = 1
