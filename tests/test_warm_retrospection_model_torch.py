@@ -601,7 +601,11 @@ def test_trainable_scope_adapts_action_dit_and_action_context_has_gradient() -> 
 
     assert trainable
     assert model.mot.training
-    assert model.action_expert.action_encoder.weight.requires_grad
+    assert model.action_expert.input_proj.weight.requires_grad
+    assert all(
+        parameter.requires_grad
+        for parameter in model.action_expert.parameters()
+    )
     assert not next(model.video_expert.parameters()).requires_grad
     inner = model.retrospective_event_adapter.action_context_output_projection
     assert torch.count_nonzero(inner.weight).item() == 0

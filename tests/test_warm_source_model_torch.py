@@ -902,10 +902,12 @@ def test_fixed_online_step_binds_checkpoint_and_is_consumed_once(
     assert captured["seed"] == step.derived_seed
     assert captured["action_horizon"] == ACTION_HORIZON
     torch.testing.assert_close(
-        captured["input_image"], torch.from_numpy(step.model_input)
+        captured["input_image"],
+        torch.from_numpy(np.array(step.model_input, copy=True)),
     )
     torch.testing.assert_close(
-        captured["proprio"], torch.from_numpy(step.proprio)
+        captured["proprio"],
+        torch.from_numpy(np.array(step.proprio, copy=True)),
     )
     context = captured["action_source_context"]
     assert isinstance(context, ActionSourceContext)
@@ -959,32 +961,38 @@ def test_fixed_online_step_binds_checkpoint_and_is_consumed_once(
     second_output = model.infer_action(online_step=preflight_step)
     assert second_output["warm_online_telemetry"]["source"]["component"] == 1
 
-    fallback_retriever = _online_retriever(
+    cross_task_retriever = _online_retriever(
         train,
         online,
         bank_task_index=1,
     )
-    model.bind_online_retriever(fallback_retriever)
-    fallback_retriever.begin_episode(0)
-    fallback_step = fallback_retriever.retrieve(
-        fallback_retriever.make_query_id(0),
+    model.bind_online_retriever(cross_task_retriever)
+    cross_task_retriever.begin_episode(0)
+    cross_task_step = cross_task_retriever.retrieve(
+        cross_task_retriever.make_query_id(0),
         {"agentview": np.zeros((16, 16, 3), dtype=np.uint8)},
         task_description="task-0",
         prompt="task-0",
         proprio=np.zeros((8,), dtype=np.float32),
     )
-    fallback_output = model.infer_action(online_step=fallback_step)
-    assert fallback_step.candidate_valid_mask.tolist() == [False, False]
-    assert fallback_output["warm_online_telemetry"]["source"] == {
-        "policy": "fixed_context_top1",
-        "component": 0,
-        "selected_rank": None,
-        "selected_event_id": None,
-        "memory_selected": False,
-        "memory_sigma": 0.2,
-        "derived_seed": fallback_step.derived_seed,
-    }
-    json.dumps(fallback_output["warm_online_telemetry"], allow_nan=False)
+    cross_task_output = model.infer_action(online_step=cross_task_step)
+    # Online retrieval must reproduce M1 exact_cosine_v1 over the complete
+    # bank. TASK_INDEX is immutable provenance, not a second eligibility
+    # filter: task identity already belongs to task-conditioned context keys.
+    assert cross_task_step.candidate_valid_mask.tolist() == [True, True]
+    cross_task_source = cross_task_output["warm_online_telemetry"]["source"]
+    cross_task_retrieval = cross_task_output["warm_online_telemetry"][
+        "retrieval"
+    ]
+    assert cross_task_source["policy"] == "fixed_context_top1"
+    assert cross_task_source["component"] == 1
+    assert cross_task_source["selected_rank"] == 0
+    assert cross_task_source["memory_selected"] is True
+    assert cross_task_source["selected_event_id"] == cross_task_retrieval[
+        "ranked_event_ids"
+    ][0]
+    assert cross_task_source["derived_seed"] == cross_task_step.derived_seed
+    json.dumps(cross_task_output["warm_online_telemetry"], allow_nan=False)
 
 
 def test_online_bind_rejects_wrong_checkpoint_identity(tmp_path: Path) -> None:
@@ -1079,7 +1087,10 @@ def test_prefill_legacy_and_extended_apis_share_one_internal_contract(
     assert extended.kv_cache is cache
     assert extended.final_tokens is final_tokens
     assert len(calls) == 2
-    assert calls[0].keys() == calls[1].keys() == kwargs.keys()
+    expected = {**kwargs, "layer_adapters": None}
+    assert calls[0].keys() == calls[1].keys() == expected.keys()
+    assert calls[0]["layer_adapters"] is None
+    assert calls[1]["layer_adapters"] is None
     for key, value in kwargs.items():
         assert calls[0][key] is value
         assert calls[1][key] is value
@@ -1231,6 +1242,7 @@ def _trainer_stub(model: WarmSourceFastWAM) -> Wan22Trainer:
     trainer.epoch = 2
     trainer.batch_in_epoch = 7
     trainer.batch_size = 2
+    trainer._consecutive_nonfinite_gradient_skips = 3
     return trainer
 
 
@@ -1246,6 +1258,7 @@ def test_trainer_state_persists_contract_and_validates_before_accelerate_load(
     state_file = tmp_path / "trainer_state.json"
     payload = json.loads(state_file.read_text(encoding="utf-8"))
     assert payload["model_contract"] == model.trainer_state_metadata()
+    assert payload["consecutive_nonfinite_gradient_skips"] == 3
 
     restored = _trainer_stub(
         _new_model(policy="fixed_context_top1", contract=_run_contract())
@@ -1255,6 +1268,7 @@ def test_trainer_state_persists_contract_and_validates_before_accelerate_load(
     assert restored.global_step == 11
     assert restored.epoch == 2
     assert restored.batch_in_epoch == 7
+    assert restored._consecutive_nonfinite_gradient_skips == 3
     assert restored.train_sampler.epoch == 2
     assert restored.train_sampler.batch == 7
 
