@@ -445,6 +445,11 @@ class Wan22Trainer:
         envelope: list[object] = [None]
         if self.accelerator.is_main_process:
             try:
+                logger.info(
+                    "Hashing and validating formal WARM resume state before "
+                    "load (large DeepSpeed states may take several minutes): %s",
+                    resume_path,
+                )
                 envelope[0] = {
                     "ok": True,
                     "lineage": prepare_formal_resume_lineage(
@@ -649,6 +654,11 @@ class Wan22Trainer:
         envelope: list[object] = [None]
         if self.accelerator.is_main_process:
             try:
+                logger.info(
+                    "Rehashing formal WARM resume state after load to close "
+                    "the validation/load race: %s",
+                    state_dir,
+                )
                 actual = sha256_training_state_tree(state_dir)
                 envelope[0] = {
                     "ok": actual == context.resume_state_sha256,
