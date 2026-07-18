@@ -5,8 +5,16 @@ NPROC_PER_NODE="${1:?Usage: bash scripts/train.sh <nproc_per_node> [hydra_overri
 shift
 
 EXTRA_ARGS=("$@")
-NUM_MACHINES="${NNODES:-1}"
-MACHINE_RANK="${NODE_RANK:-0}"
+if [[ -n "${NUM_MACHINES:-}" && -n "${NNODES:-}" && "${NUM_MACHINES}" != "${NNODES}" ]]; then
+  echo "Error: NUM_MACHINES (${NUM_MACHINES}) conflicts with NNODES (${NNODES})." >&2
+  exit 1
+fi
+if [[ -n "${MACHINE_RANK:-}" && -n "${NODE_RANK:-}" && "${MACHINE_RANK}" != "${NODE_RANK}" ]]; then
+  echo "Error: MACHINE_RANK (${MACHINE_RANK}) conflicts with NODE_RANK (${NODE_RANK})." >&2
+  exit 1
+fi
+NUM_MACHINES="${NUM_MACHINES:-${NNODES:-1}}"
+MACHINE_RANK="${MACHINE_RANK:-${NODE_RANK:-0}}"
 MAIN_PROCESS_IP="${MASTER_ADDR:-127.0.0.1}"
 MAIN_PROCESS_PORT="${MASTER_PORT:-29500}"
 

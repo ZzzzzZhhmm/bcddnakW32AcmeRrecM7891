@@ -85,6 +85,10 @@ def test_distributed_launchers_forward_complete_topology() -> None:
     root = Path(__file__).resolve().parents[1]
     for name in ("train_zero1.sh", "train_zero2.sh"):
         source = (root / "scripts" / name).read_text(encoding="utf-8")
+        assert 'NUM_MACHINES="${NUM_MACHINES:-${NNODES:-1}}"' in source
+        assert 'MACHINE_RANK="${MACHINE_RANK:-${NODE_RANK:-0}}"' in source
+        assert "conflicts with NNODES" in source
+        assert "conflicts with NODE_RANK" in source
         assert "TOTAL_PROCESSES=$((NPROC_PER_NODE * NUM_MACHINES))" in source
         assert '--num_processes "${TOTAL_PROCESSES}"' in source
         assert '--num_machines "${NUM_MACHINES}"' in source

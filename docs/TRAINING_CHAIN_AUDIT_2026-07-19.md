@@ -30,8 +30,10 @@ same validation runs again in the Trainer as defense in depth.
 `acp_warm_libero.sh` is intentionally a **single-node** orchestrator.  Its
 shared preflight and console log are not safe for two independent node shells.
 The lower `train_zero1.sh` and `train_zero2.sh` launchers forward complete
-Accelerate multi-node topology, but a scheduler must assign `MACHINE_RANK`,
-`NUM_MACHINES`, `MASTER_ADDR`, and `MASTER_PORT`.
+Accelerate multi-node topology.  A scheduler may use the Accelerate-style
+`NUM_MACHINES`/`MACHINE_RANK` names or the Torch-style `NNODES`/`NODE_RANK`
+aliases, together with `MASTER_ADDR` and `MASTER_PORT`; conflicting aliases
+fail before launch.
 
 ## 2. Canonical single-node batch contracts
 
