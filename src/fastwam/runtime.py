@@ -1,8 +1,11 @@
 import logging
+import hashlib
 import os
 import inspect
 import json
 from pathlib import Path
+import re
+from tempfile import NamedTemporaryFile
 
 import torch
 from hydra.utils import instantiate
@@ -704,15 +707,62 @@ def _resolve_train_device() -> str:
     return f"cuda:{local_rank}"
 
 
+def _publish_resolved_training_config(cfg: DictConfig) -> Path:
+    """Publish, never overwrite, the exact config for this launch.
+
+    A continuation commonly reuses the parent's output directory.  Replacing
+    ``config.yaml`` would destroy the original run record, and every rank used
+    to race that replacement before Accelerate initialized distributed state.
+    Resume launches therefore receive an immutable step-specific config; all
+    ranks may race the same atomic hard-link publication only when their bytes
+    are identical.
+    """
+
+    output = Path(cfg.output_dir)
+    output.mkdir(parents=True, exist_ok=True)
+    resume = cfg.get("resume")
+    payload = OmegaConf.to_yaml(cfg, resolve=True).encode("utf-8")
+    if resume not in (None, "", False):
+        match = re.fullmatch(r"step_(\d{6,})", Path(str(resume)).name)
+        suffix = match.group(1) if match is not None else "unresolved"
+        identity = hashlib.sha256(payload).hexdigest()[:12]
+        target = output / f"config.resume.step_{suffix}.{identity}.yaml"
+    else:
+        target = output / "config.yaml"
+    temporary: Path | None = None
+    try:
+        with NamedTemporaryFile(
+            mode="wb",
+            prefix=f".{target.name}.",
+            suffix=".tmp",
+            dir=target.parent,
+            delete=False,
+        ) as handle:
+            temporary = Path(handle.name)
+            handle.write(payload)
+            handle.flush()
+            os.fsync(handle.fileno())
+        try:
+            os.link(temporary, target)
+        except FileExistsError:
+            if target.read_bytes() != payload:
+                raise RuntimeError(
+                    f"resolved training config already exists with different bytes: {target}"
+                )
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
+    return target
+
+
 def run_training(cfg: DictConfig):
     setup_logging(
         log_level=logging.INFO,
         is_main_process=torch.distributed.get_rank() == 0 if torch.distributed.is_initialized() else True,
     )
     misc.register_work_dir(cfg.output_dir)
-    config_payload = OmegaConf.to_container(cfg, resolve=True)
-    with open(Path(cfg.output_dir) / "config.yaml", "w") as f:
-        OmegaConf.save(config_payload, f)
+    resolved_config_path = _publish_resolved_training_config(cfg)
+    logger.info("Resolved training config published at %s", resolved_config_path)
 
     # Accelerate launches one Python process per rank before DeepSpeed is
     # initialized.  Seed model construction identically here; otherwise WARM

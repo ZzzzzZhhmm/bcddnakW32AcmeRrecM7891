@@ -421,7 +421,9 @@ $RUN_DIR/checkpoints/weights/step_NNNNNN.training.json
 The adjacent trainer-produced attestation binds the actual checkpoint bytes,
 policy, shared training recipe, optimizer/scheduler and batch/world-size
 facts, precision, seed and global step, train/DEV source contracts, base
-checkpoint, and clean Git commit. Publication is no-overwrite; do not
+checkpoint, and clean Git commit. V2 additionally binds any continuation to
+the parent checkpoint/attestation, exact full-state tree, and resume step.
+Publication is no-overwrite; do not
 hand-author, copy, rename independently, or regenerate the sidecar. M2.1
 online contract construction requires the selected sidecar through
 `--training-attestation`.

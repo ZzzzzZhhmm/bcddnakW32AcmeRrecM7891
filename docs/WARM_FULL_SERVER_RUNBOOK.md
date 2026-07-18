@@ -258,6 +258,24 @@ Every accepted checkpoint must have the trainer-produced `.training.json`
 attestation beside it. A weights file without that sidecar is not a formal
 WARM checkpoint.
 
+Formal continuation uses the complete state directory, never a weights-only
+file:
+
+```bash
+export RESUME=$RUN_DIR/checkpoints/state/step_NNNNNN
+```
+
+The step-matched weights file and `.training.json` must also exist under
+`checkpoints/weights/`. Training-attestation v2 verifies the parent proof,
+global step, optimizer/scheduler/batch/runtime facts, and a tree SHA-256 of the
+entire Accelerate/DeepSpeed state before loading; it hashes the state again
+after loading and records the parent checkpoint, parent attestation, resume
+state, and resume step in every new sidecar. Existing v1 parents are accepted
+only through this one-way verified upgrade. A changed world size, batch
+geometry, source contract, runtime, or incomplete state fails closed. Resume
+launches preserve the original `config.yaml` and publish an immutable
+`config.resume.step_NNNNNN.<sha>.yaml` instead.
+
 ## 7. One-task full-WARM LIBERO evaluation
 
 Complete WARM uses the online mode `full_retrospection`. Unlike the M2.1

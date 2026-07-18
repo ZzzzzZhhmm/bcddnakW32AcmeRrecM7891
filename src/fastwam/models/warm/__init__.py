@@ -37,6 +37,7 @@ from .online_pair_contract import (
 )
 from .training_attestation import (
     SHARED_RECIPE_IGNORED_PATHS,
+    V1_SHARED_RECIPE_IGNORED_PATHS,
     TRAINING_ATTESTATION_SCHEMA,
     TRAINING_ATTESTATION_VERSION,
     TrainingAttestationError,
@@ -48,6 +49,8 @@ from .training_attestation import (
     clean_git_commit,
     load_training_attestation,
     publish_training_attestation,
+    prepare_formal_resume_lineage,
+    sha256_training_state_tree,
     training_attestation_path,
     training_config_hashes,
     verify_training_attestation,
@@ -86,6 +89,7 @@ __all__ = [
     "OnlinePairContractError",
     "WarmOnlinePairContract",
     "SHARED_RECIPE_IGNORED_PATHS",
+    "V1_SHARED_RECIPE_IGNORED_PATHS",
     "TRAINING_ATTESTATION_SCHEMA",
     "TRAINING_ATTESTATION_VERSION",
     "TrainingAttestationError",
@@ -97,6 +101,8 @@ __all__ = [
     "clean_git_commit",
     "load_training_attestation",
     "publish_training_attestation",
+    "prepare_formal_resume_lineage",
+    "sha256_training_state_tree",
     "training_attestation_path",
     "training_config_hashes",
     "verify_training_attestation",

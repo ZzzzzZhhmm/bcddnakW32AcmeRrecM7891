@@ -397,19 +397,12 @@ class Wan22Trainer:
             )
             return None
 
-        # V1 attests a fresh optimizer/scheduler trajectory from the immutable
-        # FastWAM base.  A resumed optimizer would require a separately bound
-        # parent-attestation chain and must not be mislabeled as this recipe.
-        if self.resume not in (None, "", False):
-            raise ValueError(
-                "formal WARM training attestation v1 requires resume=null"
-            )
-
         from .models.warm.training_attestation import (
             WarmTrainingRunContext,
             capture_actual_optimizer_facts,
             capture_actual_scheduler_chain,
             capture_training_runtime,
+            prepare_formal_resume_lineage,
         )
 
         resolved_config = OmegaConf.to_container(self.cfg, resolve=True)
@@ -422,7 +415,7 @@ class Wan22Trainer:
                 f"config: {actual_precision!r} != {self.mixed_precision!r}"
             )
         repository_root = Path(__file__).resolve().parents[2]
-        return WarmTrainingRunContext.create(
+        context = WarmTrainingRunContext.create(
             resolved_config=resolved_config,
             source_metadata=metadata_fn(),
             root_seed=self.seed,
@@ -445,6 +438,47 @@ class Wan22Trainer:
             training_runtime=capture_training_runtime(self.accelerator),
             repository_root=repository_root,
         )
+        if self.resume in (None, "", False):
+            return context
+
+        resume_path = Path(str(self.resume)).expanduser().resolve()
+        envelope: list[object] = [None]
+        if self.accelerator.is_main_process:
+            try:
+                envelope[0] = {
+                    "ok": True,
+                    "lineage": prepare_formal_resume_lineage(
+                        resume_path,
+                        current_context=context,
+                    ),
+                }
+            except Exception as error:
+                envelope[0] = {
+                    "ok": False,
+                    "error_type": type(error).__name__,
+                    "error": str(error),
+                }
+        if torch.distributed.is_initialized():
+            torch.distributed.broadcast_object_list(envelope, src=0)
+        result = envelope[0]
+        if not isinstance(result, dict) or result.get("ok") is not True:
+            if isinstance(result, dict):
+                detail = f"{result.get('error_type')}: {result.get('error')}"
+            else:
+                detail = "rank 0 did not publish a resume-lineage result"
+            raise ValueError(f"formal WARM resume validation failed: {detail}")
+        lineage = result.get("lineage")
+        if not isinstance(lineage, dict):
+            raise ValueError("formal WARM resume returned invalid lineage")
+        bound = context.with_resume_lineage(lineage)
+        logger.info(
+            "Bound formal WARM resume lineage: step=%d parent_checkpoint=%s "
+            "resume_state=%s",
+            int(bound.resume_step or 0),
+            str(bound.parent_checkpoint_sha256)[:12],
+            str(bound.resume_state_sha256)[:12],
+        )
+        return bound
 
     def _init_wandb(self):
         if not self.wandb_enabled or not self.accelerator.is_main_process:
@@ -596,6 +630,56 @@ class Wan22Trainer:
         logger.warning(
             "Loaded .pt weights only; distributed optimizer/scheduler/step "
             "state was not restored."
+        )
+
+    def _verify_formal_resume_after_load(self, state_dir: str) -> None:
+        """Close the validation/load TOCTOU window for attested resumes."""
+
+        context = self._warm_training_attestation_context
+        if context is None or context.resume_step is None:
+            return
+        if int(self.global_step) != int(context.resume_step):
+            raise ValueError(
+                "loaded global_step disagrees with the formally attested "
+                f"resume step: {self.global_step} != {context.resume_step}"
+            )
+
+        from .models.warm.training_attestation import sha256_training_state_tree
+
+        envelope: list[object] = [None]
+        if self.accelerator.is_main_process:
+            try:
+                actual = sha256_training_state_tree(state_dir)
+                envelope[0] = {
+                    "ok": actual == context.resume_state_sha256,
+                    "actual": actual,
+                }
+            except Exception as error:
+                envelope[0] = {
+                    "ok": False,
+                    "error_type": type(error).__name__,
+                    "error": str(error),
+                }
+        if torch.distributed.is_initialized():
+            torch.distributed.broadcast_object_list(envelope, src=0)
+        result = envelope[0]
+        if not isinstance(result, dict) or result.get("ok") is not True:
+            if isinstance(result, dict) and result.get("error"):
+                detail = f"{result.get('error_type')}: {result.get('error')}"
+            elif isinstance(result, dict):
+                detail = (
+                    f"state SHA-256 {result.get('actual')} != "
+                    f"{context.resume_state_sha256}"
+                )
+            else:
+                detail = "rank 0 did not publish post-load state verification"
+            raise ValueError(
+                "formal WARM resume state changed during load: " + detail
+            )
+        logger.info(
+            "Verified formal WARM resume after load: step=%d state_sha256=%s",
+            self.global_step,
+            str(context.resume_state_sha256)[:12],
         )
 
     def _set_dit_only_train_mode(self):
@@ -1144,6 +1228,7 @@ class Wan22Trainer:
                     "State file does not contain `epoch`/`batch_in_epoch`; "
                     "optimizer/scheduler were restored, but dataloader progress resume is skipped."
                 )
+            self._verify_formal_resume_after_load(state_dir)
             self.accelerator.wait_for_everyone()
             return
 
@@ -1155,6 +1240,7 @@ class Wan22Trainer:
         self.epoch = 0
         self.batch_in_epoch = 0
         self.train_sampler.clear_resume_batch_offset()
+        self._verify_formal_resume_after_load(state_dir)
         self.accelerator.wait_for_everyone()
         logger.info("Loaded accelerate training state from %s at step=%d", state_dir, self.global_step)
         logger.warning(

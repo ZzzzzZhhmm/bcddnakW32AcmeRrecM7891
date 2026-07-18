@@ -9,12 +9,15 @@ import pytest
 from fastwam.memory.manifest import sha256_file
 from fastwam.models.warm.training_attestation import (
     SHARED_RECIPE_IGNORED_PATHS,
+    V1_SHARED_RECIPE_IGNORED_PATHS,
     TrainingAttestationError,
     WarmTrainingAttestation,
     WarmTrainingRunContext,
     clean_git_commit,
     load_training_attestation,
     publish_training_attestation,
+    prepare_formal_resume_lineage,
+    sha256_training_state_tree,
     training_attestation_path,
     training_config_hashes,
     verify_training_attestation,
@@ -61,7 +64,7 @@ def _value(**updates: object) -> dict[str, object]:
         "source_policy": "fixed_context_top1",
         "resolved_train_config_sha256": "1" * 64,
         "shared_recipe_sha256": "2" * 64,
-        "shared_recipe_ignored_paths": list(SHARED_RECIPE_IGNORED_PATHS),
+        "shared_recipe_ignored_paths": list(V1_SHARED_RECIPE_IGNORED_PATHS),
         "root_seed": 42,
         "actual_global_step": 17,
         "actual_max_steps": 100,
@@ -180,6 +183,21 @@ def test_attestation_round_trips_and_hashes_canonically() -> None:
     assert json.loads(first.encode()) == first.to_dict()
 
 
+def test_v2_attestation_requires_complete_resume_lineage(
+    tmp_path: Path,
+) -> None:
+    repository, _ = _git_repository(tmp_path / "repository")
+    fresh = _context(repository).build(
+        checkpoint_sha256=DIGEST, actual_global_step=17
+    )
+    assert fresh.version == 2
+    assert fresh.resume_step is None
+    value = fresh.to_dict()
+    value["resume_step"] = 10
+    with pytest.raises(TrainingAttestationError, match="all null or all populated"):
+        WarmTrainingAttestation.from_dict(value)
+
+
 @pytest.mark.parametrize(
     ("field", "value", "message"),
     [
@@ -263,6 +281,24 @@ def test_shared_recipe_ignores_only_declared_pair_display_fields() -> None:
     null["wandb"]["name"] = "null"
     null["wandb"]["group"] = "null-group"
     null["wandb"]["project"] = "warm-null-display"
+    fixed.update(
+        {
+            "resume": "/run/fixed/checkpoints/state/step_000010",
+            "run_steps": 10,
+            "log_every": 1,
+            "save_every": 10,
+            "eval_every": 0,
+        }
+    )
+    null.update(
+        {
+            "resume": "/run/null/checkpoints/state/step_000010",
+            "run_steps": None,
+            "log_every": 10,
+            "save_every": 500,
+            "eval_every": 500,
+        }
+    )
 
     fixed_full, fixed_shared = training_config_hashes(fixed)
     null_full, null_shared = training_config_hashes(null)
@@ -310,6 +346,60 @@ def test_context_requires_clean_git_and_publishes_bound_sidecar(
     checkpoint.write_bytes(b"mutated after publication")
     with pytest.raises(TrainingAttestationError, match="does not match"):
         verify_training_attestation(checkpoint)
+
+
+def test_formal_resume_upgrades_v1_parent_and_binds_exact_state_tree(
+    tmp_path: Path,
+) -> None:
+    repository, commit = _git_repository(tmp_path / "repository")
+    context = _context(repository)
+    checkpoint_root = tmp_path / "run" / "checkpoints"
+    weights = checkpoint_root / "weights" / "step_000017.pt"
+    state = checkpoint_root / "state" / "step_000017"
+    weights.parent.mkdir(parents=True)
+    state.mkdir(parents=True)
+    weights.write_bytes(b"legacy v1 weights")
+    legacy = WarmTrainingAttestation.from_dict(
+        _value(
+            checkpoint_sha256=sha256_file(weights),
+            git_commit=commit,
+        )
+    )
+    training_attestation_path(weights).write_bytes(legacy.encode())
+    (state / "trainer_state.json").write_text(
+        json.dumps({"global_step": 17, "epoch": 1, "batch_in_epoch": 2}),
+        encoding="utf-8",
+    )
+    nested = state / "pytorch_model"
+    nested.mkdir()
+    (nested / "mp_rank_00_model_states.pt").write_bytes(b"model state")
+    (state / "scheduler.bin").write_bytes(b"scheduler state")
+
+    lineage = prepare_formal_resume_lineage(
+        state, current_context=context
+    )
+    assert lineage == {
+        "parent_checkpoint_sha256": sha256_file(weights),
+        "parent_training_attestation_sha256": sha256_file(
+            training_attestation_path(weights)
+        ),
+        "resume_state_sha256": sha256_training_state_tree(state),
+        "resume_step": 17,
+    }
+    continued = context.with_resume_lineage(lineage).build(
+        checkpoint_sha256="f" * 64,
+        actual_global_step=18,
+    )
+    assert continued.version == 2
+    assert continued.parent_checkpoint_sha256 == sha256_file(weights)
+    assert continued.resume_step == 17
+    assert WarmTrainingAttestation.from_dict(continued.to_dict()) == continued
+
+    (state / "trainer_state.json").write_text(
+        json.dumps({"global_step": 16}), encoding="utf-8"
+    )
+    with pytest.raises(TrainingAttestationError, match="disagrees"):
+        prepare_formal_resume_lineage(state, current_context=context)
 
 
 def test_dirty_git_prevents_context_and_publication(tmp_path: Path) -> None:
@@ -377,6 +467,7 @@ def test_context_requires_both_train_and_dev_source_contracts(
 def test_trainer_and_model_expose_attestation_lifecycle() -> None:
     root = Path(__file__).resolve().parents[1]
     trainer = (root / "src/fastwam/trainer.py").read_text(encoding="utf-8")
+    runtime = (root / "src/fastwam/runtime.py").read_text(encoding="utf-8")
     model = (
         root / "src/fastwam/models/warm/source_model.py"
     ).read_text(encoding="utf-8")
@@ -390,12 +481,16 @@ def test_trainer_and_model_expose_attestation_lifecycle() -> None:
     assert "capture_actual_optimizer_facts(self.optimizer)" in trainer
     assert "capture_actual_scheduler_chain(" in trainer
     assert "capture_training_runtime(self.accelerator)" in trainer
-    assert "training attestation v1 requires resume=null" in trainer
+    assert "prepare_formal_resume_lineage(" in trainer
+    assert "_verify_formal_resume_after_load" in trainer
     assert "publish_training_attestation(" in trainer
     assert "for path in (ckpt_path, sidecar_path)" in trainer
     assert "os.link(temporary, ckpt_path)" in trainer
     assert "os.replace(temporary, ckpt_path)" not in trainer
     assert "checkpoint_saved_this_step" in trainer
+    assert "_publish_resolved_training_config(cfg)" in runtime
+    assert "config.resume.step_" in runtime
+    assert 'open(Path(cfg.output_dir) / "config.yaml", "w")' not in runtime
     assert "os.link(temporary, path)" in attestation
     assert "os.replace(temporary, path)" not in attestation
     assert "training_attestation_metadata" in model

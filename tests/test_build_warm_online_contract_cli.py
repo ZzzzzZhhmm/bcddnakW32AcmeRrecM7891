@@ -18,7 +18,7 @@ from fastwam.memory.manifest import (
 from fastwam.models.warm.online_contract import WarmOnlineRunContract
 from fastwam.models.warm.source_contract import WarmSourceRunContract
 from fastwam.models.warm.training_attestation import (
-    SHARED_RECIPE_IGNORED_PATHS,
+    V1_SHARED_RECIPE_IGNORED_PATHS,
     WarmTrainingAttestation,
 )
 import scripts.build_warm_online_contract as online_cli
@@ -275,7 +275,7 @@ def _fixture(
             "source_policy": "fixed_context_top1",
             "resolved_train_config_sha256": "b" * 64,
             "shared_recipe_sha256": "c" * 64,
-            "shared_recipe_ignored_paths": list(SHARED_RECIPE_IGNORED_PATHS),
+            "shared_recipe_ignored_paths": list(V1_SHARED_RECIPE_IGNORED_PATHS),
             "root_seed": 17,
             "actual_global_step": 100,
             "actual_max_steps": 100,

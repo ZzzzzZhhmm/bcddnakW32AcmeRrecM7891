@@ -486,8 +486,15 @@ def _shared_training_identity(
         "checkpoint_sha256",
         "source_policy",
         "resolved_train_config_sha256",
+        # Each ablation branch necessarily resumes from policy-specific
+        # checkpoint/state bytes.  The common resume_step remains in the
+        # identity, while each branch is independently verified against its
+        # own cryptographic parent chain before this comparison.
+        "parent_checkpoint_sha256",
+        "parent_training_attestation_sha256",
+        "resume_state_sha256",
     ):
-        value.pop(field)
+        value.pop(field, None)
     return value
 
 

@@ -20,7 +20,7 @@ from fastwam.models.warm.online_pair_contract import (
     WarmOnlinePairContract,
 )
 from fastwam.models.warm.training_attestation import (
-    SHARED_RECIPE_IGNORED_PATHS,
+    V1_SHARED_RECIPE_IGNORED_PATHS,
     WarmTrainingAttestation,
 )
 import scripts.build_warm_online_pair_contract as pair_cli
@@ -189,7 +189,7 @@ def _training_attestation(
                 "2" * 64 if policy == "fixed_context_top1" else "3" * 64
             ),
             "shared_recipe_sha256": "0" * 64,
-            "shared_recipe_ignored_paths": list(SHARED_RECIPE_IGNORED_PATHS),
+            "shared_recipe_ignored_paths": list(V1_SHARED_RECIPE_IGNORED_PATHS),
             "root_seed": 17,
             "actual_global_step": 100,
             "actual_max_steps": 100,

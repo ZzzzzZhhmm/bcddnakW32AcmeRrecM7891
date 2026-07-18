@@ -7,7 +7,7 @@ recipe and the distributed optimizer geometry that actually created them.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import hashlib
 import importlib.metadata
 import json
@@ -24,12 +24,12 @@ from fastwam.memory.manifest import sha256_file
 
 
 TRAINING_ATTESTATION_SCHEMA = "warm.training-attestation"
-TRAINING_ATTESTATION_VERSION = 1
+TRAINING_ATTESTATION_VERSION = 2
 
 # These are the only resolved-config values intentionally removed from the
 # fixed/null shared recipe.  W&B routing/enablement remains bound; only its
 # human-facing run labels may differ.
-SHARED_RECIPE_IGNORED_PATHS = (
+V1_SHARED_RECIPE_IGNORED_PATHS = (
     "/output_dir",
     "/model/source_policy",
     "/wandb/workspace",
@@ -38,13 +38,26 @@ SHARED_RECIPE_IGNORED_PATHS = (
     "/wandb/group",
 )
 
+# V2 additionally excludes control-plane values that legitimately change at a
+# restart while leaving the mathematical training recipe unchanged.  Their
+# exact values remain bound by ``resolved_train_config_sha256``; excluding them
+# only permits fixed/null fairness comparison and parent-recipe validation
+# across independently named or differently checkpointed continuation jobs.
+SHARED_RECIPE_IGNORED_PATHS = V1_SHARED_RECIPE_IGNORED_PATHS + (
+    "/resume",
+    "/run_steps",
+    "/log_every",
+    "/save_every",
+    "/eval_every",
+)
+
 _SOURCE_POLICIES = frozenset(
     {"fixed_context_top1", "gaussian_null", "oracle_action_top1"}
 )
 _PRECISIONS = frozenset({"no", "fp16", "bf16"})
 _SCHEDULERS = frozenset({"cosine", "constant"})
 _GIT_COMMIT = re.compile(r"[0-9a-f]{40}")
-_FIELDS = frozenset(
+_FIELDS_V1 = frozenset(
     {
         "schema",
         "version",
@@ -82,6 +95,16 @@ _FIELDS = frozenset(
         "git_commit",
     }
 )
+_LINEAGE_FIELDS = frozenset(
+    {
+        "parent_checkpoint_sha256",
+        "parent_training_attestation_sha256",
+        "resume_state_sha256",
+        "resume_step",
+    }
+)
+_FIELDS_V2 = _FIELDS_V1 | _LINEAGE_FIELDS
+_STEP_TAG = re.compile(r"step_(\d{6,})")
 
 _TRAINING_RUNTIME_FIELDS = frozenset(
     {
@@ -610,6 +633,14 @@ def training_config_hashes(
     shared = json.loads(_canonical_json_bytes(full, field="resolved training config"))
 
     shared.pop("output_dir", None)
+    for control_plane_field in (
+        "resume",
+        "run_steps",
+        "log_every",
+        "save_every",
+        "eval_every",
+    ):
+        shared.pop(control_plane_field, None)
     model = shared.get("model")
     if isinstance(model, dict):
         model.pop("source_policy", None)
@@ -693,6 +724,10 @@ class WarmTrainingAttestation:
     dev_source_contract_sha256: str
     base_checkpoint_sha256: str
     git_commit: str
+    parent_checkpoint_sha256: str | None = None
+    parent_training_attestation_sha256: str | None = None
+    resume_state_sha256: str | None = None
+    resume_step: int | None = None
     shared_recipe_ignored_paths: tuple[str, ...] = SHARED_RECIPE_IGNORED_PATHS
     schema: str = TRAINING_ATTESTATION_SCHEMA
     version: int = TRAINING_ATTESTATION_VERSION
@@ -703,7 +738,7 @@ class WarmTrainingAttestation:
                 f"unsupported training-attestation schema {self.schema!r}"
             )
         version = _integer(self.version, "version", minimum=1)
-        if version != TRAINING_ATTESTATION_VERSION:
+        if version not in (1, TRAINING_ATTESTATION_VERSION):
             raise TrainingAttestationError(
                 f"unsupported training-attestation version {version}"
             )
@@ -720,6 +755,16 @@ class WarmTrainingAttestation:
             "dev_source_contract_sha256",
             _digest(self.dev_source_contract_sha256, "dev_source_contract_sha256"),
         )
+        for field in (
+            "parent_checkpoint_sha256",
+            "parent_training_attestation_sha256",
+            "resume_state_sha256",
+        ):
+            object.__setattr__(
+                self,
+                field,
+                _digest(getattr(self, field), field, optional=True),
+            )
         if self.source_policy not in _SOURCE_POLICIES:
             raise TrainingAttestationError(
                 f"unsupported source_policy {self.source_policy!r}"
@@ -755,9 +800,14 @@ class WarmTrainingAttestation:
         runtime_json, _ = _canonical_training_runtime(runtime_value)
         if runtime_json != self.training_runtime_json:
             raise TrainingAttestationError("training_runtime_json is not canonical")
-        if tuple(self.shared_recipe_ignored_paths) != SHARED_RECIPE_IGNORED_PATHS:
+        expected_ignored_paths = (
+            V1_SHARED_RECIPE_IGNORED_PATHS
+            if version == 1
+            else SHARED_RECIPE_IGNORED_PATHS
+        )
+        if tuple(self.shared_recipe_ignored_paths) != expected_ignored_paths:
             raise TrainingAttestationError(
-                "shared_recipe_ignored_paths does not match the v1 recipe"
+                "shared_recipe_ignored_paths does not match the attestation version"
             )
         if _GIT_COMMIT.fullmatch(self.git_commit) is None:
             raise TrainingAttestationError(
@@ -828,9 +878,36 @@ class WarmTrainingAttestation:
                 "effective_batch_size does not match per-device batch, "
                 "gradient accumulation, and world size"
             )
+        lineage = (
+            self.parent_checkpoint_sha256,
+            self.parent_training_attestation_sha256,
+            self.resume_state_sha256,
+            self.resume_step,
+        )
+        if version == 1:
+            if any(item is not None for item in lineage):
+                raise TrainingAttestationError(
+                    "v1 training attestations cannot contain resume lineage"
+                )
+        elif any(item is not None for item in lineage) and not all(
+            item is not None for item in lineage
+        ):
+            raise TrainingAttestationError(
+                "resume lineage fields must be either all null or all populated"
+            )
+        if self.resume_step is not None:
+            object.__setattr__(
+                self,
+                "resume_step",
+                _integer(self.resume_step, "resume_step", minimum=0),
+            )
+            if self.resume_step > self.checkpoint_step:
+                raise TrainingAttestationError(
+                    "resume_step cannot exceed checkpoint_step"
+                )
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        value = {
             "schema": self.schema,
             "version": self.version,
             "checkpoint_sha256": self.checkpoint_sha256,
@@ -870,19 +947,47 @@ class WarmTrainingAttestation:
             "base_checkpoint_sha256": self.base_checkpoint_sha256,
             "git_commit": self.git_commit,
         }
+        if self.version >= 2:
+            value.update(
+                {
+                    "parent_checkpoint_sha256": self.parent_checkpoint_sha256,
+                    "parent_training_attestation_sha256": (
+                        self.parent_training_attestation_sha256
+                    ),
+                    "resume_state_sha256": self.resume_state_sha256,
+                    "resume_step": self.resume_step,
+                }
+            )
+        return value
 
     @classmethod
     def from_dict(cls, value: Mapping[str, Any]) -> "WarmTrainingAttestation":
         if not isinstance(value, Mapping):
             raise TypeError("training attestation must be a mapping")
+        raw_version = value.get("version")
+        version = _integer(raw_version, "version", minimum=1)
+        expected_fields = _FIELDS_V1 if version == 1 else _FIELDS_V2
+        if version not in (1, TRAINING_ATTESTATION_VERSION):
+            raise TrainingAttestationError(
+                f"unsupported training-attestation version {version}"
+            )
         actual = set(value)
-        if actual != _FIELDS:
+        if actual != expected_fields:
             raise TrainingAttestationError(
                 "invalid training-attestation fields; "
-                f"missing={sorted(_FIELDS - actual)}, "
-                f"extra={sorted(actual - _FIELDS)}"
+                f"missing={sorted(expected_fields - actual)}, "
+                f"extra={sorted(actual - expected_fields)}"
             )
         payload = dict(value)
+        if version == 1:
+            payload.update(
+                {
+                    "parent_checkpoint_sha256": None,
+                    "parent_training_attestation_sha256": None,
+                    "resume_state_sha256": None,
+                    "resume_step": None,
+                }
+            )
         paths = payload["shared_recipe_ignored_paths"]
         if not isinstance(paths, list) or any(
             not isinstance(item, str) for item in paths
@@ -947,6 +1052,10 @@ class WarmTrainingRunContext:
     base_checkpoint_sha256: str
     git_commit: str
     repository_root: Path
+    parent_checkpoint_sha256: str | None = None
+    parent_training_attestation_sha256: str | None = None
+    resume_state_sha256: str | None = None
+    resume_step: int | None = None
 
     @classmethod
     def create(
@@ -1117,6 +1226,41 @@ class WarmTrainingRunContext:
         context.build(checkpoint_sha256="0" * 64, actual_global_step=0)
         return context
 
+    def with_resume_lineage(
+        self, lineage: Mapping[str, Any]
+    ) -> "WarmTrainingRunContext":
+        """Bind a fully verified parent state to all subsequently saved weights."""
+
+        if not isinstance(lineage, Mapping) or set(lineage) != _LINEAGE_FIELDS:
+            actual = set(lineage) if isinstance(lineage, Mapping) else set()
+            raise TrainingAttestationError(
+                "invalid formal resume lineage; "
+                f"missing={sorted(_LINEAGE_FIELDS - actual)}, "
+                f"extra={sorted(actual - _LINEAGE_FIELDS)}"
+            )
+        step = _integer(lineage["resume_step"], "resume_step", minimum=0)
+        result = replace(
+            self,
+            parent_checkpoint_sha256=str(
+                _digest(
+                    lineage["parent_checkpoint_sha256"],
+                    "parent_checkpoint_sha256",
+                )
+            ),
+            parent_training_attestation_sha256=str(
+                _digest(
+                    lineage["parent_training_attestation_sha256"],
+                    "parent_training_attestation_sha256",
+                )
+            ),
+            resume_state_sha256=str(
+                _digest(lineage["resume_state_sha256"], "resume_state_sha256")
+            ),
+            resume_step=step,
+        )
+        result.build(checkpoint_sha256="0" * 64, actual_global_step=step)
+        return result
+
     def build(
         self, *, checkpoint_sha256: str, actual_global_step: int
     ) -> WarmTrainingAttestation:
@@ -1153,7 +1297,175 @@ class WarmTrainingRunContext:
             dev_source_contract_sha256=self.dev_source_contract_sha256,
             base_checkpoint_sha256=self.base_checkpoint_sha256,
             git_commit=self.git_commit,
+            parent_checkpoint_sha256=self.parent_checkpoint_sha256,
+            parent_training_attestation_sha256=(
+                self.parent_training_attestation_sha256
+            ),
+            resume_state_sha256=self.resume_state_sha256,
+            resume_step=self.resume_step,
         )
+
+
+def sha256_training_state_tree(state_directory: str | Path) -> str:
+    """Hash an immutable view of every regular file in a resume state tree.
+
+    Relative paths and file digests are length-delimited, making the identity
+    independent of the server mount point and unambiguous across filenames.
+    Symlinks and special files are rejected so a resumed state cannot change
+    meaning between validation and Accelerate's read.
+    """
+
+    root = Path(state_directory).expanduser().resolve()
+    if not root.is_dir():
+        raise TrainingAttestationError(
+            f"formal WARM resume state is not a directory: {root}"
+        )
+    files: list[Path] = []
+    for path in root.rglob("*"):
+        if path.is_symlink():
+            raise TrainingAttestationError(
+                f"formal WARM resume state contains a symlink: {path}"
+            )
+        if path.is_dir():
+            continue
+        if not path.is_file():
+            raise TrainingAttestationError(
+                f"formal WARM resume state contains a special file: {path}"
+            )
+        files.append(path)
+    if not files:
+        raise TrainingAttestationError("formal WARM resume state is empty")
+
+    digest = hashlib.sha256()
+    for path in sorted(files, key=lambda item: item.relative_to(root).as_posix()):
+        relative = path.relative_to(root).as_posix().encode("utf-8")
+        before = path.stat()
+        file_digest = bytes.fromhex(sha256_file(path))
+        after = path.stat()
+        if (before.st_size, before.st_mtime_ns) != (
+            after.st_size,
+            after.st_mtime_ns,
+        ):
+            raise TrainingAttestationError(
+                f"resume-state file changed while it was hashed: {path}"
+            )
+        digest.update(len(relative).to_bytes(8, "big"))
+        digest.update(relative)
+        digest.update(before.st_size.to_bytes(16, "big"))
+        digest.update(file_digest)
+    return digest.hexdigest()
+
+
+def prepare_formal_resume_lineage(
+    state_directory: str | Path,
+    *,
+    current_context: WarmTrainingRunContext,
+) -> dict[str, Any]:
+    """Verify a full-state parent checkpoint and return its V2 lineage.
+
+    V1 parent weights are accepted as a one-way migration path because those
+    checkpoints predate lineage fields.  Every subsequent V2 checkpoint binds
+    both the verified parent weights/attestation and the exact DeepSpeed state
+    tree that was loaded.
+    """
+
+    state = Path(state_directory).expanduser().resolve()
+    if not state.is_dir():
+        raise TrainingAttestationError(
+            "formal WARM continuation requires an Accelerate/DeepSpeed state directory"
+        )
+    match = _STEP_TAG.fullmatch(state.name)
+    if match is None:
+        raise TrainingAttestationError(
+            "formal WARM resume directory must be named step_<global_step>"
+        )
+    resume_step = _integer(int(match.group(1)), "resume_step", minimum=0)
+    state_file = state / "trainer_state.json"
+    if not state_file.is_file():
+        raise TrainingAttestationError(
+            f"formal WARM resume is missing {state_file}"
+        )
+    try:
+        trainer_state = json.loads(state_file.read_text(encoding="utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise TrainingAttestationError(
+            "formal WARM trainer_state.json is not valid UTF-8 JSON"
+        ) from error
+    if not isinstance(trainer_state, dict):
+        raise TrainingAttestationError("trainer_state.json must contain an object")
+    state_step = _integer(
+        trainer_state.get("global_step"), "trainer_state.global_step", minimum=0
+    )
+    if state_step != resume_step:
+        raise TrainingAttestationError(
+            "resume directory step disagrees with trainer_state.global_step"
+        )
+
+    if state.parent.name != "state" or state.parent.parent.name != "checkpoints":
+        raise TrainingAttestationError(
+            "formal WARM resume must use checkpoints/state/step_<global_step>"
+        )
+    weights = state.parent.parent / "weights" / f"step_{resume_step:06d}.pt"
+    if not weights.is_file():
+        raise TrainingAttestationError(
+            f"formal WARM resume has no matching weights checkpoint: {weights}"
+        )
+    sidecar = training_attestation_path(weights)
+    parent = verify_training_attestation(weights, sidecar)
+    if parent.checkpoint_step != resume_step:
+        raise TrainingAttestationError(
+            "parent weight attestation step disagrees with resume state"
+        )
+
+    parent_facts = {
+        "source_policy": parent.source_policy,
+        "root_seed": parent.root_seed,
+        "actual_max_steps": parent.actual_max_steps,
+        "optimizer_learning_rate": parent.optimizer_learning_rate,
+        "optimizer_weight_decay": parent.optimizer_weight_decay,
+        "optimizer_beta1": parent.optimizer_beta1,
+        "optimizer_beta2": parent.optimizer_beta2,
+        "optimizer_epsilon": parent.optimizer_epsilon,
+        "optimizer_amsgrad": parent.optimizer_amsgrad,
+        "optimizer_wrapper_chain": parent.optimizer_wrapper_chain,
+        "scheduler_type": parent.scheduler_type,
+        "scheduler_total_steps": parent.scheduler_total_steps,
+        "scheduler_warmup_steps": parent.scheduler_warmup_steps,
+        "scheduler_min_learning_rate": parent.scheduler_min_learning_rate,
+        "scheduler_wrapper_chain": parent.scheduler_wrapper_chain,
+        "per_device_batch_size": parent.per_device_batch_size,
+        "gradient_accumulation_steps": parent.gradient_accumulation_steps,
+        "world_size": parent.world_size,
+        "effective_batch_size": parent.effective_batch_size,
+        "mixed_precision": parent.mixed_precision,
+        "training_runtime_json": parent.training_runtime_json,
+        "train_source_contract_sha256": parent.train_source_contract_sha256,
+        "dev_source_contract_sha256": parent.dev_source_contract_sha256,
+        "base_checkpoint_sha256": parent.base_checkpoint_sha256,
+    }
+    current_facts = {key: getattr(current_context, key) for key in parent_facts}
+    differing = sorted(
+        key for key in parent_facts if parent_facts[key] != current_facts[key]
+    )
+    if differing:
+        raise TrainingAttestationError(
+            "resume parent contradicts the live training recipe/runtime: "
+            + ", ".join(differing)
+        )
+    if (
+        parent.version >= 2
+        and parent.shared_recipe_sha256 != current_context.shared_recipe_sha256
+    ):
+        raise TrainingAttestationError(
+            "resume parent shared training recipe differs from the continuation"
+        )
+
+    return {
+        "parent_checkpoint_sha256": parent.checkpoint_sha256,
+        "parent_training_attestation_sha256": sha256_file(sidecar),
+        "resume_state_sha256": sha256_training_state_tree(state),
+        "resume_step": resume_step,
+    }
 
 
 def training_attestation_path(checkpoint_path: str | Path) -> Path:
@@ -1296,6 +1608,7 @@ def verify_training_attestation(
 
 __all__ = [
     "SHARED_RECIPE_IGNORED_PATHS",
+    "V1_SHARED_RECIPE_IGNORED_PATHS",
     "TRAINING_ATTESTATION_SCHEMA",
     "TRAINING_ATTESTATION_VERSION",
     "TrainingAttestationError",
@@ -1307,6 +1620,8 @@ __all__ = [
     "clean_git_commit",
     "load_training_attestation",
     "publish_training_attestation",
+    "prepare_formal_resume_lineage",
+    "sha256_training_state_tree",
     "training_attestation_path",
     "training_config_hashes",
     "verify_training_attestation",
