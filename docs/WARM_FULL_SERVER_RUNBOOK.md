@@ -300,6 +300,38 @@ load an M2 pair contract. Its online contract still binds the checkpoint,
 training attestation, bank, encoder, normalizer, exact task BDDL/initial states,
 seed, and resolved evaluation config.
 
+For ACP/CCI, prefer the reusable wrapper.  Its `prepare` action is run once on
+the persistent AFS volume: it verifies the completed checkpoint, creates a
+detached clean worktree at the checkpoint-attested Git commit, checks the
+MuJoCo/LIBERO runtime, and snapshots exact task metadata and initial states for
+all forty LIBERO tasks.  It performs no network operation.
+
+```bash
+cd /mnt/afs/task3_2/L202500276_lwz/projects/WARM
+EVAL_ACTION=prepare bash scripts/acp_warm_libero_eval.sh
+```
+
+Every later ACP task only selects one GPU/task/seed.  The wrapper reuses the
+persistent setup and calls the same contract-bound evaluator documented below.
+The online contract still rehashes all identity-bearing inputs on every formal
+job; this integrity check is intentionally not cached.
+
+```bash
+cd /mnt/afs/task3_2/L202500276_lwz/projects/WARM
+CUDA_VISIBLE_DEVICES=0 \
+WARM_TASK_SUITE=libero_10 \
+WARM_TASK_ID=0 \
+WARM_ROOT_SEED=17 \
+WARM_EVAL_LABEL=formal \
+bash scripts/acp_warm_libero_eval.sh
+```
+
+Persistent state includes the environment, artifacts, exact-commit worktree,
+and task snapshots.  Shell environment variables do not persist across ACP
+containers; the wrapper owns all static defaults, so callers only provide the
+four per-job values above.  A failed immutable job is retried with a new label
+such as `WARM_EVAL_LABEL=retry1`, never by overwriting its output root.
+
 Production v1 online coarse ANN intentionally runs the same contract-bound
 frozen DINO encoder used to build the bank. The learned semantic bridge maps
 the single-pass Video DiT world tokens into compact DINO-aligned tokens for
