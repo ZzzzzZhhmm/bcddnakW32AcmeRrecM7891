@@ -23,6 +23,21 @@ fail() {
   exit 2
 }
 
+TEMP_SOURCE_DIR=""
+cleanup_temporary_source() {
+  local external_real temp_real
+  [[ -n "${TEMP_SOURCE_DIR}" && -d "${TEMP_SOURCE_DIR}" ]] || return 0
+  external_real="$(realpath -m "${WARM_EXTERNAL_ROOT}")" || return 0
+  temp_real="$(realpath -m "${TEMP_SOURCE_DIR}")" || return 0
+  if [[ "${temp_real}" == "${external_real}"/* \
+        && "${temp_real}" == *.extracting.* ]]; then
+    rm -rf --one-file-system -- "${temp_real}"
+  else
+    echo "WARNING: refusing to clean unsafe temporary path: ${temp_real}" >&2
+  fi
+}
+trap cleanup_temporary_source EXIT
+
 verify_sha256() {
   local path="$1" expected="$2" label="$3" actual
   actual="$(sha256sum "${path}" | awk '{print $1}')" \
@@ -69,7 +84,16 @@ if [[ ! -e "${LIBERO_SOURCE_DIR}" && -f "${LIBERO_SOURCE_ARCHIVE}" ]]; then
   [[ "${TEMP_SOURCE_DIR}" == "${WARM_EXTERNAL_ROOT}"/* ]] \
     || fail "unsafe temporary LIBERO extraction path: ${TEMP_SOURCE_DIR}"
   mkdir "${TEMP_SOURCE_DIR}"
-  tar -xzf "${LIBERO_SOURCE_ARCHIVE}" -C "${TEMP_SOURCE_DIR}"
+  # AFS commonly root-squashes ephemeral container users.  Preserve file
+  # contents, not archive uid/gid/mode metadata, so extraction never attempts
+  # a forbidden chown/chmod to uid=0,gid=0.
+  tar \
+    --extract \
+    --gzip \
+    --file "${LIBERO_SOURCE_ARCHIVE}" \
+    --directory "${TEMP_SOURCE_DIR}" \
+    --no-same-owner \
+    --no-same-permissions
   "${PYTHON_BIN}" - "${TEMP_SOURCE_DIR}" "${LIBERO_COMMIT}" <<'PY'
 import json
 import os
@@ -90,6 +114,7 @@ with marker.open("x", encoding="utf-8") as handle:
     os.fsync(handle.fileno())
 PY
   mv "${TEMP_SOURCE_DIR}" "${LIBERO_SOURCE_DIR}"
+  TEMP_SOURCE_DIR=""
 elif [[ ! -e "${LIBERO_SOURCE_DIR}/.git" && ! -e "${LIBERO_SOURCE_DIR}/.warm_upstream.json" ]]; then
   [[ ! -e "${LIBERO_SOURCE_DIR}" ]] \
     || fail "non-Git path already exists: ${LIBERO_SOURCE_DIR}"

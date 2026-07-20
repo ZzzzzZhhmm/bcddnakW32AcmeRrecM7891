@@ -76,3 +76,6 @@ def test_libero_setup_does_not_install_legacy_requirement_bundle() -> None:
     assert "ROBOSUITE_WHEEL_SHA256" in source
     assert "LIBERO_SOURCE_ARCHIVE_SHA256" in source
     assert "--no-cache-dir" not in source
+    assert "--no-same-owner" in source
+    assert "--no-same-permissions" in source
+    assert "cleanup_temporary_source" in source

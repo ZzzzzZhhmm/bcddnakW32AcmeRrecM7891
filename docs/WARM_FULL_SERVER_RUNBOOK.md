@@ -333,7 +333,9 @@ LIBERO-8f1084e3132a.tar.gz
 The setup verifies both SHA-256 digests, installs the wheel without dependency
 resolution, and extracts the official LIBERO source.  If the files are absent,
 it falls back to network installation while retaining a persistent pip cache
-under `WARM_external/pip_cache`.
+under `WARM_external/pip_cache`.  Archive extraction deliberately ignores
+stored uid/gid/mode metadata because AFS root-squash rejects ownership changes;
+failed extraction attempts clean only their verified job-local temporary path.
 
 ```bash
 cd /mnt/afs/task3_2/L202500276_lwz/projects/WARM
