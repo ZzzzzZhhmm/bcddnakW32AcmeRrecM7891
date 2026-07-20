@@ -79,3 +79,13 @@ def test_libero_setup_does_not_install_legacy_requirement_bundle() -> None:
     assert "--no-same-owner" in source
     assert "--no-same-permissions" in source
     assert "cleanup_temporary_source" in source
+    assert "warm_pinned_libero_source.pth" in source
+    assert "sysconfig.get_path" in source
+
+
+def test_acp_eval_explicitly_exposes_pinned_libero_source() -> None:
+    source = SCRIPT.read_text(encoding="utf-8")
+
+    assert "WARM_LIBERO_SOURCE_DIR" in source
+    assert '${WARM_LIBERO_SOURCE_DIR}' in source
+    assert "libero/libero/__init__.py" in source

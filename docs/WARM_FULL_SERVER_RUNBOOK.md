@@ -336,6 +336,10 @@ it falls back to network installation while retaining a persistent pip cache
 under `WARM_external/pip_cache`.  Archive extraction deliberately ignores
 stored uid/gid/mode metadata because AFS root-squash rejects ownership changes;
 failed extraction attempts clean only their verified job-local temporary path.
+The official repository's double namespace layout is exposed through a pinned
+`.pth` file in the persistent WARM environment and an explicit evaluation
+`PYTHONPATH`; evaluation therefore does not depend on setuptools editable-hook
+behavior.
 
 ```bash
 cd /mnt/afs/task3_2/L202500276_lwz/projects/WARM

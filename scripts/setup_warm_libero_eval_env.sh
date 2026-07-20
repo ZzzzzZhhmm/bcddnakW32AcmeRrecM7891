@@ -147,7 +147,45 @@ if value.get("git_commit") != sys.argv[2]:
     raise SystemExit("offline LIBERO source commit mismatch")
 PY
 fi
-"${PYTHON_BIN}" -m pip install --no-deps -e "${LIBERO_SOURCE_DIR}"
+[[ -f "${LIBERO_SOURCE_DIR}/libero/libero/__init__.py" ]] \
+  || fail "LIBERO source package is incomplete: ${LIBERO_SOURCE_DIR}"
+
+# Official LIBERO uses a double namespace layout: the importable package is
+# LIBERO/libero/libero while the outer LIBERO/libero directory has no
+# __init__.py.  Some modern setuptools PEP 660 editable hooks install the
+# distribution metadata but fail to expose the parent namespace.  A plain .pth
+# pointing at the pinned source root is simpler, persistent, and keeps all task
+# assets available directly from the verified source tree.
+"${PYTHON_BIN}" - "${LIBERO_SOURCE_DIR}" "${CONDA_ENV_DIR}" <<'PY'
+import os
+import sys
+import sysconfig
+from pathlib import Path
+
+source = Path(sys.argv[1]).resolve()
+expected_prefix = Path(sys.argv[2]).resolve()
+actual_prefix = Path(sys.prefix).resolve()
+if actual_prefix != expected_prefix:
+    raise SystemExit(
+        f"wrong Python environment for LIBERO path install: {actual_prefix} "
+        f"!= {expected_prefix}"
+    )
+purelib = Path(sysconfig.get_path("purelib")).resolve()
+if not purelib.is_relative_to(expected_prefix):
+    raise SystemExit(f"site-packages escaped the WARM environment: {purelib}")
+pth_path = purelib / "warm_pinned_libero_source.pth"
+encoded = (str(source) + "\n").encode("utf-8")
+if pth_path.exists() and pth_path.read_bytes() != encoded:
+    raise SystemExit(f"existing LIBERO path binding disagrees: {pth_path}")
+if not pth_path.exists():
+    temporary = purelib / f".{pth_path.name}.{os.getpid()}.tmp"
+    with temporary.open("xb") as handle:
+        handle.write(encoded)
+        handle.flush()
+        os.fsync(handle.fileno())
+    os.replace(temporary, pth_path)
+print(f"libero_path_binding={pth_path}")
+PY
 
 "${PYTHON_BIN}" - <<'PY'
 import importlib.metadata
