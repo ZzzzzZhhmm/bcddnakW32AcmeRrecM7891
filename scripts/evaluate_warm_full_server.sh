@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+export HYDRA_FULL_ERROR="${HYDRA_FULL_ERROR:-1}"
 
 # Resolve, contract-bind, and execute one complete-WARM LIBERO task. Repeat for
 # every task id/seed; use a distinct WARM_EVAL_ROOT for each immutable job.
@@ -74,6 +75,11 @@ mkdir -p "${WARM_EVAL_ROOT}"
 HYDRA_OVERRIDES=(
   task=libero_warm_online_2cam224_full
   "ckpt=${WARM_CHECKPOINT}"
+  # configs/train.yaml contains a ${now:...} training output path.  Contract
+  # generation and rollout are separate Hydra processes, so leaving that
+  # otherwise-unused field dynamic makes their full resolved-config hashes
+  # differ after model loading.  Bind it to this immutable evaluation job.
+  "output_dir=${WARM_EVAL_ROOT}/unused_train_output"
   "EVALUATION.task_suite_name=${WARM_TASK_SUITE}"
   "EVALUATION.task_id=${WARM_TASK_ID}"
   "EVALUATION.output_dir=${RESULT_DIR}"
@@ -138,5 +144,38 @@ python scripts/build_warm_online_contract.py \
   --action-horizon 32 \
   --action-dim 7 \
   --output "${CONTRACT}"
+
+# Re-resolve the exact Hydra command in a distinct process and compare it with
+# the just-built contract before allocating the 6B model.  This catches any
+# future time-, environment-, or process-dependent resolver that would make
+# the runtime configuration differ from its attested snapshot.
+RUNTIME_CONFIG_CHECK="${WARM_EVAL_ROOT}/.resolved_config.runtime-check.yaml"
+sleep 1
+python experiments/libero/eval_libero_single.py \
+  "${HYDRA_OVERRIDES[@]}" \
+  --cfg job --resolve > "${RUNTIME_CONFIG_CHECK}"
+python - "${CONTRACT}" "${RUNTIME_CONFIG_CHECK}" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+from omegaconf import OmegaConf
+
+from fastwam.memory.manifest import sha256_canonical_json
+
+contract_path = Path(sys.argv[1])
+config_path = Path(sys.argv[2])
+contract = json.loads(contract_path.read_text(encoding="utf-8"))
+resolved = OmegaConf.to_container(OmegaConf.load(config_path), resolve=True)
+actual = sha256_canonical_json(resolved)
+expected = str(contract["resolved_eval_config_sha256"])
+if actual != expected:
+    raise SystemExit(
+        "resolved evaluation config is process-dependent before model allocation: "
+        f"{actual} != {expected}"
+    )
+print(f"resolved_config_stable sha256={actual}")
+PY
+rm -f "${RUNTIME_CONFIG_CHECK}"
 
 python experiments/libero/eval_libero_single.py "${HYDRA_OVERRIDES[@]}"
