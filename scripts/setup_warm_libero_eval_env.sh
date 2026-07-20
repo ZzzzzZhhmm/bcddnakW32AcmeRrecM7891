@@ -9,22 +9,39 @@ set -euo pipefail
 PROJECTS_ROOT="${PROJECTS_ROOT:-/mnt/afs/task3_2/L202500276_lwz/projects}"
 CONDA_ENV_DIR="${CONDA_ENV_DIR:-/mnt/afs/task3_2/L202500276_lwz/envs/warm}"
 LIBERO_COMMIT="${LIBERO_COMMIT:-8f1084e3132a39270c3a13ebe37270a43ece2a01}"
-LIBERO_SOURCE_DIR="${LIBERO_SOURCE_DIR:-${PROJECTS_ROOT}/WARM_external/LIBERO-${LIBERO_COMMIT:0:12}}"
+WARM_EXTERNAL_ROOT="${WARM_EXTERNAL_ROOT:-${PROJECTS_ROOT}/WARM_external}"
+WARM_BOOTSTRAP_DIR="${WARM_BOOTSTRAP_DIR:-${WARM_EXTERNAL_ROOT}/bootstrap/libero_eval_v1}"
+WARM_PIP_CACHE_DIR="${WARM_PIP_CACHE_DIR:-${WARM_EXTERNAL_ROOT}/pip_cache}"
+LIBERO_SOURCE_DIR="${LIBERO_SOURCE_DIR:-${WARM_EXTERNAL_ROOT}/LIBERO-${LIBERO_COMMIT:0:12}}"
+ROBOSUITE_WHEEL="${ROBOSUITE_WHEEL:-${WARM_BOOTSTRAP_DIR}/robosuite-1.4.0-py3-none-any.whl}"
+LIBERO_SOURCE_ARCHIVE="${LIBERO_SOURCE_ARCHIVE:-${WARM_BOOTSTRAP_DIR}/LIBERO-8f1084e3132a.tar.gz}"
+ROBOSUITE_WHEEL_SHA256="aba065e7b36745738cede259457b2cb349427f3608728d867ef3a2034cb62994"
+LIBERO_SOURCE_ARCHIVE_SHA256="effdd60e8c6377a9583b0508d6e347193d609995a9afa8e00b15cf2bd7c9e8ba"
 
 fail() {
   echo "ERROR: $*" >&2
   exit 2
 }
 
+verify_sha256() {
+  local path="$1" expected="$2" label="$3" actual
+  actual="$(sha256sum "${path}" | awk '{print $1}')" \
+    || fail "cannot hash ${label}: ${path}"
+  [[ "${actual}" == "${expected}" ]] \
+    || fail "${label} SHA-256 mismatch: ${actual} != ${expected}"
+}
+
 [[ -x "${CONDA_ENV_DIR}/bin/python" ]] \
   || fail "Python environment not found: ${CONDA_ENV_DIR}"
 PYTHON_BIN="${CONDA_ENV_DIR}/bin/python"
+mkdir -p "${WARM_BOOTSTRAP_DIR}" "${WARM_PIP_CACHE_DIR}"
+export PIP_CACHE_DIR="${WARM_PIP_CACHE_DIR}"
 
 echo "Installing the pinned simulator runtime into ${CONDA_ENV_DIR}"
 # robosuite 1.4.0 declares opencv-python.  WARM intentionally uses the
 # headless build that already supplies cv2, so install robosuite without its
 # dependency resolver to avoid replacing NumPy/OpenCV in the training env.
-"${PYTHON_BIN}" -m pip install --no-cache-dir \
+"${PYTHON_BIN}" -m pip install \
   "mujoco==3.3.2" \
   "numba==0.60.0" \
   "scipy==1.14.1" \
@@ -33,24 +50,78 @@ echo "Installing the pinned simulator runtime into ${CONDA_ENV_DIR}"
   "easydict==1.9" \
   "matplotlib==3.8.4" \
   "future==0.18.2"
-"${PYTHON_BIN}" -m pip install --no-cache-dir --no-deps "robosuite==1.4.0"
+if [[ -f "${ROBOSUITE_WHEEL}" ]]; then
+  verify_sha256 "${ROBOSUITE_WHEEL}" "${ROBOSUITE_WHEEL_SHA256}" "robosuite wheel"
+  "${PYTHON_BIN}" -m pip install --no-deps "${ROBOSUITE_WHEEL}"
+else
+  echo "WARNING: offline robosuite wheel is absent: ${ROBOSUITE_WHEEL}"
+  echo "         Falling back to the configured Python package index."
+  "${PYTHON_BIN}" -m pip install --no-deps "robosuite==1.4.0"
+fi
 
 mkdir -p "$(dirname "${LIBERO_SOURCE_DIR}")"
-if [[ ! -e "${LIBERO_SOURCE_DIR}/.git" ]]; then
+if [[ ! -e "${LIBERO_SOURCE_DIR}" && -f "${LIBERO_SOURCE_ARCHIVE}" ]]; then
+  verify_sha256 \
+    "${LIBERO_SOURCE_ARCHIVE}" \
+    "${LIBERO_SOURCE_ARCHIVE_SHA256}" \
+    "LIBERO source archive"
+  TEMP_SOURCE_DIR="${LIBERO_SOURCE_DIR}.extracting.$$"
+  [[ "${TEMP_SOURCE_DIR}" == "${WARM_EXTERNAL_ROOT}"/* ]] \
+    || fail "unsafe temporary LIBERO extraction path: ${TEMP_SOURCE_DIR}"
+  mkdir "${TEMP_SOURCE_DIR}"
+  tar -xzf "${LIBERO_SOURCE_ARCHIVE}" -C "${TEMP_SOURCE_DIR}"
+  "${PYTHON_BIN}" - "${TEMP_SOURCE_DIR}" "${LIBERO_COMMIT}" <<'PY'
+import json
+import os
+import sys
+from pathlib import Path
+
+root = Path(sys.argv[1]).resolve()
+marker = root / ".warm_upstream.json"
+payload = {
+    "schema": "warm.external-libero-source.v1",
+    "upstream": "https://github.com/Lifelong-Robot-Learning/LIBERO",
+    "git_commit": sys.argv[2],
+}
+with marker.open("x", encoding="utf-8") as handle:
+    json.dump(payload, handle, sort_keys=True, indent=2)
+    handle.write("\n")
+    handle.flush()
+    os.fsync(handle.fileno())
+PY
+  mv "${TEMP_SOURCE_DIR}" "${LIBERO_SOURCE_DIR}"
+elif [[ ! -e "${LIBERO_SOURCE_DIR}/.git" && ! -e "${LIBERO_SOURCE_DIR}/.warm_upstream.json" ]]; then
   [[ ! -e "${LIBERO_SOURCE_DIR}" ]] \
     || fail "non-Git path already exists: ${LIBERO_SOURCE_DIR}"
+  echo "WARNING: offline LIBERO archive is absent: ${LIBERO_SOURCE_ARCHIVE}"
+  echo "         Falling back to the public HTTPS repository."
   git clone https://github.com/Lifelong-Robot-Learning/LIBERO.git \
     "${LIBERO_SOURCE_DIR}"
 fi
-if ! git config --global --get-all safe.directory 2>/dev/null \
-  | grep -Fqx -- "${LIBERO_SOURCE_DIR}"; then
-  git config --global --add safe.directory "${LIBERO_SOURCE_DIR}"
+if [[ -e "${LIBERO_SOURCE_DIR}/.git" ]]; then
+  if ! git config --global --get-all safe.directory 2>/dev/null \
+    | grep -Fqx -- "${LIBERO_SOURCE_DIR}"; then
+    git config --global --add safe.directory "${LIBERO_SOURCE_DIR}"
+  fi
+  git -C "${LIBERO_SOURCE_DIR}" cat-file -e "${LIBERO_COMMIT}^{commit}" 2>/dev/null \
+    || fail "pinned LIBERO commit is unavailable locally: ${LIBERO_COMMIT}"
+  git -C "${LIBERO_SOURCE_DIR}" checkout --detach "${LIBERO_COMMIT}"
+  [[ -z "$(git -C "${LIBERO_SOURCE_DIR}" status --porcelain)" ]] \
+    || fail "official LIBERO checkout is dirty: ${LIBERO_SOURCE_DIR}"
+else
+  "${PYTHON_BIN}" - "${LIBERO_SOURCE_DIR}/.warm_upstream.json" "${LIBERO_COMMIT}" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+with Path(sys.argv[1]).open(encoding="utf-8") as handle:
+    value = json.load(handle)
+if value.get("schema") != "warm.external-libero-source.v1":
+    raise SystemExit("invalid offline LIBERO source marker")
+if value.get("git_commit") != sys.argv[2]:
+    raise SystemExit("offline LIBERO source commit mismatch")
+PY
 fi
-git -C "${LIBERO_SOURCE_DIR}" cat-file -e "${LIBERO_COMMIT}^{commit}" 2>/dev/null \
-  || fail "pinned LIBERO commit is unavailable locally: ${LIBERO_COMMIT}"
-git -C "${LIBERO_SOURCE_DIR}" checkout --detach "${LIBERO_COMMIT}"
-[[ -z "$(git -C "${LIBERO_SOURCE_DIR}" status --porcelain)" ]] \
-  || fail "official LIBERO checkout is dirty: ${LIBERO_SOURCE_DIR}"
 "${PYTHON_BIN}" -m pip install --no-deps -e "${LIBERO_SOURCE_DIR}"
 
 "${PYTHON_BIN}" - <<'PY'

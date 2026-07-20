@@ -313,6 +313,28 @@ LIBERO checkout outside the private WARM worktree.  Do not install LIBERO's
 legacy `requirements.txt` into this environment because its old dependency
 pins conflict with the trained WARM stack.
 
+The training ACP wrapper does not use the interactive shell's `(base)` Python.
+It activates the path-based environment at
+`/mnt/afs/task3_2/L202500276_lwz/envs/warm` and unconditionally prepends that
+environment's `bin` directory to `PATH`; the evaluation wrapper calls its
+Python executable by absolute path.  Because this directory is on persistent
+AFS, packages installed there survive new CCI/ACP containers that mount the
+same workspace.  The selected private image supplies the compatible OS/CUDA
+base, but does not change this interpreter selection.
+
+For a network-free setup, upload these two public, pinned files to
+`/mnt/afs/task3_2/L202500276_lwz/projects/WARM_external/bootstrap/libero_eval_v1/`:
+
+```text
+robosuite-1.4.0-py3-none-any.whl
+LIBERO-8f1084e3132a.tar.gz
+```
+
+The setup verifies both SHA-256 digests, installs the wheel without dependency
+resolution, and extracts the official LIBERO source.  If the files are absent,
+it falls back to network installation while retaining a persistent pip cache
+under `WARM_external/pip_cache`.
+
 ```bash
 cd /mnt/afs/task3_2/L202500276_lwz/projects/WARM
 bash scripts/setup_warm_libero_eval_env.sh

@@ -71,3 +71,8 @@ def test_libero_setup_does_not_install_legacy_requirement_bundle() -> None:
     assert '"robosuite==1.4.0"' in source
     assert "--no-deps" in source
     assert "8f1084e3132a39270c3a13ebe37270a43ece2a01" in source
+    assert "WARM_BOOTSTRAP_DIR" in source
+    assert "WARM_PIP_CACHE_DIR" in source
+    assert "ROBOSUITE_WHEEL_SHA256" in source
+    assert "LIBERO_SOURCE_ARCHIVE_SHA256" in source
+    assert "--no-cache-dir" not in source
