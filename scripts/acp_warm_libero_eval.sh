@@ -170,6 +170,14 @@ export LIBERO_CONFIG_PATH="${LIBERO_CONFIG_PATH:-${WARM_LIBERO_CONFIG_ROOT}}"
 export MUJOCO_GL="${MUJOCO_GL:-egl}"
 export PYOPENGL_PLATFORM="${PYOPENGL_PLATFORM:-egl}"
 export MUJOCO_EGL_DEVICE_ID="${MUJOCO_EGL_DEVICE_ID:-0}"
+# Official LIBERO init-state bundles predate PyTorch 2.6 and contain NumPy
+# objects.  PyTorch 2.6+ defaults unspecified torch.load callsites to
+# weights_only=True.  The init-state bundle is from our pinned, SHA-verified
+# official LIBERO archive, and every WARM checkpoint loaded here is separately
+# attested, so restore the legacy loader only for callsites that omit the flag.
+# Remove the opposing global override in case the container image set it.
+unset TORCH_FORCE_WEIGHTS_ONLY_LOAD
+export TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=1
 export OMP_NUM_THREADS="${OMP_NUM_THREADS:-1}"
 export PYTHONPATH="${EVAL_CODE}/src:${EVAL_CODE}:${WARM_LIBERO_SOURCE_DIR}"
 

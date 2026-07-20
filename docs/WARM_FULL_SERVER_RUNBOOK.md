@@ -341,6 +341,13 @@ The official repository's double namespace layout is exposed through a pinned
 `PYTHONPATH`; evaluation therefore does not depend on setuptools editable-hook
 behavior.
 
+The wrapper also exports `TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=1`.  This is needed
+because official LIBERO init-state files contain legacy NumPy objects while
+PyTorch 2.6+ changed unspecified `torch.load` calls to `weights_only=True`.
+This compatibility override is confined to the evaluation process: the LIBERO
+source archive is pinned and SHA-verified, and WARM checkpoints are verified by
+their training attestations before loading.
+
 ```bash
 cd /mnt/afs/task3_2/L202500276_lwz/projects/WARM
 bash scripts/setup_warm_libero_eval_env.sh

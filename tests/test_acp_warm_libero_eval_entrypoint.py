@@ -41,6 +41,8 @@ def test_acp_eval_entrypoint_prepares_exact_libero_inputs() -> None:
     assert "libero_render_smoke_ok" in source
     assert "WARM_PREPARE_RENDER_TIMEOUT_SECONDS" in source
     assert "MUJOCO_EGL_DEVICE_ID" in source
+    assert "TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=1" in source
+    assert "unset TORCH_FORCE_WEIGHTS_ONLY_LOAD" in source
 
 
 def test_acp_eval_entrypoint_keeps_per_run_outputs_immutable() -> None:
