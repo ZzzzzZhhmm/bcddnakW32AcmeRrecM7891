@@ -18,7 +18,10 @@ def test_acp_eval_entrypoint_is_offline_and_commit_bound() -> None:
     assert 'safe.directory "${EVAL_CODE}"' in source
     assert "safe.directory '*'" not in source
     assert 'status --porcelain' in source
-    assert 'bash scripts/evaluate_warm_full_server.sh' in source
+    assert 'WARM_FORMAL_EVAL_LAUNCHER' in source
+    assert '${PROJECT_DIR}/scripts/evaluate_warm_full_server.sh' in source
+    assert 'cd "${EVAL_CODE}"' in source
+    assert 'bash "${WARM_FORMAL_EVAL_LAUNCHER}"' in source
 
 
 def test_acp_eval_entrypoint_prepares_exact_libero_inputs() -> None:

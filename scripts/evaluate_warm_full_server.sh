@@ -79,6 +79,11 @@ HYDRA_OVERRIDES=(
   "EVALUATION.output_dir=${RESULT_DIR}"
   "EVALUATION.dataset_stats_path=${M1}/train_stats/dataset_stats.json"
   "EVALUATION.device=${WARM_EVAL_DEVICE:-cuda}"
+  # configs/sim_libero.yaml is merged after the selected task config and its
+  # safe default is false.  Make the formal runtime opt-in explicit instead of
+  # relying on config-group merge order; the resolved value is subsequently
+  # hash-bound and independently required by build_warm_online_contract.py.
+  "EVALUATION.warm_online.enabled=true"
   "EVALUATION.warm_online.mode=full_retrospection"
   "EVALUATION.warm_online.contract_path=${CONTRACT}"
   "EVALUATION.warm_online.training_attestation_path=${WARM_TRAINING_ATTESTATION}"

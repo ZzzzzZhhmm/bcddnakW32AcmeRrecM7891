@@ -137,6 +137,7 @@ git -C "${PROJECT_DIR}" cat-file -e "${TRAIN_COMMIT}^{commit}" 2>/dev/null \
   || fail "training commit ${TRAIN_COMMIT} is absent locally; synchronize Git once before ACP evaluation"
 
 EVAL_CODE="${WARM_EVAL_WORKTREE_ROOT}/${TRAIN_COMMIT}"
+WARM_FORMAL_EVAL_LAUNCHER="${WARM_FORMAL_EVAL_LAUNCHER:-${PROJECT_DIR}/scripts/evaluate_warm_full_server.sh}"
 mkdir -p "${WARM_EVAL_WORKTREE_ROOT}"
 if [[ ! -e "${EVAL_CODE}/.git" ]]; then
   [[ ! -e "${EVAL_CODE}" ]] || fail "non-worktree path already exists: ${EVAL_CODE}"
@@ -156,6 +157,8 @@ fi
   || fail "evaluation worktree is dirty: ${EVAL_CODE}"
 [[ -f "${EVAL_CODE}/scripts/evaluate_warm_full_server.sh" ]] \
   || fail "training commit has no complete-WARM LIBERO evaluator"
+[[ -f "${WARM_FORMAL_EVAL_LAUNCHER}" ]] \
+  || fail "formal WARM evaluation launcher not found: ${WARM_FORMAL_EVAL_LAUNCHER}"
 
 export DIFFSYNTH_MODEL_BASE_PATH="${PROJECT_DIR}/checkpoints"
 export DIFFSYNTH_SKIP_DOWNLOAD=true
@@ -472,6 +475,7 @@ echo "EVAL_PREFLIGHT_OK"
 echo "checkpoint=${WARM_CHECKPOINT}"
 echo "training_commit=${TRAIN_COMMIT}"
 echo "evaluation_code=${EVAL_CODE}"
+echo "evaluation_launcher=${WARM_FORMAL_EVAL_LAUNCHER}"
 echo "task=${WARM_TASK_SUITE}/${WARM_TASK_ID}"
 echo "task_description=${WARM_TASK_DESCRIPTION}"
 echo "root_seed=${WARM_ROOT_SEED}"
@@ -479,5 +483,5 @@ echo "evaluation_root=${WARM_EVAL_ROOT}"
 
 cd "${EVAL_CODE}"
 set -o pipefail
-bash scripts/evaluate_warm_full_server.sh \
+bash "${WARM_FORMAL_EVAL_LAUNCHER}" \
   2>&1 | tee "${WARM_EVAL_ROOT}.console.log"
