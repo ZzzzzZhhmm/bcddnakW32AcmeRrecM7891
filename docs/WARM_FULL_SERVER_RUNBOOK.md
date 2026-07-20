@@ -306,6 +306,22 @@ detached clean worktree at the checkpoint-attested Git commit, checks the
 MuJoCo/LIBERO runtime, and snapshots exact task metadata and initial states for
 all forty LIBERO tasks.  It performs no network operation.
 
+Before the first `prepare`, install the online simulator once from CCI.  This
+uses the existing WARM Python environment, pins MuJoCo 3.3.2 and official
+LIBERO commit `8f1084e3132a39270c3a13ebe37270a43ece2a01`, and places the public
+LIBERO checkout outside the private WARM worktree.  Do not install LIBERO's
+legacy `requirements.txt` into this environment because its old dependency
+pins conflict with the trained WARM stack.
+
+```bash
+cd /mnt/afs/task3_2/L202500276_lwz/projects/WARM
+bash scripts/setup_warm_libero_eval_env.sh
+```
+
+The setup is persistent on AFS and is not repeated by later ACP jobs.  The
+evaluation wrapper also creates a non-interactive LIBERO configuration under
+`WARM_evaluations/libero_config`, avoiding LIBERO's first-import prompt.
+
 ```bash
 cd /mnt/afs/task3_2/L202500276_lwz/projects/WARM
 EVAL_ACTION=prepare bash scripts/acp_warm_libero_eval.sh

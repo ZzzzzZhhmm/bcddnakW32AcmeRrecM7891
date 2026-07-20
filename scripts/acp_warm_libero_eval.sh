@@ -24,6 +24,7 @@ WARM_TOKENIZER="${WARM_TOKENIZER:-${PROJECT_DIR}/checkpoints/Wan-AI/Wan2.1-T2V-1
 WARM_EVAL_BASE="${WARM_EVAL_BASE:-/mnt/afs/task3_2/L202500276_lwz/projects/WARM_evaluations}"
 WARM_EVAL_WORKTREE_ROOT="${WARM_EVAL_WORKTREE_ROOT:-${WARM_EVAL_BASE}/code}"
 WARM_EVAL_INPUT_ROOT="${WARM_EVAL_INPUT_ROOT:-${WARM_EVAL_BASE}/inputs}"
+WARM_LIBERO_CONFIG_ROOT="${WARM_LIBERO_CONFIG_ROOT:-${WARM_EVAL_BASE}/libero_config}"
 
 EVAL_ACTION="${EVAL_ACTION:-run}"
 WARM_TASK_SUITE="${WARM_TASK_SUITE:-libero_10}"
@@ -160,8 +161,12 @@ export HF_HUB_OFFLINE=1
 export TRANSFORMERS_OFFLINE=1
 export TOKENIZERS_PARALLELISM=false
 export PYTHONNOUSERSITE=1
+# LIBERO otherwise prompts on its first import.  ACP jobs are non-interactive,
+# so keep one explicit configuration on the persistent AFS evaluation volume.
+export LIBERO_CONFIG_PATH="${LIBERO_CONFIG_PATH:-${WARM_LIBERO_CONFIG_ROOT}}"
 export MUJOCO_GL="${MUJOCO_GL:-egl}"
 export PYOPENGL_PLATFORM="${PYOPENGL_PLATFORM:-egl}"
+export MUJOCO_EGL_DEVICE_ID="${MUJOCO_EGL_DEVICE_ID:-0}"
 export OMP_NUM_THREADS="${OMP_NUM_THREADS:-1}"
 export PYTHONPATH="${EVAL_CODE}/src:${EVAL_CODE}"
 
@@ -172,12 +177,69 @@ export WARM_EVAL_DEVICE WARM_TASK_SUITE WARM_TASK_ID WARM_ROOT_SEED
 
 WARM_REQUIRE_CUDA="${WARM_REQUIRE_CUDA:-$([[ "${EVAL_ACTION}" == run ]] && echo true || echo false)}"
 export WARM_REQUIRE_CUDA WARM_REQUIRE_MUJOCO_VERSION
+# Discover the editable official LIBERO installation without importing
+# libero.libero (that import is interactive when no config exists), then write
+# the canonical config atomically.  Missing simulator packages are diagnosed
+# together so users do not have to discover them one at a time.
+"${PYTHON_BIN}" - <<'PY'
+import importlib.util
+import os
+from pathlib import Path
+
+import yaml
+
+required_modules = ("mujoco", "robosuite", "bddl", "libero")
+missing = [name for name in required_modules if importlib.util.find_spec(name) is None]
+if missing:
+    raise SystemExit(
+        "missing LIBERO evaluation modules: "
+        + ", ".join(missing)
+        + "; run scripts/setup_warm_libero_eval_env.sh once in CCI"
+    )
+
+spec = importlib.util.find_spec("libero")
+locations = list(spec.submodule_search_locations or ()) if spec is not None else []
+if len(locations) != 1:
+    raise SystemExit(f"cannot identify one official LIBERO package root: {locations}")
+outer_package = Path(locations[0]).resolve()
+benchmark_root = outer_package / "libero"
+paths = {
+    "benchmark_root": str(benchmark_root),
+    "bddl_files": str(benchmark_root / "bddl_files"),
+    "init_states": str(benchmark_root / "init_files"),
+    "datasets": str(outer_package / "datasets"),
+    "assets": str(benchmark_root / "assets"),
+}
+for key in ("benchmark_root", "bddl_files", "init_states", "assets"):
+    if not Path(paths[key]).exists():
+        raise SystemExit(f"official LIBERO installation is incomplete: {key}={paths[key]}")
+
+config_root = Path(os.environ["LIBERO_CONFIG_PATH"]).expanduser().resolve()
+config_root.mkdir(parents=True, exist_ok=True)
+config_path = config_root / "config.yaml"
+encoded = yaml.safe_dump(paths, sort_keys=True).encode("utf-8")
+if config_path.exists():
+    current = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+    if current != paths:
+        raise SystemExit(
+            f"persistent LIBERO config does not match the installed package: {config_path}"
+        )
+else:
+    temporary = config_root / f".{config_path.name}.{os.getpid()}.tmp"
+    with temporary.open("xb") as handle:
+        handle.write(encoded)
+        handle.flush()
+        os.fsync(handle.fileno())
+    os.replace(temporary, config_path)
+print(f"libero_config={config_path}")
+PY
 "${PYTHON_BIN}" - <<'PY'
 import os
 
 import mujoco
 import torch
 from libero.libero import benchmark, get_libero_path
+from libero.libero.envs import OffScreenRenderEnv  # noqa: F401
 
 expected_mujoco = os.environ["WARM_REQUIRE_MUJOCO_VERSION"]
 if mujoco.__version__ != expected_mujoco:
@@ -304,6 +366,44 @@ PY
       prepare_task_inputs "${suite}" "${task_id}" >/dev/null
     done
   done
+  # Import checks alone cannot detect a broken EGL runtime or a MuJoCo /
+  # robosuite ABI mismatch.  Create one real two-camera environment, restore a
+  # canonical initial state, and validate the observations before accepting the
+  # one-time preparation.  Bound the check so a simulator reset cannot leave an
+  # ACP job hanging indefinitely.
+  WARM_PREPARE_RENDER_TIMEOUT_SECONDS="${WARM_PREPARE_RENDER_TIMEOUT_SECONDS:-180}"
+  [[ "${WARM_PREPARE_RENDER_TIMEOUT_SECONDS}" =~ ^[1-9][0-9]*$ ]] \
+    || fail "WARM_PREPARE_RENDER_TIMEOUT_SECONDS must be a positive integer"
+  timeout "${WARM_PREPARE_RENDER_TIMEOUT_SECONDS}" "${PYTHON_BIN}" - <<'PY'
+import numpy as np
+from libero.libero import benchmark, get_libero_path
+from libero.libero.envs import OffScreenRenderEnv
+from pathlib import Path
+
+suite = benchmark.get_benchmark_dict()["libero_spatial"]()
+task = suite.get_task(0)
+bddl = Path(get_libero_path("bddl_files")) / task.problem_folder / task.bddl_file
+states = suite.get_task_init_states(0)
+if hasattr(states, "detach"):
+    states = states.detach().cpu().numpy()
+states = np.asarray(states)
+env = OffScreenRenderEnv(
+    bddl_file_name=str(bddl),
+    camera_heights=256,
+    camera_widths=256,
+)
+try:
+    env.seed(0)
+    env.reset()
+    observation = env.set_init_state(states[0])
+    for key in ("agentview_image", "robot0_eye_in_hand_image"):
+        image = np.asarray(observation[key])
+        if image.shape != (256, 256, 3) or not np.isfinite(image).all():
+            raise SystemExit(f"invalid LIBERO camera observation {key}: {image.shape}")
+finally:
+    env.close()
+print("libero_render_smoke_ok")
+PY
   echo "PREPARE_OK"
   echo "evaluation_worktree=${EVAL_CODE}"
   echo "task_inputs=${WARM_EVAL_INPUT_ROOT}"
