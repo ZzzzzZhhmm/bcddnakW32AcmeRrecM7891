@@ -43,6 +43,9 @@ def test_acp_eval_entrypoint_prepares_exact_libero_inputs() -> None:
     assert "MUJOCO_EGL_DEVICE_ID" in source
     assert "TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=1" in source
     assert "unset TORCH_FORCE_WEIGHTS_ONLY_LOAD" in source
+    assert "contextlib.redirect_stdout(io.StringIO())" in source
+    assert "task-input helper returned a malformed metadata path" in source
+    assert "task metadata was not published" in source
 
 
 def test_acp_eval_entrypoint_keeps_per_run_outputs_immutable() -> None:

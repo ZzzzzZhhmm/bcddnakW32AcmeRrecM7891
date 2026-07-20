@@ -272,23 +272,34 @@ prepare_task_inputs() {
   local suite="$1" task_id="$2"
   "${PYTHON_BIN}" - "${WARM_EVAL_INPUT_ROOT}" "${suite}" "${task_id}" <<'PY'
 import hashlib
+import contextlib
+import io
 import json
 import os
 import sys
 from pathlib import Path
 
 import numpy as np
-from libero.libero import benchmark, get_libero_path
+
+# LIBERO prints registry information and missing-demo-dataset warnings to
+# stdout while importing and resolving paths.  This helper's stdout is a
+# machine-readable protocol consumed by Bash and must contain exactly one
+# metadata path, so contain third-party chatter locally.  Python exceptions
+# and warnings still reach stderr and preserve actionable diagnostics.
+with contextlib.redirect_stdout(io.StringIO()):
+    from libero.libero import benchmark, get_libero_path
 
 root = Path(sys.argv[1]).expanduser().resolve()
 suite_name = sys.argv[2]
 task_id = int(sys.argv[3])
-suite = benchmark.get_benchmark_dict()[suite_name]()
+with contextlib.redirect_stdout(io.StringIO()):
+    suite = benchmark.get_benchmark_dict()[suite_name]()
 n_tasks = int(suite.n_tasks)
 if task_id < 0 or task_id >= n_tasks:
     raise SystemExit(f"task id {task_id} is outside [0, {n_tasks}) for {suite_name}")
-task = suite.get_task(task_id)
-states = suite.get_task_init_states(task_id)
+with contextlib.redirect_stdout(io.StringIO()):
+    task = suite.get_task(task_id)
+    states = suite.get_task_init_states(task_id)
 if hasattr(states, "detach"):
     states = states.detach().cpu().numpy()
 states = np.ascontiguousarray(np.asarray(states))
@@ -314,9 +325,10 @@ else:
         os.fsync(handle.fileno())
     os.replace(temporary, states_path)
 
-bddl_path = (
-    Path(get_libero_path("bddl_files")) / task.problem_folder / task.bddl_file
-).resolve()
+with contextlib.redirect_stdout(io.StringIO()):
+    bddl_path = (
+        Path(get_libero_path("bddl_files")) / task.problem_folder / task.bddl_file
+    ).resolve()
 if not bddl_path.is_file():
     raise SystemExit(f"LIBERO BDDL is missing: {bddl_path}")
 metadata = {
@@ -423,6 +435,10 @@ PY
 fi
 
 TASK_METADATA="$(prepare_task_inputs "${WARM_TASK_SUITE}" "${WARM_TASK_ID}")"
+[[ -n "${TASK_METADATA}" && "${TASK_METADATA}" != *$'\n'* ]] \
+  || fail "task-input helper returned a malformed metadata path"
+[[ -f "${TASK_METADATA}" ]] \
+  || fail "task metadata was not published: ${TASK_METADATA}"
 WARM_TASK_DESCRIPTION="$(${PYTHON_BIN} - "${TASK_METADATA}" <<'PY'
 import json, sys
 with open(sys.argv[1], encoding="utf-8") as handle:
