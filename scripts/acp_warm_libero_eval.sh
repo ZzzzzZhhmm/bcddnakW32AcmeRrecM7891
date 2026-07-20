@@ -138,6 +138,14 @@ if [[ ! -e "${EVAL_CODE}/.git" ]]; then
   [[ ! -e "${EVAL_CODE}" ]] || fail "non-worktree path already exists: ${EVAL_CODE}"
   git -C "${PROJECT_DIR}" worktree add --detach "${EVAL_CODE}" "${TRAIN_COMMIT}"
 fi
+# AFS/NFS containers can map the persisted worktree to an owner different from
+# the current ephemeral container user. Register only this attested, absolute
+# worktree path before asking Git to inspect it; do not use the unsafe wildcard
+# safe.directory setting.
+if ! git config --global --get-all safe.directory 2>/dev/null \
+  | grep -Fqx -- "${EVAL_CODE}"; then
+  git config --global --add safe.directory "${EVAL_CODE}"
+fi
 [[ "$(git -C "${EVAL_CODE}" rev-parse HEAD)" == "${TRAIN_COMMIT}" ]] \
   || fail "evaluation worktree does not match the checkpoint commit"
 [[ -z "$(git -C "${EVAL_CODE}" status --porcelain)" ]] \

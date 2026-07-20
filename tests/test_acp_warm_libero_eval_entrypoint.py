@@ -14,6 +14,8 @@ def test_acp_eval_entrypoint_is_offline_and_commit_bound() -> None:
     assert 'EVAL_ACTION="${EVAL_ACTION:-run}"' in source
     assert "verify_training_attestation" in source
     assert 'worktree add --detach "${EVAL_CODE}" "${TRAIN_COMMIT}"' in source
+    assert 'safe.directory "${EVAL_CODE}"' in source
+    assert "safe.directory '*'" not in source
     assert 'status --porcelain' in source
     assert 'bash scripts/evaluate_warm_full_server.sh' in source
 
