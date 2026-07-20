@@ -32,6 +32,8 @@ def test_serial_eval_is_single_gpu_resumable_and_result_validating() -> None:
 def test_serial_eval_delegates_each_task_to_the_attested_entrypoint() -> None:
     source = SCRIPT.read_text(encoding="utf-8")
 
+    assert '[[ -f "${SCRIPT_DIR}/acp_warm_libero_eval.sh" ]]' in source
+    assert '[[ -x "${SCRIPT_DIR}/acp_warm_libero_eval.sh" ]]' not in source
     assert 'EVAL_ACTION=run' in source
     assert 'bash "${SCRIPT_DIR}/acp_warm_libero_eval.sh"' in source
     assert 'WARM_EVAL_ROOT="${eval_root}"' in source

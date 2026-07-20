@@ -29,8 +29,12 @@ fail() {
 
 [[ -x "${CONDA_ENV_DIR}/bin/python" ]] \
   || fail "Python environment not found: ${CONDA_ENV_DIR}"
-[[ -x "${SCRIPT_DIR}/acp_warm_libero_eval.sh" ]] \
-  || fail "single-task evaluation entrypoint is missing or not executable"
+# The delegated entrypoint is intentionally invoked through ``bash`` below.
+# Requiring its executable bit is therefore both unnecessary and brittle when
+# a user copies the repository through a filesystem that does not preserve
+# POSIX modes (the canonical repository records this file as 100644).
+[[ -f "${SCRIPT_DIR}/acp_warm_libero_eval.sh" ]] \
+  || fail "single-task evaluation entrypoint is missing"
 [[ "${CUDA_VISIBLE_DEVICES}" != *,* ]] \
   || fail "serial evaluation uses one GPU; CUDA_VISIBLE_DEVICES must contain one device"
 [[ "${WARM_EVAL_LABEL}" =~ ^[A-Za-z0-9._-]+$ ]] \
