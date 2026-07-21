@@ -28,6 +28,7 @@ from .episode_memory import (
     EpisodeWorkingMemory,
     EpisodeWriteCapability,
     FactualObservation,
+    action_summary_signature,
 )
 
 
@@ -318,8 +319,19 @@ class OnlineRetrospectiveEpisodeMemory:
                     )
                     bends.append(0.5 * (1.0 - cosine))
         curvature = 0.0 if not bends else float(np.mean(bends))
-        signature = np.concatenate((mean, displacement, terminal)).astype(
-            np.float64, copy=False
+        # ``terminal`` above is expanded to ``action_dim`` for the learned
+        # feature vector. Repetition uses the canonical compact signature,
+        # whose terminal block contains only gripper channels. Committed
+        # ActionSummary instances use the same representation.
+        terminal_gripper_values = (
+            actions[-1, list(config.gripper_indices)]
+            if config.gripper_indices
+            else np.empty((0,), dtype=np.float32)
+        )
+        signature = action_summary_signature(
+            mean,
+            displacement,
+            terminal_gripper_values,
         )
         best_similarity = 0.0
         best_distance = np.inf

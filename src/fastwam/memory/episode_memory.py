@@ -562,6 +562,42 @@ class EpisodeWriteCapability:
     _owner: object = field(repr=False, compare=False)
 
 
+def action_summary_signature(
+    mean_displacement: Any,
+    final_displacement: Any,
+    terminal_gripper_values: Any,
+) -> np.ndarray:
+    """Return the canonical compact signature used for repetition checks.
+
+    The first two blocks retain the full action width (with gripper channels
+    zeroed by the caller), while the final block contains only the actual
+    gripper channels. Keeping this construction in one place prevents online
+    preview summaries and committed factual summaries from silently choosing
+    different widths.
+    """
+
+    mean = np.asarray(mean_displacement, dtype=np.float64)
+    final = np.asarray(final_displacement, dtype=np.float64)
+    terminal = np.asarray(terminal_gripper_values, dtype=np.float64)
+    if mean.ndim != 1 or final.ndim != 1 or terminal.ndim != 1:
+        raise EpisodeMemoryValidationError(
+            "action summary signature inputs must be rank-one"
+        )
+    if mean.shape != final.shape:
+        raise EpisodeMemoryValidationError(
+            "action summary signature displacement shapes must match"
+        )
+    if not (
+        np.isfinite(mean).all()
+        and np.isfinite(final).all()
+        and np.isfinite(terminal).all()
+    ):
+        raise EpisodeMemoryValidationError(
+            "action summary signature inputs must be finite"
+        )
+    return np.ascontiguousarray(np.concatenate((mean, final, terminal)))
+
+
 @dataclass(frozen=True, slots=True)
 class ActionSummary:
     start_frame: int
@@ -629,16 +665,14 @@ class ActionSummary:
         return int(self.gripper_transition_counts[:, 1].sum())
 
     def signature(self) -> np.ndarray:
-        return np.concatenate(
-            [
-                self.mean_displacement.astype(np.float64),
-                self.final_displacement.astype(np.float64),
-                # Boundary transition counts depend on the command immediately
-                # preceding this chunk.  Terminal gripper commands do not, so
-                # they let repetition describe the chunk itself rather than
-                # its incidental predecessor.
-                self.terminal_gripper_values.astype(np.float64),
-            ]
+        # Boundary transition counts depend on the command immediately
+        # preceding this chunk. Terminal gripper commands do not, so they let
+        # repetition describe the chunk itself rather than its incidental
+        # predecessor.
+        return action_summary_signature(
+            self.mean_displacement,
+            self.final_displacement,
+            self.terminal_gripper_values,
         )
 
     def to_dict(self) -> dict[str, Any]:

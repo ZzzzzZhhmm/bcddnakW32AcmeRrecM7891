@@ -132,6 +132,40 @@ def test_exact_executed_prefix_is_committed_only_after_next_real_observation() -
     assert history.episode_tokens.shape == (8, 8)
 
 
+def test_preview_repetition_matches_an_existing_factual_summary() -> None:
+    """A third replan must compare like-for-like compact signatures.
+
+    The first preview has no committed predecessor.  The dimension mismatch
+    fixed by this regression test appears only after that prefix is committed
+    by the next factual observation and another prefix is previewed.
+    """
+
+    runtime = _runtime()
+    runtime.begin_episode(0)
+    runtime.record_factual_observation(
+        frame_index=0,
+        factual_payload=_payload(0.0),
+        executed_actions_since_previous=None,
+    )
+    executed = np.zeros((4, 7), dtype=np.float32)
+    executed[:, 0] = 0.25
+    executed[-1, 6] = 1.0
+    runtime.record_factual_observation(
+        frame_index=4,
+        factual_payload=_payload(1.0),
+        executed_actions_since_previous=executed,
+    )
+
+    preview = runtime.history_inputs(executed_actions_since_previous=executed)
+
+    assert preview is not None
+    assert preview.action_summary_count == 2
+    assert preview.episode_action_summaries.shape == (2, 25)
+    assert preview.episode_action_mask.tolist() == [True, True]
+    assert preview.episode_action_summaries[-1, -2] == pytest.approx(1.0)
+    assert preview.episode_action_summaries[-1, -1] == pytest.approx(1.0)
+
+
 def test_initial_observation_rejects_actions_and_later_observation_requires_them() -> None:
     runtime = _runtime()
     runtime.begin_episode(0)

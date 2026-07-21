@@ -26,6 +26,9 @@ def test_serial_eval_is_single_gpu_resumable_and_result_validating() -> None:
     assert "warm_online_episodes" in source
     assert 'header.get("side") != "full_retrospection"' in source
     assert "result_sha256" in source
+    assert "evaluation_compatibility.json" in source
+    assert "evaluation_compatibility_sha256" in source
+    assert "result contract does not bind the compatibility namespace" in source
     assert "summary.json" in source
 
 

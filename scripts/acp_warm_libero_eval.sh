@@ -33,6 +33,7 @@ WARM_TASK_ID="${WARM_TASK_ID:-0}"
 WARM_ROOT_SEED="${WARM_ROOT_SEED:-17}"
 WARM_EVAL_LABEL="${WARM_EVAL_LABEL:-formal}"
 WARM_EVALUATION_NAMESPACE="${WARM_EVALUATION_NAMESPACE:-warm-libero-full-v1}"
+WARM_EVALUATION_NAMESPACE_BASE="${WARM_EVALUATION_NAMESPACE}"
 WARM_EVAL_DEVICE="${WARM_EVAL_DEVICE:-cuda}"
 WARM_REQUIRE_MUJOCO_VERSION="${WARM_REQUIRE_MUJOCO_VERSION:-3.3.2}"
 export CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES:-0}"
@@ -160,6 +161,60 @@ fi
 [[ -f "${WARM_FORMAL_EVAL_LAUNCHER}" ]] \
   || fail "formal WARM evaluation launcher not found: ${WARM_FORMAL_EVAL_LAUNCHER}"
 
+# The completed step-019100 checkpoint is bound to an evaluator commit that
+# contains one rollout-only shape bug: after the first factual action summary,
+# its compact 15-D signature is compared with a 21-D preview signature.  Keep
+# the checkpoint's clean historical worktree intact and apply only a narrow
+# startup repair whose source hash and effective namespace are recorded in the
+# immutable evaluation evidence.  Any unexpected source revision fails closed.
+WARM_EVAL_COMPAT_PYTHONPATH=""
+KNOWN_ACTION_SIGNATURE_COMMIT="c4763a975298de6f00939360551616af7902d57a"
+KNOWN_ACTION_SIGNATURE_SOURCE_SHA256="aeede91e8770706c03c4c25fd670cf8a12749956755020a2f674971d32ec829f"
+ACTION_SIGNATURE_SOURCE="${EVAL_CODE}/src/fastwam/memory/online_episode_memory.py"
+ACTION_SIGNATURE_SOURCE_SHA256="$(${PYTHON_BIN} - "${ACTION_SIGNATURE_SOURCE}" <<'PY'
+import hashlib
+import sys
+from pathlib import Path
+
+print(hashlib.sha256(Path(sys.argv[1]).read_bytes()).hexdigest())
+PY
+)"
+if [[ "${TRAIN_COMMIT}" == "${KNOWN_ACTION_SIGNATURE_COMMIT}" ]]; then
+  [[ "${ACTION_SIGNATURE_SOURCE_SHA256}" == "${KNOWN_ACTION_SIGNATURE_SOURCE_SHA256}" ]] \
+    || fail "known evaluation commit has an unexpected online-memory source hash"
+  WARM_EVAL_COMPATIBILITY_ID="action-summary-signature-v1"
+  WARM_EVAL_COMPATIBILITY_DIR="${PROJECT_DIR}/scripts/evaluation_compat/action_summary_signature_v1"
+  WARM_EVAL_COMPATIBILITY_FILE="${WARM_EVAL_COMPATIBILITY_DIR}/sitecustomize.py"
+  WARM_EVAL_COMPATIBILITY_RELATIVE="scripts/evaluation_compat/action_summary_signature_v1/sitecustomize.py"
+  [[ -f "${WARM_EVAL_COMPATIBILITY_FILE}" ]] \
+    || fail "required evaluation compatibility repair is missing"
+  WARM_EVAL_COMPATIBILITY_SHA256="$(${PYTHON_BIN} - "${WARM_EVAL_COMPATIBILITY_FILE}" <<'PY'
+import hashlib
+import sys
+from pathlib import Path
+
+print(hashlib.sha256(Path(sys.argv[1]).read_bytes()).hexdigest())
+PY
+)"
+  TRACKED_COMPATIBILITY_SHA256="$(
+    git -C "${PROJECT_DIR}" show "HEAD:${WARM_EVAL_COMPATIBILITY_RELATIVE}" \
+      | "${PYTHON_BIN}" -c 'import hashlib,sys; print(hashlib.sha256(sys.stdin.buffer.read()).hexdigest())'
+  )" || fail "compatibility repair is not committed in the current repository"
+  [[ "${WARM_EVAL_COMPATIBILITY_SHA256}" == "${TRACKED_COMPATIBILITY_SHA256}" ]] \
+    || fail "compatibility repair differs from the current committed file"
+  WARM_EVAL_COMPATIBILITY_LAUNCHER_COMMIT="$(git -C "${PROJECT_DIR}" rev-parse HEAD)"
+  WARM_EVALUATION_NAMESPACE="${WARM_EVALUATION_NAMESPACE_BASE}-compat-${WARM_EVAL_COMPATIBILITY_SHA256:0:12}"
+  WARM_EVAL_COMPAT_PYTHONPATH="${WARM_EVAL_COMPATIBILITY_DIR}:"
+  export WARM_EVAL_COMPATIBILITY_ID WARM_EVAL_COMPATIBILITY_FILE
+  export WARM_EVAL_COMPATIBILITY_SHA256 WARM_EVAL_COMPATIBILITY_LAUNCHER_COMMIT
+  export WARM_EVAL_COMPATIBILITY_SOURCE_SHA256="${ACTION_SIGNATURE_SOURCE_SHA256}"
+  export WARM_EVAL_COMPAT_ACTION_SIGNATURE="${WARM_EVAL_COMPATIBILITY_ID}"
+  export WARM_EVAL_COMPAT_TRAIN_COMMIT="${TRAIN_COMMIT}"
+  export WARM_EVAL_COMPAT_GRIPPER_INDICES="6"
+elif [[ "${ACTION_SIGNATURE_SOURCE_SHA256}" == "${KNOWN_ACTION_SIGNATURE_SOURCE_SHA256}" ]]; then
+  fail "known-buggy online-memory source appeared under an unexpected commit"
+fi
+
 export DIFFSYNTH_MODEL_BASE_PATH="${PROJECT_DIR}/checkpoints"
 export DIFFSYNTH_SKIP_DOWNLOAD=true
 export HF_HOME="${HF_HOME:-${PROJECT_DIR}/cache/huggingface}"
@@ -182,11 +237,12 @@ export MUJOCO_EGL_DEVICE_ID="${MUJOCO_EGL_DEVICE_ID:-0}"
 unset TORCH_FORCE_WEIGHTS_ONLY_LOAD
 export TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=1
 export OMP_NUM_THREADS="${OMP_NUM_THREADS:-1}"
-export PYTHONPATH="${EVAL_CODE}/src:${EVAL_CODE}:${WARM_LIBERO_SOURCE_DIR}"
+export PYTHONPATH="${WARM_EVAL_COMPAT_PYTHONPATH}${EVAL_CODE}/src:${EVAL_CODE}:${WARM_LIBERO_SOURCE_DIR}"
 
 export WARM_ARTIFACT_ROOT FASTWAM_BASE_CHECKPOINT WARM_CHECKPOINT
 export WARM_TRAINING_ATTESTATION WARM_DINO_CHECKPOINT WARM_VAE_CHECKPOINT
 export WARM_TEXT_ENCODER WARM_TOKENIZER WARM_EVALUATION_NAMESPACE
+export WARM_EVALUATION_NAMESPACE_BASE
 export WARM_EVAL_DEVICE WARM_TASK_SUITE WARM_TASK_ID WARM_ROOT_SEED
 
 WARM_REQUIRE_CUDA="${WARM_REQUIRE_CUDA:-$([[ "${EVAL_ACTION}" == run ]] && echo true || echo false)}"
@@ -476,6 +532,11 @@ echo "checkpoint=${WARM_CHECKPOINT}"
 echo "training_commit=${TRAIN_COMMIT}"
 echo "evaluation_code=${EVAL_CODE}"
 echo "evaluation_launcher=${WARM_FORMAL_EVAL_LAUNCHER}"
+if [[ -n "${WARM_EVAL_COMPATIBILITY_ID:-}" ]]; then
+  echo "evaluation_compatibility=${WARM_EVAL_COMPATIBILITY_ID}"
+  echo "evaluation_compatibility_sha256=${WARM_EVAL_COMPATIBILITY_SHA256}"
+  echo "evaluation_namespace=${WARM_EVALUATION_NAMESPACE}"
+fi
 echo "task=${WARM_TASK_SUITE}/${WARM_TASK_ID}"
 echo "task_description=${WARM_TASK_DESCRIPTION}"
 echo "root_seed=${WARM_ROOT_SEED}"

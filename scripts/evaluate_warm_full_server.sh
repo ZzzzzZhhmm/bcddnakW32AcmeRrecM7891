@@ -72,6 +72,80 @@ if [[ -e "${WARM_EVAL_ROOT}" ]]; then
 fi
 mkdir -p "${WARM_EVAL_ROOT}"
 
+# A completed checkpoint remains bound to its original clean training commit.
+# If the ACP wrapper selected a narrowly scoped evaluation compatibility
+# repair, publish its exact content hash before any contract or result is
+# created.  The wrapper also derives NAMESPACE from that hash, so the online
+# run contract cryptographically distinguishes repaired from unrepaired runs.
+if [[ -n "${WARM_EVAL_COMPATIBILITY_ID:-}" ]]; then
+  compatibility_env=(
+    WARM_EVAL_COMPATIBILITY_FILE
+    WARM_EVAL_COMPATIBILITY_SHA256
+    WARM_EVAL_COMPATIBILITY_SOURCE_SHA256
+    WARM_EVAL_COMPATIBILITY_LAUNCHER_COMMIT
+    WARM_EVALUATION_NAMESPACE_BASE
+    WARM_EVAL_COMPAT_TRAIN_COMMIT
+  )
+  for name in "${compatibility_env[@]}"; do
+    if [[ -z "${!name:-}" ]]; then
+      echo "error: ${name} is required by the evaluation compatibility repair" >&2
+      exit 2
+    fi
+  done
+  python - "${WARM_EVAL_ROOT}/evaluation_compatibility.json" <<'PY'
+import hashlib
+import json
+import os
+import re
+import sys
+from pathlib import Path
+
+from fastwam.memory.episode_memory import ActionSummary
+
+output = Path(sys.argv[1])
+patch_path = Path(os.environ["WARM_EVAL_COMPATIBILITY_FILE"])
+patch_sha = hashlib.sha256(patch_path.read_bytes()).hexdigest()
+expected_patch_sha = os.environ["WARM_EVAL_COMPATIBILITY_SHA256"]
+if patch_sha != expected_patch_sha:
+    raise SystemExit("evaluation compatibility repair changed after preflight")
+for name in (
+    "WARM_EVAL_COMPATIBILITY_SOURCE_SHA256",
+    "WARM_EVAL_COMPATIBILITY_LAUNCHER_COMMIT",
+    "WARM_EVAL_COMPAT_TRAIN_COMMIT",
+):
+    if re.fullmatch(r"[0-9a-f]{64}" if "SHA256" in name else r"[0-9a-f]{40}", os.environ[name]) is None:
+        raise SystemExit(f"invalid compatibility identity: {name}")
+base_namespace = os.environ["WARM_EVALUATION_NAMESPACE_BASE"]
+effective_namespace = os.environ["WARM_EVALUATION_NAMESPACE"]
+expected_namespace = f"{base_namespace}-compat-{patch_sha[:12]}"
+if effective_namespace != expected_namespace:
+    raise SystemExit("effective evaluation namespace does not bind the repair hash")
+if not (
+    ActionSummary.signature.__module__ == "sitecustomize"
+    and ActionSummary.signature.__name__ == "_expanded_signature"
+):
+    raise SystemExit("evaluation compatibility repair was not installed by Python")
+record = {
+    "schema": "warm.evaluation-compatibility",
+    "version": 1,
+    "patch_id": os.environ["WARM_EVAL_COMPATIBILITY_ID"],
+    "patch_file_sha256": patch_sha,
+    "patched_source_sha256": os.environ["WARM_EVAL_COMPATIBILITY_SOURCE_SHA256"],
+    "training_commit": os.environ["WARM_EVAL_COMPAT_TRAIN_COMMIT"],
+    "launcher_commit": os.environ["WARM_EVAL_COMPATIBILITY_LAUNCHER_COMMIT"],
+    "base_evaluation_namespace": base_namespace,
+    "effective_evaluation_namespace": effective_namespace,
+    "gripper_indices": [6],
+    "scope": "expand committed action-summary terminal coordinates for old online preview parity",
+}
+output.write_text(
+    json.dumps(record, sort_keys=True, indent=2, allow_nan=False) + "\n",
+    encoding="utf-8",
+)
+print(f"evaluation_compatibility_record={output} sha256={patch_sha}")
+PY
+fi
+
 HYDRA_OVERRIDES=(
   task=libero_warm_online_2cam224_full
   "ckpt=${WARM_CHECKPOINT}"

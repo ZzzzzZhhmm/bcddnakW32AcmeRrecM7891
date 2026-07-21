@@ -383,6 +383,26 @@ containers; the wrapper owns all static defaults, so callers only provide the
 four per-job values above.  A failed immutable job is retried with a new label
 such as `WARM_EVAL_LABEL=retry1`, never by overwriting its output root.
 
+The completed step-019100 checkpoint is bound to training commit
+`c4763a975298de6f00939360551616af7902d57a`. That revision has one
+evaluation-only defect which appears after a factual executed-action summary
+has been committed: the stored repetition signature is compact (15 values for
+LIBERO), while the next preview signature expands the gripper coordinates (21
+values). The ACP wrapper recognizes both the exact commit and exact source-file
+SHA-256, keeps the historical worktree clean, and enables only the
+`action-summary-signature-v1` startup repair. The repair inserts zero-valued
+terminal coordinates, so cosine similarity and normalized distance are
+numerically unchanged; it only restores equal array widths.
+
+Do not edit the detached checkpoint worktree manually. The wrapper verifies the
+repair against the current committed file, writes
+`evaluation_compatibility.json` into the immutable result root, and derives the
+effective evaluation namespace as
+`<base>-compat-<first-12-characters-of-patch-sha256>`. The online contract thus
+binds the repaired evaluation identity, while the runtime attestation continues
+to identify the unmodified training commit. Serial result validation rejects an
+affected-checkpoint result that lacks this compatibility evidence.
+
 Production v1 online coarse ANN intentionally runs the same contract-bound
 frozen DINO encoder used to build the bank. The learned semantic bridge maps
 the single-pass Video DiT world tokens into compact DINO-aligned tokens for

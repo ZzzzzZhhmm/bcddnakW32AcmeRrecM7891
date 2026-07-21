@@ -27,3 +27,6 @@ def test_formal_launcher_retains_clean_worktree_and_immutable_output_guards() ->
     assert 'HYDRA_FULL_ERROR="${HYDRA_FULL_ERROR:-1}"' in source
     assert ".resolved_config.runtime-check.yaml" in source
     assert 'contract["resolved_eval_config_sha256"]' in source
+    assert "warm.evaluation-compatibility" in source
+    assert "evaluation_compatibility.json" in source
+    assert "effective evaluation namespace does not bind the repair hash" in source

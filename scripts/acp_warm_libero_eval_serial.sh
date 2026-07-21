@@ -163,6 +163,37 @@ if header.get("side") != "full_retrospection":
     raise SystemExit("result is not a full-retrospection evaluation")
 if int(header.get("contract", {}).get("root_seed", -1)) != expected_seed:
     raise SystemExit("result root seed does not match the serial plan")
+runtime_attestation = header.get("runtime_attestation", {})
+training_commit = str(runtime_attestation.get("git_commit", ""))
+compatibility_path = result_path.parents[2] / "evaluation_compatibility.json"
+compatibility_sha256 = None
+if compatibility_path.is_file():
+    compatibility_bytes = compatibility_path.read_bytes()
+    compatibility_sha256 = hashlib.sha256(compatibility_bytes).hexdigest()
+    compatibility = json.loads(compatibility_bytes)
+    if compatibility.get("schema") != "warm.evaluation-compatibility":
+        raise SystemExit("evaluation compatibility evidence has an invalid schema")
+    if int(compatibility.get("version", -1)) != 1:
+        raise SystemExit("evaluation compatibility evidence has an invalid version")
+    if compatibility.get("training_commit") != training_commit:
+        raise SystemExit("evaluation compatibility training commit mismatch")
+    patch_sha = str(compatibility.get("patch_file_sha256", ""))
+    if len(patch_sha) != 64 or any(character not in "0123456789abcdef" for character in patch_sha):
+        raise SystemExit("evaluation compatibility patch digest is invalid")
+    effective_namespace = str(compatibility.get("effective_evaluation_namespace", ""))
+    if not effective_namespace.endswith(f"-compat-{patch_sha[:12]}"):
+        raise SystemExit("evaluation compatibility namespace does not bind the patch")
+    encoded_namespace = json.dumps(
+        {"evaluation_namespace": effective_namespace},
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+    ).encode("utf-8")
+    namespace_sha = hashlib.sha256(encoded_namespace).hexdigest()
+    if header.get("contract", {}).get("evaluation_namespace_sha256") != namespace_sha:
+        raise SystemExit("result contract does not bind the compatibility namespace")
+elif training_commit == "c4763a975298de6f00939360551616af7902d57a":
+    raise SystemExit("affected checkpoint result is missing compatibility evidence")
 digest = hashlib.sha256(result_path.read_bytes()).hexdigest()
 marker = {
     "schema": "warm.libero-serial-evaluation-completion",
@@ -175,6 +206,7 @@ marker = {
     "duration_seconds": float(value.get("duration", 0.0)),
     "result_path": str(result_path),
     "result_sha256": digest,
+    "evaluation_compatibility_sha256": compatibility_sha256,
 }
 marker_path.parent.mkdir(parents=True, exist_ok=True)
 temporary = marker_path.with_name(f".{marker_path.name}.{os.getpid()}.tmp")

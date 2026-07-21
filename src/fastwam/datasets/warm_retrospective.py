@@ -18,6 +18,7 @@ import numpy as np
 import torch
 
 from fastwam.memory.candidate_cache import QueryId
+from fastwam.memory.episode_memory import action_summary_signature
 from fastwam.memory.offline_pipeline import (
     FeatureCacheCollection,
     load_feature_cache_collection,
@@ -189,8 +190,15 @@ def _action_summary_vector(
                 cosine = float(np.clip(np.dot(left, right) / denominator, -1.0, 1.0))
                 curvature_values.append((1.0 - cosine) * 0.5)
     curvature = float(np.mean(curvature_values)) if curvature_values else 0.0
-    signature = np.concatenate((mean, displacement, terminal)).astype(
-        np.float32, copy=False
+    terminal_gripper_values = (
+        values[-1, list(gripper_indices)]
+        if gripper_indices
+        else np.empty((0,), dtype=np.float32)
+    )
+    signature = action_summary_signature(
+        mean,
+        displacement,
+        terminal_gripper_values,
     )
     repetition = 0.0
     best_distance = np.inf
@@ -240,7 +248,8 @@ def _action_summary_vector(
         ],
         dtype=np.float32,
     )
-    return np.ascontiguousarray(np.concatenate((signature, scalars))), signature
+    feature_vector = np.concatenate((mean, displacement, terminal, scalars))
+    return np.ascontiguousarray(feature_vector), signature
 
 
 def _factual_payload(features: Any, frame: int) -> dict[str, np.ndarray]:

@@ -22,6 +22,11 @@ def test_acp_eval_entrypoint_is_offline_and_commit_bound() -> None:
     assert '${PROJECT_DIR}/scripts/evaluate_warm_full_server.sh' in source
     assert 'cd "${EVAL_CODE}"' in source
     assert 'bash "${WARM_FORMAL_EVAL_LAUNCHER}"' in source
+    assert "KNOWN_ACTION_SIGNATURE_SOURCE_SHA256" in source
+    assert "action-summary-signature-v1" in source
+    assert "TRACKED_COMPATIBILITY_SHA256" in source
+    assert "WARM_EVAL_COMPAT_PYTHONPATH" in source
+    assert "-compat-${WARM_EVAL_COMPATIBILITY_SHA256:0:12}" in source
 
 
 def test_acp_eval_entrypoint_prepares_exact_libero_inputs() -> None:
@@ -58,6 +63,7 @@ def test_acp_eval_entrypoint_keeps_per_run_outputs_immutable() -> None:
     assert "immutable evaluation root already exists" in source
     assert 'tee "${WARM_EVAL_ROOT}.console.log"' in source
     assert "WARM_EVALUATION_NAMESPACE" in source
+    assert "evaluation_compatibility_sha256=" in source
 
 
 def test_acp_eval_entrypoint_owns_noninteractive_libero_config() -> None:

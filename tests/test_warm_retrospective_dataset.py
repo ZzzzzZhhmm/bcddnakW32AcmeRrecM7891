@@ -389,6 +389,25 @@ def test_action_summary_repetition_uses_all_bounded_predecessors() -> None:
     assert current[-1] == pytest.approx(1.0)
 
 
+def test_action_summary_keeps_model_width_but_uses_compact_signature() -> None:
+    actions = np.zeros((4, 7), dtype=np.float32)
+    actions[:, :6] = np.arange(24, dtype=np.float32).reshape(4, 6)
+    actions[-1, 6] = 1.0
+
+    vector, signature = _action_summary_vector(
+        actions,
+        action_horizon=16,
+        gripper_indices=(6,),
+        previous_signatures=(),
+    )
+
+    assert vector.shape == (3 * 7 + 4,)
+    assert signature.shape == (2 * 7 + 1,)
+    np.testing.assert_allclose(vector[:7], signature[:7])
+    np.testing.assert_allclose(vector[7:14], signature[7:14])
+    assert vector[20] == signature[14] == pytest.approx(1.0)
+
+
 def test_causal_event_replay_is_invariant_to_future_suffix() -> None:
     base = _episode()
     actions = np.array(base.model_actions, copy=True)
