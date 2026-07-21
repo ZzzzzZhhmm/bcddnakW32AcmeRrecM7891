@@ -384,24 +384,35 @@ four per-job values above.  A failed immutable job is retried with a new label
 such as `WARM_EVAL_LABEL=retry1`, never by overwriting its output root.
 
 The completed step-019100 checkpoint is bound to training commit
-`c4763a975298de6f00939360551616af7902d57a`. That revision has one
-evaluation-only defect which appears after a factual executed-action summary
-has been committed: the stored repetition signature is compact (15 values for
-LIBERO), while the next preview signature expands the gripper coordinates (21
-values). The ACP wrapper recognizes both the exact commit and exact source-file
-SHA-256, keeps the historical worktree clean, and enables only the
-`action-summary-signature-v1` startup repair. The repair inserts zero-valued
+`c4763a975298de6f00939360551616af7902d57a`. That revision has two
+evaluation-only portability defects. First, after a factual executed-action
+summary is committed, its stored repetition signature is compact (15 values
+for LIBERO), while the next preview signature expands the gripper coordinates
+(21 values). Second, the M1 encoder fingerprint treats the host-kernel string
+and GPU marketing name as numerical identity and assumes backend flags are
+inherited identically by every fresh ACP process.
+
+The ACP wrapper recognizes the exact commit and the exact hashes of all three
+affected source files, keeps the historical worktree clean, and enables only
+the `warm-step019100-eval-v2` startup repair. The repair inserts zero-valued
 terminal coordinates, so cosine similarity and normalized distance are
-numerically unchanged; it only restores equal array widths.
+numerically unchanged. For runtime portability it restores every contracted
+PyTorch/cuDNN/CUBLAS numerical flag before CUDA initialization, then strictly
+checks Python and library versions, CUDA/cuDNN versions, GPU compute
+capability, and all numerical flags. Only the host-kernel text and GPU
+marketing name may differ. A library, CUDA, compute-capability, or numerical
+policy mismatch still fails closed and prints a field-level diagnostic.
 
 Do not edit the detached checkpoint worktree manually. The wrapper verifies the
 repair against the current committed file, writes
 `evaluation_compatibility.json` into the immutable result root, and derives the
 effective evaluation namespace as
 `<base>-compat-<first-12-characters-of-patch-sha256>`. The online contract thus
-binds the repaired evaluation identity, while the runtime attestation continues
-to identify the unmodified training commit. Serial result validation rejects an
-affected-checkpoint result that lacks this compatibility evidence.
+binds the repaired evaluation identity and records the hashes of every patched
+source, while the runtime attestation continues to identify the unmodified
+training commit. Serial result validation rejects an affected-checkpoint result
+that lacks this compatibility evidence. Failed v1 result roots remain
+immutable; retry them under a new label such as `formal-s3407-v2`.
 
 Production v1 online coarse ANN intentionally runs the same contract-bound
 frozen DINO encoder used to build the bank. The learned semantic bridge maps

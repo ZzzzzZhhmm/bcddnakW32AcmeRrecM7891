@@ -180,8 +180,28 @@ register_git_safe_directory "${EVAL_CODE}"
 WARM_EVAL_COMPAT_PYTHONPATH=""
 KNOWN_ACTION_SIGNATURE_COMMIT="c4763a975298de6f00939360551616af7902d57a"
 KNOWN_ACTION_SIGNATURE_SOURCE_SHA256="aeede91e8770706c03c4c25fd670cf8a12749956755020a2f674971d32ec829f"
+KNOWN_RUNTIME_FINGERPRINT_SOURCE_SHA256="5f86780c35b95abbf9d4baf444b8880d932feff79b7bafff792fd6578086f787"
+KNOWN_LIBERO_EVALUATOR_SOURCE_SHA256="7f35265dfc42fdbfb4aea4fb19b9a394f5ab24e92633cbc7f53e55879b463ce9"
 ACTION_SIGNATURE_SOURCE="${EVAL_CODE}/src/fastwam/memory/online_episode_memory.py"
+RUNTIME_FINGERPRINT_SOURCE="${EVAL_CODE}/src/fastwam/memory/runtime_fingerprint.py"
+LIBERO_EVALUATOR_SOURCE="${EVAL_CODE}/experiments/libero/eval_libero_single.py"
 ACTION_SIGNATURE_SOURCE_SHA256="$(${PYTHON_BIN} - "${ACTION_SIGNATURE_SOURCE}" <<'PY'
+import hashlib
+import sys
+from pathlib import Path
+
+print(hashlib.sha256(Path(sys.argv[1]).read_bytes()).hexdigest())
+PY
+)"
+RUNTIME_FINGERPRINT_SOURCE_SHA256="$(${PYTHON_BIN} - "${RUNTIME_FINGERPRINT_SOURCE}" <<'PY'
+import hashlib
+import sys
+from pathlib import Path
+
+print(hashlib.sha256(Path(sys.argv[1]).read_bytes()).hexdigest())
+PY
+)"
+LIBERO_EVALUATOR_SOURCE_SHA256="$(${PYTHON_BIN} - "${LIBERO_EVALUATOR_SOURCE}" <<'PY'
 import hashlib
 import sys
 from pathlib import Path
@@ -192,10 +212,14 @@ PY
 if [[ "${TRAIN_COMMIT}" == "${KNOWN_ACTION_SIGNATURE_COMMIT}" ]]; then
   [[ "${ACTION_SIGNATURE_SOURCE_SHA256}" == "${KNOWN_ACTION_SIGNATURE_SOURCE_SHA256}" ]] \
     || fail "known evaluation commit has an unexpected online-memory source hash"
-  WARM_EVAL_COMPATIBILITY_ID="action-summary-signature-v1"
-  WARM_EVAL_COMPATIBILITY_DIR="${PROJECT_DIR}/scripts/evaluation_compat/action_summary_signature_v1"
+  [[ "${RUNTIME_FINGERPRINT_SOURCE_SHA256}" == "${KNOWN_RUNTIME_FINGERPRINT_SOURCE_SHA256}" ]] \
+    || fail "known evaluation commit has an unexpected runtime-fingerprint source hash"
+  [[ "${LIBERO_EVALUATOR_SOURCE_SHA256}" == "${KNOWN_LIBERO_EVALUATOR_SOURCE_SHA256}" ]] \
+    || fail "known evaluation commit has an unexpected LIBERO evaluator source hash"
+  WARM_EVAL_COMPATIBILITY_ID="warm-step019100-eval-v2"
+  WARM_EVAL_COMPATIBILITY_DIR="${PROJECT_DIR}/scripts/evaluation_compat/step019100_eval_v2"
   WARM_EVAL_COMPATIBILITY_FILE="${WARM_EVAL_COMPATIBILITY_DIR}/sitecustomize.py"
-  WARM_EVAL_COMPATIBILITY_RELATIVE="scripts/evaluation_compat/action_summary_signature_v1/sitecustomize.py"
+  WARM_EVAL_COMPATIBILITY_RELATIVE="scripts/evaluation_compat/step019100_eval_v2/sitecustomize.py"
   [[ -f "${WARM_EVAL_COMPATIBILITY_FILE}" ]] \
     || fail "required evaluation compatibility repair is missing"
   WARM_EVAL_COMPATIBILITY_SHA256="$(${PYTHON_BIN} - "${WARM_EVAL_COMPATIBILITY_FILE}" <<'PY'
@@ -218,9 +242,38 @@ PY
   export WARM_EVAL_COMPATIBILITY_ID WARM_EVAL_COMPATIBILITY_FILE
   export WARM_EVAL_COMPATIBILITY_SHA256 WARM_EVAL_COMPATIBILITY_LAUNCHER_COMMIT
   export WARM_EVAL_COMPATIBILITY_SOURCE_SHA256="${ACTION_SIGNATURE_SOURCE_SHA256}"
+  WARM_EVAL_COMPATIBILITY_TARGETS_JSON="$(${PYTHON_BIN} - \
+    "${ACTION_SIGNATURE_SOURCE_SHA256}" \
+    "${RUNTIME_FINGERPRINT_SOURCE_SHA256}" \
+    "${LIBERO_EVALUATOR_SOURCE_SHA256}" <<'PY'
+import json
+import sys
+
+print(json.dumps({
+    "src/fastwam/memory/online_episode_memory.py": sys.argv[1],
+    "src/fastwam/memory/runtime_fingerprint.py": sys.argv[2],
+    "experiments/libero/eval_libero_single.py": sys.argv[3],
+}, sort_keys=True, separators=(",", ":")))
+PY
+  )"
+  export WARM_EVAL_COMPATIBILITY_TARGETS_JSON
   export WARM_EVAL_COMPAT_ACTION_SIGNATURE="${WARM_EVAL_COMPATIBILITY_ID}"
   export WARM_EVAL_COMPAT_TRAIN_COMMIT="${TRAIN_COMMIT}"
   export WARM_EVAL_COMPAT_GRIPPER_INDICES="6"
+  export WARM_EVAL_COMPAT_ENCODER_CONTRACT_PATH="${WARM_ARTIFACT_ROOT}/m1/features/contracts/encoder_contract.json"
+  WARM_EVAL_COMPAT_ENCODER_DEVICE="$(${PYTHON_BIN} - \
+    "${WARM_EVAL_COMPAT_ENCODER_CONTRACT_PATH}" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+value = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+print(value["compute"]["device"])
+PY
+  )" || fail "cannot resolve the contracted M1 encoder device"
+  [[ "${WARM_EVAL_COMPAT_ENCODER_DEVICE}" == "cuda" ]] \
+    || fail "step-019100 LIBERO evaluation expects an M1 cuda encoder contract"
+  export WARM_EVAL_COMPAT_ENCODER_DEVICE
 elif [[ "${ACTION_SIGNATURE_SOURCE_SHA256}" == "${KNOWN_ACTION_SIGNATURE_SOURCE_SHA256}" ]]; then
   fail "known-buggy online-memory source appeared under an unexpected commit"
 fi

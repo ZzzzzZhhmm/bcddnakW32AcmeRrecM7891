@@ -27,9 +27,13 @@ def test_acp_eval_entrypoint_is_offline_and_commit_bound() -> None:
     assert 'cd "${EVAL_CODE}"' in source
     assert 'bash "${WARM_FORMAL_EVAL_LAUNCHER}"' in source
     assert "KNOWN_ACTION_SIGNATURE_SOURCE_SHA256" in source
-    assert "action-summary-signature-v1" in source
+    assert "KNOWN_RUNTIME_FINGERPRINT_SOURCE_SHA256" in source
+    assert "KNOWN_LIBERO_EVALUATOR_SOURCE_SHA256" in source
+    assert "warm-step019100-eval-v2" in source
     assert "TRACKED_COMPATIBILITY_SHA256" in source
     assert "WARM_EVAL_COMPAT_PYTHONPATH" in source
+    assert "WARM_EVAL_COMPAT_ENCODER_CONTRACT_PATH" in source
+    assert "WARM_EVAL_COMPAT_ENCODER_DEVICE" in source
     assert "-compat-${WARM_EVAL_COMPATIBILITY_SHA256:0:12}" in source
 
 

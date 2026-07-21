@@ -29,4 +29,7 @@ def test_formal_launcher_retains_clean_worktree_and_immutable_output_guards() ->
     assert 'contract["resolved_eval_config_sha256"]' in source
     assert "warm.evaluation-compatibility" in source
     assert "evaluation_compatibility.json" in source
+    assert "WARM_EVAL_COMPATIBILITY_TARGETS_JSON" in source
+    assert '"patched_sources": patched_sources' in source
+    assert "WARM_EVAL_COMPAT_RUNTIME_BRIDGE_ACTIVE=1" in source
     assert "effective evaluation namespace does not bind the repair hash" in source

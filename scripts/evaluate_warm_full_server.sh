@@ -82,6 +82,7 @@ if [[ -n "${WARM_EVAL_COMPATIBILITY_ID:-}" ]]; then
     WARM_EVAL_COMPATIBILITY_FILE
     WARM_EVAL_COMPATIBILITY_SHA256
     WARM_EVAL_COMPATIBILITY_SOURCE_SHA256
+    WARM_EVAL_COMPATIBILITY_TARGETS_JSON
     WARM_EVAL_COMPATIBILITY_LAUNCHER_COMMIT
     WARM_EVALUATION_NAMESPACE_BASE
     WARM_EVAL_COMPAT_TRAIN_COMMIT
@@ -108,6 +109,18 @@ patch_sha = hashlib.sha256(patch_path.read_bytes()).hexdigest()
 expected_patch_sha = os.environ["WARM_EVAL_COMPATIBILITY_SHA256"]
 if patch_sha != expected_patch_sha:
     raise SystemExit("evaluation compatibility repair changed after preflight")
+patched_sources = json.loads(
+    os.environ["WARM_EVAL_COMPATIBILITY_TARGETS_JSON"]
+)
+if not isinstance(patched_sources, dict) or not patched_sources:
+    raise SystemExit("evaluation compatibility targets must be a non-empty object")
+if any(
+    not isinstance(path, str)
+    or not isinstance(digest, str)
+    or re.fullmatch(r"[0-9a-f]{64}", digest) is None
+    for path, digest in patched_sources.items()
+):
+    raise SystemExit("evaluation compatibility targets are malformed")
 for name in (
     "WARM_EVAL_COMPATIBILITY_SOURCE_SHA256",
     "WARM_EVAL_COMPATIBILITY_LAUNCHER_COMMIT",
@@ -131,12 +144,16 @@ record = {
     "patch_id": os.environ["WARM_EVAL_COMPATIBILITY_ID"],
     "patch_file_sha256": patch_sha,
     "patched_source_sha256": os.environ["WARM_EVAL_COMPATIBILITY_SOURCE_SHA256"],
+    "patched_sources": patched_sources,
     "training_commit": os.environ["WARM_EVAL_COMPAT_TRAIN_COMMIT"],
     "launcher_commit": os.environ["WARM_EVAL_COMPATIBILITY_LAUNCHER_COMMIT"],
     "base_evaluation_namespace": base_namespace,
     "effective_evaluation_namespace": effective_namespace,
     "gripper_indices": [6],
-    "scope": "expand committed action-summary terminal coordinates for old online preview parity",
+    "scope": (
+        "expand committed action-summary terminal coordinates and bridge "
+        "numerically compatible ACP encoder runtimes"
+    ),
 }
 output.write_text(
     json.dumps(record, sort_keys=True, indent=2, allow_nan=False) + "\n",
@@ -252,4 +269,5 @@ print(f"resolved_config_stable sha256={actual}")
 PY
 rm -f "${RUNTIME_CONFIG_CHECK}"
 
+WARM_EVAL_COMPAT_RUNTIME_BRIDGE_ACTIVE=1 \
 python experiments/libero/eval_libero_single.py "${HYDRA_OVERRIDES[@]}"
