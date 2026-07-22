@@ -49,6 +49,7 @@ class RobotVideoDataset(torch.utils.data.Dataset):
         is_training_set=False,
         episode_catalog_path: Optional[str] = None,
         episode_split: Optional[str] = None,
+        episode_task_allowlist: Optional[list[str]] = None,
         global_sample_stride=1,
         action_video_freq_ratio: int = 1,
         skip_padding_as_possible: bool = False,
@@ -76,6 +77,7 @@ class RobotVideoDataset(torch.utils.data.Dataset):
             is_training_set=is_training_set,
             episode_catalog_path=episode_catalog_path,
             episode_split=episode_split,
+            episode_task_allowlist=episode_task_allowlist,
             global_sample_stride=global_sample_stride,
             strict_sample_loading=strict_sample_loading,
         )

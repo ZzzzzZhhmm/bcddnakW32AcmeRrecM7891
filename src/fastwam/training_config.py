@@ -97,6 +97,23 @@ def validate_training_config(cfg: Any) -> None:
             "allow_unattested_warm_checkpoints must resolve to a boolean"
         )
 
+    sampler = cfg.get("sampler", {})
+    if sampler is None or not hasattr(sampler, "get"):
+        raise TypeError("sampler must be a mapping")
+    sampler_mode = sampler.get("mode", "random")
+    if sampler_mode not in {"random", "rmbench_task_event_balanced"}:
+        raise ValueError(
+            "sampler.mode must be random or rmbench_task_event_balanced"
+        )
+    event_boost = sampler.get("event_boost", 1.5)
+    if (
+        isinstance(event_boost, bool)
+        or not isinstance(event_boost, (int, float))
+        or not math.isfinite(float(event_boost))
+        or not 1.0 <= float(event_boost) <= 4.0
+    ):
+        raise ValueError("sampler.event_boost must be finite and lie in [1, 4]")
+
     model_cfg = cfg.get("model")
     if model_cfg is not None:
         mot_checkpoint = model_cfg.get("mot_checkpoint_mixed_attn")

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Convert the exact official RMBench demo_clean release to LeRobot v2.1."""
+"""Convert a validated WARM RMBench data profile to LeRobot v2.1."""
 
 from __future__ import annotations
 
@@ -11,13 +11,18 @@ from fastwam.datasets.rmbench.converter import (
     RMBenchConversionConfig,
     convert_rmbench_dataset,
 )
+from fastwam.benchmarks.rmbench_sota import (
+    RMBENCH_DATA_PROFILES,
+    RMBENCH_SOTA_ROOT_SEED,
+    data_profile,
+)
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
-            "Strictly convert all nine official RMBench tasks (50 demo_clean "
-            "episodes each) into an atomic, hashed FastWAM LeRobot v2.1 tree."
+            "Convert all nine RMBench tasks using one closed WARM data profile "
+            "into an atomic, hashed FastWAM LeRobot v2.1 tree."
         )
     )
     parser.add_argument(
@@ -41,6 +46,15 @@ def build_parser() -> argparse.ArgumentParser:
         help="Immutable official dataset revision, preferably a Hugging Face commit SHA.",
     )
     parser.add_argument(
+        "--source-dataset",
+        default="TianxingChen/RMBench",
+        help=(
+            "Immutable source dataset identifier. Official50 requires "
+            "TianxingChen/RMBench; scaled auto-collected profiles must name "
+            "their own private snapshot."
+        ),
+    )
+    parser.add_argument(
         "--rmbench-code-revision",
         required=True,
         help="Immutable official RMBench Git commit used to define the source layout.",
@@ -62,15 +76,19 @@ def build_parser() -> argparse.ArgumentParser:
         help="Official RoboTwin/RMBench control and camera rate.",
     )
     parser.add_argument(
-        "--dev-per-task",
-        type=int,
-        default=5,
-        help="Whole source episodes reserved per task for development (default: 5).",
+        "--profile",
+        choices=tuple(RMBENCH_DATA_PROFILES),
+        default="official50-dev45",
+        help=(
+            "Closed data-volume/split profile. Scaled profiles expect an "
+            "already collected, automatically generated source tree with the "
+            "same nine-task/camera/action contract."
+        ),
     )
     parser.add_argument(
         "--split-seed",
         type=int,
-        default=42,
+        default=RMBENCH_SOTA_ROOT_SEED,
         help="Deterministic task-stratified episode split seed.",
     )
     parser.add_argument(
@@ -84,18 +102,22 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    profile = data_profile(args.profile)
     config = RMBenchConversionConfig(
         source_root=args.source_root,
         output_root=args.output_root,
         source_revision=args.source_revision,
+        source_dataset=args.source_dataset,
         data_revision=args.data_revision,
         rmbench_code_revision=args.rmbench_code_revision,
         dataset_id=args.dataset_id,
         fps=args.fps,
-        dev_per_task=args.dev_per_task,
+        dev_per_task=profile.dev_per_task,
         split_seed=args.split_seed,
         workers=args.workers,
-        strict_official_contract=True,
+        episodes_per_task=profile.episodes_per_task,
+        strict_official_contract=profile.strict_official_source,
+        data_profile=profile.name,
         progress=True,
     )
     manifest = convert_rmbench_dataset(config)

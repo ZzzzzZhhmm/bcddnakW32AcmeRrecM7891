@@ -1,0 +1,19 @@
+{
+  "schema": "warm.rmbench-experiment-matrix",
+  "schema_version": 1,
+  "benchmark": "RMBench",
+  "suite": "official9",
+  "root_seed": 3407,
+  "experiments": [
+    {"id": "context_only", "ablation_mode": "context_only", "memory_corruption": "clean", "num_inference_steps": 10},
+    {"id": "source_only_no_consequence", "ablation_mode": "source_only_no_consequence", "memory_corruption": "clean", "num_inference_steps": 10},
+    {"id": "full_warm", "ablation_mode": "full", "memory_corruption": "clean", "num_inference_steps": 10},
+    {"id": "corrupt_wrong_event", "ablation_mode": "full", "memory_corruption": "wrong_event", "num_inference_steps": 10},
+    {"id": "corrupt_reversed_action", "ablation_mode": "full", "memory_corruption": "reversed_action", "num_inference_steps": 10},
+    {"id": "corrupt_phase_shift", "ablation_mode": "full", "memory_corruption": "phase_shift", "num_inference_steps": 10},
+    {"id": "corrupt_effect_mismatch", "ablation_mode": "full", "memory_corruption": "effect_mismatch", "num_inference_steps": 10},
+    {"id": "full_warm_ode02", "ablation_mode": "full", "memory_corruption": "clean", "num_inference_steps": 2},
+    {"id": "full_warm_ode04", "ablation_mode": "full", "memory_corruption": "clean", "num_inference_steps": 4},
+    {"id": "full_warm_ode08", "ablation_mode": "full", "memory_corruption": "clean", "num_inference_steps": 8}
+  ]
+}

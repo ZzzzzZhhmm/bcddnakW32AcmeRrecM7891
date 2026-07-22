@@ -49,7 +49,7 @@ VIDEO_PATH_TEMPLATE = (
 )
 
 CONVERSION_SCHEMA = "warm.rmbench-to-lerobot"
-CONVERSION_SCHEMA_VERSION = 1
+CONVERSION_SCHEMA_VERSION = 2
 CATALOG_FILENAME = "warm_episode_catalog.json"
 MANIFEST_FILENAME = "rmbench_conversion_manifest.json"
 

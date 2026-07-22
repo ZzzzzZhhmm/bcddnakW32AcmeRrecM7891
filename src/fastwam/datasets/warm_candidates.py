@@ -234,18 +234,37 @@ class RuntimeCandidateDatasetAdapter(torch.utils.data.Dataset):
             lerobot_dataset,
             catalog,
             query_split=resolver.query_split,
+            task_allowlist=getattr(
+                lerobot_dataset, "episode_task_allowlist", None
+            ),
             require_introspection=normalization_stats_path is not None,
         )
         if normalization_stats_path is not None:
+            control_mode = resolver.action_space.control_mode
+            expected_video = {
+                "libero_delta_eef_axis_angle_plus_gripper": (
+                    (224, 448),
+                    "horizontal",
+                ),
+                "robotwin_bimanual_qpos_plus_grippers": (
+                    (384, 320),
+                    "robotwin",
+                ),
+            }.get(control_mode)
+            if expected_video is None:
+                raise RuntimeCandidateDatasetContractError(
+                    f"unsupported formal WARM control mode {control_mode!r}"
+                )
             if (
-                tuple(getattr(dataset, "video_size", ())) != (224, 448)
-                or getattr(dataset, "concat_multi_camera", None) != "horizontal"
+                tuple(getattr(dataset, "video_size", ())) != expected_video[0]
+                or getattr(dataset, "concat_multi_camera", None)
+                != expected_video[1]
                 or int(getattr(dataset, "num_frames", -1))
                 != resolver.action_horizon + 1
             ):
                 raise RuntimeCandidateDatasetContractError(
-                    "formal WARM LIBERO training requires the exact two-camera "
-                    "224x448 horizontal video and H+1 frame contract"
+                    "formal WARM dataset video layout does not match the "
+                    f"{control_mode!r} action contract"
                 )
             stats_path = Path(normalization_stats_path).expanduser().resolve()
             if not stats_path.is_file():
@@ -320,6 +339,9 @@ class RuntimeCandidateDatasetAdapter(torch.utils.data.Dataset):
                 "WARM action contract cannot define the M1 oracle distance"
             ) from exc
         self.global_sample_stride = stride
+        self._sampling_query_records_cache: tuple[
+            tuple[QueryId, str], ...
+        ] | None = None
         # Preserve the exact object path used by FastWAMTrainer:
         # ``dataset.lerobot_dataset.processor``.
         self.lerobot_dataset = lerobot_dataset
@@ -340,48 +362,66 @@ class RuntimeCandidateDatasetAdapter(torch.utils.data.Dataset):
             "FastWAMProcessor"
         ):
             raise RuntimeCandidateDatasetContractError(
-                "formal WARM LIBERO training requires the exact FastWAMProcessor"
+                "formal WARM training requires the exact FastWAMProcessor"
             )
-        if contract.control_mode != (
+        is_libero = contract.control_mode == (
             "libero_delta_eef_axis_angle_plus_gripper"
-        ):
+        )
+        is_robotwin = contract.control_mode == (
+            "robotwin_bimanual_qpos_plus_grippers"
+        )
+        if not (is_libero or is_robotwin):
             raise RuntimeCandidateDatasetContractError(
-                "the WARM LIBERO processor validator only supports "
-                "control_mode='libero_delta_eef_axis_angle_plus_gripper'"
+                f"unsupported WARM processor control mode {contract.control_mode!r}"
             )
-        expected_arm_dims = tuple(range(6))
+        if is_libero:
+            expected_action_dim = 7
+            expected_arm_dims = tuple(range(6))
+            expected_gripper_dims = (6,)
+            expected_proprio_dim = 8
+            expected_cameras = 2
+            expected_norm_mode = "global:min/max"
+        else:
+            expected_action_dim = 14
+            expected_gripper_dims = (6, 13)
+            expected_arm_dims = tuple(
+                index for index in range(14) if index not in expected_gripper_dims
+            )
+            expected_proprio_dim = 14
+            expected_cameras = 3
+            expected_norm_mode = "global:z-score"
         if (
-            contract.action_dim != 7
+            contract.action_dim != expected_action_dim
             or contract.arm_dims != expected_arm_dims
-            or contract.gripper_dims != (6,)
+            or contract.gripper_dims != expected_gripper_dims
         ):
             raise RuntimeCandidateDatasetContractError(
-                "the WARM LIBERO control mode requires six delta EEF channels "
-                "followed by one absolute gripper channel"
+                "processor action-space dimensions disagree with the WARM contract"
             )
         if int(getattr(processor, "action_output_dim", -1)) != contract.action_dim:
             raise RuntimeCandidateDatasetContractError(
                 "processor action_output_dim does not match the WARM action contract"
             )
-        if int(getattr(processor, "proprio_output_dim", -1)) != 8:
+        if int(getattr(processor, "proprio_output_dim", -1)) != expected_proprio_dim:
             raise RuntimeCandidateDatasetContractError(
-                "the WARM LIBERO processor must emit the exact 8D proprio vector"
+                "processor proprio dimension does not match the WARM action contract"
             )
         if (
             int(getattr(processor, "num_obs_steps", -1))
             != resolver.action_horizon + 1
-            or int(getattr(processor, "num_output_cameras", -1)) != 2
+            or int(getattr(processor, "num_output_cameras", -1))
+            != expected_cameras
         ):
             raise RuntimeCandidateDatasetContractError(
                 "processor observation horizon/camera count does not match "
-                "the WARM LIBERO contract"
+                "the WARM action contract"
             )
         use_stepwise_norm = bool(
             getattr(processor, "use_stepwise_action_norm", True)
         )
         if use_stepwise_norm:
             raise RuntimeCandidateDatasetContractError(
-                "WARM LIBERO model-space actions require stepwise normalization disabled"
+                "WARM model-space actions require stepwise normalization disabled"
             )
         processor_norm_mode = str(
             getattr(processor, "norm_default_mode", "")
@@ -390,7 +430,10 @@ class RuntimeCandidateDatasetAdapter(torch.utils.data.Dataset):
             f"{'stepwise' if use_stepwise_norm else 'global'}:"
             f"{processor_norm_mode}"
         )
-        if canonical_norm_mode != contract.normalization_mode:
+        if (
+            canonical_norm_mode != contract.normalization_mode
+            or canonical_norm_mode != expected_norm_mode
+        ):
             raise RuntimeCandidateDatasetContractError(
                 "processor normalization mode does not match the WARM action contract"
             )
@@ -467,20 +510,33 @@ class RuntimeCandidateDatasetAdapter(torch.utils.data.Dataset):
             raise RuntimeCandidateDatasetContractError(
                 "processor action/state metadata is incomplete"
             ) from exc
-        if action_signature != (("default", 7, 7),):
-            raise RuntimeCandidateDatasetContractError(
-                "processor must preserve the exact default 7D LIBERO action field"
-            )
-        if state_signature != (("default", 8, 8),):
-            raise RuntimeCandidateDatasetContractError(
-                "processor must preserve the exact default 8D LIBERO state field"
-            )
-        if image_signature != (
-            ("image", (3, 224, 224)),
-            ("wrist_image", (3, 224, 224)),
+        if action_signature != (
+            ("default", expected_action_dim, expected_action_dim),
         ):
             raise RuntimeCandidateDatasetContractError(
-                "processor must preserve FastWAM LIBERO's ordered two-camera metadata"
+                "processor must preserve the contract-bound default action field"
+            )
+        if state_signature != (
+            ("default", expected_proprio_dim, expected_proprio_dim),
+        ):
+            raise RuntimeCandidateDatasetContractError(
+                "processor must preserve the contract-bound default state field"
+            )
+        expected_images = (
+            (
+                ("image", (3, 224, 224)),
+                ("wrist_image", (3, 224, 224)),
+            )
+            if is_libero
+            else (
+                ("cam_high", (3, 240, 320)),
+                ("cam_left_wrist", (3, 240, 320)),
+                ("cam_right_wrist", (3, 240, 320)),
+            )
+        )
+        if image_signature != expected_images:
+            raise RuntimeCandidateDatasetContractError(
+                "processor camera metadata differs from the benchmark profile"
             )
 
         merger = getattr(processor, "action_state_merger", None)
@@ -504,6 +560,12 @@ class RuntimeCandidateDatasetAdapter(torch.utils.data.Dataset):
                 "processor must not pad action or state dimensions"
             )
         delta_masks = getattr(processor, "delta_action_dim_mask", None)
+        if is_robotwin:
+            if delta_masks is not None:
+                raise RuntimeCandidateDatasetContractError(
+                    "native RoboTwin qpos must not use a delta-action mask"
+                )
+            return
         if not isinstance(delta_masks, Mapping):
             raise RuntimeCandidateDatasetContractError(
                 "processor must expose the LIBERO delta-action dimension mask"
@@ -559,6 +621,7 @@ class RuntimeCandidateDatasetAdapter(torch.utils.data.Dataset):
         catalog: EpisodeCatalog,
         *,
         query_split: str,
+        task_allowlist: tuple[str, ...] | None,
         require_introspection: bool,
     ) -> None:
         """When introspection is available, prove the wrapped split exactly."""
@@ -594,6 +657,10 @@ class RuntimeCandidateDatasetAdapter(torch.utils.data.Dataset):
                         for record in catalog.episodes
                         if record.dataset_index == descriptor.dataset_index
                         and record.split == query_split
+                        and (
+                            task_allowlist is None
+                            or record.primary_task in task_allowlist
+                        )
                     )
                 )
                 selected = getattr(child, "episodes", None)
@@ -664,6 +731,62 @@ class RuntimeCandidateDatasetAdapter(torch.utils.data.Dataset):
 
     def __len__(self) -> int:
         return len(self._dataset)
+
+    def sampling_query_records(self) -> tuple[tuple[QueryId, str], ...]:
+        """Return index-aligned query/task metadata without decoding videos."""
+
+        cached = self._sampling_query_records_cache
+        if cached is not None:
+            return cached
+        multi_dataset = getattr(self.lerobot_dataset, "multi_dataset", None)
+        children = getattr(multi_dataset, "_datasets", None)
+        if children is None:
+            raise RuntimeCandidateDatasetContractError(
+                "balanced sampling requires LeRobot child introspection"
+            )
+        rows: list[tuple[QueryId, str]] = []
+        for dataset_index, child in enumerate(children):
+            selected = getattr(child, "episodes", None)
+            if selected is None:
+                selected = range(int(child.meta.total_episodes))
+            selected = tuple(int(value) for value in selected)
+            starts = tuple(
+                int(value) for value in child.episode_data_index["from"].tolist()
+            )
+            stops = tuple(
+                int(value) for value in child.episode_data_index["to"].tolist()
+            )
+            if not (len(selected) == len(starts) == len(stops)):
+                raise RuntimeCandidateDatasetContractError(
+                    "selected episodes and LeRobot episode ranges disagree"
+                )
+            for episode_index, start, stop in zip(
+                selected, starts, stops, strict=True
+            ):
+                record = self._episode_records.get((dataset_index, episode_index))
+                if record is None or stop - start != record.length:
+                    raise RuntimeCandidateDatasetContractError(
+                        "catalog episode length disagrees with LeRobot sampling range"
+                    )
+                for frame_index in range(record.length):
+                    rows.append(
+                        (
+                            QueryId(
+                                record.dataset_id,
+                                record.dataset_index,
+                                record.episode_index,
+                                frame_index,
+                            ),
+                            record.primary_task,
+                        )
+                    )
+        if len(rows) != len(self):
+            raise RuntimeCandidateDatasetContractError(
+                "balanced-sampling metadata does not align with dataset length"
+            )
+        result = tuple(rows)
+        self._sampling_query_records_cache = result
+        return result
 
     def __getattr__(self, name: str) -> Any:
         # Called only after ordinary attribute lookup fails.  Use __dict__ to

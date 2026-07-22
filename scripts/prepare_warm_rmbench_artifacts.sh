@@ -10,6 +10,10 @@ source "${SCRIPT_DIR}/warm_server_common.sh"
 
 RMBENCH_CODE_REVISION="${RMBENCH_CODE_REVISION:-57ee09cbc6267bc36ca0ac2d8d1c5c3b245c112c}"
 RMBENCH_DATASET_REVISION="${RMBENCH_DATASET_REVISION:-855e90e1213d150bf4889130e83398f107314681}"
+RMBENCH_SOURCE_REVISION="${RMBENCH_SOURCE_REVISION:-${RMBENCH_DATASET_REVISION}}"
+WARM_RMBENCH_DATA_PROFILE="${WARM_RMBENCH_DATA_PROFILE:-official50-dev45}"
+RMBENCH_SOURCE_DATASET="${RMBENCH_SOURCE_DATASET:-TianxingChen/RMBench}"
+RMBENCH_DATASET_ID="${RMBENCH_DATASET_ID:-rmbench_demo_clean_v1}"
 
 warm_require_env \
   WARM_ARTIFACT_ROOT \
@@ -23,6 +27,7 @@ warm_require_env \
   WARM_VAE_CHECKPOINT
 warm_require_sha40 "${RMBENCH_CODE_REVISION}" "RMBENCH_CODE_REVISION"
 warm_require_sha40 "${RMBENCH_DATASET_REVISION}" "RMBENCH_DATASET_REVISION"
+warm_require_sha40 "${RMBENCH_SOURCE_REVISION}" "RMBENCH_SOURCE_REVISION"
 warm_require_sha40 "${WARM_DINO_REVISION}" "WARM_DINO_REVISION"
 warm_require_private_checkout
 warm_require_read_only_external_checkout "${RMBENCH_ROOT}" "${RMBENCH_CODE_REVISION}"
@@ -44,18 +49,19 @@ if [[ ! -e "${RMBENCH_LEROBOT_ROOT}" && ! -L "${RMBENCH_LEROBOT_ROOT}" ]]; then
   python scripts/convert_rmbench_to_lerobot.py \
     --source-root "${RMBENCH_SOURCE_ROOT}" \
     --output-root "${RMBENCH_LEROBOT_ROOT}" \
-    --source-revision "${RMBENCH_DATASET_REVISION}" \
+    --source-revision "${RMBENCH_SOURCE_REVISION}" \
+    --source-dataset "${RMBENCH_SOURCE_DATASET}" \
     --rmbench-code-revision "${RMBENCH_CODE_REVISION}" \
     --data-revision "${WARM_CODE_REVISION}" \
-    --dataset-id rmbench_demo_clean_v1 \
-    --dev-per-task 5 \
-    --split-seed 42 \
+    --dataset-id "${RMBENCH_DATASET_ID}" \
+    --profile "${WARM_RMBENCH_DATA_PROFILE}" \
+    --split-seed 3407 \
     --workers "${WARM_CONVERSION_WORKERS:-4}"
 fi
 
 python scripts/validate_rmbench_conversion.py \
   --dataset-root "${RMBENCH_LEROBOT_ROOT}" \
-  --source-revision "${RMBENCH_DATASET_REVISION}" \
+  --source-revision "${RMBENCH_SOURCE_REVISION}" \
   --rmbench-code-revision "${RMBENCH_CODE_REVISION}"
 
 M1="${WARM_ARTIFACT_ROOT}/m1"
@@ -89,7 +95,7 @@ python scripts/compute_warm_robotwin_train_stats.py \
   --audit-report "${AUDIT}" \
   --dataset-root "${RMBENCH_LEROBOT_ROOT}" \
   --data-config configs/data/rmbench_3cam.yaml \
-  --dataset-revision "${RMBENCH_DATASET_REVISION}" \
+  --dataset-revision "${RMBENCH_SOURCE_REVISION}" \
   --output "${M1}/train_stats"
 
 python scripts/precompute_warm_features.py \

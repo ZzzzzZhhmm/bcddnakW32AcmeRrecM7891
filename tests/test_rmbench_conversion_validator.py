@@ -56,8 +56,10 @@ def _artifact(root: Path) -> None:
             "artifacts": artifacts,
         },
         "protocol": {
+            "data_profile": "official50-dev45",
             "official_task_allow_list": list(OFFICIAL_RMBENCH_TASKS),
             "episodes_per_task": OFFICIAL_EPISODES_PER_TASK,
+            "split": {"dev_per_task": 5},
         },
         "episodes": [
             {"fixture": index}

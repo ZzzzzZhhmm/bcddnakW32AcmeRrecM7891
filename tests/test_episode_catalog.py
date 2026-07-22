@@ -128,3 +128,34 @@ def test_resolve_exact_split_indices_in_configured_dataset_order(tmp_path: Path)
             split="train",
             configured_episode_totals=[4, 3],
         )
+
+
+def test_resolve_split_can_filter_one_specialist_task(tmp_path: Path) -> None:
+    root = tmp_path / "dataset"
+    _write_dataset(root, task="placeholder", episode_count=4)
+    base = scan_lerobot_datasets([root])
+    episodes = tuple(
+        type(record)(
+            **{
+                **record.__dict__,
+                "tasks": ("alpha" if record.episode_index < 2 else "beta",),
+                "split": "train",
+            }
+        )
+        for record in base.episodes
+    )
+    catalog = EpisodeCatalog(base.datasets, episodes)
+
+    selected = episode_indices_by_dataset(
+        catalog,
+        split="train",
+        task_allowlist=["beta"],
+    )
+
+    assert selected == ((2, 3),)
+    with pytest.raises(ValueError, match="unknown tasks"):
+        episode_indices_by_dataset(
+            catalog,
+            split="train",
+            task_allowlist=["unknown"],
+        )

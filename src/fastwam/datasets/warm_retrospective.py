@@ -561,6 +561,25 @@ class RetrospectiveFeatureStore:
     def action_summary_chunk_size(self) -> int:
         return self._action_summary_chunk_size
 
+    def has_recent_event(self, query_id: QueryId) -> bool:
+        """Whether factual event evidence entered memory in the latest chunk."""
+
+        key = (
+            query_id.dataset_id,
+            query_id.dataset_index,
+            query_id.episode_index,
+        )
+        try:
+            frames = self._event_frames[key][int(query_id.frame_index)]
+        except KeyError as exc:
+            raise RetrospectiveFeatureStoreError(
+                f"no event replay metadata for query {query_id!r}"
+            ) from exc
+        if not frames:
+            return False
+        lower = max(0, int(query_id.frame_index) - self._action_summary_chunk_size)
+        return max(frames) >= lower
+
     def _features(self, query_id: QueryId):
         if not isinstance(query_id, QueryId):
             raise TypeError("query_id must be QueryId")
@@ -749,6 +768,7 @@ class RuntimeRetrospectiveDatasetAdapter(torch.utils.data.Dataset):
         self._dataset = dataset
         self._feature_store = feature_store
         self.lerobot_dataset = dataset.lerobot_dataset
+        self._sampling_strata_cache: tuple[tuple[str, bool], ...] | None = None
 
     @property
     def resolver(self) -> RuntimeCandidateResolver:
@@ -765,6 +785,23 @@ class RuntimeRetrospectiveDatasetAdapter(torch.utils.data.Dataset):
 
     def __len__(self) -> int:
         return len(self._dataset)
+
+    def sampling_strata(self) -> tuple[tuple[str, bool], ...]:
+        """Return deterministic task/recent-event strata for the train sampler."""
+
+        cached = self._sampling_strata_cache
+        if cached is not None:
+            return cached
+        result = tuple(
+            (task_name, self._feature_store.has_recent_event(query_id))
+            for query_id, task_name in self._dataset.sampling_query_records()
+        )
+        if len(result) != len(self):  # pragma: no cover - defensive
+            raise RetrospectiveFeatureStoreError(
+                "sampling strata do not align with retrospective dataset"
+            )
+        self._sampling_strata_cache = result
+        return result
 
     def __getitem__(self, index: int) -> dict[str, Any]:
         sample = dict(self._dataset[index])

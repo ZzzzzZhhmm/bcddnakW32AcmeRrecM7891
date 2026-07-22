@@ -470,6 +470,11 @@ normalizer, split, or action horizon.
 
 ## 8. Official RMBench data, training, and evaluation
 
+This section remains the strict official50/reproducibility route. For the
+seed-3407 score-oriented `scale200`/`scale500`, shared-plus-specialist plan and
+one-task ACP entrypoints, use
+`docs/RMBENCH_SOTA_TRAINING_EVALUATION_PLAN_ZH.md`.
+
 RMBench uses a separate, pinned simulator checkout and the exact official nine
 tasks. It does not reuse RoboTwin helper tasks as paper scores. The code pin is
 `57ee09cbc6267bc36ca0ac2d8d1c5c3b245c112c`; the Hugging Face data pin is

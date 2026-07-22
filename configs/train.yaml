@@ -31,6 +31,9 @@ eval_num_inference_steps: 10
 gradient_accumulation_steps: 1
 mixed_precision: "bf16" # one of: [no, fp16, bf16]
 seed: 42
+sampler:
+  mode: random
+  event_boost: 1.5
 max_grad_norm: 1.0
 # Never let one overflowing distributed gradient update corrupt every rank.
 # The offending synchronized update is skipped; repeated failures abort with

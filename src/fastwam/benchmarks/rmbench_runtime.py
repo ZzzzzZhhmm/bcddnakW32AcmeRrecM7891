@@ -222,6 +222,34 @@ def build_rmbench_policy_runtime_projection(
         ode_steps,
         field="online.num_inference_steps",
     )
+    recent_event_capacity = _integer(
+        online.get("recent_event_capacity"),
+        field="warm_online.recent_event_capacity",
+        minimum=2,
+    )
+    action_summary_capacity = _integer(
+        online.get("action_summary_capacity"),
+        field="warm_online.action_summary_capacity",
+        minimum=1,
+    )
+    _same(
+        _integer(
+            args.get("warm_recent_event_capacity"),
+            field="warm_recent_event_capacity",
+            minimum=2,
+        ),
+        recent_event_capacity,
+        field="warm_recent_event_capacity",
+    )
+    _same(
+        _integer(
+            args.get("warm_action_summary_capacity"),
+            field="warm_action_summary_capacity",
+            minimum=1,
+        ),
+        action_summary_capacity,
+        field="warm_action_summary_capacity",
+    )
 
     artifact_args = {
         "online_contract": "warm_online_contract_path",
@@ -359,6 +387,8 @@ def build_rmbench_policy_runtime_projection(
             "mode": str(online.get("mode")),
             "evaluation_namespace": namespace,
             "top_k": top_k,
+            "recent_event_capacity": recent_event_capacity,
+            "action_summary_capacity": action_summary_capacity,
             "dino_device": str(online.get("dino_device")),
             "dino_batch_size": _integer(
                 online.get("dino_batch_size"), field="dino_batch_size", minimum=1

@@ -66,20 +66,25 @@ tasks from HDF5/RoboTwin format into a versioned LeRobot dataset. Pilot Put Back
 Block, Rearrange Blocks, and Battery Try before all nine tasks/100 rollouts.
 
 The production converter is `scripts/convert_rmbench_to_lerobot.py`. It has a
-closed allow-list for the nine paper tasks, requires exactly 50 `demo_clean`
-episodes per task, and never writes under the official RMBench checkout. Pin
-both the official dataset revision and the official RMBench code revision:
+closed allow-list for the nine paper tasks and three closed data profiles:
+`official50-dev45`, `scale200-dev190`, and `scale500-dev480`. It never writes
+under the official RMBench checkout. The official50 profile requires the
+official source; scaled profiles require a separately attested, automatically
+collected source tree. The full score-oriented plan is in
+`docs/RMBENCH_SOTA_TRAINING_EVALUATION_PLAN_ZH.md`. Pin both the official
+dataset revision and the official RMBench code revision:
 
 ```bash
 python scripts/convert_rmbench_to_lerobot.py \
   --source-root /server/external/RMBench \
   --output-root /server/data/rmbench_demo_clean_lerobot_v2_1 \
   --source-revision <exact-Hugging-Face-dataset-commit> \
+  --source-dataset TianxingChen/RMBench \
   --rmbench-code-revision 57ee09cbc6267bc36ca0ac2d8d1c5c3b245c112c \
   --data-revision warm-rmbench-demo-clean-v1 \
   --dataset-id rmbench_demo_clean_v1 \
-  --dev-per-task 5 \
-  --split-seed 42 \
+  --profile official50-dev45 \
+  --split-seed 3407 \
   --workers 4
 ```
 

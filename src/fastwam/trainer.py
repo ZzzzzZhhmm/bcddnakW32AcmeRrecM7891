@@ -20,7 +20,10 @@ from torch.utils.data import DataLoader
 from .utils.fs import ensure_dir
 from .utils.logging_config import get_logger, setup_logging
 from .utils.pytorch_utils import set_global_seed
-from .utils.samplers import ResumableEpochSampler
+from .utils.samplers import (
+    ResumableEpochSampler,
+    ResumableTaskEventBalancedSampler,
+)
 from .utils.video_io import save_mp4
 from .utils.video_metrics import pil_frames_to_video_tensor, video_psnr, video_ssim
 from .training_config import validate_training_config
@@ -90,6 +93,9 @@ class Wan22Trainer:
             raise ValueError("max_nonfinite_gradient_skips must be positive")
         self._consecutive_nonfinite_gradient_skips = 0
         self.seed = int(cfg.seed)
+        sampler_cfg = cfg.get("sampler", {})
+        self.sampler_mode = str(sampler_cfg.get("mode", "random")).strip()
+        self.sampler_event_boost = float(sampler_cfg.get("event_boost", 1.5))
         
         self.resume = cfg.resume
         allow_unattested = cfg.get("allow_unattested_warm_checkpoints", False)
@@ -600,11 +606,26 @@ class Wan22Trainer:
         return result.get("value")
 
     def _build_loader(self, dataset, worker_init_fn=None):
-        self.train_sampler = ResumableEpochSampler(
-            dataset=dataset,
-            seed=self.seed,
-            batch_size=self.batch_size,
-            num_processes=self.accelerator.num_processes,
+        sampler_kwargs = {
+            "dataset": dataset,
+            "seed": self.seed,
+            "batch_size": self.batch_size,
+            "num_processes": self.accelerator.num_processes,
+        }
+        if self.sampler_mode == "random":
+            self.train_sampler = ResumableEpochSampler(**sampler_kwargs)
+        elif self.sampler_mode == "rmbench_task_event_balanced":
+            self.train_sampler = ResumableTaskEventBalancedSampler(
+                **sampler_kwargs,
+                event_boost=self.sampler_event_boost,
+            )
+        else:  # guarded by validate_training_config; retained fail-closed.
+            raise ValueError(f"unsupported sampler mode {self.sampler_mode!r}")
+        logger.info(
+            "Training sampler: mode=%s event_boost=%.3f samples=%d",
+            self.sampler_mode,
+            self.sampler_event_boost,
+            len(dataset),
         )
         return DataLoader(
             dataset,

@@ -295,6 +295,12 @@ def _compose_runtime_config(
             or "warm-rmbench-full-v1"
         )
         online.top_k = int(usr_args.get("warm_top_k", 32))
+        online.recent_event_capacity = int(
+            usr_args.get("warm_recent_event_capacity", 6)
+        )
+        online.action_summary_capacity = int(
+            usr_args.get("warm_action_summary_capacity", 2)
+        )
         online.dino_device = str(usr_args.get("warm_dino_device") or "cuda")
         online.dino_batch_size = int(usr_args.get("warm_dino_batch_size", 1))
         online.experiment_id = str(usr_args.get("warm_experiment_id") or "")
@@ -307,6 +313,9 @@ def _compose_runtime_config(
         )
         cfg.EVALUATION.action_horizon = int(usr_args.get("action_horizon", 32))
         cfg.EVALUATION.replan_steps = int(usr_args.get("replan_steps", 10))
+        cfg.model.retrospection.episode_action_chunk_size = int(
+            cfg.EVALUATION.replan_steps
+        )
         cfg.EVALUATION.num_inference_steps = int(
             usr_args.get("num_inference_steps", cfg.eval_num_inference_steps)
         )
@@ -657,7 +666,8 @@ class RMBenchWarmPolicy:
             action_horizon=32,
             semantic_dim=768,
             gripper_indices=ROBOTWIN_GRIPPER_DIMS,
-            recent_event_capacity=6,
+            recent_event_capacity=int(online_cfg.recent_event_capacity),
+            action_summary_capacity=int(online_cfg.action_summary_capacity),
             episode_namespace="rmbench-eval",
         )
         self.controller = OnlineEpisodeController(
@@ -687,6 +697,17 @@ class RMBenchWarmPolicy:
             raise ValueError("online contract must bind RMBench H=32/D=14")
         if contract.top_k != int(usr_args.get("warm_top_k", 32)):
             raise ValueError("online top-k differs from contract")
+        for field, minimum in (
+            ("warm_recent_event_capacity", 2),
+            ("warm_action_summary_capacity", 1),
+        ):
+            value = usr_args.get(field)
+            if (
+                isinstance(value, bool)
+                or not isinstance(value, int)
+                or value < minimum
+            ):
+                raise ValueError(f"{field} must be an integer >= {minimum}")
         if contract.source_policy != "fixed_context_top1":
             raise ValueError("full RMBench WARM requires fixed_context_top1")
         namespace = str(

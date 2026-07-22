@@ -28,6 +28,8 @@ Start here:
 - [`docs/WARM_FULL_SERVER_RUNBOOK.md`](docs/WARM_FULL_SERVER_RUNBOOK.md) is the
   executable server path from a clean private clone through artifacts,
   training, and evaluation.
+- [`docs/RMBENCH_SOTA_TRAINING_EVALUATION_PLAN_ZH.md`](docs/RMBENCH_SOTA_TRAINING_EVALUATION_PLAN_ZH.md)
+  is the seed-3407, scaled-data, shared-plus-specialist RMBench execution plan.
 - [`docs/WARM_FULL_ARCHITECTURE.md`](docs/WARM_FULL_ARCHITECTURE.md) describes
   the architecture that the current code actually implements.
 - [`docs/DATA_AND_EVAL_PROTOCOL.md`](docs/DATA_AND_EVAL_PROTOCOL.md) and

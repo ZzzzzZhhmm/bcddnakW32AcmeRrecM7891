@@ -42,6 +42,8 @@ warm_initial_states_path: null
 warm_task_definition_path: null
 warm_evaluation_namespace: warm-rmbench-full-v1
 warm_top_k: 32
+warm_recent_event_capacity: 6
+warm_action_summary_capacity: 2
 warm_dino_device: cuda
 warm_dino_batch_size: 1
 warm_telemetry_path: null

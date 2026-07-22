@@ -14,11 +14,11 @@ from fastwam.datasets.rmbench.constants import (
     CONVERSION_SCHEMA,
     CONVERSION_SCHEMA_VERSION,
     MANIFEST_FILENAME,
-    OFFICIAL_EPISODES_PER_TASK,
     OFFICIAL_RMBENCH_TASKS,
     OFFICIAL_TASK_CONFIG,
 )
 from fastwam.datasets.rmbench.source import canonical_json_bytes, file_sha256
+from fastwam.benchmarks.rmbench_sota import data_profile
 
 
 class RMBenchConversionValidationError(RuntimeError):
@@ -104,8 +104,13 @@ def validate_conversion(
         raise RMBenchConversionValidationError("conversion manifest SHA-256 mismatch")
 
     source = _mapping(manifest["source"], "source")
-    if source.get("dataset") != "TianxingChen/RMBench":
-        raise RMBenchConversionValidationError("unexpected RMBench source dataset")
+    source_dataset = source.get("dataset")
+    if (
+        not isinstance(source_dataset, str)
+        or not source_dataset
+        or source_dataset.strip() != source_dataset
+    ):
+        raise RMBenchConversionValidationError("invalid RMBench source dataset")
     if source.get("revision") != source_revision:
         raise RMBenchConversionValidationError("RMBench dataset revision mismatch")
     if source.get("rmbench_code_revision") != rmbench_code_revision:
@@ -114,13 +119,26 @@ def validate_conversion(
         raise RMBenchConversionValidationError("RMBench task config mismatch")
 
     protocol = _mapping(manifest["protocol"], "protocol")
+    try:
+        profile = data_profile(protocol.get("data_profile"))
+    except (TypeError, ValueError) as exc:
+        raise RMBenchConversionValidationError(
+            "conversion manifest has an unsupported data profile"
+        ) from exc
+    if profile.strict_official_source and source_dataset != "TianxingChen/RMBench":
+        raise RMBenchConversionValidationError(
+            "official50 profile must bind TianxingChen/RMBench"
+        )
     if tuple(protocol.get("official_task_allow_list", ())) != OFFICIAL_RMBENCH_TASKS:
         raise RMBenchConversionValidationError("official nine-task order mismatch")
-    if protocol.get("episodes_per_task") != OFFICIAL_EPISODES_PER_TASK:
-        raise RMBenchConversionValidationError("official episode count mismatch")
+    if protocol.get("episodes_per_task") != profile.episodes_per_task:
+        raise RMBenchConversionValidationError("profile episode count mismatch")
+    split = _mapping(protocol.get("split"), "protocol.split")
+    if split.get("dev_per_task") != profile.dev_per_task:
+        raise RMBenchConversionValidationError("profile dev count mismatch")
     episodes = manifest["episodes"]
     if not isinstance(episodes, list) or len(episodes) != (
-        len(OFFICIAL_RMBENCH_TASKS) * OFFICIAL_EPISODES_PER_TASK
+        len(OFFICIAL_RMBENCH_TASKS) * profile.episodes_per_task
     ):
         raise RMBenchConversionValidationError("conversion episode inventory mismatch")
 

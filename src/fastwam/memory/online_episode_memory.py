@@ -178,6 +178,7 @@ class OnlineRetrospectiveEpisodeMemory:
         semantic_dim: int,
         gripper_indices: tuple[int, ...] = (),
         recent_event_capacity: int = 6,
+        action_summary_capacity: int = 2,
         episode_namespace: str = "libero-eval",
     ) -> None:
         self._semantic_dim = _nonnegative_int(semantic_dim, "semantic_dim")
@@ -202,6 +203,7 @@ class OnlineRetrospectiveEpisodeMemory:
                 action_dim=action_dim,
                 gripper_indices=gripper_indices,
                 max_recent_events=recent_event_capacity,
+                max_action_summaries=action_summary_capacity,
             )
         )
         self._episode_index: int | None = None

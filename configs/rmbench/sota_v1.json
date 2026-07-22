@@ -1,0 +1,96 @@
+{
+  "schema_version": 1,
+  "root_seed": 3407,
+  "shared": {
+    "data_profile": "scale200-dev190",
+    "train_steps": 30000,
+    "sampler_mode": "rmbench_task_event_balanced",
+    "event_boost": 1.5,
+    "recent_event_capacity": 20,
+    "action_summary_capacity": 8,
+    "replan_steps": 10
+  },
+  "tasks": {
+    "observe_and_pickup": {
+      "memory_regime": "M(1)",
+      "train_steps": 6000,
+      "recent_event_capacity": 6,
+      "action_summary_capacity": 2,
+      "replan_steps": 8,
+      "inference_steps": 8,
+      "top_k": 16
+    },
+    "rearrange_blocks": {
+      "memory_regime": "M(1)",
+      "train_steps": 8000,
+      "recent_event_capacity": 8,
+      "action_summary_capacity": 3,
+      "replan_steps": 6,
+      "inference_steps": 10,
+      "top_k": 32
+    },
+    "put_back_block": {
+      "memory_regime": "M(1)",
+      "train_steps": 8000,
+      "recent_event_capacity": 8,
+      "action_summary_capacity": 3,
+      "replan_steps": 6,
+      "inference_steps": 10,
+      "top_k": 32
+    },
+    "swap_blocks": {
+      "memory_regime": "M(1)",
+      "train_steps": 10000,
+      "recent_event_capacity": 10,
+      "action_summary_capacity": 4,
+      "replan_steps": 6,
+      "inference_steps": 10,
+      "top_k": 32
+    },
+    "swap_T": {
+      "memory_regime": "M(1)",
+      "train_steps": 10000,
+      "recent_event_capacity": 10,
+      "action_summary_capacity": 4,
+      "replan_steps": 6,
+      "inference_steps": 10,
+      "top_k": 32
+    },
+    "blocks_ranking_try": {
+      "memory_regime": "M(n)",
+      "train_steps": 14000,
+      "recent_event_capacity": 20,
+      "action_summary_capacity": 8,
+      "replan_steps": 4,
+      "inference_steps": 10,
+      "top_k": 32
+    },
+    "press_button": {
+      "memory_regime": "M(n)",
+      "train_steps": 12000,
+      "recent_event_capacity": 16,
+      "action_summary_capacity": 8,
+      "replan_steps": 4,
+      "inference_steps": 10,
+      "top_k": 32
+    },
+    "cover_blocks": {
+      "memory_regime": "M(n)",
+      "train_steps": 12000,
+      "recent_event_capacity": 16,
+      "action_summary_capacity": 6,
+      "replan_steps": 4,
+      "inference_steps": 10,
+      "top_k": 32
+    },
+    "battery_try": {
+      "memory_regime": "M(n)",
+      "train_steps": 12000,
+      "recent_event_capacity": 16,
+      "action_summary_capacity": 8,
+      "replan_steps": 4,
+      "inference_steps": 10,
+      "top_k": 32
+    }
+  }
+}

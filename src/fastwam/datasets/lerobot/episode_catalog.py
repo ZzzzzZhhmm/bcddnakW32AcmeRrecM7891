@@ -349,6 +349,7 @@ def episode_indices_by_dataset(
     *,
     split: str,
     configured_episode_totals: Sequence[int] | None = None,
+    task_allowlist: Sequence[str] | None = None,
 ) -> tuple[tuple[int, ...], ...]:
     """Resolve exact per-dataset episode indices for a configured split.
 
@@ -370,6 +371,19 @@ def episode_indices_by_dataset(
                 f"configured dataset episode totals {totals} do not match catalog {expected}"
             )
 
+    allowed_tasks: frozenset[str] | None = None
+    if task_allowlist is not None:
+        normalized = tuple(str(value) for value in task_allowlist)
+        if not normalized or len(normalized) != len(set(normalized)):
+            raise ValueError("task_allowlist must be non-empty without duplicates")
+        if any(not value or value.strip() != value for value in normalized):
+            raise ValueError("task_allowlist entries must be normalized strings")
+        catalog_tasks = {episode.primary_task for episode in catalog.episodes}
+        unknown = sorted(set(normalized) - catalog_tasks)
+        if unknown:
+            raise ValueError(f"task_allowlist contains unknown tasks: {unknown}")
+        allowed_tasks = frozenset(normalized)
+
     output: list[tuple[int, ...]] = []
     for descriptor in descriptors:
         indices = tuple(
@@ -378,11 +392,16 @@ def episode_indices_by_dataset(
                 for episode in catalog.episodes
                 if episode.dataset_index == descriptor.dataset_index
                 and episode.split == split
+                and (
+                    allowed_tasks is None
+                    or episode.primary_task in allowed_tasks
+                )
             )
         )
         if not indices:
             raise ValueError(
-                f"catalog has no {split!r} episodes for dataset {descriptor.dataset_id}"
+                f"catalog has no {split!r} episodes for dataset "
+                f"{descriptor.dataset_id} after task filtering"
             )
         output.append(indices)
     return tuple(output)

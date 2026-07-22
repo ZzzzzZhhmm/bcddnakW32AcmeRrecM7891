@@ -30,6 +30,7 @@ train:
   video_size: [384, 320]
   camera_key: null
   val_set_proportion: 0.0
+  episode_task_allowlist: null
   is_training_set: true
   pretrained_norm_stats: ${oc.env:RMBENCH_DATASET_STATS,./data/rmbench/dataset_stats.json}
   skip_padding_as_possible: false
@@ -68,6 +69,7 @@ val:
   video_size: ${data.train.video_size}
   camera_key: null
   val_set_proportion: 0.0
+  episode_task_allowlist: ${data.train.episode_task_allowlist}
   is_training_set: false
   pretrained_norm_stats: ${data.train.pretrained_norm_stats}
   skip_padding_as_possible: false

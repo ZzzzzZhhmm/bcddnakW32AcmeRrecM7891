@@ -28,6 +28,10 @@ EVALUATION:
     benchmark_profile: robotwin
     evaluation_namespace: warm-rmbench-full-v1
     top_k: 32
+    # These limits alter online history and therefore belong to the hashed
+    # runtime projection. M(n) specialists can use larger factual histories.
+    recent_event_capacity: 6
+    action_summary_capacity: 2
     experiment_id: null
     ablation_mode: full
     memory_corruption: clean

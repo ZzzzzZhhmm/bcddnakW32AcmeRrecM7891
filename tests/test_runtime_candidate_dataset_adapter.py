@@ -127,7 +127,42 @@ class LinearNormalizer:
 class FastWAMProcessor:
     __module__ = "fastwam.datasets.lerobot.processors.fastwam_processor"
 
-    def __init__(self, *, gripper_is_delta: bool = False) -> None:
+    def __init__(
+        self, *, gripper_is_delta: bool = False, robotwin: bool = False
+    ) -> None:
+        if robotwin:
+            self.action_output_dim = 14
+            self.proprio_output_dim = 14
+            self.num_obs_steps = 33
+            self.num_output_cameras = 3
+            self.use_stepwise_action_norm = False
+            self.norm_default_mode = "z-score"
+            self.norm_exception_mode = None
+            self.action_state_transforms = None
+            self.shape_meta = {
+                "images": [
+                    {
+                        "key": key,
+                        "raw_shape": [3, 240, 320],
+                        "shape": [3, 240, 320],
+                    }
+                    for key in (
+                        "cam_high",
+                        "cam_left_wrist",
+                        "cam_right_wrist",
+                    )
+                ],
+                "action": [
+                    {"key": "default", "raw_shape": 14, "shape": 14}
+                ],
+                "state": [
+                    {"key": "default", "raw_shape": 14, "shape": 14}
+                ],
+            }
+            self.delta_action_dim_mask = None
+            self.action_state_merger = ConcatLeftAlign()
+            self.normalizer = LinearNormalizer()
+            return
         self.action_output_dim = 7
         self.proprio_output_dim = 8
         self.num_obs_steps = 5
@@ -609,6 +644,24 @@ def test_processor_action_semantics_mismatch_fails_closed(tmp_path: Path) -> Non
             normalization_stats_path=stats_path,
             audit_report_path=audit_path,
         )
+
+
+def test_processor_validator_accepts_native_robotwin_qpos_contract() -> None:
+    action_contract = ActionSpaceContract(
+        action_dim=14,
+        arm_dims=(0, 1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12),
+        gripper_dims=(6, 13),
+        gripper_threshold=0.0,
+        normalization_mode="global:z-score",
+        normalization_stats_sha256="f" * 64,
+        control_mode="robotwin_bimanual_qpos_plus_grippers",
+        embodiment="robotwin_bimanual",
+    )
+    resolver = SimpleNamespace(action_space=action_contract, action_horizon=32)
+
+    RuntimeCandidateDatasetAdapter._validate_processor_action_space(
+        FastWAMProcessor(robotwin=True), resolver
+    )
 
 
 def test_runtime_oracle_uses_m1_action_distance_not_uniform_mse(

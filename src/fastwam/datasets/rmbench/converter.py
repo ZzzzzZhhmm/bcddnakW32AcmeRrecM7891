@@ -86,6 +86,7 @@ class RMBenchConversionConfig:
     source_revision: str
     data_revision: str
     rmbench_code_revision: str
+    source_dataset: str = "TianxingChen/RMBench"
     dataset_id: str = "rmbench_demo_clean_v1"
     fps: int = DEFAULT_FPS
     dev_per_task: int = DEFAULT_DEV_PER_TASK
@@ -96,6 +97,7 @@ class RMBenchConversionConfig:
     expected_image_height: int = DEFAULT_IMAGE_HEIGHT
     expected_image_width: int = DEFAULT_IMAGE_WIDTH
     strict_official_contract: bool = True
+    data_profile: str = "official50-dev45"
     progress: bool = False
 
     def __post_init__(self) -> None:
@@ -112,7 +114,17 @@ class RMBenchConversionConfig:
             "rmbench_code_revision",
             _normalized_text(self.rmbench_code_revision, label="rmbench_code_revision"),
         )
+        object.__setattr__(
+            self,
+            "source_dataset",
+            _normalized_text(self.source_dataset, label="source_dataset"),
+        )
         object.__setattr__(self, "dataset_id", _normalized_text(self.dataset_id, label="dataset_id"))
+        object.__setattr__(
+            self,
+            "data_profile",
+            _normalized_text(self.data_profile, label="data_profile"),
+        )
         if "/" in self.dataset_id or "\\" in self.dataset_id:
             raise ValueError("dataset_id must not contain path separators")
         if isinstance(self.fps, bool) or self.fps <= 0:
@@ -128,6 +140,10 @@ class RMBenchConversionConfig:
         if not self.tasks or len(self.tasks) != len(set(self.tasks)):
             raise ValueError("tasks must be a non-empty sequence without duplicates")
         if self.strict_official_contract:
+            if self.source_dataset != "TianxingChen/RMBench":
+                raise ValueError(
+                    "official conversion requires source_dataset='TianxingChen/RMBench'"
+                )
             if self.tasks != OFFICIAL_RMBENCH_TASKS:
                 raise ValueError("production conversion requires the exact nine-task allow-list")
             if self.episodes_per_task != OFFICIAL_EPISODES_PER_TASK:
@@ -838,7 +854,7 @@ def _publish_metadata(
         "schema": CONVERSION_SCHEMA,
         "schema_version": CONVERSION_SCHEMA_VERSION,
         "source": {
-            "dataset": "TianxingChen/RMBench",
+            "dataset": config.source_dataset,
             "revision": config.source_revision,
             "rmbench_code_revision": config.rmbench_code_revision,
             "task_config": OFFICIAL_TASK_CONFIG,
@@ -854,6 +870,7 @@ def _publish_metadata(
             "artifacts": artifacts,
         },
         "protocol": {
+            "data_profile": config.data_profile,
             "official_task_allow_list": list(config.tasks),
             "episodes_per_task": config.episodes_per_task,
             "fps": config.fps,

@@ -83,6 +83,8 @@ EVALUATION:
     warm_experiment_id: manual
     warm_evaluation_namespace: warm-rmbench-full-v1
     warm_top_k: 32
+    warm_recent_event_capacity: 6
+    warm_action_summary_capacity: 2
 
   # The exact FastWAM comparison uses the same official evaluator, camera
   # processor, training split, seed, action horizon, and ODE schedule, but no

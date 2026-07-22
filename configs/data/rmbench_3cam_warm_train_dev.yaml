@@ -10,6 +10,7 @@ train:
   skip_padding_as_possible: false
   episode_catalog_path: null
   episode_split: train
+  episode_task_allowlist: null
   pretrained_norm_stats: null
 
 val:
@@ -31,6 +32,7 @@ val:
   context_len: ${data.train.context_len}
   episode_catalog_path: null
   episode_split: dev
+  episode_task_allowlist: ${data.train.episode_task_allowlist}
   pretrained_norm_stats: null
 
 warm_candidates:

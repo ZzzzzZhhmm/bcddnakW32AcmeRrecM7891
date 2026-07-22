@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 from pathlib import Path
-from typing import List, Literal, Dict, Optional, Any, DefaultDict
+from typing import List, Literal, Dict, Optional, Any, DefaultDict, Sequence
 from tqdm import tqdm
 from .lerobot.lerobot_dataset import LeRobotDatasetMetadata, MultiLeRobotDataset
 from .episode_catalog import EpisodeCatalog, episode_indices_by_dataset
@@ -33,6 +33,7 @@ class BaseLerobotDataset(torch.utils.data.Dataset):
         seed: int = 42,
         episode_catalog_path: Optional[str] = None,
         episode_split: Optional[Literal["train", "dev", "test"]] = None,
+        episode_task_allowlist: Optional[Sequence[str]] = None,
 
         # sampling
         global_sample_stride: int = 1,
@@ -65,6 +66,11 @@ class BaseLerobotDataset(torch.utils.data.Dataset):
 
         self.val_set_proportion = val_set_proportion
         self.is_training_set = is_training_set
+        self.episode_task_allowlist = (
+            None
+            if episode_task_allowlist is None
+            else tuple(str(value) for value in episode_task_allowlist)
+        )
 
         self.image_meta = shape_meta["images"]
         self.state_meta = shape_meta["state"]
@@ -101,6 +107,7 @@ class BaseLerobotDataset(torch.utils.data.Dataset):
                 catalog,
                 split=episode_split,
                 configured_episode_totals=[meta.total_episodes for meta in metas],
+                task_allowlist=self.episode_task_allowlist,
             )
             if len(selected) != len(metas):
                 raise ValueError(
@@ -108,6 +115,10 @@ class BaseLerobotDataset(torch.utils.data.Dataset):
                 )
             for meta, episode_indices in zip(metas, selected, strict=True):
                 episodes[meta.repo_id] = list(episode_indices)
+        elif episode_task_allowlist is not None:
+            raise ValueError(
+                "episode_task_allowlist requires episode_catalog_path and episode_split"
+            )
         elif val_set_proportion < 1e-6:
             for meta in metas:
                 episodes.update({meta.repo_id: list(range(meta.total_episodes))})

@@ -84,6 +84,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--matrix", type=Path, default=DEFAULT_MATRIX)
     parser.add_argument("--experiment", action="append", default=[])
     parser.add_argument("--suite", choices=("official9", "pilot3"), default="official9")
+    parser.add_argument(
+        "--task",
+        action="append",
+        default=[],
+        help="Build only the named official task(s); repeat for multiple tasks.",
+    )
     parser.add_argument("--rmbench-root", required=True, type=Path)
     parser.add_argument("--output-root", required=True, type=Path)
     parser.add_argument("--plan-only", action="store_true")
@@ -122,6 +128,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--action-horizon", type=_positive_int, default=32)
     parser.add_argument("--action-dim", type=_positive_int, default=14)
     parser.add_argument("--replan-steps", type=_positive_int, default=10)
+    parser.add_argument("--recent-event-capacity", type=_positive_int, default=6)
+    parser.add_argument("--action-summary-capacity", type=_positive_int, default=2)
     parser.add_argument("--dino-device", default="cuda")
     parser.add_argument("--dino-batch-size", type=_positive_int, default=1)
     parser.add_argument("--device", default="cuda")
@@ -276,6 +284,8 @@ def _runtime_args(
         "warm_memory_corruption": experiment.memory_corruption,
         "warm_evaluation_namespace": args.evaluation_namespace,
         "warm_top_k": args.top_k,
+        "warm_recent_event_capacity": args.recent_event_capacity,
+        "warm_action_summary_capacity": args.action_summary_capacity,
         "warm_dino_device": args.dino_device,
         "warm_dino_batch_size": args.dino_batch_size,
     }
@@ -596,6 +606,15 @@ def main(argv: Sequence[str] | None = None) -> int:
     matrix = load_matrix(matrix_path)
     experiments = select_experiments(matrix, args.experiment)
     tasks = tasks_for_suite(args.suite)
+    if args.task:
+        requested = tuple(args.task)
+        if len(requested) != len(set(requested)):
+            raise RMBenchBundleError("--task values must be unique")
+        known = {task.name: task for task in tasks}
+        unknown = sorted(set(requested) - set(known))
+        if unknown:
+            raise RMBenchBundleError(f"unknown official RMBench tasks: {unknown}")
+        tasks = tuple(known[name] for name in requested)
     checkout_root = args.rmbench_root.expanduser().resolve()
     checkout = validate_read_only_checkout(
         checkout_root,
