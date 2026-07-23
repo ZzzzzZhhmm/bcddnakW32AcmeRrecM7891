@@ -159,14 +159,20 @@ def validate_conversion(
     seen: set[str] = set()
     for row in artifacts:
         row = _mapping(row, "artifact row")
-        if set(row) != {"path", "size", "sha256"}:
+        keys = set(row)
+        if keys == {"path", "size", "sha256"}:
+            relpath = row["path"]
+            size = row["size"]
+        elif keys == {"relpath", "size_bytes", "sha256"}:
+            relpath = row["relpath"]
+            size = row["size_bytes"]
+        else:
             raise RMBenchConversionValidationError("malformed artifact row")
-        relpath = row["path"]
         if not isinstance(relpath, str) or relpath in seen:
             raise RMBenchConversionValidationError("duplicate/invalid artifact path")
         seen.add(relpath)
         path = _safe_artifact_path(root, relpath)
-        if not path.is_file() or path.stat().st_size != row["size"]:
+        if not path.is_file() or path.stat().st_size != size:
             raise RMBenchConversionValidationError(
                 f"artifact missing or size changed: {relpath}"
             )

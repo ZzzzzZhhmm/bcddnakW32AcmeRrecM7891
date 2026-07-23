@@ -1010,7 +1010,7 @@ def _run_server_precompute(args: argparse.Namespace, plan: PrecomputePlan) -> No
                 )
 
                 action_contract = robotwin_qpos_action_contract(
-                    plan.stats_sha256
+                    normalization_stats_sha256=plan.stats_sha256,
                 ).to_dict()
             else:
                 action_contract = ActionSpaceContract(
