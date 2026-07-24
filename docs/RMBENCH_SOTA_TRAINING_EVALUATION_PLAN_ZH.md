@@ -210,6 +210,20 @@ export ZERO_STAGE=1
 bash scripts/train_warm_rmbench_server.sh
 ```
 
+official50 ACP 正式任务优先使用封装入口，它会统一环境、四卡 batch contract、
+Hydra preflight、console log 和严格续训：
+
+```bash
+CUDA_VISIBLE_DEVICES=0,1,2,3 \
+WARM_RMBENCH_SPECIALIST_TASK=blocks_ranking_try \
+bash scripts/acp_warm_rmbench_specialist.sh
+```
+
+这里没有把 shared checkpoint 静默当作 specialist 初始化权重；当前 specialist
+仍从相同 FastWAM base 独立训练，因此可以与 shared 并行启动。若后续实现
+shared→specialist warm-start，必须先给 training attestation 增加独立的 fork
+provenance，不能复用普通 full-state resume。
+
 只需替换任务名和输出目录。合法任务顺序为：
 
 ```text

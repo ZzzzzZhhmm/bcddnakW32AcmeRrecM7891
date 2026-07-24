@@ -59,6 +59,7 @@ def test_rmbench_training_and_eval_launchers_bind_contracts_and_closed_controls(
 
 def test_score_oriented_task_launchers_bind_registry_batch_and_online_memory() -> None:
     training = _read("train_warm_rmbench_server.sh")
+    acp_specialist = _read("acp_warm_rmbench_specialist.sh")
     contract = _read("build_warm_rmbench_sota_task_contract_server.sh")
     evaluation = _read("evaluate_warm_rmbench_task_server.sh")
 
@@ -68,6 +69,16 @@ def test_score_oriented_task_launchers_bind_registry_batch_and_online_memory() -
     assert "episode_task_allowlist" in training
     assert "rmbench_task_event_balanced" not in training  # resolved by registry
     assert "sampler.mode=${SAMPLER_MODE}" in training
+    assert "WARM_RESUME_STATE" in training
+    assert "trainer_state.json" in training
+    assert "WARM_PREFLIGHT_RESOLVE" in training
+    assert "--cfg job --resolve" in training
+    assert "git pull" not in acp_specialist
+    assert "PER_DEVICE_BATCH_SIZE=8" in acp_specialist
+    assert "GRADIENT_ACCUMULATION_STEPS=4" in acp_specialist
+    assert "TARGET_GLOBAL_BATCH_SIZE=128" in acp_specialist
+    assert "official50-dev45" in acp_specialist
+    assert "save_every=2000" in acp_specialist
     assert "rmbench_sota_matrix.json" in contract
     assert "WARM_RMBENCH_TASK" in contract
     assert "seed=3407" in evaluation

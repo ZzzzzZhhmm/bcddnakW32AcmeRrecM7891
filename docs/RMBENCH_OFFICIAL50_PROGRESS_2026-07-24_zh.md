@@ -41,7 +41,7 @@ scale200 主力成绩。scale200 采集与 M1/M2 尚未开始。
 | Gate B：M1/M2 | **完成** | feature/bank/oracle/cache/contract 已发布 |
 | Gate C：训练（10-step 探针） | **完成（单卡 CCI）** | shared smoke 10 step；方案建议 4 卡探针，ACP 可选复跑 |
 | Gate C：训练（shared 30k） | **未开始** | 需 ACP 4×H100 |
-| 9× specialist 30k | **未开始** | 需 ACP |
+| 9× specialist（每任务 6k–14k） | **未开始** | 需 ACP 4×H100；步数由 task registry 固定 |
 | Gate D：仿真评测 | **未开始** | 需 RMBENCH_ROOT + 一任务一卡 ACP |
 | scale200 采集 + M1/M2 | **未开始** | 无 CCI MuJoCo 采集条件 |
 
@@ -172,13 +172,81 @@ CCI 上曾 stash 局部修改或先 commit 再跑 formal 链。
 1. **shared 正式训练**：`NPROC_PER_NODE=4`，`PER_DEVICE_BATCH_SIZE=8`，
    `TARGET_GLOBAL_BATCH_SIZE=128`（grad_accum 自动为 4），去掉 `WARM_MAX_STEPS`，
    新 `WARM_TRAIN_OUTPUT`。详见 SOTA 文档第 6.1 节。
-2. **九个 specialist**：同上 4 卡配置，逐任务 `WARM_RMBENCH_STAGE=specialist`。
+2. **九个 specialist**：每个任务一个独立 ACP，使用同一套 4 卡/global-batch
+   contract；任务步数、episode-memory 容量、replan 和 ODE 预算由
+   `configs/rmbench/sota_v1.json` 自动读取。
 3. **scale200**：simulator 自动采集 → 新 `WARM_ARTIFACT_ROOT` → 再训练（SOTA 默认 profile）。
 4. **评测**：dev 选 checkpoint → `build_warm_rmbench_sota_task_contract_server.sh` →
    ACP 单卡 `evaluate_warm_rmbench_task_server.sh`（每任务 100 episode）。
 
-RMBench **无** `acp_warm_libero.sh` 式统一 wrapper；ACP 任务命令为设置环境变量后
-执行 `bash scripts/train_warm_rmbench_server.sh`（或评测脚本）。
+### 7.1 正式 specialist ACP 入口
+
+仓库提供 `scripts/acp_warm_rmbench_specialist.sh`。它不运行 `git pull`，只会：
+
+- 使用 AFS 上持久化的 `envs/warm`；
+- 校验恰好四张 80GB H100；
+- 绑定本文的 official50 数据、M1/M2、文本 cache 和 FastWAM base；
+- 固定 per-device batch 8、gradient accumulation 4、global batch 128；
+- 做 conversion identity、Hydra resolve 和 formal contract preflight；
+- 运行一个 specialist，并把 console log 写到 run 目录旁。
+
+每个 ACP 只需要替换任务名：
+
+```bash
+cd /mnt/afs/task3_2/L202500276_lwz/projects/WARM
+
+CUDA_VISIBLE_DEVICES=0,1,2,3 \
+WARM_RMBENCH_SPECIALIST_TASK=blocks_ranking_try \
+bash scripts/acp_warm_rmbench_specialist.sh
+```
+
+默认输出：
+
+```text
+runs/rmbench_official50_specialists/<task>-s3407-v1
+```
+
+合法任务为：
+
+```text
+observe_and_pickup
+rearrange_blocks
+put_back_block
+swap_blocks
+swap_T
+blocks_ranking_try
+press_button
+cover_blocks
+battery_try
+```
+
+九个任务互相独立；资源允许时可以提交多个 ACP，但每个 ACP 都必须独占四张
+H100，且输出目录不能重复。共享 AFS 带宽有限，建议同时运行不超过 2–3 个任务，
+避免 36 卡同时解码同一份视频/cache 造成 I/O 抖动。
+
+### 7.2 ACP 中断后的 formal resume
+
+训练脚本现在允许从**同一输出目录内部**的完整 DeepSpeed state 严格续训，不允许
+用任意外部 state 冒充。示例：
+
+```bash
+cd /mnt/afs/task3_2/L202500276_lwz/projects/WARM
+
+CUDA_VISIBLE_DEVICES=0,1,2,3 \
+WARM_RMBENCH_SPECIALIST_TASK=blocks_ranking_try \
+WARM_RESUME_STATE=/mnt/afs/task3_2/L202500276_lwz/projects/WARM/runs/rmbench_official50_specialists/blocks_ranking_try-s3407-v1/checkpoints/state/step_006000 \
+bash scripts/acp_warm_rmbench_specialist.sh
+```
+
+续训必须保持相同四卡、batch、optimizer、scheduler、数据 profile、task 和目标总
+步数。launcher 会验证 parent weight、training attestation、state tree hash 和
+trainer step；不能只给 `.pt` 权重文件做伪续训。
+
+如果 ACP 有明确 wall-time 上限，可在首次任务和每次续训时都设置
+`WARM_RUN_STEPS=2000`。它只限制本次 ACP 最多运行 2000 个 optimizer steps，
+不会改变 task registry 中的总步数或 cosine scheduler 总长度；每个 segment 结束
+都会发布可验证的 weight、attestation 和完整 resume state。无 wall-time 压力时
+不要设置，让单次 ACP 直接跑到 task 目标步数。
 
 ---
 

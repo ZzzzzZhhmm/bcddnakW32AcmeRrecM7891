@@ -21,7 +21,41 @@ warm_require_sha40 "${RMBENCH_SOURCE_REVISION}" "RMBENCH_SOURCE_REVISION"
 warm_require_sha40 "${RMBENCH_CODE_REVISION}" "RMBENCH_CODE_REVISION"
 warm_require_private_checkout
 warm_configure_offline_logging
-warm_refuse_existing_output "${WARM_TRAIN_OUTPUT}"
+
+WARM_RESUME_STATE="${WARM_RESUME_STATE:-}"
+if [[ -z "${WARM_RESUME_STATE}" ]]; then
+  warm_refuse_existing_output "${WARM_TRAIN_OUTPUT}"
+else
+  if [[ ! -d "${WARM_TRAIN_OUTPUT}" ]]; then
+    warm_die "resume requires an existing WARM_TRAIN_OUTPUT directory"
+  fi
+  if [[ ! -d "${WARM_RESUME_STATE}" ]]; then
+    warm_die "WARM_RESUME_STATE is not a directory: ${WARM_RESUME_STATE}"
+  fi
+  WARM_RESUME_STATE="$(
+    python - "${WARM_TRAIN_OUTPUT}" "${WARM_RESUME_STATE}" <<'PY'
+from pathlib import Path
+import re
+import sys
+
+output = Path(sys.argv[1]).expanduser().resolve(strict=True)
+state = Path(sys.argv[2]).expanduser().resolve(strict=True)
+expected_parent = output / "checkpoints" / "state"
+if state.parent != expected_parent:
+    raise SystemExit(
+        "WARM_RESUME_STATE must be an immediate child of "
+        f"{expected_parent}, got {state}"
+    )
+if re.fullmatch(r"step_[0-9]{6,}", state.name) is None:
+    raise SystemExit("WARM_RESUME_STATE must be named step_<global_step>")
+if not (state / "trainer_state.json").is_file():
+    raise SystemExit("WARM_RESUME_STATE is missing trainer_state.json")
+print(state)
+PY
+  )"
+  printf 'RMBench formal resume: output=%s state=%s\n' \
+    "${WARM_TRAIN_OUTPUT}" "${WARM_RESUME_STATE}"
+fi
 
 SOTA_REGISTRY="${WARM_RMBENCH_SOTA_REGISTRY:-configs/rmbench/sota_v1.json}"
 STAGE="${WARM_RMBENCH_STAGE:-shared}"
@@ -93,6 +127,17 @@ if [[ -n "${WARM_MAX_STEPS:-}" ]]; then
   fi
   TRAIN_STEPS="${WARM_MAX_STEPS}"
 fi
+if [[ -n "${WARM_RUN_STEPS:-}" && ! "${WARM_RUN_STEPS}" =~ ^[1-9][0-9]*$ ]]; then
+  warm_die "WARM_RUN_STEPS must be a positive integer"
+fi
+printf 'RMBench training profile: stage=%s task=%s data=%s max_steps=%s recent_events=%s action_summaries=%s replan_steps=%s\n' \
+  "${STAGE}" \
+  "${SPECIALIST_TASK:-all}" \
+  "${DATA_PROFILE}" \
+  "${TRAIN_STEPS}" \
+  "${RECENT_EVENT_CAPACITY}" \
+  "${ACTION_SUMMARY_CAPACITY}" \
+  "${REPLAN_STEPS}"
 
 export RMBENCH_LEROBOT_ROOT
 export RMBENCH_DATASET_STATS="${TRAIN_STATS}"
@@ -156,49 +201,75 @@ for override in "$@"; do
   key="${key#+}"
   key="${key#~}"
   case "${key}" in
-    task|data|data.*|model|model.*|output_dir|resume|seed|max_steps|batch_size|gradient_accumulation_steps|sampler|sampler.*|wandb.enabled|wandb.mode|--config-name|--config-name*)
+    task|data|data.*|model|model.*|output_dir|resume|seed|max_steps|run_steps|batch_size|gradient_accumulation_steps|sampler|sampler.*|wandb.enabled|wandb.mode|--config-name|--config-name*)
       warm_die "protected formal-training override is not allowed: ${override}"
       ;;
   esac
 done
 
-exec bash scripts/train_zero1.sh "${NPROC_PER_NODE}" \
-  task=rmbench_warm_3cam384_1e-4 \
-  "output_dir=${WARM_TRAIN_OUTPUT}" \
-  "wandb.enabled=${WANDB_ENABLED}" \
-  "wandb.mode=${WANDB_MODE}" \
-  "model.run_contract_path=${TRAIN_CONTRACT}" \
-  "model.validation_run_contract_path=${DEV_CONTRACT}" \
-  "model.base_checkpoint_path=${FASTWAM_BASE_CHECKPOINT}" \
-  "seed=${ROOT_SEED}" \
-  "max_steps=${TRAIN_STEPS}" \
-  "batch_size=${PER_DEVICE_BATCH_SIZE}" \
-  "gradient_accumulation_steps=${GRADIENT_ACCUMULATION_STEPS}" \
-  "sampler.mode=${SAMPLER_MODE}" \
-  "sampler.event_boost=${EVENT_BOOST}" \
-  "data.train.dataset_dirs=[${RMBENCH_LEROBOT_ROOT}]" \
-  "data.train.episode_task_allowlist=${TASK_FILTER}" \
-  "data.train.text_embedding_cache_dir=${RMBENCH_TEXT_CACHE}" \
-  "data.warm_candidates.train.bank_directory=${M1}/banks/hybrid_h32" \
-  "data.warm_candidates.train.candidate_directory=${TRAIN_CACHE}" \
-  "data.warm_candidates.train.catalog_path=${CATALOG}" \
-  "data.warm_candidates.train.normalization_stats_path=${TRAIN_STATS}" \
-  "data.warm_candidates.train.audit_report_path=${AUDIT}" \
-  "data.warm_candidates.train.retrospective_feature_list=${M1}/features/train_features.list" \
-  "data.warm_candidates.train.retrospective_recent_event_capacity=${RECENT_EVENT_CAPACITY}" \
-  "data.warm_candidates.train.retrospective_action_summary_capacity=${ACTION_SUMMARY_CAPACITY}" \
-  "data.warm_candidates.train.retrospective_action_summary_chunk_size=${REPLAN_STEPS}" \
-  "data.val.dataset_dirs=[${RMBENCH_LEROBOT_ROOT}]" \
-  "data.val.episode_task_allowlist=${TASK_FILTER}" \
-  "data.val.text_embedding_cache_dir=${RMBENCH_TEXT_CACHE}" \
-  "data.warm_candidates.val.bank_directory=${M1}/banks/hybrid_h32" \
-  "data.warm_candidates.val.candidate_directory=${DEV_CACHE}" \
-  "data.warm_candidates.val.catalog_path=${CATALOG}" \
-  "data.warm_candidates.val.normalization_stats_path=${TRAIN_STATS}" \
-  "data.warm_candidates.val.audit_report_path=${AUDIT}" \
-  "data.warm_candidates.val.retrospective_feature_list=${M1}/features/dev_features.list" \
-  "data.warm_candidates.val.retrospective_recent_event_capacity=${RECENT_EVENT_CAPACITY}" \
-  "data.warm_candidates.val.retrospective_action_summary_capacity=${ACTION_SUMMARY_CAPACITY}" \
-  "data.warm_candidates.val.retrospective_action_summary_chunk_size=${REPLAN_STEPS}" \
-  "model.retrospection.episode_action_chunk_size=${REPLAN_STEPS}" \
-  "$@"
+TRAIN_OVERRIDES=(
+  task=rmbench_warm_3cam384_1e-4
+  "output_dir=${WARM_TRAIN_OUTPUT}"
+  "wandb.enabled=${WANDB_ENABLED}"
+  "wandb.mode=${WANDB_MODE}"
+  "model.run_contract_path=${TRAIN_CONTRACT}"
+  "model.validation_run_contract_path=${DEV_CONTRACT}"
+  "model.base_checkpoint_path=${FASTWAM_BASE_CHECKPOINT}"
+  "seed=${ROOT_SEED}"
+  "max_steps=${TRAIN_STEPS}"
+  "batch_size=${PER_DEVICE_BATCH_SIZE}"
+  "gradient_accumulation_steps=${GRADIENT_ACCUMULATION_STEPS}"
+  "sampler.mode=${SAMPLER_MODE}"
+  "sampler.event_boost=${EVENT_BOOST}"
+  "data.train.dataset_dirs=[${RMBENCH_LEROBOT_ROOT}]"
+  "data.train.episode_task_allowlist=${TASK_FILTER}"
+  "data.train.text_embedding_cache_dir=${RMBENCH_TEXT_CACHE}"
+  "data.warm_candidates.train.bank_directory=${M1}/banks/hybrid_h32"
+  "data.warm_candidates.train.candidate_directory=${TRAIN_CACHE}"
+  "data.warm_candidates.train.catalog_path=${CATALOG}"
+  "data.warm_candidates.train.normalization_stats_path=${TRAIN_STATS}"
+  "data.warm_candidates.train.audit_report_path=${AUDIT}"
+  "data.warm_candidates.train.retrospective_feature_list=${M1}/features/train_features.list"
+  "data.warm_candidates.train.retrospective_recent_event_capacity=${RECENT_EVENT_CAPACITY}"
+  "data.warm_candidates.train.retrospective_action_summary_capacity=${ACTION_SUMMARY_CAPACITY}"
+  "data.warm_candidates.train.retrospective_action_summary_chunk_size=${REPLAN_STEPS}"
+  "data.val.dataset_dirs=[${RMBENCH_LEROBOT_ROOT}]"
+  "data.val.episode_task_allowlist=${TASK_FILTER}"
+  "data.val.text_embedding_cache_dir=${RMBENCH_TEXT_CACHE}"
+  "data.warm_candidates.val.bank_directory=${M1}/banks/hybrid_h32"
+  "data.warm_candidates.val.candidate_directory=${DEV_CACHE}"
+  "data.warm_candidates.val.catalog_path=${CATALOG}"
+  "data.warm_candidates.val.normalization_stats_path=${TRAIN_STATS}"
+  "data.warm_candidates.val.audit_report_path=${AUDIT}"
+  "data.warm_candidates.val.retrospective_feature_list=${M1}/features/dev_features.list"
+  "data.warm_candidates.val.retrospective_recent_event_capacity=${RECENT_EVENT_CAPACITY}"
+  "data.warm_candidates.val.retrospective_action_summary_capacity=${ACTION_SUMMARY_CAPACITY}"
+  "data.warm_candidates.val.retrospective_action_summary_chunk_size=${REPLAN_STEPS}"
+  "model.retrospection.episode_action_chunk_size=${REPLAN_STEPS}"
+)
+if [[ -n "${WARM_RESUME_STATE}" ]]; then
+  TRAIN_OVERRIDES+=("resume=${WARM_RESUME_STATE}")
+fi
+if [[ -n "${WARM_RUN_STEPS:-}" ]]; then
+  TRAIN_OVERRIDES+=("run_steps=${WARM_RUN_STEPS}")
+fi
+TRAIN_OVERRIDES+=("$@")
+
+if [[ "${WARM_PREFLIGHT_RESOLVE:-true}" != "true" && \
+      "${WARM_PREFLIGHT_RESOLVE:-true}" != "false" ]]; then
+  warm_die "WARM_PREFLIGHT_RESOLVE must be true or false"
+fi
+if [[ "${WARM_PREFLIGHT_RESOLVE:-true}" == "true" ]]; then
+  PREFLIGHT_OUTPUT="${WARM_PREFLIGHT_OUTPUT:-${WARM_TRAIN_OUTPUT}.resolved_config.preflight.yaml}"
+  mkdir -p "$(dirname -- "${PREFLIGHT_OUTPUT}")"
+  PREFLIGHT_TEMP="${PREFLIGHT_OUTPUT}.tmp.$$"
+  trap 'rm -f -- "${PREFLIGHT_TEMP:-}"' EXIT
+  python scripts/train.py \
+    "${TRAIN_OVERRIDES[@]}" \
+    --cfg job --resolve > "${PREFLIGHT_TEMP}"
+  mv -f -- "${PREFLIGHT_TEMP}" "${PREFLIGHT_OUTPUT}"
+  trap - EXIT
+  printf 'RMBench Hydra preflight: %s\n' "${PREFLIGHT_OUTPUT}"
+fi
+
+exec bash scripts/train_zero1.sh "${NPROC_PER_NODE}" "${TRAIN_OVERRIDES[@]}"
