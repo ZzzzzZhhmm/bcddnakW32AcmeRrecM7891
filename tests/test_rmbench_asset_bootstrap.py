@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import sys
+import types
 from pathlib import Path
 
 import pytest
@@ -129,3 +130,29 @@ def test_link_category_recovers_only_fileless_partial_tree(tmp_path: Path) -> No
     (conflicting / "partial.bin").write_bytes(b"partial")
     with pytest.raises(assets.AssetBootstrapError, match="refusing to replace"):
         assets._link_category(source, conflicting)
+
+
+def test_explicit_download_clears_inherited_offline_flags(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    observed: dict[str, object] = {}
+
+    def fake_snapshot_download(**kwargs: object) -> None:
+        observed.update(kwargs)
+        observed["hf_hub_offline"] = assets.os.environ.get("HF_HUB_OFFLINE")
+        observed["datasets_offline"] = assets.os.environ.get("HF_DATASETS_OFFLINE")
+
+    fake_hub = types.ModuleType("huggingface_hub")
+    fake_hub.snapshot_download = fake_snapshot_download  # type: ignore[attr-defined]
+    monkeypatch.setitem(sys.modules, "huggingface_hub", fake_hub)
+    monkeypatch.setenv("HF_HUB_OFFLINE", "1")
+    monkeypatch.setenv("HF_DATASETS_OFFLINE", "1")
+    monkeypatch.setenv("TRANSFORMERS_OFFLINE", "1")
+
+    assets._download_snapshot(asset_root=tmp_path / "assets", max_workers=7)
+
+    assert observed["revision"] == assets.RMBENCH_HF_REVISION
+    assert observed["max_workers"] == 7
+    assert observed["hf_hub_offline"] is None
+    assert observed["datasets_offline"] is None

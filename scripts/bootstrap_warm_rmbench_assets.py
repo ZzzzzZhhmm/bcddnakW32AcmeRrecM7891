@@ -311,6 +311,26 @@ def _download_snapshot(
     asset_root: Path,
     max_workers: int,
 ) -> None:
+    # Training and formal evaluation deliberately run offline, and those flags
+    # are commonly exported by the persistent CCI image.  This helper is the
+    # one explicit network bootstrap, so clear inherited offline-only switches
+    # before importing huggingface_hub (its constants are initialized at
+    # import time).  The process is short-lived; later eval jobs still set the
+    # same flags fail-closed.
+    inherited_offline = {
+        name: os.environ.pop(name)
+        for name in (
+            "HF_HUB_OFFLINE",
+            "HF_DATASETS_OFFLINE",
+            "TRANSFORMERS_OFFLINE",
+        )
+        if name in os.environ
+    }
+    if inherited_offline:
+        rendered = ", ".join(
+            f"{name}={value!r}" for name, value in sorted(inherited_offline.items())
+        )
+        print(f"asset_download_cleared_offline_flags={rendered}")
     try:
         from huggingface_hub import snapshot_download
     except ImportError as error:
@@ -318,15 +338,22 @@ def _download_snapshot(
             "huggingface_hub is required in the base WARM environment"
         ) from error
     asset_root.mkdir(parents=True, exist_ok=True)
-    snapshot_download(
-        repo_id=RMBENCH_HF_REPOSITORY,
-        repo_type="dataset",
-        revision=RMBENCH_HF_REVISION,
-        allow_patterns=list(ASSET_PATTERNS),
-        local_dir=str(asset_root),
-        max_workers=max_workers,
-        etag_timeout=60,
-    )
+    try:
+        snapshot_download(
+            repo_id=RMBENCH_HF_REPOSITORY,
+            repo_type="dataset",
+            revision=RMBENCH_HF_REVISION,
+            allow_patterns=list(ASSET_PATTERNS),
+            local_dir=str(asset_root),
+            max_workers=max_workers,
+            etag_timeout=60,
+        )
+    except Exception as error:
+        endpoint = os.environ.get("HF_ENDPOINT", "https://huggingface.co")
+        raise AssetBootstrapError(
+            "failed to resolve/download the pinned official asset snapshot "
+            f"from endpoint={endpoint!r}: {type(error).__name__}: {error}"
+        ) from error
 
 
 def _parse_args() -> argparse.Namespace:
