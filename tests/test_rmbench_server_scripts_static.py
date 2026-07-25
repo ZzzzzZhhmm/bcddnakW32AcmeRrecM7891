@@ -162,6 +162,7 @@ def test_rmbench_eval_bootstrap_preserves_warm_runtime_and_pins_simulator() -> N
     assert "http.version=HTTP/1.1" in source
     assert "CUROBO_FETCH_ATTEMPTS" in source
     assert "--filter=blob:none" in source
+    assert 'refs/tags/${CUROBO_TAG}^{commit}' in source
     assert "sparse-checkout set" in source
     assert "'!/src/curobo/content/assets/'" in source
     assert source.index(

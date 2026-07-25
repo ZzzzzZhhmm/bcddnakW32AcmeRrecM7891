@@ -259,7 +259,9 @@ fi
 git -C "${CUROBO_SOURCE}" config remote.origin.promisor true
 git -C "${CUROBO_SOURCE}" config remote.origin.partialclonefilter blob:none
 if ! git -C "${CUROBO_SOURCE}" cat-file \
-  -e "${CUROBO_REVISION}^{commit}" 2>/dev/null
+  -e "${CUROBO_REVISION}^{commit}" 2>/dev/null \
+  || ! git -C "${CUROBO_SOURCE}" rev-parse \
+    --verify "refs/tags/${CUROBO_TAG}^{commit}" >/dev/null 2>&1
 then
   retry_git -C "${CUROBO_SOURCE}" fetch \
     --filter=blob:none \
@@ -269,7 +271,8 @@ then
     || fail "failed to fetch sparse CuRobo ${CUROBO_TAG} after ${CUROBO_FETCH_ATTEMPTS} attempts"
 fi
 CUROBO_TAG_REVISION="$(
-  git -C "${CUROBO_SOURCE}" rev-parse "${CUROBO_TAG}^{}"
+  git -C "${CUROBO_SOURCE}" rev-parse \
+    --verify "refs/tags/${CUROBO_TAG}^{commit}"
 )"
 [[ "${CUROBO_TAG_REVISION}" == "${CUROBO_REVISION}" ]] \
   || fail "CuRobo tag ${CUROBO_TAG} resolves to ${CUROBO_TAG_REVISION}, expected ${CUROBO_REVISION}"
