@@ -32,6 +32,7 @@ warm_require_env \
   WARM_RMBENCH_TASK
 warm_require_sha40 "${RMBENCH_CODE_REVISION}" "RMBENCH_CODE_REVISION"
 warm_require_sha40 "${RMBENCH_DATASET_REVISION}" "RMBENCH_DATASET_REVISION"
+warm_register_safe_directory "${PROJECT_ROOT}"
 warm_require_private_checkout
 warm_require_read_only_external_checkout "${RMBENCH_ROOT}" "${RMBENCH_CODE_REVISION}"
 warm_configure_offline_logging

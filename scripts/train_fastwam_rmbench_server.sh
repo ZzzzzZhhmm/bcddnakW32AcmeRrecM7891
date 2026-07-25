@@ -5,6 +5,7 @@ set -euo pipefail
 # demonstrations, episode split, action statistics, and processor as WARM.
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
 # shellcheck source=scripts/warm_server_common.sh
 source "${SCRIPT_DIR}/warm_server_common.sh"
 
@@ -18,6 +19,7 @@ warm_require_env \
   FASTWAM_RMBENCH_TRAIN_OUTPUT
 warm_require_sha40 "${RMBENCH_DATASET_REVISION}" "RMBENCH_DATASET_REVISION"
 warm_require_sha40 "${RMBENCH_CODE_REVISION}" "RMBENCH_CODE_REVISION"
+warm_register_safe_directory "${PROJECT_ROOT}"
 warm_require_private_checkout
 warm_configure_offline_logging
 warm_refuse_existing_output "${FASTWAM_RMBENCH_TRAIN_OUTPUT}"

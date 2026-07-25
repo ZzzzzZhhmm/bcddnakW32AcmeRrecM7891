@@ -5,6 +5,7 @@ set -euo pipefail
 # Ablation/corruption controls are closed enums used by the matrix runner.
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
 # shellcheck source=scripts/warm_server_common.sh
 source "${SCRIPT_DIR}/warm_server_common.sh"
 
@@ -25,6 +26,7 @@ warm_require_env \
   WARM_EVAL_ROOT
 warm_require_sha40 "${RMBENCH_CODE_REVISION}" "RMBENCH_CODE_REVISION"
 warm_require_sha40 "${RMBENCH_DATASET_REVISION}" "RMBENCH_DATASET_REVISION"
+warm_register_safe_directory "${PROJECT_ROOT}"
 warm_require_private_checkout
 warm_require_read_only_external_checkout "${RMBENCH_ROOT}" "${RMBENCH_CODE_REVISION}"
 warm_configure_offline_logging

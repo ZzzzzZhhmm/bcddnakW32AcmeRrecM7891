@@ -34,12 +34,39 @@ warm_require_sha40() {
   fi
 }
 
-warm_require_private_checkout() {
-  local root expected_head remote_names fetch_url push_url expected_origin
-  root="$(git rev-parse --show-toplevel 2>/dev/null)" || {
-    warm_die "formal jobs must run inside the WARM Git checkout"
+warm_register_safe_directory() {
+  local directory canonical existing
+  directory="$1"
+  if [[ ! -d "${directory}" ]]; then
+    warm_die "Git checkout directory does not exist: ${directory}" || return
+  fi
+  canonical="$(cd -- "${directory}" && pwd -P)" || {
+    warm_die "failed to resolve Git checkout directory: ${directory}"
     return
   }
+  if [[ ! -e "${canonical}/.git" ]]; then
+    warm_die "Git metadata is missing from checkout: ${canonical}" || return
+  fi
+
+  # ACP containers often run as root while the persistent AFS checkout belongs
+  # to another uid.  Register only the exact, caller-derived checkout path; do
+  # not use the unsafe '*' wildcard and do not fetch or mutate repository data.
+  existing="$(git config --global --get-all safe.directory 2>/dev/null || true)"
+  if ! printf '%s\n' "${existing}" | grep -Fqx -- "${canonical}"; then
+    git config --global --add safe.directory "${canonical}" || {
+      warm_die "failed to register exact Git safe.directory: ${canonical}"
+      return
+    }
+  fi
+}
+
+warm_require_private_checkout() {
+  local root expected_head remote_names fetch_url push_url expected_origin git_error
+  if ! root="$(git rev-parse --show-toplevel 2>&1)"; then
+    git_error="${root//$'\n'/; }"
+    warm_die "formal jobs must run inside the WARM Git checkout (git: ${git_error})"
+    return
+  fi
   cd "${root}"
   remote_names="$(git remote | LC_ALL=C sort)"
   if [[ "${remote_names}" != "origin" ]]; then
@@ -83,6 +110,7 @@ warm_require_read_only_external_checkout() {
   if [[ ! -d "${checkout}/.git" ]]; then
     warm_die "external checkout is not a Git worktree: ${checkout}" || return
   fi
+  warm_register_safe_directory "${checkout}" || return
   actual="$(git -C "${checkout}" rev-parse HEAD)"
   if [[ "${actual}" != "${expected_revision}" ]]; then
     warm_die "external checkout revision mismatch: ${actual}" || return

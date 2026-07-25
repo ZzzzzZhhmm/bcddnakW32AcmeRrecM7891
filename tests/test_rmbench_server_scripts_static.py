@@ -19,6 +19,29 @@ def test_common_server_guard_is_private_clean_pinned_and_offline_by_default() ->
     assert 'HF_HUB_OFFLINE:-1' in source
     assert "WARM_ALLOW_NETWORK_LOGGING" in source
     assert "push URL must be the literal DISABLED" in source
+    assert "warm_register_safe_directory" in source
+    assert 'git config --global --add safe.directory "${canonical}"' in source
+    assert "safe.directory '*'" not in source
+    assert "git: ${git_error}" in source
+
+
+def test_formal_server_entrypoints_register_the_exact_project_checkout() -> None:
+    entrypoints = (
+        "build_warm_rmbench_contract_bundle_server.sh",
+        "evaluate_fastwam_rmbench_server.sh",
+        "evaluate_warm_rmbench_server.sh",
+        "evaluate_warm_rmbench_task_server.sh",
+        "prepare_warm_rmbench_artifacts.sh",
+        "train_fastwam_rmbench_server.sh",
+        "train_warm_rmbench_server.sh",
+    )
+    for entrypoint in entrypoints:
+        source = _read(entrypoint)
+        assert 'PROJECT_ROOT="$(cd -- "${SCRIPT_DIR}/.." && pwd)"' in source
+        assert 'warm_register_safe_directory "${PROJECT_ROOT}"' in source
+        assert source.index("warm_register_safe_directory") < source.index(
+            "warm_require_private_checkout"
+        )
 
 
 def test_rmbench_artifact_script_is_exact_three_camera_h32_pipeline() -> None:

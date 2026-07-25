@@ -5,6 +5,7 @@ set -euo pipefail
 # three-camera H=32 artifacts consumed by WARM.  This is a Linux GPU-server job.
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
 # shellcheck source=scripts/warm_server_common.sh
 source "${SCRIPT_DIR}/warm_server_common.sh"
 
@@ -29,6 +30,7 @@ warm_require_sha40 "${RMBENCH_CODE_REVISION}" "RMBENCH_CODE_REVISION"
 warm_require_sha40 "${RMBENCH_DATASET_REVISION}" "RMBENCH_DATASET_REVISION"
 warm_require_sha40 "${RMBENCH_SOURCE_REVISION}" "RMBENCH_SOURCE_REVISION"
 warm_require_sha40 "${WARM_DINO_REVISION}" "WARM_DINO_REVISION"
+warm_register_safe_directory "${PROJECT_ROOT}"
 warm_require_private_checkout
 warm_require_read_only_external_checkout "${RMBENCH_ROOT}" "${RMBENCH_CODE_REVISION}"
 warm_configure_offline_logging
