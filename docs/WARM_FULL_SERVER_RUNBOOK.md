@@ -516,10 +516,17 @@ bash scripts/bootstrap_warm_rmbench_eval_env.sh
 
 The bootstrap downloads only
 `embodiments/aloha-agilex/**` and `objects/**` from the same pinned
-`TianxingChen/RMBench@855e90e...` snapshot.  It uses concurrent Hugging Face
-Xet transfers with resumable metadata, stores the result under
+`TianxingChen/RMBench@855e90e...` snapshot.  It first uses concurrent Hugging
+Face snapshot/Xet transfers.  On a slow link where the full 99.5 GB repository
+metadata cannot be resolved, it automatically falls back to the pinned tree
+API and downloads only the audited 344-file, 1,352,861,012-byte simulator
+closure.  The fallback is concurrent, range-resumable, content-deduplicated,
+and verifies every LFS SHA-256 or Git blob SHA-1 before deployment.  It stores
+the result under
 `${PROJECT_DIR}_external/rmbench-assets-855e90e1213d`, writes a provenance
 manifest, and links the two ignored directories into `RMBENCH_ROOT/assets`.
+After a known snapshot-metadata failure, set
+`RMBENCH_ASSET_DOWNLOAD_MODE=direct` to skip that probe on the next retry.
 Later ACP jobs reuse that persistent store and remain offline.  To reuse an
 independently prepared exact snapshot instead of downloading it, set
 `RMBENCH_ASSET_SOURCE` to the directory containing `embodiments/` and

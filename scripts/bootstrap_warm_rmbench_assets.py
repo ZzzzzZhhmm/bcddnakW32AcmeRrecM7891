@@ -19,13 +19,21 @@ therefore fails closed instead of silently replacing user data.
 from __future__ import annotations
 
 import argparse
+import concurrent.futures
 import hashlib
 import json
 import os
+import re
+import shutil
 import subprocess
 import sys
+import threading
+import time
+import urllib.error
+import urllib.parse
+import urllib.request
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any, Iterable, Mapping, Sequence
 
 
 ASSET_SCHEMA = "warm.rmbench-simulator-assets"
@@ -37,6 +45,11 @@ ASSET_PATTERNS = (
     "objects/**",
 )
 ASSET_MANIFEST_NAME = ".warm_rmbench_assets.json"
+DOWNLOAD_PLAN_NAME = ".warm_rmbench_download_plan.json"
+EXPECTED_ASSET_FILE_COUNT = 344
+EXPECTED_ASSET_TOTAL_BYTES = 1_352_861_012
+DEFAULT_NETWORK_TIMEOUT_SECONDS = 600
+DEFAULT_DOWNLOAD_RETRIES = 8
 
 # Every object required by the official nine-task suite.  The final four are
 # common RMBench utility assets used by task helpers rather than appearing as
@@ -65,6 +78,55 @@ REQUIRED_OBJECT_DIRECTORIES = (
 
 class AssetBootstrapError(RuntimeError):
     """Raised when the official asset snapshot cannot be proven complete."""
+
+
+def _positive_int_environment(name: str, default: int) -> int:
+    raw = os.environ.get(name)
+    if raw is None:
+        return default
+    try:
+        value = int(raw)
+    except ValueError as error:
+        raise AssetBootstrapError(
+            f"{name} must be a positive integer, got {raw!r}"
+        ) from error
+    if value < 1:
+        raise AssetBootstrapError(
+            f"{name} must be a positive integer, got {raw!r}"
+        )
+    return value
+
+
+def _exception_chain(error: BaseException) -> str:
+    rendered: list[str] = []
+    seen: set[int] = set()
+    current: BaseException | None = error
+    while current is not None and id(current) not in seen:
+        seen.add(id(current))
+        response = getattr(current, "response", None)
+        status = getattr(response, "status_code", None)
+        suffix = f" status={status}" if status is not None else ""
+        rendered.append(f"{type(current).__name__}{suffix}: {current}")
+        current = current.__cause__ or current.__context__
+    return " <- ".join(rendered)
+
+
+def _endpoint_candidates() -> tuple[str, ...]:
+    configured = os.environ.get("RMBENCH_HF_ENDPOINTS", "")
+    values = [value.strip() for value in configured.split(",") if value.strip()]
+    if not values:
+        explicit = os.environ.get("HF_ENDPOINT", "").strip()
+        if explicit:
+            values.append(explicit)
+        values.extend(("https://huggingface.co", "https://hf-mirror.com"))
+    unique: list[str] = []
+    for value in values:
+        normalized = value.rstrip("/")
+        if normalized and normalized not in unique:
+            unique.append(normalized)
+    if not unique:
+        raise AssetBootstrapError("no Hugging Face download endpoint is configured")
+    return tuple(unique)
 
 
 def _is_nonempty_directory(path: Path) -> bool:
@@ -306,11 +368,412 @@ def deploy_asset_links(
         )
 
 
+def _authorization_headers() -> dict[str, str]:
+    token = os.environ.get("HF_TOKEN") or os.environ.get("HUGGING_FACE_HUB_TOKEN")
+    headers = {"User-Agent": "WARM-RMBench-asset-bootstrap/2"}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    return headers
+
+
+def _open_with_retries(
+    request: urllib.request.Request,
+    *,
+    timeout: int,
+    retries: int = DEFAULT_DOWNLOAD_RETRIES,
+) -> Any:
+    errors: list[str] = []
+    for attempt in range(retries):
+        try:
+            return urllib.request.urlopen(request, timeout=timeout)
+        except (OSError, urllib.error.URLError, urllib.error.HTTPError) as error:
+            errors.append(f"attempt={attempt + 1}: {_exception_chain(error)}")
+            if isinstance(error, urllib.error.HTTPError) and error.code in {
+                400,
+                401,
+                403,
+                404,
+            }:
+                break
+            if attempt + 1 < retries:
+                time.sleep(min(2**attempt, 30))
+    raise AssetBootstrapError(
+        f"network request failed url={request.full_url!r}: " + " | ".join(errors)
+    )
+
+
+def _next_link(value: str | None) -> str | None:
+    if not value:
+        return None
+    match = re.search(r'<([^>]+)>;\s*rel="next"', value)
+    return match.group(1) if match else None
+
+
+def _tree_url(endpoint: str, path: str) -> str:
+    encoded_path = urllib.parse.quote(path, safe="/")
+    return (
+        f"{endpoint}/api/datasets/{RMBENCH_HF_REPOSITORY}/tree/"
+        f"{RMBENCH_HF_REVISION}/{encoded_path}?recursive=true&expand=true"
+    )
+
+
+def _plan_entry(value: Mapping[str, Any]) -> dict[str, Any]:
+    path = str(value.get("path", ""))
+    size = value.get("size")
+    oid = str(value.get("oid", ""))
+    if not path or not isinstance(size, int) or size < 0 or not oid:
+        raise AssetBootstrapError(f"malformed Hugging Face tree entry: {value!r}")
+    lfs = value.get("lfs")
+    if isinstance(lfs, Mapping):
+        digest = str(lfs.get("oid", ""))
+        algorithm = "sha256"
+        if lfs.get("size") != size or not re.fullmatch(r"[0-9a-f]{64}", digest):
+            raise AssetBootstrapError(
+                f"malformed LFS provenance for asset {path!r}: {lfs!r}"
+            )
+    else:
+        digest = oid
+        algorithm = "git-sha1"
+        if not re.fullmatch(r"[0-9a-f]{40}", digest):
+            raise AssetBootstrapError(
+                f"malformed Git provenance for asset {path!r}: oid={digest!r}"
+            )
+    return {
+        "path": path,
+        "size": size,
+        "algorithm": algorithm,
+        "digest": digest,
+    }
+
+
+def _validate_download_plan(value: Mapping[str, Any]) -> list[dict[str, Any]]:
+    if value.get("repo_id") != RMBENCH_HF_REPOSITORY:
+        raise AssetBootstrapError("asset download plan repository does not match")
+    if value.get("revision") != RMBENCH_HF_REVISION:
+        raise AssetBootstrapError("asset download plan revision does not match")
+    raw_files = value.get("files")
+    if not isinstance(raw_files, list):
+        raise AssetBootstrapError("asset download plan has no file list")
+    files: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    allowed_prefixes = ("embodiments/aloha-agilex/", "objects/")
+    for raw in raw_files:
+        if not isinstance(raw, Mapping):
+            raise AssetBootstrapError("asset download plan contains a malformed row")
+        entry = {
+            "path": str(raw.get("path", "")),
+            "size": raw.get("size"),
+            "algorithm": str(raw.get("algorithm", "")),
+            "digest": str(raw.get("digest", "")),
+        }
+        path = entry["path"]
+        if (
+            not path.startswith(allowed_prefixes)
+            or path in seen
+            or not isinstance(entry["size"], int)
+            or entry["size"] < 0
+            or entry["algorithm"] not in {"sha256", "git-sha1"}
+        ):
+            raise AssetBootstrapError(
+                f"invalid pinned asset download-plan row: {entry!r}"
+            )
+        expected_digest_length = 64 if entry["algorithm"] == "sha256" else 40
+        if not re.fullmatch(
+            rf"[0-9a-f]{{{expected_digest_length}}}", entry["digest"]
+        ):
+            raise AssetBootstrapError(
+                f"invalid digest in pinned asset download-plan row: {entry!r}"
+            )
+        seen.add(path)
+        files.append(entry)
+    total_bytes = sum(int(entry["size"]) for entry in files)
+    if (
+        len(files) != EXPECTED_ASSET_FILE_COUNT
+        or total_bytes != EXPECTED_ASSET_TOTAL_BYTES
+    ):
+        raise AssetBootstrapError(
+            "pinned asset tree closure differs from the audited revision: "
+            f"files={len(files)} bytes={total_bytes}, expected "
+            f"files={EXPECTED_ASSET_FILE_COUNT} "
+            f"bytes={EXPECTED_ASSET_TOTAL_BYTES}"
+        )
+    return sorted(files, key=lambda entry: entry["path"])
+
+
+def _fetch_download_plan(endpoint: str, *, timeout: int) -> dict[str, Any]:
+    files: list[dict[str, Any]] = []
+    headers = _authorization_headers()
+    for root in ("embodiments/aloha-agilex", "objects"):
+        url: str | None = _tree_url(endpoint, root)
+        while url is not None:
+            request = urllib.request.Request(url, headers=headers)
+            with _open_with_retries(request, timeout=timeout) as response:
+                try:
+                    values = json.load(response)
+                except (UnicodeDecodeError, json.JSONDecodeError) as error:
+                    raise AssetBootstrapError(
+                        f"invalid asset tree response from {url!r}"
+                    ) from error
+                if not isinstance(values, list):
+                    raise AssetBootstrapError(
+                        f"unexpected asset tree response from {url!r}"
+                    )
+                for value in values:
+                    if isinstance(value, Mapping) and value.get("type") == "file":
+                        files.append(_plan_entry(value))
+                url = _next_link(response.headers.get("Link"))
+    plan: dict[str, Any] = {
+        "schema": "warm.rmbench-asset-download-plan",
+        "version": 1,
+        "repo_id": RMBENCH_HF_REPOSITORY,
+        "revision": RMBENCH_HF_REVISION,
+        "endpoint": endpoint,
+        "files": files,
+    }
+    plan["files"] = _validate_download_plan(plan)
+    return plan
+
+
+def _download_plan_path(asset_root: Path) -> Path:
+    return asset_root / DOWNLOAD_PLAN_NAME
+
+
+def _load_or_fetch_download_plan(
+    asset_root: Path,
+    *,
+    endpoints: Sequence[str],
+    timeout: int,
+) -> dict[str, Any]:
+    path = _download_plan_path(asset_root)
+    if path.is_file():
+        try:
+            value = json.loads(path.read_text(encoding="utf-8"))
+            _validate_download_plan(value)
+        except (AssetBootstrapError, json.JSONDecodeError, OSError) as error:
+            print(f"asset_download_plan_ignored={_exception_chain(error)}")
+        else:
+            print(f"asset_download_plan_reused={path}")
+            return value
+
+    failures: list[str] = []
+    for endpoint in endpoints:
+        try:
+            value = _fetch_download_plan(endpoint, timeout=timeout)
+        except (AssetBootstrapError, OSError) as error:
+            failures.append(f"{endpoint}: {_exception_chain(error)}")
+            continue
+        temporary = path.with_suffix(path.suffix + ".tmp")
+        temporary.write_text(
+            json.dumps(value, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        os.replace(temporary, path)
+        print(f"asset_download_plan_endpoint={endpoint}")
+        return value
+    raise AssetBootstrapError(
+        "could not list the pinned RMBench asset tree through any endpoint: "
+        + " | ".join(failures)
+    )
+
+
+def _hash_matches(path: Path, entry: Mapping[str, Any]) -> bool:
+    if not path.is_file() or path.stat().st_size != entry["size"]:
+        return False
+    algorithm = str(entry["algorithm"])
+    if algorithm == "sha256":
+        digest = hashlib.sha256()
+        prefix = b""
+    elif algorithm == "git-sha1":
+        digest = hashlib.sha1()
+        prefix = f"blob {entry['size']}\0".encode("ascii")
+    else:
+        raise AssetBootstrapError(f"unsupported asset hash algorithm: {algorithm}")
+    digest.update(prefix)
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(8 * 1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest() == entry["digest"]
+
+
+def _resolve_url(endpoint: str, path: str) -> str:
+    encoded_path = urllib.parse.quote(path, safe="/")
+    return (
+        f"{endpoint}/datasets/{RMBENCH_HF_REPOSITORY}/resolve/"
+        f"{RMBENCH_HF_REVISION}/{encoded_path}?download=true"
+    )
+
+
+def _download_file(
+    *,
+    destination: Path,
+    entry: Mapping[str, Any],
+    endpoints: Sequence[str],
+    timeout: int,
+) -> None:
+    if _hash_matches(destination, entry):
+        return
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    partial = destination.with_name(destination.name + ".warm-partial")
+    if partial.exists() and (
+        not partial.is_file() or partial.stat().st_size > entry["size"]
+    ):
+        if partial.is_dir():
+            raise AssetBootstrapError(
+                f"asset partial path is unexpectedly a directory: {partial}"
+            )
+        partial.unlink()
+    if partial.is_file() and partial.stat().st_size == entry["size"]:
+        if _hash_matches(partial, entry):
+            os.replace(partial, destination)
+            return
+        partial.unlink()
+
+    failures: list[str] = []
+    headers = _authorization_headers()
+    attempts = max(DEFAULT_DOWNLOAD_RETRIES, len(endpoints) * 2)
+    for attempt in range(attempts):
+        endpoint = endpoints[attempt % len(endpoints)]
+        offset = partial.stat().st_size if partial.is_file() else 0
+        request_headers = dict(headers)
+        if offset:
+            request_headers["Range"] = f"bytes={offset}-"
+        request = urllib.request.Request(
+            _resolve_url(endpoint, str(entry["path"])),
+            headers=request_headers,
+        )
+        try:
+            with urllib.request.urlopen(request, timeout=timeout) as response:
+                status = int(getattr(response, "status", response.getcode()))
+                append = offset > 0 and status == 206
+                mode = "ab" if append else "wb"
+                if offset > 0 and status not in {200, 206}:
+                    raise AssetBootstrapError(
+                        f"resume request returned HTTP {status}"
+                    )
+                with partial.open(mode) as handle:
+                    while True:
+                        chunk = response.read(8 * 1024 * 1024)
+                        if not chunk:
+                            break
+                        handle.write(chunk)
+                        if handle.tell() > entry["size"]:
+                            raise AssetBootstrapError(
+                                f"download exceeded attested size for {entry['path']}"
+                            )
+        except Exception as error:
+            failures.append(
+                f"endpoint={endpoint} attempt={attempt + 1}: "
+                f"{_exception_chain(error)}"
+            )
+            if attempt + 1 < attempts:
+                time.sleep(min(2 ** min(attempt, 4), 15))
+            continue
+
+        if partial.stat().st_size < entry["size"]:
+            failures.append(
+                f"endpoint={endpoint} attempt={attempt + 1}: short download "
+                f"{partial.stat().st_size}/{entry['size']}"
+            )
+            continue
+        if not _hash_matches(partial, entry):
+            failures.append(
+                f"endpoint={endpoint} attempt={attempt + 1}: digest mismatch"
+            )
+            partial.unlink(missing_ok=True)
+            continue
+        os.replace(partial, destination)
+        return
+    raise AssetBootstrapError(
+        f"failed to download pinned asset {entry['path']!r}: "
+        + " | ".join(failures)
+    )
+
+
+def _materialize_duplicate(
+    source: Path,
+    destination: Path,
+    entry: Mapping[str, Any],
+) -> None:
+    if _hash_matches(destination, entry):
+        return
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    temporary = destination.with_name(destination.name + ".warm-link")
+    temporary.unlink(missing_ok=True)
+    try:
+        os.link(source, temporary)
+    except OSError:
+        shutil.copy2(source, temporary)
+    os.replace(temporary, destination)
+
+
+def _download_direct_asset_tree(
+    *,
+    asset_root: Path,
+    max_workers: int,
+) -> str:
+    timeout = _positive_int_environment(
+        "HF_HUB_DOWNLOAD_TIMEOUT", DEFAULT_NETWORK_TIMEOUT_SECONDS
+    )
+    endpoints = _endpoint_candidates()
+    plan = _load_or_fetch_download_plan(
+        asset_root,
+        endpoints=endpoints,
+        timeout=timeout,
+    )
+    files = _validate_download_plan(plan)
+    groups: dict[tuple[str, str, int], list[dict[str, Any]]] = {}
+    for entry in files:
+        key = (entry["algorithm"], entry["digest"], entry["size"])
+        groups.setdefault(key, []).append(entry)
+
+    completed = 0
+    lock = threading.Lock()
+    total = len(groups)
+
+    def materialize(entries: list[dict[str, Any]]) -> None:
+        nonlocal completed
+        verified = next(
+            (
+                asset_root / entry["path"]
+                for entry in entries
+                if _hash_matches(asset_root / entry["path"], entry)
+            ),
+            None,
+        )
+        canonical_entry = entries[0]
+        canonical = verified or asset_root / canonical_entry["path"]
+        if verified is None:
+            _download_file(
+                destination=canonical,
+                entry=canonical_entry,
+                endpoints=endpoints,
+                timeout=timeout,
+            )
+        for entry in entries:
+            destination = asset_root / entry["path"]
+            if destination != canonical:
+                _materialize_duplicate(canonical, destination, entry)
+        with lock:
+            completed += 1
+            print(
+                f"asset_blob_ready={completed}/{total} "
+                f"path={canonical_entry['path']} bytes={canonical_entry['size']}",
+                flush=True,
+            )
+
+    workers = min(max_workers, total)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
+        futures = [executor.submit(materialize, entries) for entries in groups.values()]
+        for future in concurrent.futures.as_completed(futures):
+            future.result()
+    return f"direct_resolve:{plan['endpoint']}"
+
+
 def _download_snapshot(
     *,
     asset_root: Path,
     max_workers: int,
-) -> None:
+) -> str:
     # Training and formal evaluation deliberately run offline, and those flags
     # are commonly exported by the persistent CCI image.  This helper is the
     # one explicit network bootstrap, so clear inherited offline-only switches
@@ -338,6 +801,12 @@ def _download_snapshot(
             "huggingface_hub is required in the base WARM environment"
         ) from error
     asset_root.mkdir(parents=True, exist_ok=True)
+    timeout = _positive_int_environment(
+        "HF_HUB_DOWNLOAD_TIMEOUT", DEFAULT_NETWORK_TIMEOUT_SECONDS
+    )
+    etag_timeout = _positive_int_environment(
+        "HF_HUB_ETAG_TIMEOUT", DEFAULT_NETWORK_TIMEOUT_SECONDS
+    )
     try:
         snapshot_download(
             repo_id=RMBENCH_HF_REPOSITORY,
@@ -346,14 +815,36 @@ def _download_snapshot(
             allow_patterns=list(ASSET_PATTERNS),
             local_dir=str(asset_root),
             max_workers=max_workers,
-            etag_timeout=60,
+            etag_timeout=etag_timeout,
         )
     except Exception as error:
-        endpoint = os.environ.get("HF_ENDPOINT", "https://huggingface.co")
-        raise AssetBootstrapError(
-            "failed to resolve/download the pinned official asset snapshot "
-            f"from endpoint={endpoint!r}: {type(error).__name__}: {error}"
-        ) from error
+        print(
+            "asset_snapshot_download_fallback="
+            f"{_exception_chain(error)}",
+            file=sys.stderr,
+            flush=True,
+        )
+        return _download_direct_asset_tree(
+            asset_root=asset_root,
+            max_workers=max_workers,
+        )
+
+    metadata = _tree_metadata(asset_root)
+    if (
+        metadata["file_count"] != EXPECTED_ASSET_FILE_COUNT
+        or metadata["total_bytes"] != EXPECTED_ASSET_TOTAL_BYTES
+    ):
+        print(
+            "asset_snapshot_incomplete_fallback="
+            f"files={metadata['file_count']} bytes={metadata['total_bytes']}",
+            file=sys.stderr,
+            flush=True,
+        )
+        return _download_direct_asset_tree(
+            asset_root=asset_root,
+            max_workers=max_workers,
+        )
+    return f"huggingface_snapshot_download:{os.environ.get('HF_ENDPOINT', 'https://huggingface.co')}"
 
 
 def _parse_args() -> argparse.Namespace:
@@ -363,6 +854,15 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--asset-source", type=Path)
     parser.add_argument("--rmbench-revision", required=True)
     parser.add_argument("--max-workers", type=int, default=16)
+    parser.add_argument(
+        "--download-mode",
+        choices=("auto", "direct"),
+        default="auto",
+        help=(
+            "Use 'direct' to skip Hugging Face snapshot metadata and fetch only "
+            "the audited simulator tree with range-resumable verified GETs."
+        ),
+    )
     parser.add_argument(
         "--trust-existing-source",
         action="store_true",
@@ -412,14 +912,20 @@ def main() -> int:
                 previous = validate_asset_manifest(asset_root)
                 print(f"asset_snapshot_reused={asset_root}")
             except (AssetBootstrapError, json.JSONDecodeError):
-                _download_snapshot(
-                    asset_root=asset_root,
-                    max_workers=args.max_workers,
-                )
+                if args.download_mode == "direct":
+                    download_source = _download_direct_asset_tree(
+                        asset_root=asset_root,
+                        max_workers=args.max_workers,
+                    )
+                else:
+                    download_source = _download_snapshot(
+                        asset_root=asset_root,
+                        max_workers=args.max_workers,
+                    )
                 rendered = render_embodiment_configs(asset_root, rmbench_root)
                 write_asset_manifest(
                     asset_root,
-                    source="huggingface_snapshot_download",
+                    source=download_source,
                     rendered_configs=rendered,
                 )
             else:

@@ -20,6 +20,7 @@ WARM_EXTERNAL_ROOT="${WARM_EXTERNAL_ROOT:-${PROJECT_DIR}_external}"
 RMBENCH_ASSET_STORE="${RMBENCH_ASSET_STORE:-${WARM_EXTERNAL_ROOT}/rmbench-assets-855e90e1213d}"
 RMBENCH_ASSET_SOURCE="${RMBENCH_ASSET_SOURCE:-}"
 RMBENCH_ASSET_MAX_WORKERS="${RMBENCH_ASSET_MAX_WORKERS:-16}"
+RMBENCH_ASSET_DOWNLOAD_MODE="${RMBENCH_ASSET_DOWNLOAD_MODE:-auto}"
 CUROBO_SOURCE="${CUROBO_SOURCE:-${WARM_EXTERNAL_ROOT}/curobo-d64c4b005459}"
 RMBENCH_CODE_REVISION="${RMBENCH_CODE_REVISION:-57ee09cbc6267bc36ca0ac2d8d1c5c3b245c112c}"
 CUROBO_REVISION="${CUROBO_REVISION:-d64c4b005459db10c5dd867d8b30a87d5bda9bdb}"
@@ -30,7 +31,7 @@ CONSTRAINTS="${PROJECT_DIR}/scripts/constraints/warm_rmbench_eval.constraints"
 WARM_RMBENCH_WHEELHOUSE="${WARM_RMBENCH_WHEELHOUSE:-${WARM_EXTERNAL_ROOT}/wheelhouse/rmbench-eval-v2}"
 export PIP_CACHE_DIR="${PIP_CACHE_DIR:-${WARM_EXTERNAL_ROOT}/pip-cache/rmbench-eval-v2}"
 export HF_HUB_DOWNLOAD_TIMEOUT="${HF_HUB_DOWNLOAD_TIMEOUT:-600}"
-export HF_HUB_ETAG_TIMEOUT="${HF_HUB_ETAG_TIMEOUT:-60}"
+export HF_HUB_ETAG_TIMEOUT="${HF_HUB_ETAG_TIMEOUT:-600}"
 export HF_XET_HIGH_PERFORMANCE="${HF_XET_HIGH_PERFORMANCE:-1}"
 WARM_RMBENCH_PYPI_MIRROR="${WARM_RMBENCH_PYPI_MIRROR:-https://mirrors.aliyun.com/pypi/simple/}"
 WARM_RMBENCH_PYPI_FALLBACK="${WARM_RMBENCH_PYPI_FALLBACK:-https://pypi.org/simple}"
@@ -114,14 +115,15 @@ PY
 # The official policy-training data under data/robotwin2.0 does not contain
 # SAPIEN URDF/mesh assets.  Materialize only the pinned ALOHA embodiment and
 # object trees in persistent AFS, then link their ignored directories into the
-# exact read-only RMBench code checkout.  Hugging Face's local metadata makes
-# interrupted transfers resumable; high-performance Xet plus file-level
-# concurrency avoids the cluster's slow single-stream path.
+# exact read-only RMBench code checkout.  The downloader uses snapshot/Xet
+# when available and a hash-verified, range-resumable direct-tree fallback on
+# slow links; both paths retain partial work in persistent AFS.
 ASSET_ARGS=(
   --rmbench-root "${RMBENCH_ROOT}"
   --asset-store "${RMBENCH_ASSET_STORE}"
   --rmbench-revision "${RMBENCH_CODE_REVISION}"
   --max-workers "${RMBENCH_ASSET_MAX_WORKERS}"
+  --download-mode "${RMBENCH_ASSET_DOWNLOAD_MODE}"
 )
 RMBENCH_ASSET_ACTIVE_ROOT="${RMBENCH_ASSET_STORE}"
 if [[ -n "${RMBENCH_ASSET_SOURCE}" ]]; then
