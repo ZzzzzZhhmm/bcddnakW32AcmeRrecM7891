@@ -125,11 +125,36 @@ def test_rmbench_specialist_eval_launcher_pins_checkpoint_training_commit() -> N
     assert "build_warm_rmbench_sota_task_contract_server.sh" in source
     assert "evaluate_warm_rmbench_task_server.sh" in source
     assert "formal100-s3407-v1" in source
-    assert "expected exactly one visible CUDA device" in source
+    runtime_check = _read("check_warm_rmbench_eval_runtime.py")
+    assert "expected exactly one visible CUDA device" in runtime_check
     assert "rmbench_f77_contract_v1/run_contract_bundle.py" in source
     assert "KNOWN_F77_ONLINE_BUILDER_SHA256" in source
     assert "CONTRACT_COMPAT_SUFFIX" in source
     assert 'WARM_EVALUATION_NAMESPACE_BASE' in source
+    assert "warm-rmbench-eval" in source
+    assert "check_warm_rmbench_eval_runtime.py" in source
+    assert "bootstrap_warm_rmbench_eval_env.sh once in CCI" in source
+    assert source.index("check_warm_rmbench_eval_runtime.py") < source.index(
+        "BUILD RMBENCH SPECIALIST CONTRACT"
+    )
+
+
+def test_rmbench_eval_bootstrap_preserves_warm_runtime_and_pins_simulator() -> None:
+    source = _read("bootstrap_warm_rmbench_eval_env.sh")
+    assert "--system-site-packages" in source
+    assert "warm-rmbench-eval" in source
+    assert "warm_rmbench_eval.constraints" in source
+    assert '"sapien==3.0.0b1"' in source
+    assert '"mplib==0.2.1"' in source
+    assert '"open3d==0.18.0"' in source
+    assert '"warp-lang==1.11.1"' in source
+    assert '"scikit-image==0.22.0"' in source
+    assert "--force-reinstall --no-deps" in source
+    assert "d64c4b005459db10c5dd867d8b30a87d5bda9bdb" in source
+    assert "check_warm_rmbench_eval_runtime.py" in source
+    assert "RMBENCH_EVAL_ENV_READY" in source
+    assert "script/requirements.txt" in source
+    assert "pip install -r" not in source
 
 
 def test_rmbench_contract_builder_retains_validated_compute_device() -> None:

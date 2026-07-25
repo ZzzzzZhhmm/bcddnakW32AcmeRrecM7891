@@ -1,0 +1,32 @@
+# Keep the exact WARM checkpoint runtime while installing RMBench simulation.
+#
+# Do not replace this file with RMBench/script/requirements.txt: the latter
+# pins torch==2.4.1 and would make the trained WARM checkpoint runtime drift.
+torch==2.7.1+cu128
+torchvision==0.22.1+cu128
+numpy==1.26.4
+huggingface-hub==0.29.2
+imageio==2.37.0
+scipy==1.10.1
+transforms3d==0.4.2
+sapien==3.0.0b1
+mplib==0.2.1
+gymnasium==0.29.1
+trimesh==4.4.3
+open3d==0.18.0
+pyglet==1.5.31
+toppra==0.6.3
+
+# CuRobo v0.7.8 transitive dependencies are pinned as of its 2026-03-02
+# release window.  In particular, newer scikit-image releases require a
+# SciPy version that conflicts with the official RMBench simulator pin.
+warp-lang==1.11.1
+scikit-image==0.22.0
+yourdfpy==0.0.60
+numpy-quaternion==2024.0.13
+pybind11==2.13.6
+networkx==3.4.2
+pyyaml==6.0.2
+setuptools_scm==8.2.0
+tqdm==4.66.5
+importlib_resources==6.5.2

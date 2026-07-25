@@ -10,10 +10,12 @@ set -euo pipefail
 # fetch, pull, checkout of the primary worktree, or other network operation.
 
 PROJECT_DIR="${PROJECT_DIR:-/mnt/afs/task3_2/L202500276_lwz/projects/WARM}"
-CONDA_ENV_DIR="${CONDA_ENV_DIR:-/mnt/afs/task3_2/L202500276_lwz/envs/warm}"
+WARM_RMBENCH_EVAL_ENV_DIR="${WARM_RMBENCH_EVAL_ENV_DIR:-/mnt/afs/task3_2/L202500276_lwz/envs/warm-rmbench-eval}"
+CONDA_ENV_DIR="${CONDA_ENV_DIR:-${WARM_RMBENCH_EVAL_ENV_DIR}}"
 RMBENCH_ROOT="${RMBENCH_ROOT:-/mnt/afs/task3_2/L202500276_lwz/external/RMBench-official}"
 RMBENCH_HF_REVISION_MARKER="${RMBENCH_HF_REVISION_MARKER:-/mnt/afs/task3_2/L202500276_lwz/datasets/rmbench_hf_revision.json}"
 WARM_ARTIFACT_ROOT="${WARM_ARTIFACT_ROOT:-${PROJECT_DIR}_artifacts/rmbench_official50_v1}"
+WARM_RMBENCH_RUNTIME_MANIFEST="${WARM_RMBENCH_RUNTIME_MANIFEST:-${CONDA_ENV_DIR}/warm_rmbench_runtime.json}"
 
 FASTWAM_BASE_CHECKPOINT="${FASTWAM_BASE_CHECKPOINT:-${PROJECT_DIR}/checkpoints/fastwam_release/robotwin_uncond_3cam_384.pt}"
 WARM_DINO_CHECKPOINT="${WARM_DINO_CHECKPOINT:-${PROJECT_DIR}/checkpoints/dinov2-base}"
@@ -63,7 +65,9 @@ esac
 [[ "${CUDA_VISIBLE_DEVICES}" != *,* ]] \
   || fail "one specialist evaluation uses exactly one visible GPU"
 [[ -x "${CONDA_ENV_DIR}/bin/python" ]] \
-  || fail "persistent warm Python environment is incomplete: ${CONDA_ENV_DIR}"
+  || fail "persistent RMBench evaluation environment is incomplete: ${CONDA_ENV_DIR}; run scripts/bootstrap_warm_rmbench_eval_env.sh once in CCI"
+[[ -f "${WARM_RMBENCH_RUNTIME_MANIFEST}" ]] \
+  || fail "RMBench runtime manifest is absent: ${WARM_RMBENCH_RUNTIME_MANIFEST}; run scripts/bootstrap_warm_rmbench_eval_env.sh once in CCI"
 [[ -e "${PROJECT_DIR}/.git" ]] \
   || fail "WARM Git checkout not found: ${PROJECT_DIR}"
 [[ -e "${RMBENCH_ROOT}/.git" ]] \
@@ -92,6 +96,13 @@ register_git_safe_directory "${RMBENCH_ROOT}"
 
 [[ "$(git -C "${RMBENCH_ROOT}" rev-parse HEAD)" == "${RMBENCH_CODE_REVISION}" ]] \
   || fail "RMBench checkout revision does not match ${RMBENCH_CODE_REVISION}"
+
+# Validate the complete simulator/import/render closure before checkpoint
+# hashing, contract creation, or an immutable evaluation output directory.
+"${PYTHON_BIN}" "${PROJECT_DIR}/scripts/check_warm_rmbench_eval_runtime.py" \
+  --rmbench-root "${RMBENCH_ROOT}" \
+  --task "${WARM_RMBENCH_TASK}" \
+  --runtime-manifest "${WARM_RMBENCH_RUNTIME_MANIFEST}"
 
 FINAL_STEP="${WARM_FINAL_STEP:-${DEFAULT_FINAL_STEP}}"
 [[ "${FINAL_STEP}" =~ ^[1-9][0-9]*$ ]] \
@@ -362,22 +373,6 @@ export WARM_RMBENCH_ONLINE_CONTRACT WARM_EVAL_ROOT
 mkdir -p \
   "$(dirname "${WARM_RMBENCH_ONLINE_CONTRACT}")" \
   "$(dirname "${WARM_EVAL_ROOT}")"
-
-"${PYTHON_BIN}" - <<'PY'
-import torch
-
-count = torch.cuda.device_count()
-if count != 1:
-    raise SystemExit(f"expected exactly one visible CUDA device, got {count}")
-props = torch.cuda.get_device_properties(0)
-gib = props.total_memory / 1024**3
-if "H100" not in props.name or gib < 75:
-    raise SystemExit(
-        f"formal specialist evaluation requires an 80GB H100, "
-        f"got {props.name} ({gib:.1f} GiB)"
-    )
-print(f"gpu[0]={props.name} memory_gib={gib:.1f}")
-PY
 
 printf '%s\n' \
   "launcher_commit=$(git -C "${PROJECT_DIR}" rev-parse HEAD)" \

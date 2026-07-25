@@ -276,6 +276,36 @@ bash scripts/evaluate_warm_rmbench_task_server.sh
 
 ACP 本身负责进程生命周期，不需要 tmux，也不在启动命令中执行 `git pull`。一个 ACP 占一张卡；有 4 张 H100 时可并行四个不同任务，每个任务使用独立 checkpoint、contract root 和 eval root。
 
+### 8.1 一次性持久化仿真环境
+
+正式 evaluator 不只需要 WARM 训练环境，还需要 SAPIEN、MPLib、Open3D 和
+CuRobo。RMBench 官方 `script/requirements.txt` 固定
+`torch==2.4.1`，不能直接安装到 checkpoint 所绑定的 WARM
+`torch==2.7.1+cu128` 环境，否则模型 runtime 会漂移。
+
+因此只在同步新代码后的 CCI 中执行一次：
+
+```bash
+cd /mnt/afs/task3_2/L202500276_lwz/projects/WARM
+
+CUDA_VISIBLE_DEVICES=0 \
+WARM_RMBENCH_TASK=blocks_ranking_try \
+bash scripts/bootstrap_warm_rmbench_eval_env.sh
+```
+
+脚本在持久化 AFS 中创建
+`/mnt/afs/task3_2/L202500276_lwz/envs/warm-rmbench-eval`。它继承原 WARM
+环境，精确安装官方 simulator 版本和 CuRobo v0.7.8 对应 commit，应用官方
+SAPIEN/MPLib 补丁，然后验证完整 import closure、指定任务模块、单张 H100 和
+无头 ray-tracing renderer。成功标志为 `RMBENCH_EVAL_ENV_READY`。
+
+该步骤不是每个 ACP 都运行；环境保存在 AFS，后续所有 specialist 共用。ACP
+wrapper 会在创建 contract 或 immutable eval root 前重新执行只读 preflight；
+环境缺包、版本漂移、CuRobo provenance 不符或 renderer 不可用都会立即报出，
+不会再跑到正式 rollout 中途才发现。
+
+### 8.2 ACP 正式评测
+
 对于 checkpoint 训练完成后 `main` 已继续更新的常见情况，ACP 正式评测应优先使用封装入口：
 
 ```bash
