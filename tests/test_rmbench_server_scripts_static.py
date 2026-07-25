@@ -159,6 +159,11 @@ def test_rmbench_eval_bootstrap_preserves_warm_runtime_and_pins_simulator() -> N
     assert "--no-build-isolation" in source
     assert "toppra-0.6.3-*.whl" in source
     assert '--wheel-dir "${WARM_RMBENCH_WHEELHOUSE}"' in source
+    assert "http.version=HTTP/1.1" in source
+    assert "CUROBO_FETCH_ATTEMPTS" in source
+    assert "--filter=blob:none" in source
+    assert "sparse-checkout set" in source
+    assert "'!/src/curobo/content/assets/'" in source
     assert '"warp-lang==1.11.1"' in source
     assert '"scikit-image==0.22.0"' in source
     assert "--force-reinstall --no-deps" in source

@@ -20,6 +20,9 @@ WARM_EXTERNAL_ROOT="${WARM_EXTERNAL_ROOT:-${PROJECT_DIR}_external}"
 CUROBO_SOURCE="${CUROBO_SOURCE:-${WARM_EXTERNAL_ROOT}/curobo-d64c4b005459}"
 RMBENCH_CODE_REVISION="${RMBENCH_CODE_REVISION:-57ee09cbc6267bc36ca0ac2d8d1c5c3b245c112c}"
 CUROBO_REVISION="${CUROBO_REVISION:-d64c4b005459db10c5dd867d8b30a87d5bda9bdb}"
+CUROBO_TAG="${CUROBO_TAG:-v0.7.8}"
+CUROBO_GIT_URL="${CUROBO_GIT_URL:-https://github.com/NVlabs/curobo.git}"
+CUROBO_FETCH_ATTEMPTS="${CUROBO_FETCH_ATTEMPTS:-6}"
 CONSTRAINTS="${PROJECT_DIR}/scripts/constraints/warm_rmbench_eval.constraints"
 WARM_RMBENCH_WHEELHOUSE="${WARM_RMBENCH_WHEELHOUSE:-${WARM_EXTERNAL_ROOT}/wheelhouse/rmbench-eval-v2}"
 export PIP_CACHE_DIR="${PIP_CACHE_DIR:-${WARM_EXTERNAL_ROOT}/pip-cache/rmbench-eval-v2}"
@@ -33,6 +36,21 @@ SAPIEN_WHEEL_SIZE="49596610"
 fail() {
   printf 'ERROR: %s\n' "$*" >&2
   exit 2
+}
+
+retry_git() {
+  local attempt
+  for ((attempt = 1; attempt <= CUROBO_FETCH_ATTEMPTS; attempt++)); do
+    if GIT_TERMINAL_PROMPT=0 git -c http.version=HTTP/1.1 "$@"; then
+      return 0
+    fi
+    if ((attempt < CUROBO_FETCH_ATTEMPTS)); then
+      printf 'Git attempt %d/%d failed; retrying in %d seconds.\n' \
+        "${attempt}" "${CUROBO_FETCH_ATTEMPTS}" "$((attempt * 2))" >&2
+      sleep "$((attempt * 2))"
+    fi
+  done
+  return 1
 }
 
 [[ -x "${WARM_BASE_ENV_DIR}/bin/python" ]] \
@@ -220,18 +238,56 @@ fi
 "${PYTHON_BIN}" "${PROJECT_DIR}/scripts/install_open3d_rgb_guard.py" \
   --source "${PROJECT_DIR}/scripts/runtime_shims/open3d"
 
+# CuRobo's full checkout is dominated by ~172 MB of example robot/scene
+# assets. RMBench supplies its own embodiment assets and only needs CuRobo's
+# code, CUDA extensions, and 160 KB runtime configs. A blobless sparse checkout
+# therefore keeps the exact v0.7.8 commit while greatly reducing GitHub
+# transfer size and TLS exposure.
 if [[ ! -e "${CUROBO_SOURCE}/.git" ]]; then
   [[ ! -e "${CUROBO_SOURCE}" ]] \
     || fail "non-Git path already occupies CUROBO_SOURCE: ${CUROBO_SOURCE}"
-  git clone --no-checkout https://github.com/NVlabs/curobo.git \
-    "${CUROBO_SOURCE}"
+  mkdir -p "${CUROBO_SOURCE}"
+  git -C "${CUROBO_SOURCE}" init
+  git -C "${CUROBO_SOURCE}" remote add origin "${CUROBO_GIT_URL}"
 fi
 git config --global --add safe.directory "${CUROBO_SOURCE}" 2>/dev/null || true
-git -C "${CUROBO_SOURCE}" cat-file -e "${CUROBO_REVISION}^{commit}" 2>/dev/null \
-  || git -C "${CUROBO_SOURCE}" fetch --depth 1 origin "${CUROBO_REVISION}"
-git -C "${CUROBO_SOURCE}" checkout --detach "${CUROBO_REVISION}"
+if git -C "${CUROBO_SOURCE}" remote get-url origin >/dev/null 2>&1; then
+  git -C "${CUROBO_SOURCE}" remote set-url origin "${CUROBO_GIT_URL}"
+else
+  git -C "${CUROBO_SOURCE}" remote add origin "${CUROBO_GIT_URL}"
+fi
+git -C "${CUROBO_SOURCE}" config remote.origin.promisor true
+git -C "${CUROBO_SOURCE}" config remote.origin.partialclonefilter blob:none
+if ! git -C "${CUROBO_SOURCE}" cat-file \
+  -e "${CUROBO_REVISION}^{commit}" 2>/dev/null
+then
+  retry_git -C "${CUROBO_SOURCE}" fetch \
+    --filter=blob:none \
+    --depth 1 \
+    origin \
+    "refs/tags/${CUROBO_TAG}:refs/tags/${CUROBO_TAG}" \
+    || fail "failed to fetch sparse CuRobo ${CUROBO_TAG} after ${CUROBO_FETCH_ATTEMPTS} attempts"
+fi
+CUROBO_TAG_REVISION="$(
+  git -C "${CUROBO_SOURCE}" rev-parse "${CUROBO_TAG}^{}"
+)"
+[[ "${CUROBO_TAG_REVISION}" == "${CUROBO_REVISION}" ]] \
+  || fail "CuRobo tag ${CUROBO_TAG} resolves to ${CUROBO_TAG_REVISION}, expected ${CUROBO_REVISION}"
+git -C "${CUROBO_SOURCE}" sparse-checkout init --no-cone
+git -C "${CUROBO_SOURCE}" sparse-checkout set \
+  --no-cone \
+  '/*' \
+  '!/src/curobo/content/assets/'
+retry_git -C "${CUROBO_SOURCE}" checkout --detach "${CUROBO_REVISION}" \
+  || fail "failed to materialize sparse CuRobo source"
 [[ -z "$(git -C "${CUROBO_SOURCE}" status --porcelain)" ]] \
   || fail "CuRobo source checkout is dirty: ${CUROBO_SOURCE}"
+[[ -d "${CUROBO_SOURCE}/src/curobo/content/configs" ]] \
+  || fail "sparse CuRobo runtime configs are absent"
+[[ -f "${CUROBO_SOURCE}/src/curobo/curobolib/cpp/kinematics_fused_kernel.cu" ]] \
+  || fail "sparse CuRobo CUDA sources are absent"
+[[ ! -e "${CUROBO_SOURCE}/src/curobo/content/assets" ]] \
+  || fail "CuRobo example assets unexpectedly entered the minimal checkout"
 
 # Build the exact official v0.7.8 source against WARM's inherited Torch 2.7.1.
 # Constraints prevent dependency resolution from changing the checkpoint
