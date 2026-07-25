@@ -35,3 +35,4 @@ importlib_resources==6.5.2
 setuptools==80.9.0
 wheel==0.45.1
 ninja==1.11.1.4
+Cython==0.29.37

@@ -97,7 +97,17 @@ PIP=("${PYTHON_BIN}" -m pip)
 # fast from the target cluster; exact-package fallback preserves portability.
 # --no-deps is deliberate: yourdfpy declares trimesh[easy], whose VHACD,
 # Embree, XAtlas, and Open3D-adjacent extras are unused by CuRobo's
-# load_meshes=False URDF path.
+# load_meshes=False URDF path.  Build requirements are installed first because
+# toppra 0.6.3 is source-only and needs Cython plus inherited NumPy at build
+# time.
+BUILD_PACKAGES=(
+  "setuptools==80.9.0"
+  "wheel==0.45.1"
+  "ninja==1.11.1.4"
+  "Cython==0.29.37"
+  "pybind11==2.13.6"
+  "setuptools_scm==8.2.0"
+)
 RUNTIME_PACKAGES=(
   "scipy==1.10.1"
   "transforms3d==0.4.2"
@@ -113,17 +123,13 @@ RUNTIME_PACKAGES=(
   "six==1.17.0"
   "pyperclip==1.9.0"
   "numpy-quaternion==2024.0.13"
-  "pybind11==2.13.6"
   "networkx==3.4.2"
   "pyyaml==6.0.2"
-  "setuptools_scm==8.2.0"
   "tqdm==4.66.5"
   "importlib_resources==6.5.2"
-  "setuptools==80.9.0"
-  "wheel==0.45.1"
-  "ninja==1.11.1.4"
 )
-for package in "${RUNTIME_PACKAGES[@]}"; do
+DOWNLOAD_PACKAGES=("${BUILD_PACKAGES[@]}" "${RUNTIME_PACKAGES[@]}")
+for package in "${DOWNLOAD_PACKAGES[@]}"; do
   if ! "${PIP[@]}" download \
     --no-deps \
     --dest "${WARM_RMBENCH_WHEELHOUSE}" \
@@ -160,12 +166,42 @@ then
     "sapien==3.0.0b1"
 fi
 
+# Make source builds deterministic and independent of pip's temporary build
+# environment.  In particular, toppra's pyproject requires Cython and NumPy;
+# NumPy is inherited from the checkpoint-attested WARM base runtime.
+"${PIP[@]}" install \
+  --no-index \
+  --find-links "${WARM_RMBENCH_WHEELHOUSE}" \
+  --no-deps \
+  -c "${CONSTRAINTS}" \
+  "${BUILD_PACKAGES[@]}"
+
+# Persist the only source-only Python dependency as a platform wheel.  This is
+# performed once per AFS wheelhouse and prevents every later ACP environment
+# from repeating toppra's Cython compilation.
+if ! find "${WARM_RMBENCH_WHEELHOUSE}" \
+  -maxdepth 1 \
+  -type f \
+  -name 'toppra-0.6.3-*.whl' \
+  -print -quit | grep -q .
+then
+  "${PIP[@]}" wheel \
+    --no-index \
+    --find-links "${WARM_RMBENCH_WHEELHOUSE}" \
+    --no-deps \
+    --no-build-isolation \
+    -c "${CONSTRAINTS}" \
+    --wheel-dir "${WARM_RMBENCH_WHEELHOUSE}" \
+    "toppra==0.6.3"
+fi
+
 # This is intentionally not RMBench/script/requirements.txt: its torch==2.4.1
 # pin is incompatible with the checkpoint-attested WARM runtime.
 "${PIP[@]}" install \
   --no-index \
   --find-links "${WARM_RMBENCH_WHEELHOUSE}" \
   --no-deps \
+  --no-build-isolation \
   -c "${CONSTRAINTS}" \
   "sapien==3.0.0b1" \
   "${RUNTIME_PACKAGES[@]}"

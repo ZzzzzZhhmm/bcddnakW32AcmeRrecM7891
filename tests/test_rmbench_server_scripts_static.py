@@ -154,6 +154,11 @@ def test_rmbench_eval_bootstrap_preserves_warm_runtime_and_pins_simulator() -> N
     assert "mirrors.aliyun.com" in source
     assert "trimesh[easy]" in source
     assert "--no-deps" in source
+    assert '"Cython==0.29.37"' in source
+    assert "BUILD_PACKAGES=(" in source
+    assert "--no-build-isolation" in source
+    assert "toppra-0.6.3-*.whl" in source
+    assert '--wheel-dir "${WARM_RMBENCH_WHEELHOUSE}"' in source
     assert '"warp-lang==1.11.1"' in source
     assert '"scikit-image==0.22.0"' in source
     assert "--force-reinstall --no-deps" in source
