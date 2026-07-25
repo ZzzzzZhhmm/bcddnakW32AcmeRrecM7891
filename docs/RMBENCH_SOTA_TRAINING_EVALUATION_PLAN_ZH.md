@@ -276,6 +276,24 @@ bash scripts/evaluate_warm_rmbench_task_server.sh
 
 ACP 本身负责进程生命周期，不需要 tmux，也不在启动命令中执行 `git pull`。一个 ACP 占一张卡；有 4 张 H100 时可并行四个不同任务，每个任务使用独立 checkpoint、contract root 和 eval root。
 
+对于 checkpoint 训练完成后 `main` 已继续更新的常见情况，ACP 正式评测应优先使用封装入口：
+
+```bash
+cd /mnt/afs/task3_2/L202500276_lwz/projects/WARM
+
+CUDA_VISIBLE_DEVICES=0 \
+WARM_RMBENCH_TASK=blocks_ranking_try \
+WARM_EVAL_LABEL=formal100-s3407-v1 \
+bash scripts/acp_warm_rmbench_specialist_eval.sh
+```
+
+该入口从 checkpoint 的 canonical training attestation 读取训练 commit，在
+`WARM_evaluations/code/<training-commit>` 创建或复用 detached worktree，并在该
+只读 worktree 中构建任务 contract 和运行官方 100-episode evaluator。它不会
+切换主 checkout、不会执行 `pull/fetch`，也不会放宽 contract 对
+checkpoint/evaluator commit 一致性的要求。不同任务可各占一个单卡 ACP 并行运行；
+若重跑同一任务，必须提供新的 `WARM_EVAL_LABEL`。
+
 ## 9. 正式报告
 
 九任务每项 100 episodes，报告：

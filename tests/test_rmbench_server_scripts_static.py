@@ -110,6 +110,24 @@ def test_score_oriented_task_launchers_bind_registry_batch_and_online_memory() -
     assert "warm_experiment_id" in evaluation
 
 
+def test_rmbench_specialist_eval_launcher_pins_checkpoint_training_commit() -> None:
+    source = _read("acp_warm_rmbench_specialist_eval.sh")
+    assert "git pull" not in source
+    assert "git fetch" not in source
+    assert "worktree add --detach" in source
+    assert 'TRAIN_COMMIT' in source
+    assert 'WARM_CODE_REVISION="${TRAIN_COMMIT}"' in source
+    assert 'register_git_safe_directory "${PROJECT_DIR}"' in source
+    assert 'register_git_safe_directory "${RMBENCH_ROOT}"' in source
+    assert 'register_git_safe_directory "${EVAL_CODE}"' in source
+    assert "flock -x 9" in source
+    assert "PYTHONDONTWRITEBYTECODE=1" in source
+    assert "build_warm_rmbench_sota_task_contract_server.sh" in source
+    assert "evaluate_warm_rmbench_task_server.sh" in source
+    assert "formal100-s3407-v1" in source
+    assert "expected exactly one visible CUDA device" in source
+
+
 def test_same_data_fastwam_baseline_has_separate_train_and_eval_launchers() -> None:
     training = _read("train_fastwam_rmbench_server.sh")
     evaluation = _read("evaluate_fastwam_rmbench_server.sh")
