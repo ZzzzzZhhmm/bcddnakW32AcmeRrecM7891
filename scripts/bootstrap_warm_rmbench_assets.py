@@ -254,8 +254,16 @@ def _link_category(source: Path, target: Path) -> None:
             )
         return
     if target.exists():
-        if target.is_dir() and next(target.iterdir(), None) is None:
-            target.rmdir()
+        if target.is_dir() and not any(
+            child.is_file() or child.is_symlink()
+            for child in target.rglob("*")
+        ):
+            # Failed/manual setup often leaves category/aloha-agilex as an
+            # empty directory tree.  Removing only fileless directories is
+            # safe and keeps retries automatic; any file or link still causes
+            # the fail-closed branch below.
+            for directory, _, _ in os.walk(target, topdown=False):
+                Path(directory).rmdir()
         else:
             raise AssetBootstrapError(
                 f"refusing to replace non-empty asset path: {target}; "

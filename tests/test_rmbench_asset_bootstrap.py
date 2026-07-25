@@ -109,3 +109,23 @@ def test_manifest_json_uses_exact_official_patterns(tmp_path: Path) -> None:
         "embodiments/aloha-agilex/**",
         "objects/**",
     ]
+
+
+def test_link_category_recovers_only_fileless_partial_tree(tmp_path: Path) -> None:
+    source = tmp_path / "source"
+    source.mkdir()
+    (source / "payload").write_text("ready", encoding="utf-8")
+    target = tmp_path / "target"
+    (target / "aloha-agilex" / "meshes").mkdir(parents=True)
+    try:
+        assets._link_category(source, target)
+    except OSError as error:
+        pytest.skip(f"local filesystem does not permit symbolic links: {error}")
+    assert target.is_symlink()
+    assert target.resolve() == source.resolve()
+
+    conflicting = tmp_path / "conflicting"
+    conflicting.mkdir()
+    (conflicting / "partial.bin").write_bytes(b"partial")
+    with pytest.raises(assets.AssetBootstrapError, match="refusing to replace"):
+        assets._link_category(source, conflicting)
