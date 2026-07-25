@@ -17,6 +17,9 @@ WARM_BASE_ENV_DIR="${WARM_BASE_ENV_DIR:-/mnt/afs/task3_2/L202500276_lwz/envs/war
 WARM_RMBENCH_EVAL_ENV_DIR="${WARM_RMBENCH_EVAL_ENV_DIR:-/mnt/afs/task3_2/L202500276_lwz/envs/warm-rmbench-eval}"
 RMBENCH_ROOT="${RMBENCH_ROOT:-/mnt/afs/task3_2/L202500276_lwz/external/RMBench-official}"
 WARM_EXTERNAL_ROOT="${WARM_EXTERNAL_ROOT:-${PROJECT_DIR}_external}"
+RMBENCH_ASSET_STORE="${RMBENCH_ASSET_STORE:-${WARM_EXTERNAL_ROOT}/rmbench-assets-855e90e1213d}"
+RMBENCH_ASSET_SOURCE="${RMBENCH_ASSET_SOURCE:-}"
+RMBENCH_ASSET_MAX_WORKERS="${RMBENCH_ASSET_MAX_WORKERS:-16}"
 CUROBO_SOURCE="${CUROBO_SOURCE:-${WARM_EXTERNAL_ROOT}/curobo-d64c4b005459}"
 RMBENCH_CODE_REVISION="${RMBENCH_CODE_REVISION:-57ee09cbc6267bc36ca0ac2d8d1c5c3b245c112c}"
 CUROBO_REVISION="${CUROBO_REVISION:-d64c4b005459db10c5dd867d8b30a87d5bda9bdb}"
@@ -26,6 +29,9 @@ CUROBO_FETCH_ATTEMPTS="${CUROBO_FETCH_ATTEMPTS:-6}"
 CONSTRAINTS="${PROJECT_DIR}/scripts/constraints/warm_rmbench_eval.constraints"
 WARM_RMBENCH_WHEELHOUSE="${WARM_RMBENCH_WHEELHOUSE:-${WARM_EXTERNAL_ROOT}/wheelhouse/rmbench-eval-v2}"
 export PIP_CACHE_DIR="${PIP_CACHE_DIR:-${WARM_EXTERNAL_ROOT}/pip-cache/rmbench-eval-v2}"
+export HF_HUB_DOWNLOAD_TIMEOUT="${HF_HUB_DOWNLOAD_TIMEOUT:-600}"
+export HF_HUB_ETAG_TIMEOUT="${HF_HUB_ETAG_TIMEOUT:-60}"
+export HF_XET_HIGH_PERFORMANCE="${HF_XET_HIGH_PERFORMANCE:-1}"
 WARM_RMBENCH_PYPI_MIRROR="${WARM_RMBENCH_PYPI_MIRROR:-https://mirrors.aliyun.com/pypi/simple/}"
 WARM_RMBENCH_PYPI_FALLBACK="${WARM_RMBENCH_PYPI_FALLBACK:-https://pypi.org/simple}"
 SAPIEN_WHEEL_NAME="sapien-3.0.0b1-cp310-cp310-manylinux2014_x86_64.whl"
@@ -63,6 +69,8 @@ retry_git() {
   || fail "Open3D RGB guard installer is absent"
 [[ -f "${PROJECT_DIR}/scripts/download_verified_http_ranges.py" ]] \
   || fail "verified parallel downloader is absent"
+[[ -f "${PROJECT_DIR}/scripts/bootstrap_warm_rmbench_assets.py" ]] \
+  || fail "RMBench asset bootstrap is absent"
 [[ -e "${RMBENCH_ROOT}/.git" ]] \
   || fail "pinned RMBench checkout is absent: ${RMBENCH_ROOT}"
 command -v git >/dev/null 2>&1 || fail "git is required"
@@ -102,6 +110,30 @@ print(
     f"numpy={numpy.__version__} torch={torch.__version__}"
 )
 PY
+
+# The official policy-training data under data/robotwin2.0 does not contain
+# SAPIEN URDF/mesh assets.  Materialize only the pinned ALOHA embodiment and
+# object trees in persistent AFS, then link their ignored directories into the
+# exact read-only RMBench code checkout.  Hugging Face's local metadata makes
+# interrupted transfers resumable; high-performance Xet plus file-level
+# concurrency avoids the cluster's slow single-stream path.
+ASSET_ARGS=(
+  --rmbench-root "${RMBENCH_ROOT}"
+  --asset-store "${RMBENCH_ASSET_STORE}"
+  --rmbench-revision "${RMBENCH_CODE_REVISION}"
+  --max-workers "${RMBENCH_ASSET_MAX_WORKERS}"
+)
+RMBENCH_ASSET_ACTIVE_ROOT="${RMBENCH_ASSET_STORE}"
+if [[ -n "${RMBENCH_ASSET_SOURCE}" ]]; then
+  ASSET_ARGS+=(--asset-source "${RMBENCH_ASSET_SOURCE}")
+  RMBENCH_ASSET_ACTIVE_ROOT="${RMBENCH_ASSET_SOURCE}"
+fi
+if [[ "${RMBENCH_TRUST_EXISTING_ASSETS:-false}" == "true" ]]; then
+  ASSET_ARGS+=(--trust-existing-source)
+fi
+"${WARM_BASE_ENV_DIR}/bin/python" \
+  "${PROJECT_DIR}/scripts/bootstrap_warm_rmbench_assets.py" \
+  "${ASSET_ARGS[@]}"
 
 if [[ ! -x "${WARM_RMBENCH_EVAL_ENV_DIR}/bin/python" ]]; then
   "${WARM_BASE_ENV_DIR}/bin/python" -m venv \
@@ -329,17 +361,26 @@ fi
 
 "${PYTHON_BIN}" - \
   "${WARM_RMBENCH_EVAL_ENV_DIR}/warm_rmbench_runtime.json" \
-  "${RMBENCH_CODE_REVISION}" "${CUROBO_REVISION}" <<'PY'
+  "${RMBENCH_CODE_REVISION}" "${CUROBO_REVISION}" \
+  "${RMBENCH_ASSET_ACTIVE_ROOT}/.warm_rmbench_assets.json" <<'PY'
 import json
 import sys
 from pathlib import Path
 
 output = Path(sys.argv[1])
+asset_manifest_path = Path(sys.argv[4]).resolve()
+asset_manifest = json.loads(asset_manifest_path.read_text(encoding="utf-8"))
 value = {
     "schema": "warm.rmbench-eval-runtime",
-    "version": 2,
+    "version": 3,
     "rmbench_revision": sys.argv[2],
     "curobo_revision": sys.argv[3],
+    "rmbench_asset_repository": asset_manifest["repo_id"],
+    "rmbench_asset_revision": asset_manifest["revision"],
+    "rmbench_asset_manifest": str(asset_manifest_path),
+    "rmbench_asset_tree_metadata_sha256": asset_manifest[
+        "tree_metadata_sha256"
+    ],
     "construction": "venv-system-site-packages-over-warm",
     "dependency_profile": "rgb-only-minimal-v2",
     "open3d_provider": "warm-rgb-only-import-guard",
@@ -368,6 +409,7 @@ export CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES:-0}"
 printf '%s\n' \
   "RMBENCH_EVAL_ENV_READY" \
   "python=${PYTHON_BIN}" \
+  "asset_store=${RMBENCH_ASSET_ACTIVE_ROOT}" \
   "wheelhouse=${WARM_RMBENCH_WHEELHOUSE}" \
   "pip_cache=${PIP_CACHE_DIR}" \
   "runtime_manifest=${WARM_RMBENCH_EVAL_ENV_DIR}/warm_rmbench_runtime.json"

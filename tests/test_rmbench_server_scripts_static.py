@@ -173,6 +173,10 @@ def test_rmbench_eval_bootstrap_preserves_warm_runtime_and_pins_simulator() -> N
     assert "--force-reinstall --no-deps" in source
     assert "d64c4b005459db10c5dd867d8b30a87d5bda9bdb" in source
     assert "check_warm_rmbench_eval_runtime.py" in source
+    assert "bootstrap_warm_rmbench_assets.py" in source
+    assert "RMBENCH_ASSET_STORE" in source
+    assert "HF_XET_HIGH_PERFORMANCE" in source
+    assert "RMBENCH_ASSET_MAX_WORKERS" in source
     assert "RMBENCH_EVAL_ENV_READY" in source
     assert "script/requirements.txt" in source
     assert "pip install -r" not in source

@@ -26,6 +26,8 @@ def test_runtime_manifest_is_exactly_revision_bound(tmp_path: Path) -> None:
                 "version": runtime.RUNTIME_VERSION,
                 "rmbench_revision": runtime.RMBENCH_REVISION,
                 "curobo_revision": runtime.CUROBO_REVISION,
+                "rmbench_asset_repository": runtime.RMBENCH_ASSET_REPOSITORY,
+                "rmbench_asset_revision": runtime.RMBENCH_ASSET_REVISION,
                 "dependency_profile": "rgb-only-minimal-v2",
                 "open3d_provider": "warm-rgb-only-import-guard",
             }

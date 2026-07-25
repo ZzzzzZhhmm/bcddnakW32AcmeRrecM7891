@@ -15,6 +15,7 @@ bootstrap script; ACP jobs run this file in read-only validation mode.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import importlib
 import importlib.metadata
 import importlib.util
@@ -31,7 +32,31 @@ from typing import Iterable
 RMBENCH_REVISION = "57ee09cbc6267bc36ca0ac2d8d1c5c3b245c112c"
 CUROBO_REVISION = "d64c4b005459db10c5dd867d8b30a87d5bda9bdb"
 RUNTIME_SCHEMA = "warm.rmbench-eval-runtime"
-RUNTIME_VERSION = 2
+RUNTIME_VERSION = 3
+RMBENCH_ASSET_SCHEMA = "warm.rmbench-simulator-assets"
+RMBENCH_ASSET_VERSION = 1
+RMBENCH_ASSET_REPOSITORY = "TianxingChen/RMBench"
+RMBENCH_ASSET_REVISION = "855e90e1213d150bf4889130e83398f107314681"
+RMBENCH_REQUIRED_OBJECTS = (
+    "002_breadbasket",
+    "003_cover",
+    "004_numbercard",
+    "005_button",
+    "006_check_button",
+    "007_T_block",
+    "008_shelf",
+    "009_toycar",
+    "010_mouse",
+    "011_stapler",
+    "012_bell",
+    "013_playingcards",
+    "017_battery_slot_gauge",
+    "018_battery",
+    "cube",
+    "sapien-block1",
+    "sapien-block2",
+    "vis_box",
+)
 
 EXPECTED_DISTRIBUTIONS = {
     "numpy": "1.26.4",
@@ -245,6 +270,8 @@ def validate_manifest(path: Path) -> dict[str, object]:
         "version": RUNTIME_VERSION,
         "rmbench_revision": RMBENCH_REVISION,
         "curobo_revision": CUROBO_REVISION,
+        "rmbench_asset_repository": RMBENCH_ASSET_REPOSITORY,
+        "rmbench_asset_revision": RMBENCH_ASSET_REVISION,
         "dependency_profile": "rgb-only-minimal-v2",
         "open3d_provider": "warm-rgb-only-import-guard",
     }
@@ -253,6 +280,88 @@ def validate_manifest(path: Path) -> dict[str, object]:
             raise RuntimeValidationError(
                 f"runtime manifest {key}={value.get(key)!r}, expected {expected!r}"
             )
+    return value
+
+
+def _asset_tree_metadata(root: Path) -> dict[str, object]:
+    digest = hashlib.sha256()
+    count = 0
+    total_bytes = 0
+    files = []
+    for category in ("embodiments", "objects"):
+        category_root = root / category
+        if category_root.is_dir():
+            files.extend(path for path in category_root.rglob("*") if path.is_file())
+    for path in sorted(files, key=lambda item: item.relative_to(root).as_posix()):
+        relative = path.relative_to(root).as_posix()
+        size = path.stat().st_size
+        digest.update(relative.encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(str(size).encode("ascii"))
+        digest.update(b"\n")
+        count += 1
+        total_bytes += size
+    return {
+        "file_count": count,
+        "total_bytes": total_bytes,
+        "tree_metadata_sha256": digest.hexdigest(),
+    }
+
+
+def validate_asset_provenance(
+    runtime_manifest: dict[str, object],
+    rmbench_root: Path,
+) -> dict[str, object]:
+    """Bind deployed simulator files to the pinned HF asset snapshot."""
+
+    raw_path = runtime_manifest.get("rmbench_asset_manifest")
+    if not isinstance(raw_path, str) or not raw_path:
+        raise RuntimeValidationError(
+            "runtime manifest does not identify an RMBench asset manifest"
+        )
+    path = Path(raw_path).expanduser().resolve()
+    if not path.is_file():
+        raise RuntimeValidationError(
+            f"RMBench asset provenance manifest is absent: {path}"
+        )
+    value = json.loads(path.read_text(encoding="utf-8"))
+    required = {
+        "schema": RMBENCH_ASSET_SCHEMA,
+        "version": RMBENCH_ASSET_VERSION,
+        "repo_id": RMBENCH_ASSET_REPOSITORY,
+        "revision": RMBENCH_ASSET_REVISION,
+    }
+    for key, expected in required.items():
+        if value.get(key) != expected:
+            raise RuntimeValidationError(
+                f"asset manifest {key}={value.get(key)!r}, expected {expected!r}"
+            )
+    asset_root = path.parent.resolve()
+    deployed = rmbench_root / "assets"
+    for category in ("embodiments", "objects"):
+        link = deployed / category
+        if not link.is_symlink():
+            raise RuntimeValidationError(
+                f"deployed RMBench asset category is not a provenance-bound "
+                f"symlink: {link}"
+            )
+        if link.resolve() != (asset_root / category).resolve():
+            raise RuntimeValidationError(
+                f"deployed RMBench asset category points outside the attested "
+                f"snapshot: {link} -> {link.resolve()}"
+            )
+    actual = _asset_tree_metadata(asset_root)
+    for key in ("file_count", "total_bytes", "tree_metadata_sha256"):
+        if value.get(key) != actual[key]:
+            raise RuntimeValidationError(
+                f"RMBench asset tree {key}={actual[key]!r}, "
+                f"manifest={value.get(key)!r}"
+            )
+    runtime_tree = runtime_manifest.get("rmbench_asset_tree_metadata_sha256")
+    if runtime_tree != actual["tree_metadata_sha256"]:
+        raise RuntimeValidationError(
+            "runtime manifest and deployed RMBench asset tree differ"
+        )
     return value
 
 
@@ -273,6 +382,10 @@ def validate_rmbench_checkout(root: Path, task: str) -> None:
     )
     if not embodiment_config.is_file():
         missing.append(str(embodiment_config))
+    for object_name in RMBENCH_REQUIRED_OBJECTS:
+        directory = root / "assets" / "objects" / object_name
+        if not directory.is_dir() or not any(directory.iterdir()):
+            missing.append(f"{directory} (official9 asset missing or empty)")
     if task_file.is_file():
         task_source = task_file.read_text(encoding="utf-8")
         model_names = set(
@@ -460,8 +573,9 @@ def main() -> int:
                     f"changed={str(result.changed).lower()}"
                 )
         versions = validate_versions()
-        validate_manifest(args.runtime_manifest)
+        runtime_manifest = validate_manifest(args.runtime_manifest)
         validate_rmbench_checkout(args.rmbench_root.resolve(), args.task)
+        validate_asset_provenance(runtime_manifest, args.rmbench_root.resolve())
         validate_rgb_only_protocol(args.rmbench_root.resolve())
         validate_open3d_guard()
         validate_official_runtime_patches()
