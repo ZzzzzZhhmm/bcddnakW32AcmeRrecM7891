@@ -243,6 +243,7 @@ fi
 # code, CUDA extensions, and 160 KB runtime configs. A blobless sparse checkout
 # therefore keeps the exact v0.7.8 commit while greatly reducing GitHub
 # transfer size and TLS exposure.
+git config --global --add safe.directory "${CUROBO_SOURCE}" 2>/dev/null || true
 if [[ ! -e "${CUROBO_SOURCE}/.git" ]]; then
   [[ ! -e "${CUROBO_SOURCE}" ]] \
     || fail "non-Git path already occupies CUROBO_SOURCE: ${CUROBO_SOURCE}"
@@ -250,7 +251,6 @@ if [[ ! -e "${CUROBO_SOURCE}/.git" ]]; then
   git -C "${CUROBO_SOURCE}" init
   git -C "${CUROBO_SOURCE}" remote add origin "${CUROBO_GIT_URL}"
 fi
-git config --global --add safe.directory "${CUROBO_SOURCE}" 2>/dev/null || true
 if git -C "${CUROBO_SOURCE}" remote get-url origin >/dev/null 2>&1; then
   git -C "${CUROBO_SOURCE}" remote set-url origin "${CUROBO_GIT_URL}"
 else

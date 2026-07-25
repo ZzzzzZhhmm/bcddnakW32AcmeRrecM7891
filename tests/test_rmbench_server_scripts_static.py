@@ -164,6 +164,9 @@ def test_rmbench_eval_bootstrap_preserves_warm_runtime_and_pins_simulator() -> N
     assert "--filter=blob:none" in source
     assert "sparse-checkout set" in source
     assert "'!/src/curobo/content/assets/'" in source
+    assert source.index(
+        'safe.directory "${CUROBO_SOURCE}"'
+    ) < source.index('git -C "${CUROBO_SOURCE}" init')
     assert '"warp-lang==1.11.1"' in source
     assert '"scikit-image==0.22.0"' in source
     assert "--force-reinstall --no-deps" in source
