@@ -278,8 +278,12 @@ ACP 本身负责进程生命周期，不需要 tmux，也不在启动命令中�
 
 ### 8.1 一次性持久化仿真环境
 
-正式 evaluator 不只需要 WARM 训练环境，还需要 SAPIEN、MPLib、Open3D 和
-CuRobo。RMBench 官方 `script/requirements.txt` 固定
+正式 evaluator 不只需要 WARM 训练环境，还需要 SAPIEN、MPLib 和
+CuRobo。RMBench 官方源码虽然顶层导入 Open3D，但当前正式
+`demo_clean.yml` 协议显式关闭 depth、pointcloud 和 segmentation，实际 rollout
+不会调用 Open3D。WARM 因而使用 fail-closed 的轻量 import guard 代替约 400 MB
+的 Open3D wheel；如果协议意外开启上述输出，preflight 会直接拒绝运行。
+RMBench 官方 `script/requirements.txt` 固定
 `torch==2.4.1`，不能直接安装到 checkpoint 所绑定的 WARM
 `torch==2.7.1+cu128` 环境，否则模型 runtime 会漂移。
 
@@ -298,6 +302,13 @@ bash scripts/bootstrap_warm_rmbench_eval_env.sh
 环境，精确安装官方 simulator 版本和 CuRobo v0.7.8 对应 commit，应用官方
 SAPIEN/MPLib 补丁，然后验证完整 import closure、指定任务模块、单张 H100 和
 无头 ray-tracing renderer。成功标志为 `RMBENCH_EVAL_ENV_READY`。
+
+下载产物保存在
+`WARM_external/wheelhouse/rmbench-eval-v2`，pip cache 保存在
+`WARM_external/pip-cache/rmbench-eval-v2`，均位于持久化 AFS。镜像可通过
+`WARM_RMBENCH_PYPI_MIRROR` 覆盖；默认使用阿里云 PyPI 镜像。镜像不保留的
+SAPIEN 3.0.0b1 使用 8 路可续传分段下载并核对官方 SHA-256。`yourdfpy`
+使用最小依赖安装，不解析其未被 CuRobo 使用的 `trimesh[easy]` 扩展。
 
 该步骤不是每个 ACP 都运行；环境保存在 AFS，后续所有 specialist 共用。ACP
 wrapper 会在创建 contract 或 immutable eval root 前重新执行只读 preflight；

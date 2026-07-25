@@ -26,6 +26,8 @@ def test_runtime_manifest_is_exactly_revision_bound(tmp_path: Path) -> None:
                 "version": runtime.RUNTIME_VERSION,
                 "rmbench_revision": runtime.RMBENCH_REVISION,
                 "curobo_revision": runtime.CUROBO_REVISION,
+                "dependency_profile": "rgb-only-minimal-v2",
+                "open3d_provider": "warm-rgb-only-import-guard",
             }
         ),
         encoding="utf-8",
@@ -92,3 +94,39 @@ def test_required_import_closure_contains_planner_and_renderer_dependencies() ->
         "open3d",
         "curobo.wrap.reacher.motion_gen",
     } <= required
+
+
+def test_rgb_only_protocol_rejects_pointcloud_before_open3d_guard_use(
+    tmp_path: Path,
+) -> None:
+    config = tmp_path / "task_config" / "demo_clean.yml"
+    config.parent.mkdir()
+    config.write_text(
+        "data_type:\n"
+        "  rgb: true\n"
+        "  depth: false\n"
+        "  pointcloud: false\n"
+        "  mesh_segmentation: false\n"
+        "  actor_segmentation: false\n",
+        encoding="utf-8",
+    )
+    runtime.validate_rgb_only_protocol(tmp_path)
+    config.write_text(
+        config.read_text(encoding="utf-8").replace(
+            "pointcloud: false", "pointcloud: true"
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(runtime.RuntimeValidationError, match="pointcloud"):
+        runtime.validate_rgb_only_protocol(tmp_path)
+
+
+def test_open3d_guard_is_fail_closed() -> None:
+    guard = ROOT / "scripts" / "runtime_shims" / "open3d" / "__init__.py"
+    spec = importlib.util.spec_from_file_location("_warm_open3d_guard", guard)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    assert module.__warm_rgb_only_shim__ is True
+    with pytest.raises(RuntimeError, match="RGB-only"):
+        module.geometry

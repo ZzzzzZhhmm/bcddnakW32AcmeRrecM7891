@@ -31,7 +31,7 @@ from typing import Iterable
 RMBENCH_REVISION = "57ee09cbc6267bc36ca0ac2d8d1c5c3b245c112c"
 CUROBO_REVISION = "d64c4b005459db10c5dd867d8b30a87d5bda9bdb"
 RUNTIME_SCHEMA = "warm.rmbench-eval-runtime"
-RUNTIME_VERSION = 1
+RUNTIME_VERSION = 2
 
 EXPECTED_DISTRIBUTIONS = {
     "numpy": "1.26.4",
@@ -42,12 +42,13 @@ EXPECTED_DISTRIBUTIONS = {
     "mplib": "0.2.1",
     "gymnasium": "0.29.1",
     "trimesh": "4.4.3",
-    "open3d": "0.18.0",
     "pyglet": "1.5.31",
     "toppra": "0.6.3",
     "warp-lang": "1.11.1",
     "scikit-image": "0.22.0",
     "yourdfpy": "0.0.60",
+    "lxml": "5.3.0",
+    "six": "1.17.0",
     "numpy-quaternion": "2024.0.13",
     "nvidia_curobo": "0.7.8",
 }
@@ -244,6 +245,8 @@ def validate_manifest(path: Path) -> dict[str, object]:
         "version": RUNTIME_VERSION,
         "rmbench_revision": RMBENCH_REVISION,
         "curobo_revision": CUROBO_REVISION,
+        "dependency_profile": "rgb-only-minimal-v2",
+        "open3d_provider": "warm-rgb-only-import-guard",
     }
     for key, expected in required.items():
         if value.get(key) != expected:
@@ -294,6 +297,47 @@ def validate_rmbench_checkout(root: Path, task: str) -> None:
         raise RuntimeValidationError(
             f"RMBench revision={actual or '<unavailable>'}, "
             f"expected {RMBENCH_REVISION}"
+        )
+
+
+def validate_rgb_only_protocol(root: Path) -> None:
+    """Prove that replacing import-only Open3D with a guard is protocol-safe."""
+
+    import yaml
+
+    config_path = root / "task_config" / "demo_clean.yml"
+    if not config_path.is_file():
+        raise RuntimeValidationError(
+            f"official RGB-only protocol config is absent: {config_path}"
+        )
+    value = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+    data_type = value.get("data_type")
+    if not isinstance(data_type, dict):
+        raise RuntimeValidationError(
+            f"invalid data_type mapping in {config_path}"
+        )
+    if data_type.get("rgb") is not True:
+        raise RuntimeValidationError("formal RMBench protocol must enable RGB")
+    forbidden = (
+        "depth",
+        "pointcloud",
+        "mesh_segmentation",
+        "actor_segmentation",
+    )
+    enabled = [name for name in forbidden if data_type.get(name) is not False]
+    if enabled:
+        raise RuntimeValidationError(
+            "minimal Open3D-guard runtime is valid only for the pinned "
+            "RGB-only protocol; expected explicit false for: "
+            + ", ".join(enabled)
+        )
+
+
+def validate_open3d_guard() -> None:
+    module = importlib.import_module("open3d")
+    if getattr(module, "__warm_rgb_only_shim__", False) is not True:
+        raise RuntimeValidationError(
+            "WARM's fail-closed Open3D RGB-only import guard is absent"
         )
 
 
@@ -418,6 +462,8 @@ def main() -> int:
         versions = validate_versions()
         validate_manifest(args.runtime_manifest)
         validate_rmbench_checkout(args.rmbench_root.resolve(), args.task)
+        validate_rgb_only_protocol(args.rmbench_root.resolve())
+        validate_open3d_guard()
         validate_official_runtime_patches()
         validate_system_tools()
         import_required_modules(REQUIRED_IMPORTS)

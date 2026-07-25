@@ -146,7 +146,14 @@ def test_rmbench_eval_bootstrap_preserves_warm_runtime_and_pins_simulator() -> N
     assert "warm_rmbench_eval.constraints" in source
     assert '"sapien==3.0.0b1"' in source
     assert '"mplib==0.2.1"' in source
-    assert '"open3d==0.18.0"' in source
+    assert '"open3d==0.18.0"' not in source
+    assert "install_open3d_rgb_guard.py" in source
+    assert "WARM_RMBENCH_WHEELHOUSE" in source
+    assert "PIP_CACHE_DIR" in source
+    assert "download_verified_http_ranges.py" in source
+    assert "mirrors.aliyun.com" in source
+    assert "trimesh[easy]" in source
+    assert "--no-deps" in source
     assert '"warp-lang==1.11.1"' in source
     assert '"scikit-image==0.22.0"' in source
     assert "--force-reinstall --no-deps" in source
