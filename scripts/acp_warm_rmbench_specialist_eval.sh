@@ -281,15 +281,74 @@ export WARM_TEXT_ENCODER
 export WARM_TOKENIZER
 
 export WARM_EXPERIMENT_ID="${WARM_EXPERIMENT_ID:-full_warm}"
-export WARM_EVALUATION_NAMESPACE="${WARM_EVALUATION_NAMESPACE:-warm-rmbench-sota-v1}"
+WARM_EVALUATION_NAMESPACE_BASE="${WARM_EVALUATION_NAMESPACE:-warm-rmbench-sota-v1}"
+export WARM_EVALUATION_NAMESPACE="${WARM_EVALUATION_NAMESPACE_BASE}"
 export WARM_GPU_ID=0
 export WARM_EVAL_DEVICE="${WARM_EVAL_DEVICE:-cuda}"
 export WARM_DINO_DEVICE="${WARM_DINO_DEVICE:-cuda}"
 export WARM_DINO_BATCH_SIZE="${WARM_DINO_BATCH_SIZE:-1}"
 export WARM_MIXED_PRECISION="${WARM_MIXED_PRECISION:-bf16}"
 
+CONTRACT_COMPAT_RUNNER=""
+CONTRACT_COMPAT_SUFFIX=""
+KNOWN_F77_COMMIT="f77c63385c747fdc1424386489cbf9c7ea57ddc5"
+KNOWN_F77_ONLINE_BUILDER_SHA256="f205796a2ef2e9ad58f7a3e35e95473926ea51bf8833d2b583858414842eb4a5"
+KNOWN_F77_BUNDLE_BUILDER_SHA256="a516d3ab2a8d3bbef2654a6d5a972d86085e2754112f54bf7e616e3ac133c109"
+ONLINE_BUILDER_SHA256="$("${PYTHON_BIN}" - \
+  "${EVAL_CODE}/scripts/build_warm_online_contract.py" <<'PY'
+import hashlib
+import sys
+from pathlib import Path
+
+print(hashlib.sha256(Path(sys.argv[1]).read_bytes()).hexdigest())
+PY
+)"
+BUNDLE_BUILDER_SHA256="$("${PYTHON_BIN}" - \
+  "${EVAL_CODE}/scripts/build_warm_rmbench_contract_bundle.py" <<'PY'
+import hashlib
+import sys
+from pathlib import Path
+
+print(hashlib.sha256(Path(sys.argv[1]).read_bytes()).hexdigest())
+PY
+)"
+if [[ "${TRAIN_COMMIT}" == "${KNOWN_F77_COMMIT}" ]]; then
+  [[ "${ONLINE_BUILDER_SHA256}" == "${KNOWN_F77_ONLINE_BUILDER_SHA256}" ]] \
+    || fail "f77 online-contract builder source hash is unexpected"
+  [[ "${BUNDLE_BUILDER_SHA256}" == "${KNOWN_F77_BUNDLE_BUILDER_SHA256}" ]] \
+    || fail "f77 RMBench bundle builder source hash is unexpected"
+  CONTRACT_COMPAT_RUNNER="${PROJECT_DIR}/scripts/evaluation_compat/rmbench_f77_contract_v1/run_contract_bundle.py"
+  [[ -f "${CONTRACT_COMPAT_RUNNER}" ]] \
+    || fail "required f77 RMBench contract compatibility runner is missing"
+  CONTRACT_COMPAT_SHA256="$("${PYTHON_BIN}" - \
+    "${CONTRACT_COMPAT_RUNNER}" <<'PY'
+import hashlib
+import sys
+from pathlib import Path
+
+print(hashlib.sha256(Path(sys.argv[1]).read_bytes()).hexdigest())
+PY
+  )"
+  TRACKED_COMPAT_SHA256="$(
+    git -C "${PROJECT_DIR}" show \
+      "HEAD:scripts/evaluation_compat/rmbench_f77_contract_v1/run_contract_bundle.py" \
+      | "${PYTHON_BIN}" -c \
+        'import hashlib,sys; print(hashlib.sha256(sys.stdin.buffer.read()).hexdigest())'
+  )" || fail "RMBench contract compatibility runner is not committed"
+  [[ "${CONTRACT_COMPAT_SHA256}" == "${TRACKED_COMPAT_SHA256}" ]] \
+    || fail "RMBench contract compatibility runner differs from committed bytes"
+  CONTRACT_COMPAT_SUFFIX="-compat-${CONTRACT_COMPAT_SHA256:0:12}"
+  WARM_EVALUATION_NAMESPACE="${WARM_EVALUATION_NAMESPACE_BASE}${CONTRACT_COMPAT_SUFFIX}"
+  export WARM_EVALUATION_NAMESPACE
+  export WARM_EVAL_COMPAT_HISTORICAL_ROOT="${EVAL_CODE}"
+  printf 'contract_compatibility=%s sha256=%s\n' \
+    "${CONTRACT_COMPAT_RUNNER}" "${CONTRACT_COMPAT_SHA256}"
+elif [[ "${ONLINE_BUILDER_SHA256}" == "${KNOWN_F77_ONLINE_BUILDER_SHA256}" ]]; then
+  fail "known f77 contract-builder bug appeared under an unexpected commit"
+fi
+
 CHECKPOINT_NAME="$(basename "${WARM_CHECKPOINT}" .pt)"
-WARM_RMBENCH_ONLINE_CONTRACT="${WARM_RMBENCH_ONLINE_CONTRACT:-${WARM_RMBENCH_EVAL_BASE}/contracts/${WARM_RMBENCH_TASK}-${CHECKPOINT_NAME}-${TRAIN_COMMIT:0:12}}"
+WARM_RMBENCH_ONLINE_CONTRACT="${WARM_RMBENCH_ONLINE_CONTRACT:-${WARM_RMBENCH_EVAL_BASE}/contracts/${WARM_RMBENCH_TASK}-${CHECKPOINT_NAME}-${TRAIN_COMMIT:0:12}${CONTRACT_COMPAT_SUFFIX}}"
 WARM_EVAL_ROOT="${WARM_EVAL_ROOT:-${WARM_RMBENCH_EVAL_BASE}/results/${WARM_RMBENCH_TASK}/${CHECKPOINT_NAME}/${WARM_EVAL_LABEL}}"
 export WARM_RMBENCH_ONLINE_CONTRACT WARM_EVAL_ROOT
 
@@ -331,11 +390,76 @@ printf '%s\n' \
   "evaluation_root=${WARM_EVAL_ROOT}"
 
 cd "${EVAL_CODE}"
+(
+  # Preserve the same private-origin and clean-worktree checks used by the
+  # historical formal server launcher even when a compatibility runner owns
+  # the final Python invocation.
+  # shellcheck source=scripts/warm_server_common.sh
+  source scripts/warm_server_common.sh
+  warm_require_private_checkout
+  warm_require_read_only_external_checkout \
+    "${RMBENCH_ROOT}" "${RMBENCH_CODE_REVISION}"
+)
 set -o pipefail
 {
   if [[ ! -e "${WARM_RMBENCH_ONLINE_CONTRACT}" ]]; then
     printf '%s\n' "===== BUILD RMBENCH SPECIALIST CONTRACT ====="
-    bash scripts/build_warm_rmbench_sota_task_contract_server.sh
+    if [[ -n "${CONTRACT_COMPAT_RUNNER}" ]]; then
+      IFS=$'\t' read -r VALIDATED_TASK MEMORY_REGIME TRAIN_STEPS \
+        RECENT_EVENT_CAPACITY ACTION_SUMMARY_CAPACITY REPLAN_STEPS \
+        INFERENCE_STEPS TOP_K < <(
+          "${PYTHON_BIN}" scripts/plan_warm_rmbench_sota.py \
+            --registry configs/rmbench/sota_v1.json \
+            --task "${WARM_RMBENCH_TASK}" \
+            --format tsv
+        )
+      [[ "${VALIDATED_TASK}" == "${WARM_RMBENCH_TASK}" ]] \
+        || fail "task registry returned an inconsistent task"
+      case "${INFERENCE_STEPS}" in
+        8) PROFILE_EXPERIMENT="full_warm_ode08" ;;
+        10) PROFILE_EXPERIMENT="full_warm" ;;
+        *) fail "unsupported formal inference step count: ${INFERENCE_STEPS}" ;;
+      esac
+      [[ "${WARM_EXPERIMENT_ID}" == "${PROFILE_EXPERIMENT}" ]] \
+        || fail "WARM_EXPERIMENT_ID disagrees with specialist task profile"
+      M1="${WARM_ARTIFACT_ROOT}/m1"
+      M2="${WARM_ARTIFACT_ROOT}/m2"
+      "${PYTHON_BIN}" "${CONTRACT_COMPAT_RUNNER}" \
+        --matrix configs/ablation/rmbench_sota_matrix.json \
+        --suite official9 \
+        --rmbench-root "${RMBENCH_ROOT}" \
+        --output-root "${WARM_RMBENCH_ONLINE_CONTRACT}" \
+        --training-run-contract "${M2}/contracts/hybrid_h32_train_source.json" \
+        --validation-run-contract "${M2}/contracts/hybrid_h32_dev_source.json" \
+        --warm-checkpoint "${WARM_CHECKPOINT}" \
+        --training-attestation "${WARM_TRAINING_ATTESTATION}" \
+        --base-checkpoint "${FASTWAM_BASE_CHECKPOINT}" \
+        --bank "${M1}/banks/hybrid_h32" \
+        --normalizer-contract "${M1}/features/contracts/normalizer_contract.json" \
+        --encoder-contract "${M1}/features/contracts/encoder_contract.json" \
+        --camera-contract "${M1}/features/contracts/camera_contract.json" \
+        --data-config configs/data/rmbench_3cam.yaml \
+        --dino-checkpoint "${WARM_DINO_CHECKPOINT}" \
+        --normalization-stats "${M1}/train_stats/dataset_stats.json" \
+        --catalog "${M1}/rmbench_catalog.json" \
+        --audit-report "${M1}/rmbench_audit.json" \
+        --vae-checkpoint "${WARM_VAE_CHECKPOINT}" \
+        --text-encoder "${WARM_TEXT_ENCODER}" \
+        --tokenizer "${WARM_TOKENIZER}" \
+        --evaluation-namespace "${WARM_EVALUATION_NAMESPACE}" \
+        --top-k "${TOP_K}" \
+        --replan-steps "${REPLAN_STEPS}" \
+        --recent-event-capacity "${RECENT_EVENT_CAPACITY}" \
+        --action-summary-capacity "${ACTION_SUMMARY_CAPACITY}" \
+        --task "${WARM_RMBENCH_TASK}" \
+        --experiment "${PROFILE_EXPERIMENT}" \
+        --dino-device "${WARM_DINO_DEVICE}" \
+        --dino-batch-size "${WARM_DINO_BATCH_SIZE}" \
+        --device "${WARM_EVAL_DEVICE}" \
+        --mixed-precision "${WARM_MIXED_PRECISION}"
+    else
+      bash scripts/build_warm_rmbench_sota_task_contract_server.sh
+    fi
   else
     printf 'reusing complete online contract: %s\n' \
       "${WARM_RMBENCH_ONLINE_CONTRACT}"

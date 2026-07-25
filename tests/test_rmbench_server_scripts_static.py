@@ -126,6 +126,27 @@ def test_rmbench_specialist_eval_launcher_pins_checkpoint_training_commit() -> N
     assert "evaluate_warm_rmbench_task_server.sh" in source
     assert "formal100-s3407-v1" in source
     assert "expected exactly one visible CUDA device" in source
+    assert "rmbench_f77_contract_v1/run_contract_bundle.py" in source
+    assert "KNOWN_F77_ONLINE_BUILDER_SHA256" in source
+    assert "CONTRACT_COMPAT_SUFFIX" in source
+    assert 'WARM_EVALUATION_NAMESPACE_BASE' in source
+
+
+def test_rmbench_contract_builder_retains_validated_compute_device() -> None:
+    builder = _read("build_warm_online_contract.py")
+    assert builder.count(
+        "_, _, _, compute_device = validate_online_encoder_contract("
+        "encoder_contract)"
+    ) == 2
+
+    compatibility = _read(
+        "evaluation_compat/rmbench_f77_contract_v1/run_contract_bundle.py"
+    )
+    assert "f77c63385c747fdc1424386489cbf9c7ea57ddc5" in compatibility
+    assert "EXPECTED_ONLINE_BUILDER_SHA256" in compatibility
+    assert "EXPECTED_BUNDLE_BUILDER_SHA256" in compatibility
+    assert "online_builder.compute_device = compute_device" in compatibility
+    assert "module.main(arguments)" in compatibility
 
 
 def test_same_data_fastwam_baseline_has_separate_train_and_eval_launchers() -> None:

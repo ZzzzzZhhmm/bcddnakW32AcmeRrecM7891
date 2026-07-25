@@ -818,7 +818,7 @@ def _build_contract(args: argparse.Namespace) -> WarmOnlineRunContract:
         raise OnlineContractBuildError(
             "camera contract payload differs from the event-bank manifest"
         )
-    validate_online_encoder_contract(encoder_contract)
+    _, _, _, compute_device = validate_online_encoder_contract(encoder_contract)
     validate_online_camera_contract(
         camera_contract, benchmark_profile=args.benchmark_profile
     )

@@ -294,6 +294,14 @@ bash scripts/acp_warm_rmbench_specialist_eval.sh
 checkpoint/evaluator commit 一致性的要求。不同任务可各占一个单卡 ACP 并行运行；
 若重跑同一任务，必须提供新的 `WARM_EVAL_LABEL`。
 
+已训练的 `f77c633...` specialist 所绑定的历史 contract builder 有一个局部变量
+遗漏：encoder contract 已完成校验，但其 `compute_device` 返回值未被
+`_build_contract` 保存。ACP wrapper 仅在训练 commit 和两份历史 builder 的
+SHA-256 同时精确匹配时，使用
+`scripts/evaluation_compat/rmbench_f77_contract_v1/` 注入这一个已校验返回值；
+历史 worktree 保持 clean，兼容 runner 的哈希进入 evaluation namespace 和日志。
+未知 commit 或未知源文件哈希一律拒绝兼容，不会把新模型代码混入旧 checkpoint。
+
 ## 9. 正式报告
 
 九任务每项 100 episodes，报告：
