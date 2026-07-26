@@ -20,6 +20,7 @@ import importlib
 import importlib.metadata
 import importlib.util
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -478,9 +479,15 @@ def import_required_modules(names: Iterable[str]) -> None:
 
 def import_rmbench_task(root: Path, task: str) -> None:
     original = list(sys.path)
+    original_cwd = Path.cwd()
     sys.path.insert(0, str(root))
     sys.path.append(str(root / "description" / "utils"))
     try:
+        # The pinned official evaluator resolves object manifests and several
+        # simulator resources relative to the repository root at import time.
+        # Formal evaluation already runs from its root-shaped runtime overlay;
+        # make the standalone preflight reproduce that contract as well.
+        os.chdir(root)
         for name in ("envs", "envs._base_task", "envs.robot.robot", f"envs.{task}"):
             importlib.import_module(name)
         entrypoint = root / "script" / "eval_policy.py"
@@ -500,6 +507,7 @@ def import_rmbench_task(root: Path, task: str) -> None:
             f"{type(error).__name__}: {error}"
         ) from error
     finally:
+        os.chdir(original_cwd)
         sys.path[:] = original
 
 

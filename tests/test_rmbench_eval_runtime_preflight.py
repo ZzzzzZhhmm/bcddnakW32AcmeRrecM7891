@@ -103,6 +103,50 @@ def test_required_import_closure_contains_planner_and_renderer_dependencies() ->
     } <= required
 
 
+def test_official_evaluator_import_uses_rmbench_root_as_working_directory(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    root = tmp_path / "RMBench-official"
+    for relative in (
+        "envs/__init__.py",
+        "envs/_base_task.py",
+        "envs/robot/__init__.py",
+        "envs/robot/robot.py",
+        "envs/blocks_ranking_try.py",
+    ):
+        path = root / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("", encoding="utf-8")
+    manifest = root / "assets" / "objects" / "objaverse" / "list.json"
+    manifest.parent.mkdir(parents=True)
+    manifest.write_text("[]", encoding="utf-8")
+    entrypoint = root / "script" / "eval_policy.py"
+    entrypoint.parent.mkdir()
+    entrypoint.write_text(
+        "from pathlib import Path\n"
+        "Path('assets/objects/objaverse/list.json').read_text(encoding='utf-8')\n",
+        encoding="utf-8",
+    )
+
+    imported = (
+        "envs",
+        "envs._base_task",
+        "envs.robot",
+        "envs.robot.robot",
+        "envs.blocks_ranking_try",
+    )
+    for name in imported:
+        monkeypatch.delitem(sys.modules, name, raising=False)
+    original_cwd = Path.cwd()
+    try:
+        runtime.import_rmbench_task(root, "blocks_ranking_try")
+    finally:
+        for name in imported:
+            sys.modules.pop(name, None)
+    assert Path.cwd() == original_cwd
+
+
 def test_rgb_only_protocol_rejects_pointcloud_before_open3d_guard_use(
     tmp_path: Path,
 ) -> None:
