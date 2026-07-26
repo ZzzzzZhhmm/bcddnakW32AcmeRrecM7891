@@ -19,6 +19,7 @@ therefore fails closed instead of silently replacing user data.
 from __future__ import annotations
 
 import argparse
+import base64
 import concurrent.futures
 import hashlib
 import json
@@ -32,6 +33,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+import zlib
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
@@ -46,6 +48,11 @@ ASSET_PATTERNS = (
 )
 ASSET_MANIFEST_NAME = ".warm_rmbench_assets.json"
 DOWNLOAD_PLAN_NAME = ".warm_rmbench_download_plan.json"
+BUNDLED_DOWNLOAD_PLAN = (
+    Path(__file__).resolve().parent
+    / "constraints"
+    / "rmbench_assets_855e90e1213d.json.zlib.b64"
+)
 EXPECTED_ASSET_FILE_COUNT = 344
 EXPECTED_ASSET_TOTAL_BYTES = 1_352_861_012
 DEFAULT_NETWORK_TIMEOUT_SECONDS = 600
@@ -538,6 +545,50 @@ def _download_plan_path(asset_root: Path) -> Path:
     return asset_root / DOWNLOAD_PLAN_NAME
 
 
+def _load_bundled_download_plan() -> dict[str, Any]:
+    try:
+        encoded = "".join(
+            BUNDLED_DOWNLOAD_PLAN.read_text(encoding="ascii").split()
+        )
+        rows = json.loads(zlib.decompress(base64.b64decode(encoded)))
+    except (OSError, ValueError, zlib.error, json.JSONDecodeError) as error:
+        raise AssetBootstrapError(
+            f"bundled pinned asset plan is unreadable: {BUNDLED_DOWNLOAD_PLAN}"
+        ) from error
+    if not isinstance(rows, list):
+        raise AssetBootstrapError("bundled pinned asset plan is not a list")
+    files: list[dict[str, Any]] = []
+    for row in rows:
+        if not isinstance(row, list) or len(row) != 4:
+            raise AssetBootstrapError(
+                f"malformed bundled pinned asset row: {row!r}"
+            )
+        path, size, compact_algorithm, digest = row
+        algorithm = {"s": "sha256", "g": "git-sha1"}.get(compact_algorithm)
+        if algorithm is None:
+            raise AssetBootstrapError(
+                f"unknown bundled asset digest algorithm: {compact_algorithm!r}"
+            )
+        files.append(
+            {
+                "path": path,
+                "size": size,
+                "algorithm": algorithm,
+                "digest": digest,
+            }
+        )
+    value: dict[str, Any] = {
+        "schema": "warm.rmbench-asset-download-plan",
+        "version": 1,
+        "repo_id": RMBENCH_HF_REPOSITORY,
+        "revision": RMBENCH_HF_REVISION,
+        "endpoint": "bundled-official-manifest",
+        "files": files,
+    }
+    value["files"] = _validate_download_plan(value)
+    return value
+
+
 def _load_or_fetch_download_plan(
     asset_root: Path,
     *,
@@ -554,6 +605,24 @@ def _load_or_fetch_download_plan(
         else:
             print(f"asset_download_plan_reused={path}")
             return value
+
+    try:
+        value = _load_bundled_download_plan()
+    except AssetBootstrapError as error:
+        print(f"asset_bundled_download_plan_ignored={_exception_chain(error)}")
+    else:
+        temporary = path.with_suffix(path.suffix + ".tmp")
+        temporary.write_text(
+            json.dumps(value, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        os.replace(temporary, path)
+        print(
+            f"asset_download_plan_bundled={BUNDLED_DOWNLOAD_PLAN} "
+            f"files={len(value['files'])}",
+            flush=True,
+        )
+        return value
 
     failures: list[str] = []
     for endpoint in endpoints:
@@ -601,6 +670,48 @@ def _resolve_url(endpoint: str, path: str) -> str:
         f"{endpoint}/datasets/{RMBENCH_HF_REPOSITORY}/resolve/"
         f"{RMBENCH_HF_REVISION}/{encoded_path}?download=true"
     )
+
+
+def _probe_download_endpoints(
+    endpoints: Sequence[str],
+    *,
+    entry: Mapping[str, Any],
+    timeout: int,
+) -> tuple[str, ...]:
+    usable: list[str] = []
+    failures: list[str] = []
+    for endpoint in endpoints:
+        headers = _authorization_headers()
+        headers["Range"] = "bytes=0-0"
+        request = urllib.request.Request(
+            _resolve_url(endpoint, str(entry["path"])),
+            headers=headers,
+        )
+        print(f"asset_endpoint_probe_start={endpoint}", flush=True)
+        try:
+            with _open_with_retries(
+                request,
+                timeout=timeout,
+                retries=2,
+            ) as response:
+                response.read(1)
+        except AssetBootstrapError as error:
+            failures.append(f"{endpoint}: {_exception_chain(error)}")
+            print(
+                f"asset_endpoint_probe_failed={endpoint} "
+                f"reason={_exception_chain(error)}",
+                file=sys.stderr,
+                flush=True,
+            )
+            continue
+        usable.append(endpoint)
+        print(f"asset_endpoint_probe_ok={endpoint}", flush=True)
+    if not usable:
+        raise AssetBootstrapError(
+            "no RMBench asset download endpoint is reachable: "
+            + " | ".join(failures)
+        )
+    return tuple(usable)
 
 
 def _download_file(
@@ -721,6 +832,12 @@ def _download_direct_asset_tree(
         timeout=timeout,
     )
     files = _validate_download_plan(plan)
+    probe_timeout = _positive_int_environment("RMBENCH_HF_PROBE_TIMEOUT", 60)
+    endpoints = _probe_download_endpoints(
+        endpoints,
+        entry=files[0],
+        timeout=probe_timeout,
+    )
     groups: dict[tuple[str, str, int], list[dict[str, Any]]] = {}
     for entry in files:
         key = (entry["algorithm"], entry["digest"], entry["size"])
@@ -762,6 +879,11 @@ def _download_direct_asset_tree(
             )
 
     workers = min(max_workers, total)
+    print(
+        f"asset_download_start=unique_blobs:{total} files:{len(files)} "
+        f"workers:{workers} endpoints:{','.join(endpoints)}",
+        flush=True,
+    )
     with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
         futures = [executor.submit(materialize, entries) for entries in groups.values()]
         for future in concurrent.futures.as_completed(futures):

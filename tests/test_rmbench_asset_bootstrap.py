@@ -292,3 +292,48 @@ def test_download_plan_rejects_unexpected_revision_closure(
     plan["files"][0]["size"] = 4
     with pytest.raises(assets.AssetBootstrapError, match="audited revision"):
         assets._validate_download_plan(plan)
+
+
+def test_bundled_download_plan_is_complete_and_revision_bound() -> None:
+    plan = assets._load_bundled_download_plan()
+    files = assets._validate_download_plan(plan)
+    assert plan["revision"] == assets.RMBENCH_HF_REVISION
+    assert plan["endpoint"] == "bundled-official-manifest"
+    assert len(files) == assets.EXPECTED_ASSET_FILE_COUNT
+    assert sum(entry["size"] for entry in files) == (
+        assets.EXPECTED_ASSET_TOTAL_BYTES
+    )
+    assert any(
+        entry["path"] == "objects/005_button/10124/model_data.json"
+        for entry in files
+    )
+
+
+def test_endpoint_probe_keeps_only_reachable_sources(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class FakeResponse(io.BytesIO):
+        def __enter__(self) -> "FakeResponse":
+            return self
+
+        def __exit__(self, *args: object) -> None:
+            self.close()
+
+    def fake_open(
+        request: object,
+        *,
+        timeout: int,
+        retries: int,
+    ) -> FakeResponse:
+        del timeout, retries
+        if str(request.full_url).startswith("https://bad.invalid"):  # type: ignore[attr-defined]
+            raise assets.AssetBootstrapError("unreachable")
+        return FakeResponse(b"x")
+
+    monkeypatch.setattr(assets, "_open_with_retries", fake_open)
+    usable = assets._probe_download_endpoints(
+        ("https://bad.invalid", "https://good.invalid"),
+        entry={"path": "objects/005_button/model.json"},
+        timeout=5,
+    )
+    assert usable == ("https://good.invalid",)

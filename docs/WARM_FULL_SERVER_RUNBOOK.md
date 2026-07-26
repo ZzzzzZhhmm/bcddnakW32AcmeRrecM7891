@@ -519,8 +519,9 @@ The bootstrap downloads only
 `TianxingChen/RMBench@855e90e...` snapshot.  It first uses concurrent Hugging
 Face snapshot/Xet transfers.  On a slow link where the full 99.5 GB repository
 metadata cannot be resolved, it automatically falls back to the pinned tree
-API and downloads only the audited 344-file, 1,352,861,012-byte simulator
-closure.  The fallback is concurrent, range-resumable, content-deduplicated,
+manifest bundled with WARM and downloads only the audited 344-file,
+1,352,861,012-byte simulator closure without another Hub metadata request.
+The fallback is concurrent, range-resumable, content-deduplicated,
 and verifies every LFS SHA-256 or Git blob SHA-1 before deployment.  It stores
 the result under
 `${PROJECT_DIR}_external/rmbench-assets-855e90e1213d`, writes a provenance
