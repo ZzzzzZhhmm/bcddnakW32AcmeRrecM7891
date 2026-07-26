@@ -102,6 +102,16 @@ def test_score_oriented_task_launchers_bind_registry_batch_and_online_memory() -
     assert "TARGET_GLOBAL_BATCH_SIZE=128" in acp_specialist
     assert "official50-dev45" in acp_specialist
     assert "save_every=2000" in acp_specialist
+    assert "worktree add --detach" in acp_specialist
+    assert 'WARM_TRAIN_CODE_DIR="${WARM_TRAIN_CODE_DIR:-}"' in acp_specialist
+    assert 'WARM_CODE_REVISION="${TRAIN_COMMIT}"' in acp_specialist
+    assert 'PROJECT_DIR="${PROJECT_DIR}"' in acp_specialist
+    assert "formal-training-worktree.lock" in acp_specialist
+    assert "flock -x 9" in acp_specialist
+    assert "PYTHONDONTWRITEBYTECODE=1" in acp_specialist
+    assert "status --porcelain --untracked-files=all" in acp_specialist
+    assert 'cd "${WARM_TRAIN_CODE_DIR}"' in acp_specialist
+    assert "fastwam import escaped the isolated training worktree" in acp_specialist
     assert "rmbench_sota_matrix.json" in contract
     assert "WARM_RMBENCH_TASK" in contract
     assert "seed=3407" in evaluation

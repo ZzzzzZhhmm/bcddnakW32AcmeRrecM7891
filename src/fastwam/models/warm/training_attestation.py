@@ -678,13 +678,21 @@ def clean_git_commit(repository: str | Path) -> str:
         ).stdout
     except (OSError, subprocess.CalledProcessError) as error:
         raise TrainingAttestationError(
-            "cannot inspect WARM Git provenance"
+            f"cannot inspect WARM Git provenance: repository={root}"
         ) from error
     if _GIT_COMMIT.fullmatch(commit) is None:
-        raise TrainingAttestationError("Git returned an invalid commit SHA")
-    if status.strip():
         raise TrainingAttestationError(
-            "formal WARM checkpoint publication requires a clean Git worktree"
+            "Git returned an invalid commit SHA: "
+            f"repository={root}, head={commit!r}"
+        )
+    if status.strip():
+        entries = status.splitlines()
+        preview = "; ".join(entries[:12])
+        if len(entries) > 12:
+            preview += f"; ... ({len(entries) - 12} more)"
+        raise TrainingAttestationError(
+            "formal WARM checkpoint publication requires a clean Git "
+            f"worktree: repository={root}, head={commit}, changes={preview}"
         )
     return commit
 

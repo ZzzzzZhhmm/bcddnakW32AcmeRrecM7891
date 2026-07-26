@@ -1207,9 +1207,12 @@ class Wan22Trainer:
         # Formal WARM checkpoint bytes are staged and atomically replaced.  If
         # the subsequent attestation cannot be published, neither file remains
         # under its formal name.
-        if clean_git_commit(context.repository_root) != context.git_commit:
+        current_commit = clean_git_commit(context.repository_root)
+        if current_commit != context.git_commit:
             raise ValueError(
-                "Git state changed after formal WARM training started"
+                "Git commit changed after formal WARM training started: "
+                f"expected={context.git_commit}, actual={current_commit}, "
+                f"repository={context.repository_root}"
             )
         sidecar_path = training_attestation_path(ckpt_path)
         occupied = [
@@ -1231,9 +1234,12 @@ class Wan22Trainer:
             with temporary.open("r+b") as handle:
                 handle.flush()
                 os.fsync(handle.fileno())
-            if clean_git_commit(context.repository_root) != context.git_commit:
+            current_commit = clean_git_commit(context.repository_root)
+            if current_commit != context.git_commit:
                 raise ValueError(
-                    "Git state changed while the WARM checkpoint was saved"
+                    "Git commit changed while the WARM checkpoint was saved: "
+                    f"expected={context.git_commit}, actual={current_commit}, "
+                    f"repository={context.repository_root}"
                 )
             # Atomic no-replace publication.  os.link fails if another writer
             # claimed this exact step after the preflight above.

@@ -405,7 +405,10 @@ def test_formal_resume_upgrades_v1_parent_and_binds_exact_state_tree(
 def test_dirty_git_prevents_context_and_publication(tmp_path: Path) -> None:
     repository, _ = _git_repository(tmp_path / "repository")
     (repository / "untracked.txt").write_text("dirty\n", encoding="utf-8")
-    with pytest.raises(TrainingAttestationError, match="clean Git"):
+    with pytest.raises(
+        TrainingAttestationError,
+        match=r"clean Git worktree: repository=.*changes=\?\? untracked\.txt",
+    ):
         _context(repository)
 
 
@@ -417,7 +420,10 @@ def test_git_change_after_context_prevents_sidecar_publication(
     checkpoint = tmp_path / "step_000017.pt"
     checkpoint.write_bytes(b"formal WARM checkpoint bytes")
     (repository / "tracked.txt").write_text("changed\n", encoding="utf-8")
-    with pytest.raises(TrainingAttestationError, match="clean Git"):
+    with pytest.raises(
+        TrainingAttestationError,
+        match=r"clean Git worktree: repository=.*changes= M tracked\.txt",
+    ):
         publish_training_attestation(
             checkpoint,
             context=context,
