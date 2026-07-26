@@ -170,6 +170,9 @@ def test_rmbench_eval_bootstrap_preserves_warm_runtime_and_pins_simulator() -> N
     ) < source.index('git -C "${CUROBO_SOURCE}" init')
     assert '"warp-lang==1.11.1"' in source
     assert '"scikit-image==0.22.0"' in source
+    assert '"lazy_loader==0.4"' in source
+    assert '"tifffile==2024.9.20"' in source
+    assert '"pillow==11.1.0"' in source
     assert "--force-reinstall --no-deps" in source
     assert "d64c4b005459db10c5dd867d8b30a87d5bda9bdb" in source
     assert "check_warm_rmbench_eval_runtime.py" in source

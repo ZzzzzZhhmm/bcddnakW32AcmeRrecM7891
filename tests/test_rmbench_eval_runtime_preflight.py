@@ -28,7 +28,7 @@ def test_runtime_manifest_is_exactly_revision_bound(tmp_path: Path) -> None:
                 "curobo_revision": runtime.CUROBO_REVISION,
                 "rmbench_asset_repository": runtime.RMBENCH_ASSET_REPOSITORY,
                 "rmbench_asset_revision": runtime.RMBENCH_ASSET_REVISION,
-                "dependency_profile": "rgb-only-minimal-v2",
+                "dependency_profile": "rgb-only-minimal-v3",
                 "open3d_provider": "warm-rgb-only-import-guard",
             }
         ),
@@ -52,6 +52,9 @@ def test_runtime_versions_keep_checkpoint_torch_and_official_simulator() -> None
     assert runtime.EXPECTED_DISTRIBUTIONS["mplib"] == "0.2.1"
     assert runtime.EXPECTED_DISTRIBUTIONS["warp-lang"] == "1.11.1"
     assert runtime.EXPECTED_DISTRIBUTIONS["scikit-image"] == "0.22.0"
+    assert runtime.EXPECTED_DISTRIBUTIONS["lazy_loader"] == "0.4"
+    assert runtime.EXPECTED_DISTRIBUTIONS["tifffile"] == "2024.9.20"
+    assert runtime.EXPECTED_DISTRIBUTIONS["pillow"] == "11.1.0"
     assert runtime.EXPECTED_DISTRIBUTIONS["nvidia_curobo"] == "0.7.8"
 
 
@@ -94,6 +97,8 @@ def test_required_import_closure_contains_planner_and_renderer_dependencies() ->
         "sapien.render",
         "mplib.sapien_utils",
         "open3d",
+        "lazy_loader",
+        "tifffile",
         "curobo.wrap.reacher.motion_gen",
     } <= required
 

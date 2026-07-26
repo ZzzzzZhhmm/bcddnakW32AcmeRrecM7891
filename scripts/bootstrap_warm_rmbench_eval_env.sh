@@ -170,6 +170,14 @@ RUNTIME_PACKAGES=(
   "toppra==0.6.3"
   "warp-lang==1.11.1"
   "scikit-image==0.22.0"
+  # scikit-image is installed with --no-deps, so keep its complete direct
+  # runtime closure in the persistent wheelhouse instead of relying on
+  # incidental packages inherited from the training environment.
+  "imageio==2.37.0"
+  "lazy_loader==0.4"
+  "tifffile==2024.9.20"
+  "pillow==11.1.0"
+  "packaging==24.2"
   "yourdfpy==0.0.60"
   "lxml==5.3.0"
   "six==1.17.0"
@@ -384,7 +392,7 @@ value = {
         "tree_metadata_sha256"
     ],
     "construction": "venv-system-site-packages-over-warm",
-    "dependency_profile": "rgb-only-minimal-v2",
+    "dependency_profile": "rgb-only-minimal-v3",
     "open3d_provider": "warm-rgb-only-import-guard",
     "python_executable": str(Path(sys.executable).resolve()),
 }

@@ -21,6 +21,12 @@ toppra==0.6.3
 # SciPy version that conflicts with the official RMBench simulator pin.
 warp-lang==1.11.1
 scikit-image==0.22.0
+# Complete direct runtime closure for scikit-image.  The bootstrap installs
+# from an offline wheelhouse with --no-deps, so these cannot be implicit.
+lazy_loader==0.4
+tifffile==2024.9.20
+pillow==11.1.0
+packaging==24.2
 yourdfpy==0.0.60
 lxml==5.3.0
 six==1.17.0
