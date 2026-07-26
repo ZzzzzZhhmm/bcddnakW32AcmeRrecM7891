@@ -28,6 +28,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 import urllib.error
@@ -299,19 +300,28 @@ def write_asset_manifest(
 
 def _run_readonly_git(root: Path, *arguments: str) -> subprocess.CompletedProcess[str]:
     canonical = root.resolve()
-    return subprocess.run(
-        [
-            "git",
-            "-c",
-            f"safe.directory={canonical}",
-            "-C",
-            str(canonical),
-            *arguments,
-        ],
-        check=False,
-        capture_output=True,
-        text=True,
-    )
+    # ``safe.directory`` is only honored from protected configuration scopes.
+    # Some cluster Git builds do not treat ``git -c`` as protected and still
+    # reject AFS checkouts whose recorded owner differs from the container
+    # user.  Give this one read-only subprocess an isolated HOME/global config
+    # instead of mutating the user's persistent Git configuration.
+    with tempfile.TemporaryDirectory(prefix="warm-rmbench-git-") as git_home:
+        global_config = Path(git_home) / ".gitconfig"
+        safe_directory = canonical.as_posix()
+        global_config.write_text(
+            f"[safe]\n\tdirectory = {json.dumps(safe_directory)}\n",
+            encoding="utf-8",
+        )
+        environment = os.environ.copy()
+        environment["HOME"] = git_home
+        environment["GIT_CONFIG_GLOBAL"] = str(global_config)
+        return subprocess.run(
+            ["git", "-C", str(canonical), *arguments],
+            check=False,
+            capture_output=True,
+            text=True,
+            env=environment,
+        )
 
 
 def _assert_pinned_checkout(root: Path, revision: str) -> None:

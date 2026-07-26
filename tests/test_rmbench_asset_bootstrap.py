@@ -340,7 +340,7 @@ def test_endpoint_probe_keeps_only_reachable_sources(
     assert usable == ("https://good.invalid",)
 
 
-def test_checkout_revision_probe_uses_command_scoped_safe_directory(
+def test_checkout_revision_probe_uses_isolated_global_safe_directory(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -348,26 +348,33 @@ def test_checkout_revision_probe_uses_command_scoped_safe_directory(
     (checkout / ".git").mkdir(parents=True)
     revision = "a" * 40
     observed: list[str] = []
+    observed_environment: dict[str, str] = {}
+    observed_config = ""
 
     def fake_run(
         command: list[str],
         **kwargs: object,
     ) -> subprocess.CompletedProcess[str]:
-        del kwargs
+        nonlocal observed_config
         observed.extend(command)
+        environment = kwargs["env"]
+        assert isinstance(environment, dict)
+        observed_environment.update(environment)
+        config_path = Path(environment["GIT_CONFIG_GLOBAL"])
+        observed_config = config_path.read_text(encoding="utf-8")
         return subprocess.CompletedProcess(command, 0, revision + "\n", "")
 
     monkeypatch.setattr(assets.subprocess, "run", fake_run)
     assets._assert_pinned_checkout(checkout, revision)
 
-    assert observed[:3] == [
+    assert observed == [
         "git",
-        "-c",
-        f"safe.directory={checkout.resolve()}",
-    ]
-    assert observed[-4:] == [
         "-C",
         str(checkout.resolve()),
         "rev-parse",
         "HEAD",
     ]
+    assert observed_environment["HOME"] == str(
+        Path(observed_environment["GIT_CONFIG_GLOBAL"]).parent
+    )
+    assert f'directory = "{checkout.resolve().as_posix()}"' in observed_config
