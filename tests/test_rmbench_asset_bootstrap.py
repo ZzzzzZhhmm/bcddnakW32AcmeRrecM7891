@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib.util
 import io
 import json
+import subprocess
 import sys
 import types
 from pathlib import Path
@@ -337,3 +338,36 @@ def test_endpoint_probe_keeps_only_reachable_sources(
         timeout=5,
     )
     assert usable == ("https://good.invalid",)
+
+
+def test_checkout_revision_probe_uses_command_scoped_safe_directory(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    checkout = tmp_path / "RMBench-official"
+    (checkout / ".git").mkdir(parents=True)
+    revision = "a" * 40
+    observed: list[str] = []
+
+    def fake_run(
+        command: list[str],
+        **kwargs: object,
+    ) -> subprocess.CompletedProcess[str]:
+        del kwargs
+        observed.extend(command)
+        return subprocess.CompletedProcess(command, 0, revision + "\n", "")
+
+    monkeypatch.setattr(assets.subprocess, "run", fake_run)
+    assets._assert_pinned_checkout(checkout, revision)
+
+    assert observed[:3] == [
+        "git",
+        "-c",
+        f"safe.directory={checkout.resolve()}",
+    ]
+    assert observed[-4:] == [
+        "-C",
+        str(checkout.resolve()),
+        "rev-parse",
+        "HEAD",
+    ]

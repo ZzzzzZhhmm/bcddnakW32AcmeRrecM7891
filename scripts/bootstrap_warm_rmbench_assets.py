@@ -297,20 +297,34 @@ def write_asset_manifest(
     return value
 
 
-def _assert_pinned_checkout(root: Path, revision: str) -> None:
-    if not (root / ".git").exists():
-        raise AssetBootstrapError(f"RMBench Git checkout is absent: {root}")
-    completed = subprocess.run(
-        ["git", "-C", str(root), "rev-parse", "HEAD"],
+def _run_readonly_git(root: Path, *arguments: str) -> subprocess.CompletedProcess[str]:
+    canonical = root.resolve()
+    return subprocess.run(
+        [
+            "git",
+            "-c",
+            f"safe.directory={canonical}",
+            "-C",
+            str(canonical),
+            *arguments,
+        ],
         check=False,
         capture_output=True,
         text=True,
     )
+
+
+def _assert_pinned_checkout(root: Path, revision: str) -> None:
+    if not (root / ".git").exists():
+        raise AssetBootstrapError(f"RMBench Git checkout is absent: {root}")
+    completed = _run_readonly_git(root, "rev-parse", "HEAD")
     actual = completed.stdout.strip()
     if completed.returncode or actual != revision:
+        detail = completed.stderr.strip()
+        suffix = f"; git_error={detail}" if detail else ""
         raise AssetBootstrapError(
             f"RMBench checkout revision={actual or '<unavailable>'}, "
-            f"expected {revision}"
+            f"expected {revision}{suffix}"
         )
 
 
@@ -355,18 +369,11 @@ def deploy_asset_links(
         _link_category(asset_root / category, checkout_assets / category)
     validate_asset_layout(checkout_assets)
 
-    completed = subprocess.run(
-        [
-            "git",
-            "-C",
-            str(rmbench_root),
-            "status",
-            "--porcelain",
-            "--untracked-files=all",
-        ],
-        check=False,
-        capture_output=True,
-        text=True,
+    completed = _run_readonly_git(
+        rmbench_root,
+        "status",
+        "--porcelain",
+        "--untracked-files=all",
     )
     if completed.returncode or completed.stdout.strip():
         raise AssetBootstrapError(
