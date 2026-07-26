@@ -692,7 +692,7 @@ def _probe_download_endpoints(
             with _open_with_retries(
                 request,
                 timeout=timeout,
-                retries=2,
+                retries=1,
             ) as response:
                 response.read(1)
         except AssetBootstrapError as error:
