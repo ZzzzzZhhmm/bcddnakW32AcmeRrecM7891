@@ -316,9 +316,9 @@ def validate_warm_model_telemetry(
             raise RMBenchPolicyBoundaryError(
                 "context_only ablation used a memory action source"
             )
-    elif memory_selected != candidate_selected:
+    elif memory_selected and not candidate_selected:
         raise RMBenchPolicyBoundaryError(
-            "WARM source/candidate selection semantics drifted"
+            "WARM memory source has no selected candidate"
         )
     component = source.get("component")
     expected_component = selected_rank + 1 if memory_selected else 0
@@ -338,7 +338,15 @@ def validate_warm_model_telemetry(
         raise RMBenchPolicyBoundaryError(
             "WARM source sigma differs from online contract"
         )
-    for name in ("gate", "memory_relevance_gate"):
+    for name in (
+        "gate",
+        "memory_relevance_gate",
+        "learned_gate",
+        "source_quality",
+        "selected_probability",
+        "normalized_entropy",
+        "stagnation_score",
+    ):
         try:
             scalar = float(source.get(name, float("nan")))
         except (TypeError, ValueError) as exc:
@@ -349,6 +357,40 @@ def validate_warm_model_telemetry(
             raise RMBenchPolicyBoundaryError(
                 f"WARM {name} telemetry is invalid"
             )
+    try:
+        probability_margin = float(
+            source.get("probability_margin", float("nan"))
+        )
+    except (TypeError, ValueError) as exc:
+        raise RMBenchPolicyBoundaryError(
+            "WARM probability_margin telemetry is invalid"
+        ) from exc
+    if not np.isfinite(probability_margin) or not -1.0 <= probability_margin <= 1.0:
+        raise RMBenchPolicyBoundaryError(
+            "WARM probability_margin telemetry is invalid"
+        )
+    try:
+        thread_prior = float(source.get("thread_prior", float("nan")))
+    except (TypeError, ValueError) as exc:
+        raise RMBenchPolicyBoundaryError(
+            "WARM thread_prior telemetry is invalid"
+        ) from exc
+    if not np.isfinite(thread_prior):
+        raise RMBenchPolicyBoundaryError(
+            "WARM thread_prior telemetry is invalid"
+        )
+    try:
+        episode_query_delta_norm = float(
+            source.get("episode_query_delta_norm", float("nan"))
+        )
+    except (TypeError, ValueError) as exc:
+        raise RMBenchPolicyBoundaryError(
+            "WARM episode_query_delta_norm telemetry is invalid"
+        ) from exc
+    if not np.isfinite(episode_query_delta_norm) or episode_query_delta_norm < 0.0:
+        raise RMBenchPolicyBoundaryError(
+            "WARM episode_query_delta_norm telemetry is invalid"
+        )
     return dict(value)
 
 

@@ -250,7 +250,7 @@ The current single-node recipes preserve effective global batch 128:
 ```
 
 Keep `max_steps=null`, `run_steps=null`, `num_epochs=10`,
-`mot_checkpoint_mixed_attn=true`, and `save_every=2000` for the formal run.
+`mot_checkpoint_mixed_attn=true`, and `save_every=1000` for the formal run.
 The ACP wrapper validates this geometry and is intentionally single-node; use
 the lower Accelerate launchers under a real scheduler for multi-node jobs.
 

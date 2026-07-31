@@ -47,6 +47,17 @@ retrospection:
   consequence_weight: 1.0
   support_weight: 0.0
   magnitude_weight: 0.25
+  selection_temperature: 1.0
+  minimum_candidate_probability: 0.06
+  maximum_candidate_entropy: 0.94
+  inference_source_gate_threshold: 0.15
+  stagnation_decay: 3.0
+  stagnation_hard_threshold: 0.75
+  thread_score_weight: 0.75
+  thread_switch_penalty: 0.25
+  thread_backtrack_tolerance: 16
+  thread_forward_window: 256
+  thread_max_null_steps: 3
   utility_effect_weight: 1.0
   utility_temperature: 1.0
   gate_effect_weight: 1.0
@@ -57,6 +68,10 @@ retrospection:
   loss_effect: 0.05
   loss_gate: 0.05
   loss_adaptation: 0.05
+  corruption_normal_weight: 0.50
+  corruption_drop_weight: 0.125
+  corruption_null_weight: 0.125
+  corruption_hard_negative_weight: 0.25
   corruption_seed: 3407
 
 # Full WARM uses disjoint action and video passes. The action pass reads only

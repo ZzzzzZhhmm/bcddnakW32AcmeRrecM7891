@@ -50,6 +50,7 @@ from .consequence import (
     SourceConfidenceGate,
     build_action_effect_utility_targets,
     build_corruption_controls,
+    calibrate_source_acceptance,
     consequence_consistency,
     select_consequence_candidate,
     utility_kl_divergence,
@@ -58,6 +59,7 @@ from .consequence import (
 )
 from .consequence_curriculum import (
     CorruptionDecision,
+    CorruptionWeights,
     derive_corruption_batch,
     select_hard_negative_index,
 )
@@ -80,7 +82,7 @@ from .video_adapter import build_video_layer_adapters
 
 
 WARM_RETROSPECTION_CHECKPOINT_SCHEMA = "warm.retrospection-checkpoint"
-WARM_RETROSPECTION_CHECKPOINT_VERSION = 3
+WARM_RETROSPECTION_CHECKPOINT_VERSION = 4
 WARM_ONLINE_ABLATION_MODES = frozenset(
     {"full", "context_only", "source_only_no_consequence"}
 )
@@ -137,6 +139,8 @@ class RetrospectiveSourceContext:
     target_action_valid_mask: torch.Tensor | None = None
     future_valid_mask: torch.Tensor | None = None
     forced_candidate_indices: torch.Tensor | None = None
+    forced_rejection_mask: torch.Tensor | None = None
+    candidate_thread_prior: torch.Tensor | None = None
 
 
 def _as_config(
@@ -159,6 +163,33 @@ def _candidate_action_summary(actions: torch.Tensor) -> torch.Tensor:
     else:
         variation = torch.zeros_like(mean)
     return torch.cat((mean, final, variation), dim=-1)
+
+
+def _episode_stagnation_score(
+    summaries: torch.Tensor, mask: torch.Tensor
+) -> torch.Tensor:
+    """Recency-weighted repetition rate from factual executed-action history."""
+
+    if summaries.ndim != 3 or mask.ndim != 2 or summaries.shape[:2] != mask.shape:
+        raise WarmRetrospectionError(
+            "episode action summaries and mask must align as [B,N,*]"
+        )
+    if mask.dtype != torch.bool or summaries.shape[-1] < 1:
+        raise WarmRetrospectionError(
+            "episode action history needs a bool mask and repetition field"
+        )
+    repeated = summaries[..., -1].float().clamp(0.0, 1.0)
+    recency = torch.linspace(
+        0.5,
+        1.0,
+        steps=int(summaries.shape[1]),
+        device=summaries.device,
+        dtype=torch.float32,
+    ).unsqueeze(0)
+    weights = recency * mask.float()
+    return ((repeated * weights).sum(dim=1) / weights.sum(dim=1).clamp(min=1.0)).to(
+        dtype=summaries.dtype
+    )
 
 
 def _warp_candidate_actions(
@@ -492,6 +523,13 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             nn.GELU(),
             nn.Linear(cfg.semantic_dim, cfg.semantic_dim),
         )
+        self.episode_query_projection = nn.Sequential(
+            nn.LayerNorm(cfg.semantic_dim),
+            nn.Linear(cfg.semantic_dim, cfg.context_dim, bias=False),
+        )
+        query_projection = self.episode_query_projection[-1]
+        assert isinstance(query_projection, nn.Linear)
+        nn.init.zeros_(query_projection.weight)
         self.gist_to_text = nn.Linear(cfg.gist_dim, cfg.text_dim, bias=False)
         self.action_context_to_text = nn.Linear(
             cfg.event_model_dim, cfg.text_dim, bias=False
@@ -522,6 +560,10 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             experiment_id="default",
         )
         self._warm_online_experiment_locked = False
+        self._warm_thread_event: Any | None = None
+        self._warm_thread_query_frame: int | None = None
+        self._warm_thread_episode_index: int | None = None
+        self._warm_thread_null_steps = 0
         self.to(device=self.device, dtype=self.torch_dtype)
 
     def _require_retrospection(self) -> WarmRetrospectionConfig:
@@ -589,6 +631,55 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             return OnlineExperimentControls("full", "clean", "default")
         return value
 
+    def reset_warm_online_episode(self) -> None:
+        """Reset runtime-only retrieval-thread state at a factual env reset."""
+
+        self._warm_thread_event = None
+        self._warm_thread_query_frame = None
+        self._warm_thread_episode_index = None
+        self._warm_thread_null_steps = 0
+
+    def _online_thread_prior(self, online_step: Any) -> torch.Tensor:
+        """Favor monotonic continuation of one useful demonstration event."""
+
+        cfg = self._require_retrospection()
+        events = tuple(online_step.event_ids)
+        valid = np.asarray(online_step.candidate_valid_mask, dtype=np.bool_)
+        if valid.shape != (len(events),):
+            raise WarmRetrospectionError(
+                "online candidate ids and validity mask are not aligned"
+            )
+        query_episode = int(online_step.query_id.episode_index)
+        query_frame = int(online_step.query_id.frame_index)
+        if self._warm_thread_episode_index not in (None, query_episode):
+            self.reset_warm_online_episode()
+        self._warm_thread_episode_index = query_episode
+        prior = np.zeros((len(events),), dtype=np.float32)
+        previous = self._warm_thread_event
+        previous_query = self._warm_thread_query_frame
+        if previous is None or previous_query is None:
+            return torch.as_tensor(
+                prior, device=self.device, dtype=self.torch_dtype
+            ).unsqueeze(0)
+        expected = int(previous.start_frame) + max(query_frame - previous_query, 0)
+        for index, (event, is_valid) in enumerate(zip(events, valid, strict=True)):
+            if not bool(is_valid) or event is None:
+                continue
+            if event.episode_key != previous.episode_key:
+                prior[index] = -float(cfg.thread_switch_penalty)
+                continue
+            if int(event.start_frame) + cfg.thread_backtrack_tolerance < int(
+                previous.start_frame
+            ):
+                prior[index] = -float(cfg.thread_score_weight)
+                continue
+            distance = abs(int(event.start_frame) - expected)
+            coherence = max(0.0, 1.0 - distance / float(cfg.thread_forward_window))
+            prior[index] = float(cfg.thread_score_weight) * coherence
+        return torch.as_tensor(
+            prior, device=self.device, dtype=self.torch_dtype
+        ).unsqueeze(0)
+
     def configure_trainable_modules(self):
         """Adapt Action DiT, WARM modules, and selected Video DiT adapters.
 
@@ -616,6 +707,7 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             self.utility_reranker,
             self.source_confidence_gate,
             self.episode_action_projection,
+            self.episode_query_projection,
             self.gist_to_text,
             self.action_context_to_text,
             self.video_layer_adapters,
@@ -744,7 +836,16 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
                     dataset_indices, episode_indices, frame_indices, strict=True
                 )
             )
-            decisions = derive_corruption_batch(cfg.corruption_seed, identities)
+            decisions = derive_corruption_batch(
+                cfg.corruption_seed,
+                identities,
+                weights=CorruptionWeights(
+                    normal=cfg.corruption_normal_weight,
+                    drop=cfg.corruption_drop_weight,
+                    null=cfg.corruption_null_weight,
+                    hard_negative=cfg.corruption_hard_negative_weight,
+                ),
+            )
 
         # Pick an actually incompatible raw event for hard-negative rows: the
         # farthest valid action/effect candidate, excluding the best when
@@ -801,6 +902,11 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             hard_negative_indices=hard_indices,
         )
         effective = controls.candidate_valid_mask
+        forced_rejection = torch.tensor(
+            [decision.mode == "hard_negative" for decision in normalized_decisions],
+            dtype=torch.bool,
+            device=self.device,
+        )
 
         def masked(key: str, *, dtype: torch.dtype) -> torch.Tensor:
             value = self._tensor(sample, key, dtype=dtype)
@@ -869,6 +975,7 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             target_action_valid_mask=action_valid,
             future_valid_mask=future_valid,
             forced_candidate_indices=controls.forced_candidate_indices,
+            forced_rejection_mask=forced_rejection,
         )
 
     def training_loss(self, sample, tiled: bool = False):
@@ -992,6 +1099,13 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
         episode_mask = torch.cat(
             (ctx.episode_mask, ctx.episode_action_mask), dim=1
         )
+        episode_weights = episode_mask.to(dtype=episode_tokens.dtype).unsqueeze(-1)
+        pooled_episode = (episode_tokens * episode_weights).sum(dim=1) / (
+            episode_weights.sum(dim=1).clamp(min=1.0)
+        )
+        phase_aware_query = ctx.query_context + self.episode_query_projection(
+            pooled_episode
+        )
         # The required world transition is a query-only prediction.  Long-term
         # candidates are explicitly hidden here so an event can never help
         # manufacture the criterion that later accepts that same event.
@@ -1031,7 +1145,7 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
         observed_effect = _mean_effect(candidate_payload.effect_delta)
         action_summary = _candidate_action_summary(event.adapted_action_mean)
         reranker_scores = self.utility_reranker(
-            ctx.query_context,
+            phase_aware_query,
             ctx.candidate_context,
             action_summary,
             torch.zeros_like(observed_effect) if source_only else observed_effect,
@@ -1056,6 +1170,8 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             valid,
             consequence_weight=0.0 if source_only else cfg.consequence_weight,
             support_weight=cfg.support_weight,
+            candidate_prior=ctx.candidate_thread_prior,
+            selection_temperature=cfg.selection_temperature,
             # Candidate-only ranking logits have no absolute null calibration;
             # the separately utility-supervised gate owns continuous fallback.
             automatic_null=False,
@@ -1077,6 +1193,8 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
                     0.0 if source_only else cfg.consequence_weight
                 ),
                 support_weight=cfg.support_weight,
+                candidate_prior=ctx.candidate_thread_prior,
+                selection_temperature=cfg.selection_temperature,
                 automatic_null=False,
                 forced_candidate_indices=forced_wrong,
             )
@@ -1093,8 +1211,24 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             selected_residual,
             dims=(-1, -2),
         ).to(dtype=base_gaussian.dtype)
-        gate = self.source_confidence_gate(selection, deformation)
-        relevance_gate = gate.probability.to(dtype=base_gaussian.dtype)
+        stagnation = _episode_stagnation_score(
+            ctx.episode_action_summaries, ctx.episode_action_mask
+        ).to(dtype=base_gaussian.dtype)
+        gate = self.source_confidence_gate(selection, deformation, stagnation)
+        acceptance = calibrate_source_acceptance(
+            gate,
+            selection,
+            stagnation,
+            minimum_candidate_probability=cfg.minimum_candidate_probability,
+            maximum_candidate_entropy=cfg.maximum_candidate_entropy,
+            stagnation_decay=cfg.stagnation_decay,
+            stagnation_hard_threshold=cfg.stagnation_hard_threshold,
+            inference_gate_threshold=cfg.inference_source_gate_threshold,
+            hard_reject=phase == "infer",
+        )
+        relevance_gate = acceptance.effective_probability.to(
+            dtype=base_gaussian.dtype
+        )
         gate_value = (
             torch.zeros_like(relevance_gate)
             if ablation_mode == "context_only"
@@ -1185,11 +1319,20 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             future_valid = ctx.future_valid_mask
             supervised_rows = future_valid & action_valid.any(dim=1)
             utility_valid = valid & supervised_rows.unsqueeze(1)
-            non_hard_rows = (
-                torch.ones_like(supervised_rows)
-                if ctx.forced_candidate_indices is None
-                else ctx.forced_candidate_indices < 0
+            forced_rejection = (
+                torch.zeros_like(supervised_rows)
+                if ctx.forced_rejection_mask is None
+                else ctx.forced_rejection_mask
             )
+            if (
+                forced_rejection.dtype != torch.bool
+                or forced_rejection.shape != supervised_rows.shape
+                or forced_rejection.device != supervised_rows.device
+            ):
+                raise WarmRetrospectionError(
+                    "forced_rejection_mask must be bool [B] on the model device"
+                )
+            non_hard_rows = ~forced_rejection
             utility = build_action_effect_utility_targets(
                 # The deterministic factual start-state warp defines the
                 # contextualized ranking label; the learnable bounded adapter
@@ -1216,19 +1359,53 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
                     sample_mask=supervised_rows,
                     magnitude_weight=cfg.magnitude_weight,
                 )
-            if bool(valid.any().item()):
-                # A retrieved event was not executed in the current query, so
-                # the query's future must never be used as a counterfactual
-                # label for that candidate.  Each effect branch is supervised
-                # only by the event's own stored factual pre/post transition.
-                losses["effect"] = (
+            if bool(supervised_rows.any().item()):
+                # Ordinary demonstrations provide one factual transition:
+                # current world + executed GT action -> observed future
+                # semantic delta.  Train the exact same predictor used for
+                # candidate effects, but with no retrieved-effect shortcut.
+                factual_effect = self.retrospective_event_adapter.predict_effects(
+                    actions=ctx.target_action.unsqueeze(1),
+                    observed_effect_prior=torch.zeros_like(target_effect).unsqueeze(1),
+                    candidate_valid_mask=supervised_rows.unsqueeze(1),
+                    world_tokens=bridge.world_tokens,
+                    world_mask=bridge.token_mask,
+                )
+                factual_effect_loss = (
                     self.retrospective_event_adapter.effect_alignment_loss(
-                        event,
-                        observed_effect,
-                        candidate_mask=valid,
+                        factual_effect,
+                        target_effect,
+                        candidate_mask=supervised_rows.unsqueeze(1),
                         magnitude_weight=cfg.magnitude_weight,
                     )
                 )
+                # Also supervise the exact candidate-effect path used online.
+                # Utility weights restrict this target to demonstrations whose
+                # stored action/effect already agree with the factual query;
+                # hard-negative rows are excluded.  Together with the zero-
+                # prior factual call above, this trains the stored-effect prior
+                # without permitting a pure identity shortcut.
+                candidate_effect_rows = utility.valid_rows & non_hard_rows
+                if bool(candidate_effect_rows.any().item()):
+                    candidate_effect_weights = utility.probabilities * (
+                        candidate_effect_rows.unsqueeze(1).to(
+                            dtype=utility.probabilities.dtype
+                        )
+                    )
+                    candidate_effect_loss = (
+                        self.retrospective_event_adapter.effect_alignment_loss(
+                            event.predicted_effect,
+                            target_effect,
+                            candidate_mask=utility_valid,
+                            candidate_weights=candidate_effect_weights,
+                            magnitude_weight=cfg.magnitude_weight,
+                        )
+                    )
+                    losses["effect"] = 0.5 * (
+                        factual_effect_loss + candidate_effect_loss
+                    )
+                else:
+                    losses["effect"] = factual_effect_loss
             gate_target = utility_supervised_gate_target(
                 selected_mean,
                 ctx.target_action,
@@ -1238,6 +1415,11 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
                 action_valid_mask=action_valid,
                 effect_weight=cfg.gate_effect_weight,
                 temperature=cfg.gate_temperature,
+            )
+            gate_target = torch.where(
+                forced_rejection,
+                torch.zeros_like(gate_target),
+                gate_target,
             )
             losses["gate"] = utility_supervised_gate_bce(
                 gate, gate_target, sample_mask=supervised_rows
@@ -1268,7 +1450,7 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
         source_memory_mask = (
             torch.zeros_like(selection.memory_mask)
             if ablation_mode == "context_only"
-            else selection.memory_mask
+            else acceptance.accepted_mask
         )
         source_component_indices = torch.where(
             source_memory_mask,
@@ -1286,7 +1468,9 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             "loss_warm_gate": losses["gate"],
             "loss_warm_adaptation": losses["adaptation"],
             "warm_gate_mean": gate_value.mean(),
-            "warm_selected_memory_rate": selection.memory_mask.float().mean(),
+            "warm_learned_gate_mean": gate.probability.mean(),
+            "warm_source_quality_mean": acceptance.quality.mean(),
+            "warm_selected_memory_rate": source_memory_mask.float().mean(),
             "warm_consequence_mean": selection_consistency[valid].mean()
             if bool(valid.any().item())
             else zero,
@@ -1295,6 +1479,20 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             "candidate_indices": selection.candidate_indices.detach(),
             "gate": gate_value.detach(),
             "memory_relevance_gate": relevance_gate.detach(),
+            "learned_gate": gate.probability.detach(),
+            "source_quality": acceptance.quality.detach(),
+            "selected_probability": selection.selected_probability.detach(),
+            "probability_margin": selection.probability_margin.detach(),
+            "normalized_entropy": selection.normalized_entropy.detach(),
+            "stagnation_score": stagnation.detach(),
+            "candidate_thread_prior": (
+                torch.zeros_like(reranker_scores)
+                if ctx.candidate_thread_prior is None
+                else ctx.candidate_thread_prior
+            ).detach(),
+            "episode_query_delta_norm": torch.linalg.vector_norm(
+                (phase_aware_query - ctx.query_context).float(), dim=-1
+            ).detach(),
             "source_memory_mask": source_memory_mask.detach(),
             "consistency": selection_consistency.detach(),
             "predicted_consistency": consistency.detach(),
@@ -1491,6 +1689,7 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             episode_mask=episode_valid,
             episode_action_summaries=action_history,
             episode_action_mask=action_history_valid,
+            candidate_thread_prior=self._online_thread_prior(online_step),
         )
 
     @torch.no_grad()
@@ -1598,6 +1797,20 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
         source_memory_selected = bool(
             diagnostics["source_memory_mask"].reshape(-1)[0].cpu().item()
         )
+        if source_memory_selected and selected_event is not None:
+            self._warm_thread_event = selected_event
+            self._warm_thread_query_frame = int(online_step.query_id.frame_index)
+            self._warm_thread_episode_index = int(
+                online_step.query_id.episode_index
+            )
+            self._warm_thread_null_steps = 0
+        else:
+            self._warm_thread_null_steps += 1
+            if self._warm_thread_null_steps >= (
+                self._require_retrospection().thread_max_null_steps
+            ):
+                self._warm_thread_event = None
+                self._warm_thread_query_frame = None
         output["warm_online_telemetry"] = _json_safe(
             {
                 "experiment": {
@@ -1639,6 +1852,51 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
                         .cpu()
                         .item()
                     ),
+                    "learned_gate": float(
+                        diagnostics["learned_gate"].reshape(-1)[0].cpu().item()
+                    ),
+                    "source_quality": float(
+                        diagnostics["source_quality"].reshape(-1)[0].cpu().item()
+                    ),
+                    "selected_probability": float(
+                        diagnostics["selected_probability"]
+                        .reshape(-1)[0]
+                        .cpu()
+                        .item()
+                    ),
+                    "probability_margin": float(
+                        diagnostics["probability_margin"]
+                        .reshape(-1)[0]
+                        .cpu()
+                        .item()
+                    ),
+                    "normalized_entropy": float(
+                        diagnostics["normalized_entropy"]
+                        .reshape(-1)[0]
+                        .cpu()
+                        .item()
+                    ),
+                    "stagnation_score": float(
+                        diagnostics["stagnation_score"]
+                        .reshape(-1)[0]
+                        .cpu()
+                        .item()
+                    ),
+                    "thread_prior": float(
+                        _gather_candidate(
+                            diagnostics["candidate_thread_prior"],
+                            diagnostics["candidate_indices"],
+                        )
+                        .reshape(-1)[0]
+                        .cpu()
+                        .item()
+                    ),
+                    "episode_query_delta_norm": float(
+                        diagnostics["episode_query_delta_norm"]
+                        .reshape(-1)[0]
+                        .cpu()
+                        .item()
+                    ),
                     "derived_seed": int(online_step.derived_seed),
                 },
             },
@@ -1671,6 +1929,7 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             "utility_reranker",
             "source_confidence_gate",
             "episode_action_projection",
+            "episode_query_projection",
             "gist_to_text",
             "action_context_to_text",
             "video_layer_adapters",
@@ -1734,6 +1993,7 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             "utility_reranker",
             "source_confidence_gate",
             "episode_action_projection",
+            "episode_query_projection",
             "gist_to_text",
             "action_context_to_text",
             "video_layer_adapters",
@@ -1775,6 +2035,7 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             "utility_reranker",
             "source_confidence_gate",
             "episode_action_projection",
+            "episode_query_projection",
             "gist_to_text",
             "action_context_to_text",
             "video_layer_adapters",

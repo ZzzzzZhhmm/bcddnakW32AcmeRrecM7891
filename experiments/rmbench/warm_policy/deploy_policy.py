@@ -119,6 +119,25 @@ def _optional_float(value: Any) -> float | None:
     return None if _none_like(value) else float(value)
 
 
+def _array_summary(value: Any) -> dict[str, Any]:
+    """Small human-readable numeric witness alongside the exact SHA-256."""
+
+    array = np.asarray(value)
+    if array.size == 0 or not np.issubdtype(array.dtype, np.number):
+        raise ValueError("diagnostic arrays must be non-empty numeric values")
+    finite = np.asarray(array, dtype=np.float64)
+    if not np.isfinite(finite).all():
+        raise ValueError("diagnostic arrays must be finite")
+    return {
+        "shape": [int(item) for item in array.shape],
+        "dtype": str(array.dtype),
+        "min": float(finite.min()),
+        "max": float(finite.max()),
+        "mean": float(finite.mean()),
+        "std": float(finite.std()),
+    }
+
+
 def _path(value: Any, *, field: str, directory: bool | None = None) -> Path:
     if _none_like(value):
         raise ValueError(f"{field} is required for full WARM evaluation")
@@ -853,6 +872,14 @@ class RMBenchWarmPolicy:
         self.queue.clear()
         self._executed_policy_actions = 0
         self._instruction = None
+        reset_retrospection = getattr(
+            self.model, "reset_warm_online_episode", None
+        )
+        if not callable(reset_retrospection):
+            raise RuntimeError(
+                "formal RMBench WARM model lacks episode-memory reset"
+            )
+        reset_retrospection()
         self.controller.begin_episode(self._next_episode_index)
         self.writer.append(
             {
@@ -969,6 +996,11 @@ class RMBenchWarmPolicy:
             "candidate_payload_sha256": online_step.candidate_payload_sha256,
             "raw_camera_sha256": dict(online_step.raw_camera_sha256),
             "processed_camera_sha256": dict(online_step.processed_camera_sha256),
+            "raw_camera_stats": {
+                str(name): _array_summary(value)
+                for name, value in sorted(raw_cameras.items())
+            },
+            "model_input_stats": _array_summary(online_step.model_input),
             "model_input_sha256": online_step.model_input_sha256,
             "proprio_sha256": online_step.proprio_sha256,
             "candidate_count": int(sum(online_step.candidate_valid_mask)),
@@ -977,6 +1009,8 @@ class RMBenchWarmPolicy:
             "factual_update_after_replan": factual_update,
             "model_action_chunk_sha256": sha256_array(model_chunk),
             "environment_action_chunk_sha256": sha256_array(environment_chunk),
+            "model_action_chunk_stats": _array_summary(model_chunk),
+            "environment_action_chunk_stats": _array_summary(environment_chunk),
             "model": model_telemetry,
         }
         if self.timing_enabled:

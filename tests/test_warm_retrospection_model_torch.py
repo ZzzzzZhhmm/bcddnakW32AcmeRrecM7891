@@ -22,6 +22,7 @@ else:
 
 import fastwam.runtime as runtime  # noqa: E402
 from fastwam.memory.manifest import sha256_canonical_json  # noqa: E402
+from fastwam.memory.schema import EventId  # noqa: E402
 from fastwam.datasets.warm_candidates import (  # noqa: E402
     WARM_CANDIDATE_MASK,
     WARM_CANDIDATE_MU,
@@ -109,6 +110,14 @@ def _config() -> WarmRetrospectionConfig:
         event_heads=2,
         reranker_hidden_dim=8,
         gate_hidden_dim=4,
+        # Most model tests below exercise tensor plumbing rather than the
+        # deployment-time rejection policy.  Keep this fixture permissive and
+        # test rejection/stagnation calibration independently in
+        # test_consequence_torch.py.
+        minimum_candidate_probability=0.0,
+        maximum_candidate_entropy=1.0,
+        inference_source_gate_threshold=0.0,
+        stagnation_hard_threshold=1.0,
     )
 
 
@@ -158,6 +167,19 @@ def test_retrospection_trainer_metadata_survives_json_round_trip() -> None:
     )
     with pytest.raises(ValueError, match="video_adapter_layers"):
         model.validate_trainer_state_metadata(incompatible)
+
+
+def test_checkpoint_payload_persists_phase_aware_query_projection() -> None:
+    model = _model()
+
+    payload = model._checkpoint_extra_state()
+
+    modules = payload["warm_retrospection_modules"]
+    assert "episode_query_projection" in modules
+    assert set(modules["episode_query_projection"]) == set(
+        model.episode_query_projection.state_dict()
+    )
+    model._preflight_checkpoint_extra_state(payload)
 
 
 def _source_context(*, with_teachers: bool) -> RetrospectiveSourceContext:
@@ -386,6 +408,8 @@ def test_full_training_source_exposes_finite_auxiliary_losses() -> None:
         "loss_warm_gate",
         "loss_warm_adaptation",
         "warm_gate_mean",
+        "warm_learned_gate_mean",
+        "warm_source_quality_mean",
         "warm_selected_memory_rate",
         "warm_consequence_mean",
     }
@@ -461,6 +485,31 @@ def test_online_experiment_controls_are_closed_and_lock_after_inference() -> Non
             memory_corruption="clean",
             experiment_id="full_warm",
         )
+
+
+def test_online_thread_prior_prefers_monotonic_event_continuation_and_resets() -> None:
+    model = _model()
+    previous = EventId("train", 0, 7, 100)
+    model._warm_thread_event = previous
+    model._warm_thread_query_frame = 20
+    model._warm_thread_episode_index = 3
+    step = SimpleNamespace(
+        query_id=SimpleNamespace(episode_index=3, frame_index=24),
+        event_ids=(
+            EventId("train", 0, 7, 104),
+            EventId("train", 0, 7, 20),
+            EventId("train", 0, 8, 104),
+        ),
+        candidate_valid_mask=np.asarray([True, True, True]),
+    )
+    prior = model._online_thread_prior(step)
+    assert prior.shape == (1, 3)
+    assert float(prior[0, 0]) > 0.0
+    assert float(prior[0, 1]) < 0.0
+    assert float(prior[0, 2]) < 0.0
+
+    model.reset_warm_online_episode()
+    torch.testing.assert_close(model._online_thread_prior(step), torch.zeros(1, 3))
 
 
 def test_context_only_keeps_memory_conditioning_but_source_is_exact_gaussian() -> None:

@@ -72,6 +72,28 @@ class WarmRetrospectionConfig:
     consequence_weight: float = 1.0
     support_weight: float = 0.0
     magnitude_weight: float = 0.25
+    # Candidate-only reranker logits are shift invariant.  Source acceptance
+    # therefore uses calibrated distribution statistics rather than an
+    # absolute score: selected probability, top-1/top-2 probability margin,
+    # and normalized entropy.
+    selection_temperature: float = 1.0
+    minimum_candidate_probability: float = 0.06
+    maximum_candidate_entropy: float = 0.94
+    inference_source_gate_threshold: float = 0.15
+    # Repeated closed-loop action summaries are factual evidence that the
+    # current memory thread is not making progress.  They attenuate the source
+    # continuously and trigger a hard Gaussian fallback at the configured
+    # limit.
+    stagnation_decay: float = 3.0
+    stagnation_hard_threshold: float = 0.75
+    # Online-only temporal coherence prior.  It favors monotonic continuation
+    # inside one retrieved demonstration without forcing a candidate when the
+    # calibrated source gate rejects memory.
+    thread_score_weight: float = 0.75
+    thread_switch_penalty: float = 0.25
+    thread_backtrack_tolerance: int = 16
+    thread_forward_window: int = 256
+    thread_max_null_steps: int = 3
     utility_effect_weight: float = 1.0
     utility_temperature: float = 1.0
     gate_effect_weight: float = 1.0
@@ -82,6 +104,10 @@ class WarmRetrospectionConfig:
     loss_effect: float = 0.05
     loss_gate: float = 0.05
     loss_adaptation: float = 0.05
+    corruption_normal_weight: float = 0.50
+    corruption_drop_weight: float = 0.125
+    corruption_null_weight: float = 0.125
+    corruption_hard_negative_weight: float = 0.25
     corruption_seed: int = 3407
 
     @property
@@ -109,6 +135,9 @@ class WarmRetrospectionConfig:
             "gate_hidden_dim",
             "episode_action_chunk_size",
             "video_adapter_rank",
+            "thread_backtrack_tolerance",
+            "thread_forward_window",
+            "thread_max_null_steps",
         )
         for field in integer_fields:
             object.__setattr__(
@@ -196,6 +225,7 @@ class WarmRetrospectionConfig:
             "utility_temperature",
             "gate_temperature",
             "video_adapter_scale",
+            "selection_temperature",
         ):
             object.__setattr__(
                 self, field, _finite(getattr(self, field), field, positive=True)
@@ -212,11 +242,49 @@ class WarmRetrospectionConfig:
             "loss_effect",
             "loss_gate",
             "loss_adaptation",
+            "minimum_candidate_probability",
+            "maximum_candidate_entropy",
+            "inference_source_gate_threshold",
+            "stagnation_decay",
+            "stagnation_hard_threshold",
+            "thread_score_weight",
+            "thread_switch_penalty",
+            "corruption_normal_weight",
+            "corruption_drop_weight",
+            "corruption_null_weight",
+            "corruption_hard_negative_weight",
         ):
             object.__setattr__(
                 self,
                 field,
                 _finite(getattr(self, field), field, non_negative=True),
+            )
+        for field in (
+            "minimum_candidate_probability",
+            "maximum_candidate_entropy",
+            "inference_source_gate_threshold",
+            "stagnation_hard_threshold",
+        ):
+            if getattr(self, field) > 1.0:
+                raise WarmRetrospectionConfigError(
+                    f"{field} must lie in [0,1]"
+                )
+        if self.maximum_candidate_entropy <= 0.0:
+            raise WarmRetrospectionConfigError(
+                "maximum_candidate_entropy must lie in (0,1]"
+            )
+        corruption_total = sum(
+            getattr(self, field)
+            for field in (
+                "corruption_normal_weight",
+                "corruption_drop_weight",
+                "corruption_null_weight",
+                "corruption_hard_negative_weight",
+            )
+        )
+        if not math.isclose(corruption_total, 1.0, rel_tol=0.0, abs_tol=1e-12):
+            raise WarmRetrospectionConfigError(
+                "corruption weights must sum to one within 1e-12"
             )
         if (
             isinstance(self.corruption_seed, bool)

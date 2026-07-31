@@ -210,6 +210,14 @@ def _telemetry_fixture(*, valid: tuple[bool, ...] = (True, True)) -> tuple[objec
             "memory_sigma": 0.2,
             "gate": 0.7,
             "memory_relevance_gate": 1.0,
+            "learned_gate": 0.8,
+            "source_quality": 0.875,
+            "selected_probability": 0.7,
+            "probability_margin": 0.4,
+            "normalized_entropy": 0.2,
+            "stagnation_score": 0.0,
+            "thread_prior": 0.5,
+            "episode_query_delta_norm": 0.25,
             "derived_seed": 41,
         },
     }
@@ -283,6 +291,21 @@ def test_model_telemetry_validation_enforces_corruption_fallback_semantics() -> 
             experiment_id="wrong_event_10step",
             memory_corruption="wrong_event",
         )
+
+
+def test_model_telemetry_allows_candidate_considered_but_source_rejected() -> None:
+    step, telemetry = _telemetry_fixture()
+    telemetry["source"].update(
+        {
+            "component": 0,
+            "memory_selected": False,
+            "gate": 0.0,
+            "memory_relevance_gate": 0.0,
+            "source_quality": 0.0,
+            "normalized_entropy": 1.0,
+        }
+    )
+    assert _validate_telemetry(step, telemetry) == telemetry
 
 
 def test_deploy_policy_exposes_official_signatures_and_full_warm_boundaries() -> None:

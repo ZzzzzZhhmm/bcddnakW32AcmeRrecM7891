@@ -255,3 +255,59 @@ def test_event_adapter_rejects_nonprefix_and_nonzero_padding() -> None:
     inputs["warped_actions"][0, 2, 0, 0] = 1.0
     with pytest.raises(RetrospectiveEventAdapterError, match="must be zero"):
         module(**inputs)
+
+
+def test_effect_predictor_is_trained_from_current_action_without_memory_identity() -> None:
+    torch.manual_seed(23)
+    module = _event_module()
+    inputs = _event_inputs()
+    actions = inputs["warped_actions"][:, :1].detach().clone().requires_grad_(True)
+    valid = torch.ones(2, 1, dtype=torch.bool)
+    predicted = module.predict_effects(
+        actions=actions,
+        observed_effect_prior=torch.zeros(2, 1, 6),
+        candidate_valid_mask=valid,
+        world_tokens=inputs["world_tokens"],
+        world_mask=inputs["world_mask"],
+    )
+    target = torch.randn(2, 6)
+    loss = module.effect_alignment_loss(
+        predicted, target, candidate_mask=valid
+    )
+    loss.backward()
+
+    assert actions.grad is not None
+    assert torch.isfinite(actions.grad).all()
+    assert actions.grad.abs().sum().item() > 0.0
+    assert module.effect_action_projection.weight.grad is not None
+    assert module.effect_action_projection.weight.grad.abs().sum().item() > 0.0
+
+
+def test_effect_predictor_trains_nonzero_stored_effect_prior_path() -> None:
+    torch.manual_seed(29)
+    module = _event_module()
+    inputs = _event_inputs()
+    actions = inputs["warped_actions"][:, :2].detach().clone()
+    prior = torch.randn(2, 2, 6)
+    valid = torch.ones(2, 2, dtype=torch.bool)
+    predicted = module.predict_effects(
+        actions=actions,
+        observed_effect_prior=prior,
+        candidate_valid_mask=valid,
+        world_tokens=inputs["world_tokens"],
+        world_mask=inputs["world_mask"],
+    )
+    target = torch.randn(2, 6)
+    weights = torch.tensor([[0.8, 0.2], [0.0, 1.0]])
+    loss = module.effect_alignment_loss(
+        predicted,
+        target,
+        candidate_mask=valid,
+        candidate_weights=weights,
+    )
+    loss.backward()
+
+    gradient = module.effect_prior_projection.weight.grad
+    assert gradient is not None
+    assert torch.isfinite(gradient).all()
+    assert gradient.abs().sum().item() > 0.0

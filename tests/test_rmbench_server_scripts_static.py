@@ -101,7 +101,7 @@ def test_score_oriented_task_launchers_bind_registry_batch_and_online_memory() -
     assert "GRADIENT_ACCUMULATION_STEPS=4" in acp_specialist
     assert "TARGET_GLOBAL_BATCH_SIZE=128" in acp_specialist
     assert "official50-dev45" in acp_specialist
-    assert "save_every=2000" in acp_specialist
+    assert "save_every=1000" in acp_specialist
     assert "worktree add --detach" in acp_specialist
     assert 'WARM_TRAIN_CODE_DIR="${WARM_TRAIN_CODE_DIR:-}"' in acp_specialist
     assert 'WARM_CODE_REVISION="${TRAIN_COMMIT}"' in acp_specialist
@@ -134,7 +134,8 @@ def test_rmbench_specialist_eval_launcher_pins_checkpoint_training_commit() -> N
     assert "PYTHONDONTWRITEBYTECODE=1" in source
     assert "build_warm_rmbench_sota_task_contract_server.sh" in source
     assert "evaluate_warm_rmbench_task_server.sh" in source
-    assert "formal100-s3407-v1" in source
+    assert "formal100-s3407-v2" in source
+    assert "-s3407-v2" in source
     runtime_check = _read("check_warm_rmbench_eval_runtime.py")
     assert "expected exactly one visible CUDA device" in runtime_check
     assert "rmbench_f77_contract_v1/run_contract_bundle.py" in source

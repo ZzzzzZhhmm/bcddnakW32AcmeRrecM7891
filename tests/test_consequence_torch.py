@@ -22,6 +22,7 @@ from fastwam.models.warm.consequence import (
     SourceConfidenceGate,
     build_action_effect_utility_targets,
     build_corruption_controls,
+    calibrate_source_acceptance,
     consequence_consistency,
     select_consequence_candidate,
     utility_kl_divergence,
@@ -182,7 +183,7 @@ def test_gate_starts_at_bias_minus_two_and_uses_utility_supervision() -> None:
         output.probability,
         torch.tensor([torch.sigmoid(torch.tensor(-2.0)), 0.0]),
     )
-    assert output.features.shape == (2, 5)
+    assert output.features.shape == (2, 7)
 
     target = utility_supervised_gate_target(
         torch.zeros(2, 2, 1),
@@ -234,6 +235,66 @@ def test_all_null_gate_loss_is_differentiable_zero() -> None:
     loss = utility_supervised_gate_bce(output, torch.zeros(2))
     assert loss.item() == 0.0
     loss.backward()
+
+
+def test_candidate_confidence_is_shift_invariant_and_ambiguous_rows_fall_back() -> None:
+    scores = torch.tensor([[0.001, 0.0, -0.001], [2.0, -1.0, -2.0]])
+    kwargs = {
+        "consistency_scores": torch.zeros_like(scores),
+        "support_count": torch.ones_like(scores, dtype=torch.long),
+        "candidate_valid_mask": torch.ones_like(scores, dtype=torch.bool),
+        "automatic_null": False,
+        "selection_temperature": 0.25,
+    }
+    original = select_consequence_candidate(scores, **kwargs)
+    shifted = select_consequence_candidate(scores + 137.0, **kwargs)
+    torch.testing.assert_close(
+        original.selected_probability, shifted.selected_probability
+    )
+    torch.testing.assert_close(original.probability_margin, shifted.probability_margin)
+    torch.testing.assert_close(original.normalized_entropy, shifted.normalized_entropy)
+
+    gate = SourceConfidenceGate(hidden_dim=8)
+    gate_output = gate(original, torch.zeros(2), torch.zeros(2))
+    acceptance = calibrate_source_acceptance(
+        gate_output,
+        original,
+        torch.zeros(2),
+        minimum_candidate_probability=0.06,
+        maximum_candidate_entropy=0.94,
+        stagnation_decay=3.0,
+        stagnation_hard_threshold=0.75,
+        inference_gate_threshold=0.01,
+        hard_reject=True,
+    )
+    assert acceptance.accepted_mask.tolist() == [False, True]
+    assert acceptance.effective_probability[0].item() == 0.0
+
+
+def test_factual_stagnation_forces_explicit_gaussian_null() -> None:
+    selection = select_consequence_candidate(
+        torch.tensor([[3.0, -2.0]]),
+        torch.zeros(1, 2),
+        torch.ones(1, 2),
+        torch.ones(1, 2, dtype=torch.bool),
+        automatic_null=False,
+        selection_temperature=0.25,
+    )
+    gate = SourceConfidenceGate(hidden_dim=8)
+    output = gate(selection, torch.zeros(1), torch.tensor([0.9]))
+    acceptance = calibrate_source_acceptance(
+        output,
+        selection,
+        torch.tensor([0.9]),
+        minimum_candidate_probability=0.06,
+        maximum_candidate_entropy=0.94,
+        stagnation_decay=3.0,
+        stagnation_hard_threshold=0.75,
+        inference_gate_threshold=0.0,
+        hard_reject=True,
+    )
+    assert acceptance.accepted_mask.tolist() == [False]
+    assert acceptance.effective_probability.tolist() == [0.0]
 
 
 def test_contracts_reject_nonfinite_broadcast_and_invalid_forcing() -> None:

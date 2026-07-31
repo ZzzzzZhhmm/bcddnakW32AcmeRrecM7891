@@ -165,21 +165,19 @@ class RetrospectiveEventAdapter(nn.Module):
         nn.init.zeros_(self.residual_head.bias)
 
         self.event_delta_projection = nn.Linear(config.event_dim, dim)
-        # The consequence branch is deliberately candidate-factual: it sees
-        # the stored action, stored effect and current world, but never the
-        # required-transition gist or language-conditioned action hidden.
-        # This prevents the effect predictor from copying the very target it
-        # is later compared against.
-        self.effect_action_projection = nn.Linear(config.action_dim, dim)
+        # The consequence branch predicts an effect in the *current* world
+        # from action geometry plus a stored-event effect prior.  It does not
+        # receive the required-transition gist.  A separate factual-query
+        # training call uses the demonstrated current action and a zero prior,
+        # which prevents the branch from learning the old identity shortcut
+        # ``predicted_effect = stored_effect + zero_residual``.
+        self.effect_action_projection = nn.Linear(3 * config.action_dim, dim)
+        self.effect_prior_projection = nn.Linear(config.effect_dim, dim)
         self.effect_mixer = nn.Sequential(
             nn.Linear(dim * 3, dim),
             nn.GELU(),
             nn.Linear(dim, config.effect_dim),
         )
-        effect_residual = self.effect_mixer[-1]
-        assert isinstance(effect_residual, nn.Linear)
-        nn.init.zeros_(effect_residual.weight)
-        nn.init.zeros_(effect_residual.bias)
         self.effect_to_context = nn.Linear(config.effect_dim, dim)
 
         self.action_context_queries = nn.Parameter(
@@ -233,6 +231,92 @@ class RetrospectiveEventAdapter(nn.Module):
             world_projected, world_mask, dim=1
         )
         return context, context_mask, world_pooled
+
+    def predict_effects(
+        self,
+        *,
+        actions: torch.Tensor,
+        observed_effect_prior: torch.Tensor,
+        candidate_valid_mask: torch.Tensor,
+        world_tokens: torch.Tensor,
+        world_mask: torch.Tensor,
+    ) -> torch.Tensor:
+        """Predict current-state semantic consequences for action chunks.
+
+        ``actions`` is ``[B,K,H,Da]``.  The stored event delta is only a prior;
+        callers may pass an exact zero prior for the factual current query.
+        This shared path is what makes the candidate consequence predictor
+        identifiable from ordinary demonstration data without counterfactual
+        labels or an additional world model rollout.
+        """
+
+        cfg = self.config
+        action = _finite_tensor(
+            actions, field="actions", rank=4, width=cfg.action_dim
+        )
+        batch, candidates, horizon, _ = action.shape
+        if int(horizon) != cfg.action_horizon:
+            raise RetrospectiveEventAdapterError(
+                "actions horizon does not match the configured action horizon"
+            )
+        prior = _finite_tensor(
+            observed_effect_prior,
+            field="observed_effect_prior",
+            rank=3,
+            width=cfg.effect_dim,
+        )
+        if tuple(prior.shape[:2]) != (batch, candidates):
+            raise RetrospectiveEventAdapterError(
+                "observed_effect_prior must share actions [B,K]"
+            )
+        world = _finite_tensor(
+            world_tokens, field="world_tokens", rank=3, width=cfg.world_dim
+        )
+        if int(world.shape[0]) != batch:
+            raise RetrospectiveEventAdapterError(
+                "world_tokens must share the action batch"
+            )
+        valid = _bool_mask(
+            candidate_valid_mask,
+            field="candidate_valid_mask",
+            shape=(batch, candidates),
+            device=action.device,
+        )
+        world_valid = _bool_mask(
+            world_mask,
+            field="world_mask",
+            shape=(batch, int(world.shape[1])),
+            device=action.device,
+        )
+        if any(
+            value.device != action.device or value.dtype != action.dtype
+            for value in (prior, world)
+        ):
+            raise RetrospectiveEventAdapterError(
+                "effect inputs must share device and dtype"
+            )
+        if not bool(world_valid.any(dim=1).all().item()):
+            raise RetrospectiveEventAdapterError(
+                "world_mask must retain a token per sample"
+            )
+
+        mean = action.mean(dim=2)
+        final = action[:, :, -1]
+        if horizon > 1:
+            variation = (action[:, :, 1:] - action[:, :, :-1]).abs().mean(dim=2)
+        else:
+            variation = torch.zeros_like(mean)
+        action_features = self.effect_action_projection(
+            torch.cat((mean, final, variation), dim=-1)
+        )
+        prior_features = self.effect_prior_projection(prior)
+        world_pooled = _masked_mean(
+            self.world_projection(world), world_valid, dim=1
+        ).unsqueeze(1).expand(-1, candidates, -1)
+        predicted = self.effect_mixer(
+            torch.cat((action_features, prior_features, world_pooled), dim=-1)
+        )
+        return predicted.masked_fill(~valid.unsqueeze(-1), 0.0)
 
     def forward(
         self,
@@ -361,7 +445,7 @@ class RetrospectiveEventAdapter(nn.Module):
                 "invalid candidate action and timing payloads must be zero"
             )
 
-        context, context_mask, world_pooled = self._global_context(
+        context, context_mask, _ = self._global_context(
             world=world,
             world_mask=world_valid,
             gist=gist,
@@ -411,20 +495,15 @@ class RetrospectiveEventAdapter(nn.Module):
         delta_projected = delta_projected.masked_fill(
             ~delta_valid.unsqueeze(-1), 0.0
         )
-        pooled_delta = _masked_mean(delta_projected, delta_valid, dim=2)
         pooled_observed_effect = _masked_mean(
             event_delta, delta_valid, dim=2
         )
-        pooled_action = self.effect_action_projection(actions).mean(dim=2)
-        expanded_world = world_pooled.unsqueeze(1).expand(-1, candidates, -1)
-        # Predict a bounded-in-spirit residual around the immutable factual
-        # event effect.  Zero initialization makes the initial consequence
-        # exactly the stored observation and preserves distinct candidates.
-        predicted_effect = pooled_observed_effect + self.effect_mixer(
-            torch.cat((pooled_action, pooled_delta, expanded_world), dim=-1)
-        )
-        predicted_effect = predicted_effect.masked_fill(
-            ~valid.unsqueeze(-1), 0.0
+        predicted_effect = self.predict_effects(
+            actions=adapted,
+            observed_effect_prior=pooled_observed_effect,
+            candidate_valid_mask=valid,
+            world_tokens=world,
+            world_mask=world_valid,
         )
 
         effect_token = self.effect_to_context(predicted_effect).unsqueeze(2)
@@ -484,10 +563,9 @@ class RetrospectiveEventAdapter(nn.Module):
         """Align effects to factual or utility-weighted detached targets.
 
         ``semantic_delta_target`` may be one target per query ``[B,E]`` or a
-        distinct factual target per candidate ``[B,K,E]``.  The latter is the
-        default training use and prevents all retrieved events from collapsing
-        to the demonstrated query future.  Direction and log-magnitude are
-        both supervised because consequence scoring consumes both quantities.
+        distinct factual target per candidate ``[B,K,E]``. Direction and
+        log-magnitude are both supervised because consequence scoring consumes
+        both quantities.
         """
 
         predicted = output.predicted_effect if isinstance(

@@ -350,6 +350,7 @@ class Wan22Trainer:
             "utility_reranker",
             "source_confidence_gate",
             "episode_action_projection",
+            "episode_query_projection",
             "gist_to_text",
             "action_context_to_text",
             "video_layer_adapters",

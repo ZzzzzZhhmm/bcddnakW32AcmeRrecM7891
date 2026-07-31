@@ -324,7 +324,7 @@ cd /mnt/afs/task3_2/L202500276_lwz/projects/WARM
 
 CUDA_VISIBLE_DEVICES=0 \
 WARM_RMBENCH_TASK=blocks_ranking_try \
-WARM_EVAL_LABEL=formal100-s3407-v1 \
+WARM_EVAL_LABEL=formal100-s3407-v2 \
 bash scripts/acp_warm_rmbench_specialist_eval.sh
 ```
 

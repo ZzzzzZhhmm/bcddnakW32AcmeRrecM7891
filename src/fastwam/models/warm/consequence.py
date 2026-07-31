@@ -66,6 +66,9 @@ class ConsequenceSelection:
     candidate_scores: torch.Tensor
     selected_score: torch.Tensor
     selection_margin: torch.Tensor
+    selected_probability: torch.Tensor
+    probability_margin: torch.Tensor
+    normalized_entropy: torch.Tensor
     selected_consistency: torch.Tensor
     selected_support: torch.Tensor
 
@@ -78,6 +81,15 @@ class GateOutput:
     probability: torch.Tensor
     features: torch.Tensor
     memory_mask: torch.Tensor
+
+
+@dataclass(frozen=True, slots=True)
+class SourceAcceptance:
+    """Calibrated memory-source probability and explicit null decision."""
+
+    effective_probability: torch.Tensor
+    quality: torch.Tensor
+    accepted_mask: torch.Tensor
 
 
 def _require_positive_int(value: object, field: str) -> int:
@@ -708,6 +720,8 @@ def select_consequence_candidate(
     *,
     consequence_weight: float = 1.0,
     support_weight: float = 0.0,
+    candidate_prior: torch.Tensor | None = None,
+    selection_temperature: float = 1.0,
     null_score: float | torch.Tensor = 0.0,
     automatic_null: bool = True,
     forced_candidate_indices: torch.Tensor | None = None,
@@ -760,6 +774,9 @@ def select_consequence_candidate(
     support_lambda = _finite_number(
         support_weight, "support_weight", non_negative=True
     )
+    tau = _finite_number(
+        selection_temperature, "selection_temperature", positive=True
+    )
     if not isinstance(automatic_null, bool):
         raise TypeError("automatic_null must be bool")
     null = _null_scores(null_score, retrieval)
@@ -774,6 +791,16 @@ def select_consequence_candidate(
         + support_lambda
         * torch.log1p(support.to(dtype=torch.float32)).to(dtype=retrieval.dtype)
     )
+    if candidate_prior is not None:
+        prior = _require_float_tensor(
+            candidate_prior, "candidate_prior", ndim=2
+        )
+        if prior.shape != retrieval.shape:
+            raise ConsequenceAlignmentError(
+                "candidate_prior must match reranker_scores [B,K]"
+            )
+        _same_float_contract(retrieval, (("candidate_prior", prior),))
+        candidate_scores = candidate_scores + prior
     if not bool(torch.isfinite(candidate_scores).all().item()):
         raise ConsequenceAlignmentError("candidate scores must be finite")
 
@@ -821,12 +848,41 @@ def select_consequence_candidate(
             candidate_scores=candidate_scores,
             selected_score=null,
             selection_margin=zeros,
+            selected_probability=zeros,
+            probability_margin=zeros,
+            normalized_entropy=zeros,
             selected_consistency=zeros,
             selected_support=zeros,
         )
 
     masked_scores = candidate_scores.masked_fill(~valid, -torch.inf)
     has_candidate = valid.any(dim=-1)
+    candidate_probabilities = torch.zeros_like(candidate_scores)
+    normalized_entropy = retrieval.new_zeros((batch_size,))
+    if bool(has_candidate.any().item()):
+        rows = torch.nonzero(has_candidate, as_tuple=False).squeeze(1)
+        row_mask = valid[rows]
+        row_logits = (candidate_scores[rows].float() / tau).masked_fill(
+            ~row_mask, -torch.inf
+        )
+        row_probabilities = torch.softmax(row_logits, dim=-1).masked_fill(
+            ~row_mask, 0.0
+        )
+        candidate_probabilities[rows] = row_probabilities.to(
+            dtype=candidate_scores.dtype
+        )
+        counts = row_mask.sum(dim=-1)
+        entropy = -(
+            row_probabilities
+            * row_probabilities.clamp_min(torch.finfo(torch.float32).tiny).log()
+        ).sum(dim=-1)
+        denominator = counts.to(dtype=torch.float32).log()
+        entropy = torch.where(
+            counts > 1,
+            entropy / denominator.clamp_min(torch.finfo(torch.float32).eps),
+            torch.zeros_like(entropy),
+        )
+        normalized_entropy[rows] = entropy.to(dtype=retrieval.dtype)
     best_score, best_index = masked_scores.max(dim=-1)
     automatic_memory = (
         has_candidate & (best_score > null)
@@ -855,12 +911,15 @@ def select_consequence_candidate(
     selected_consistency = retrieval.new_zeros((batch_size,))
     selected_support = retrieval.new_zeros((batch_size,))
     selection_margin = retrieval.new_zeros((batch_size,))
+    selected_probability = retrieval.new_zeros((batch_size,))
+    probability_margin = retrieval.new_zeros((batch_size,))
     if bool(memory_mask.any().item()):
         rows = torch.nonzero(memory_mask, as_tuple=False).squeeze(1)
         slots = candidate_indices[rows]
         selected_score[rows] = candidate_scores[rows, slots]
         selected_consistency[rows] = consistency[rows, slots]
         selected_support[rows] = support[rows, slots].to(dtype=retrieval.dtype)
+        selected_probability[rows] = candidate_probabilities[rows, slots]
         competitors = masked_scores.clone()
         competitors[rows, slots] = -torch.inf
         other_best = competitors[rows].max(dim=-1).values
@@ -874,6 +933,11 @@ def select_consequence_candidate(
                 torch.isfinite(other_best), other_best, selected_score[rows]
             )
         selection_margin[rows] = selected_score[rows] - alternative
+        probability_competitors = candidate_probabilities.clone()
+        probability_competitors[rows, slots] = 0.0
+        probability_margin[rows] = selected_probability[rows] - (
+            probability_competitors[rows].max(dim=-1).values
+        )
 
     null_rows = ~memory_mask
     null_with_candidates = null_rows & has_candidate
@@ -887,19 +951,29 @@ def select_consequence_candidate(
         candidate_scores=candidate_scores,
         selected_score=selected_score,
         selection_margin=selection_margin,
+        selected_probability=selected_probability,
+        probability_margin=probability_margin,
+        normalized_entropy=normalized_entropy,
         selected_consistency=selected_consistency,
         selected_support=selected_support,
     )
 
 
 class SourceConfidenceGate(nn.Module):
-    """Tiny five-feature source gate with the required -2 initial bias."""
+    """Calibrated seven-feature source gate with a conservative initial bias.
+
+    Candidate-only ranking logits have no meaningful absolute origin.  The
+    gate therefore consumes probability/entropy statistics of the valid
+    candidate distribution, plus consequence, support, deformation, and
+    factual episode stagnation.  This makes the null decision invariant to an
+    arbitrary constant shift of every reranker logit.
+    """
 
     def __init__(self, hidden_dim: int = 16) -> None:
         super().__init__()
         width = _require_positive_int(hidden_dim, "hidden_dim")
         self.network = nn.Sequential(
-            nn.Linear(5, width),
+            nn.Linear(7, width),
             nn.SiLU(),
             nn.Linear(width, 1),
         )
@@ -912,6 +986,7 @@ class SourceConfidenceGate(nn.Module):
         self,
         selection: ConsequenceSelection,
         action_deformation_norm: torch.Tensor,
+        stagnation_score: torch.Tensor | None = None,
     ) -> GateOutput:
         if not isinstance(selection, ConsequenceSelection):
             raise TypeError("selection must be ConsequenceSelection")
@@ -924,8 +999,9 @@ class SourceConfidenceGate(nn.Module):
                 "gate inputs must have a non-empty batch dimension"
             )
         fields = (
-            ("selected_score", selection.selected_score),
-            ("selection_margin", selection.selection_margin),
+            ("selected_probability", selection.selected_probability),
+            ("probability_margin", selection.probability_margin),
+            ("normalized_entropy", selection.normalized_entropy),
             ("selected_consistency", selection.selected_consistency),
             ("selected_support", selection.selected_support),
         )
@@ -943,38 +1019,58 @@ class SourceConfidenceGate(nn.Module):
             raise ConsequenceAlignmentError(
                 "action_deformation_norm must be non-negative"
             )
+        if stagnation_score is None:
+            stagnation = torch.zeros_like(deformation)
+        else:
+            stagnation = _require_float_tensor(
+                stagnation_score, "stagnation_score", ndim=1
+            )
+            if stagnation.shape != (batch_size,):
+                raise ConsequenceAlignmentError(
+                    f"stagnation_score must have shape {(batch_size,)}"
+                )
+            if bool(torch.any(stagnation < 0).item()) or bool(
+                torch.any(stagnation > 1).item()
+            ):
+                raise ConsequenceAlignmentError(
+                    "stagnation_score must lie in [0,1]"
+                )
         memory_mask = _require_tensor(selection.memory_mask, "memory_mask")
         if memory_mask.dtype != torch.bool or memory_mask.shape != (batch_size,):
             raise ConsequenceAlignmentError(
                 "selection.memory_mask must be bool with shape [B]"
             )
         _same_float_contract(
-            selection.selected_score,
+            selection.selected_probability,
             (
-                ("selection_margin", selection.selection_margin),
+                ("probability_margin", selection.probability_margin),
+                ("normalized_entropy", selection.normalized_entropy),
                 ("selected_consistency", selection.selected_consistency),
                 ("selected_support", selection.selected_support),
                 ("action_deformation_norm", deformation),
+                ("stagnation_score", stagnation),
             ),
         )
-        if memory_mask.device != selection.selected_score.device:
+        if memory_mask.device != selection.selected_probability.device:
             raise ConsequenceAlignmentError("memory_mask must share the gate device")
         if bool(torch.any(selection.selected_support < 0).item()):
             raise ConsequenceAlignmentError(
                 "selection.selected_support must be non-negative"
             )
         parameter = next(self.parameters())
-        if parameter.device != selection.selected_score.device:
+        if parameter.device != selection.selected_probability.device:
             raise ConsequenceAlignmentError(
                 "gate parameters and features must share a device"
             )
         features = torch.stack(
             (
-                selection.selected_score,
-                selection.selection_margin,
+                selection.selected_probability,
+                selection.probability_margin,
+                1.0 - selection.normalized_entropy,
                 selection.selected_consistency,
                 torch.log1p(selection.selected_support),
                 deformation,
+                stagnation,
             ),
             dim=-1,
         )
@@ -991,6 +1087,122 @@ class SourceConfidenceGate(nn.Module):
             features=features,
             memory_mask=memory_mask,
         )
+
+
+def calibrate_source_acceptance(
+    gate: GateOutput,
+    selection: ConsequenceSelection,
+    stagnation_score: torch.Tensor,
+    *,
+    minimum_candidate_probability: float,
+    maximum_candidate_entropy: float,
+    stagnation_decay: float,
+    stagnation_hard_threshold: float,
+    inference_gate_threshold: float,
+    hard_reject: bool,
+) -> SourceAcceptance:
+    """Combine learned usefulness with ambiguity and factual progress evidence.
+
+    Candidate-only ranking logits have no calibrated absolute origin.  This
+    layer consequently uses probability concentration and normalized entropy,
+    then decays memory influence when the real closed-loop action history is
+    repeating.  Inference additionally exposes an explicit Gaussian null
+    decision so a weak memory cannot perturb every replan indefinitely.
+    """
+
+    if not isinstance(gate, GateOutput):
+        raise TypeError("gate must be GateOutput")
+    if not isinstance(selection, ConsequenceSelection):
+        raise TypeError("selection must be ConsequenceSelection")
+    stagnation = _require_float_tensor(
+        stagnation_score, "stagnation_score", ndim=1
+    )
+    batch = int(gate.probability.shape[0])
+    if stagnation.shape != (batch,):
+        raise ConsequenceAlignmentError(
+            f"stagnation_score must have shape {(batch,)}"
+        )
+    _same_float_contract(
+        gate.probability,
+        (
+            ("selected_probability", selection.selected_probability),
+            ("normalized_entropy", selection.normalized_entropy),
+            ("stagnation_score", stagnation),
+        ),
+    )
+    if gate.memory_mask.shape != (batch,) or selection.memory_mask.shape != (batch,):
+        raise ConsequenceAlignmentError("source masks must have shape [B]")
+    if not torch.equal(gate.memory_mask, selection.memory_mask):
+        raise ConsequenceAlignmentError("gate and selection memory masks differ")
+    if bool(((stagnation < 0) | (stagnation > 1)).any().item()):
+        raise ConsequenceAlignmentError("stagnation_score must lie in [0,1]")
+
+    minimum = _finite_number(
+        minimum_candidate_probability,
+        "minimum_candidate_probability",
+        non_negative=True,
+    )
+    maximum_entropy = _finite_number(
+        maximum_candidate_entropy,
+        "maximum_candidate_entropy",
+        positive=True,
+    )
+    decay = _finite_number(
+        stagnation_decay, "stagnation_decay", non_negative=True
+    )
+    hard_stagnation = _finite_number(
+        stagnation_hard_threshold,
+        "stagnation_hard_threshold",
+        non_negative=True,
+    )
+    gate_threshold = _finite_number(
+        inference_gate_threshold,
+        "inference_gate_threshold",
+        non_negative=True,
+    )
+    if any(
+        value > 1.0
+        for value in (minimum, maximum_entropy, hard_stagnation, gate_threshold)
+    ):
+        raise ConsequenceAlignmentError(
+            "source acceptance thresholds must lie in [0,1]"
+        )
+    if not isinstance(hard_reject, bool):
+        raise TypeError("hard_reject must be bool")
+
+    probability_quality = (
+        (selection.selected_probability - minimum)
+        / max(1.0 - minimum, 1e-6)
+    ).clamp(0.0, 1.0)
+    entropy_quality = (
+        (maximum_entropy - selection.normalized_entropy) / maximum_entropy
+    ).clamp(0.0, 1.0)
+    progress_quality = torch.exp(-decay * stagnation.float()).to(
+        dtype=gate.probability.dtype
+    )
+    quality = torch.sqrt(probability_quality * entropy_quality) * progress_quality
+    effective = gate.probability * quality
+    # Even during differentiable training, a candidate whose calibrated
+    # quality is exactly zero is an explicit null source.  Keeping that row
+    # marked as accepted would make source-usage telemetry disagree with the
+    # tensor that actually enters flow matching.
+    accepted = selection.memory_mask & (effective > 0)
+    if hard_reject:
+        accepted = (
+            accepted
+            & (stagnation < hard_stagnation)
+            & (effective >= gate_threshold)
+        )
+        effective = torch.where(accepted, effective, torch.zeros_like(effective))
+    else:
+        effective = torch.where(
+            selection.memory_mask, effective, torch.zeros_like(effective)
+        )
+    return SourceAcceptance(
+        effective_probability=effective,
+        quality=quality,
+        accepted_mask=accepted,
+    )
 
 
 def utility_supervised_gate_target(
@@ -1141,10 +1353,12 @@ __all__ = [
     "ConsequenceSelection",
     "CorruptionControls",
     "GateOutput",
+    "SourceAcceptance",
     "SourceConfidenceGate",
     "UtilityTargets",
     "build_action_effect_utility_targets",
     "build_corruption_controls",
+    "calibrate_source_acceptance",
     "consequence_consistency",
     "select_consequence_candidate",
     "utility_kl_divergence",

@@ -17,3 +17,13 @@ retrospection:
   # the left/right gripper commands at indices 6 and 13 exactly.
   canonical_action_mode: start_proprio_delta
   canonical_gripper_dims: [6, 13]
+  # RMBench contains visually similar but phase-incompatible states.  Sharper
+  # utility supervision plus more forced incompatible events teaches explicit
+  # memory rejection instead of an always-on source prior.
+  utility_temperature: 0.25
+  gate_temperature: 0.25
+  selection_temperature: 0.25
+  corruption_normal_weight: 0.45
+  corruption_drop_weight: 0.10
+  corruption_null_weight: 0.10
+  corruption_hard_negative_weight: 0.35

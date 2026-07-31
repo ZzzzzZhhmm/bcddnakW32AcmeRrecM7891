@@ -166,7 +166,10 @@ export WARM_RMBENCH_STAGE=specialist
 export WARM_RMBENCH_SPECIALIST_TASK
 
 SPECIALIST_RUN_ROOT="${WARM_SPECIALIST_RUN_ROOT:-${PROJECT_DIR}/runs/rmbench_official50_specialists}"
-export WARM_TRAIN_OUTPUT="${WARM_TRAIN_OUTPUT:-${SPECIALIST_RUN_ROOT}/${WARM_RMBENCH_SPECIALIST_TASK}-s3407-v1}"
+# Retrospection checkpoint v4 is intentionally architecture-incompatible with
+# the original always-on v1 specialist.  Never reuse the legacy output root or
+# accidentally resume its optimizer/model state.
+export WARM_TRAIN_OUTPUT="${WARM_TRAIN_OUTPUT:-${SPECIALIST_RUN_ROOT}/${WARM_RMBENCH_SPECIALIST_TASK}-s3407-v2}"
 export WARM_PREFLIGHT_RESOLVE="${WARM_PREFLIGHT_RESOLVE:-true}"
 export WARM_PREFLIGHT_OUTPUT="${WARM_PREFLIGHT_OUTPUT:-${WARM_TRAIN_OUTPUT}.resolved_config.preflight.yaml}"
 export WARM_WANDB_ENABLED="${WARM_WANDB_ENABLED:-false}"
@@ -197,6 +200,6 @@ bash scripts/train_warm_rmbench_server.sh \
   learning_rate=1.0e-4 \
   weight_decay=1.0e-2 \
   log_every=10 \
-  save_every=2000 \
+  save_every=1000 \
   eval_every=0 \
   2>&1 | tee "${TEE_ARGS[@]}" "${CONSOLE_LOG}"
