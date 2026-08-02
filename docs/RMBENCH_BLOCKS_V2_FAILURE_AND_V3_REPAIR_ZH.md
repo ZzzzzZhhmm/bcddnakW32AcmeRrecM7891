@@ -169,7 +169,8 @@ V3 首先复用现有 official50 M1/M2，因为现有 evidence 已证明：
 
 ### 4.2 V3 机制 pilot，禁止直接再跑满 14k
 
-从 Fast-WAM base 新建 `*-s3407-v3`，依次保留 500、2000、4000、6000 step
+从 Fast-WAM base 新建 `*-s3407-v3`，先做 10-step 数值 smoke，再依次保留
+1000、2000、4000、6000 step
 checkpoint。每个 checkpoint 在固定 dev seeds 上至少运行：
 
 1. `no_memory`；
