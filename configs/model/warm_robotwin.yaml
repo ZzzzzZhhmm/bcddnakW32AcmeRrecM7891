@@ -17,13 +17,24 @@ retrospection:
   # the left/right gripper commands at indices 6 and 13 exactly.
   canonical_action_mode: start_proprio_delta
   canonical_gripper_dims: [6, 13]
-  # RMBench contains visually similar but phase-incompatible states.  Sharper
-  # utility supervision plus more forced incompatible events teaches explicit
-  # memory rejection instead of an always-on source prior.
+  # RMBench contains visually similar but phase-incompatible states.  Utility
+  # supervision remains sharp, while normal memory rows must be frequent
+  # enough that Action DiT learns the source transport itself.  Twenty percent
+  # factual hard negatives is sufficient for gate rejection; the previous 35%
+  # allocation left only 45% ordinary source rows in a 45-demo specialist.
   utility_temperature: 0.25
   gate_temperature: 0.25
   selection_temperature: 0.25
-  corruption_normal_weight: 0.45
+  corruption_normal_weight: 0.60
   corruption_drop_weight: 0.10
   corruption_null_weight: 0.10
-  corruption_hard_negative_weight: 0.35
+  corruption_hard_negative_weight: 0.20
+  # Progress-coupled repetition is now measured in relative qpos motion and
+  # factual world/VAE change.  Attenuate it smoothly and reject only sustained
+  # no-progress history; ordinary slow approach chunks remain eligible.
+  stagnation_decay: 1.0
+  stagnation_hard_threshold: 0.875
+  # Thread continuity is a tie-breaker, not a planner.  A large 0.75 prior
+  # could dominate learned utility after the first accepted demonstration.
+  thread_score_weight: 0.20
+  thread_switch_penalty: 0.05

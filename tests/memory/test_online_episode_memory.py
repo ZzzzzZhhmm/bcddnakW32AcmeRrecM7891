@@ -132,8 +132,8 @@ def test_exact_executed_prefix_is_committed_only_after_next_real_observation() -
     assert history.episode_tokens.shape == (8, 8)
 
 
-def test_preview_repetition_matches_an_existing_factual_summary() -> None:
-    """A third replan must compare like-for-like compact signatures.
+def test_preview_similarity_is_diagnostic_but_not_premature_stagnation() -> None:
+    """A preview has no post-action observation and cannot prove stagnation.
 
     The first preview has no committed predecessor.  The dimension mismatch
     fixed by this regression test appears only after that prefix is committed
@@ -163,7 +163,35 @@ def test_preview_repetition_matches_an_existing_factual_summary() -> None:
     assert preview.episode_action_summaries.shape == (2, 25)
     assert preview.episode_action_mask.tolist() == [True, True]
     assert preview.episode_action_summaries[-1, -2] == pytest.approx(1.0)
-    assert preview.episode_action_summaries[-1, -1] == pytest.approx(1.0)
+    assert preview.episode_action_summaries[-1, -1] == pytest.approx(0.0)
+
+
+def test_absolute_target_preview_uses_latest_factual_proprio() -> None:
+    runtime = OnlineRetrospectiveEpisodeMemory(
+        action_dim=3,
+        action_horizon=4,
+        semantic_dim=8,
+        gripper_indices=(2,),
+        action_mode="absolute_target",
+    )
+    runtime.begin_episode(0)
+    payload = _payload(0.0)
+    payload["proprio"] = np.asarray([10.0, -3.0, 0.0], dtype=np.float32)
+    runtime.record_factual_observation(
+        frame_index=0,
+        factual_payload=payload,
+        executed_actions_since_previous=None,
+    )
+    targets = np.asarray(
+        [[10.2, -2.9, -1.0], [10.4, -2.8, -1.0]], dtype=np.float32
+    )
+
+    preview = runtime.history_inputs(executed_actions_since_previous=targets)
+
+    assert preview is not None
+    summary = preview.episode_action_summaries[-1]
+    np.testing.assert_allclose(summary[:3], [0.3, 0.15, 0.0], atol=1e-6)
+    np.testing.assert_allclose(summary[3:6], [0.4, 0.2, 0.0], atol=1e-6)
 
 
 def test_initial_observation_rejects_actions_and_later_observation_requires_them() -> None:

@@ -411,6 +411,10 @@ def test_full_training_source_exposes_finite_auxiliary_losses() -> None:
         "warm_learned_gate_mean",
         "warm_source_quality_mean",
         "warm_selected_memory_rate",
+        "warm_forced_rejection_rate",
+        "warm_normal_source_exposure_mean",
+        "warm_forced_source_leak_mean",
+        "warm_stagnation_mean",
         "warm_consequence_mean",
     }
     assert all(
@@ -697,12 +701,17 @@ def test_forced_hard_negative_after_slot_zero_preserves_prefix_contract() -> Non
     context = replace(
         _source_context(with_teachers=True),
         forced_candidate_indices=torch.tensor([1, -1], dtype=torch.long),
+        forced_rejection_mask=torch.tensor([True, False]),
     )
 
-    _, output = _resolve(model, context, phase="train")
+    gaussian, output = _resolve(model, context, phase="train")
 
     assert output.component_indices.tolist() == [2, 0]
     assert output.memory_mask.tolist() == [True, False]
+    assert torch.equal(output.source[0], gaussian[0])
+    assert output.source_gate.tolist() == [0.0, 0.0]
+    assert output.auxiliary_metrics["warm_forced_rejection_rate"].item() == 0.5
+    assert output.auxiliary_metrics["warm_forced_source_leak_mean"].item() == 0.0
     assert torch.isfinite(output.auxiliary_loss)
 
 

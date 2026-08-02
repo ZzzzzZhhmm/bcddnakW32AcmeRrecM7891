@@ -408,6 +408,55 @@ def test_action_summary_keeps_model_width_but_uses_compact_signature() -> None:
     assert vector[20] == signature[14] == pytest.approx(1.0)
 
 
+def test_absolute_target_summary_uses_relative_qpos_and_factual_progress() -> None:
+    actions = np.asarray(
+        [[10.2, -2.9, -1.0], [10.4, -2.8, -1.0]], dtype=np.float32
+    )
+    start = np.asarray([10.0, -3.0, 0.0], dtype=np.float32)
+    first, signature = _action_summary_vector(
+        actions,
+        action_horizon=4,
+        gripper_indices=(2,),
+        previous_signatures=(),
+        start_proprio=start,
+        action_mode="absolute_target",
+    )
+    np.testing.assert_allclose(first[:3], [0.3, 0.15, 0.0], atol=1e-6)
+    np.testing.assert_allclose(first[3:6], [0.4, 0.2, 0.0], atol=1e-6)
+
+    stalled, _ = _action_summary_vector(
+        actions,
+        action_horizon=4,
+        gripper_indices=(2,),
+        previous_signatures=(signature,),
+        start_proprio=start,
+        action_mode="absolute_target",
+        factual_progress=0.0,
+    )
+    progressed, _ = _action_summary_vector(
+        actions,
+        action_horizon=4,
+        gripper_indices=(2,),
+        previous_signatures=(signature,),
+        start_proprio=start,
+        action_mode="absolute_target",
+        factual_progress=0.2,
+    )
+    preview, _ = _action_summary_vector(
+        actions,
+        action_horizon=4,
+        gripper_indices=(2,),
+        previous_signatures=(signature,),
+        start_proprio=start,
+        action_mode="absolute_target",
+        factual_progress=0.0,
+        factual_outcome_available=False,
+    )
+    assert stalled[-2:].tolist() == pytest.approx([1.0, 1.0])
+    assert progressed[-2:].tolist() == pytest.approx([1.0, 0.0])
+    assert preview[-2:].tolist() == pytest.approx([1.0, 0.0])
+
+
 def test_causal_event_replay_is_invariant_to_future_suffix() -> None:
     base = _episode()
     actions = np.array(base.model_actions, copy=True)

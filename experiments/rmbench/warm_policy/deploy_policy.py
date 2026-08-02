@@ -685,8 +685,11 @@ class RMBenchWarmPolicy:
             action_horizon=32,
             semantic_dim=768,
             gripper_indices=ROBOTWIN_GRIPPER_DIMS,
+            action_mode="absolute_target",
             recent_event_capacity=int(online_cfg.recent_event_capacity),
             action_summary_capacity=int(online_cfg.action_summary_capacity),
+            change_threshold_floor=0.015,
+            change_threshold_ceiling=0.25,
             episode_namespace="rmbench-eval",
         )
         self.controller = OnlineEpisodeController(

@@ -31,7 +31,7 @@ import numpy as np
 
 
 EPISODE_MEMORY_SCHEMA = "warm.episode-working-memory"
-EPISODE_MEMORY_VERSION = 1
+EPISODE_MEMORY_VERSION = 2
 FACTUAL_OBSERVATION_PROVENANCE = "environment_observation"
 
 _FACTUAL_FACTORY_TOKEN = object()
@@ -259,6 +259,13 @@ class EpisodeMemoryConfig:
     """Static dimensions and deterministic bounded-memory policy."""
 
     action_dim: int
+    # ``delta`` is used by LIBERO-style displacement commands.  RoboTwin and
+    # RMBench instead execute normalized absolute qpos targets; treating those
+    # targets as displacements makes every nearby robot pose look like a
+    # repeated attempt and causes factual stagnation to saturate.  In
+    # ``absolute_target`` mode arm summaries are therefore measured relative
+    # to the factual proprioception at the start of the executed chunk.
+    action_mode: str = "delta"
     gripper_indices: tuple[int, ...] = ()
     max_recent_events: int = 6
     max_action_summaries: int = 2
@@ -287,6 +294,13 @@ class EpisodeMemoryConfig:
         if any(index >= action_dim for index in gripper_indices):
             raise EpisodeMemoryValidationError("gripper_indices must be within action_dim")
         object.__setattr__(self, "action_dim", action_dim)
+        if (
+            not isinstance(self.action_mode, str)
+            or self.action_mode not in {"delta", "absolute_target"}
+        ):
+            raise EpisodeMemoryValidationError(
+                "action_mode must be 'delta' or 'absolute_target'"
+            )
         object.__setattr__(self, "gripper_indices", tuple(sorted(gripper_indices)))
         object.__setattr__(
             self,
@@ -369,6 +383,7 @@ class EpisodeMemoryConfig:
     def to_dict(self) -> dict[str, Any]:
         return {
             "action_dim": self.action_dim,
+            "action_mode": self.action_mode,
             "gripper_indices": list(self.gripper_indices),
             "max_recent_events": self.max_recent_events,
             "max_action_summaries": self.max_action_summaries,
@@ -398,6 +413,7 @@ class EpisodeMemoryConfig:
             raise EpisodeMemoryValidationError("config.change_weights must be a list of four values")
         return cls(
             action_dim=value["action_dim"],
+            action_mode=value["action_mode"],
             gripper_indices=tuple(value["gripper_indices"]),
             max_recent_events=value["max_recent_events"],
             max_action_summaries=value["max_action_summaries"],
@@ -1355,13 +1371,38 @@ class EpisodeWorkingMemory:
         *,
         start_frame: int,
         end_frame: int,
+        start_proprio: np.ndarray,
     ) -> ActionSummary:
         mean = np.zeros((self._config.action_dim,), dtype=np.float32)
         final = np.zeros((self._config.action_dim,), dtype=np.float32)
         movement = self._config.movement_indices
+        summarized_actions = np.array(actions, copy=True, dtype=np.float32)
         if movement:
-            mean[list(movement)] = np.mean(actions[:, movement], axis=0, dtype=np.float32)
-            final[list(movement)] = np.sum(actions[:, movement], axis=0, dtype=np.float32)
+            if self._config.action_mode == "absolute_target":
+                if max(movement) >= int(start_proprio.shape[0]):
+                    raise EpisodeMemoryValidationError(
+                        "absolute-action summaries require proprio for every "
+                        "movement action channel"
+                    )
+                # Both tensors are in normalized model space.  The exact
+                # state-to-action scale is close to one for the bound RMBench
+                # stats and is handled by action source canonicalization; the
+                # factual repetition signature only needs the commanded
+                # motion relative to this real start state.
+                summarized_actions[:, movement] -= start_proprio[
+                    list(movement)
+                ][None, :]
+                mean[list(movement)] = np.mean(
+                    summarized_actions[:, movement], axis=0, dtype=np.float32
+                )
+                final[list(movement)] = summarized_actions[-1, list(movement)]
+            else:
+                mean[list(movement)] = np.mean(
+                    summarized_actions[:, movement], axis=0, dtype=np.float32
+                )
+                final[list(movement)] = np.sum(
+                    summarized_actions[:, movement], axis=0, dtype=np.float32
+                )
         transitions, terminal = self._gripper_transitions(actions)
         provisional = ActionSummary(
             start_frame=start_frame,
@@ -1371,7 +1412,7 @@ class EpisodeWorkingMemory:
             final_displacement=final,
             terminal_gripper_values=terminal,
             gripper_transition_counts=transitions,
-            curvature=self._curvature(actions),
+            curvature=self._curvature(summarized_actions),
             repetition_similarity=0.0,
             repeated=False,
         )
@@ -1620,6 +1661,7 @@ class EpisodeWorkingMemory:
                 actions,
                 start_frame=previous.frame_index,
                 end_frame=observation.frame_index,
+                start_proprio=previous.proprio,
             )
             gripper_component = float(
                 min(1, summary.close_count + summary.release_count)
@@ -1631,6 +1673,26 @@ class EpisodeWorkingMemory:
             vae_component = _relative_change(
                 previous.vae_latent, observation.vae_latent
             )
+            # Similar commands are normal during a slow approach or grasp.
+            # They become factual *stagnation* evidence only when neither the
+            # semantic world representation nor the VAE observation changed.
+            # This couples action repetition to real closed-loop progress and
+            # prevents absolute-qpos continuity from disabling memory.
+            if summary.repeated and max(world_component, vae_component) > (
+                self._config.stationary_world_change_threshold
+            ):
+                summary = ActionSummary(
+                    start_frame=summary.start_frame,
+                    end_frame=summary.end_frame,
+                    step_count=summary.step_count,
+                    mean_displacement=summary.mean_displacement,
+                    final_displacement=summary.final_displacement,
+                    terminal_gripper_values=summary.terminal_gripper_values,
+                    gripper_transition_counts=summary.gripper_transition_counts,
+                    curvature=summary.curvature,
+                    repetition_similarity=summary.repetition_similarity,
+                    repeated=False,
+                )
             components = _readonly_float32(
                 [gripper_component, action_component, world_component, vae_component],
                 "change_components",

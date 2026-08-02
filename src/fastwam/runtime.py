@@ -692,6 +692,31 @@ def _wrap_warm_candidate_dataset(
             int(value)
             for value in candidate_cfg.get("retrospective_gripper_indices", ())
         ),
+        # The action-space contract, not a free Hydra override, determines
+        # how factual executed chunks are summarized.  RMBench/RoboTwin uses
+        # absolute qpos targets; LIBERO uses delta commands.
+        action_mode=(
+            "absolute_target"
+            if resolver.action_space.control_mode
+            == "robotwin_bimanual_qpos_plus_grippers"
+            else "delta"
+        ),
+        # DINO/VAE relative changes in the 3-camera RMBench bridge are an
+        # order of magnitude smaller than the original LIBERO defaults.  A
+        # benchmark-bound floor preserves contact/progress events without an
+        # online mask or manual event annotation.
+        change_threshold_floor=(
+            0.015
+            if resolver.action_space.control_mode
+            == "robotwin_bimanual_qpos_plus_grippers"
+            else 0.08
+        ),
+        change_threshold_ceiling=(
+            0.25
+            if resolver.action_space.control_mode
+            == "robotwin_bimanual_qpos_plus_grippers"
+            else 0.85
+        ),
     )
     return RuntimeRetrospectiveDatasetAdapter(adapted, feature_store)
 

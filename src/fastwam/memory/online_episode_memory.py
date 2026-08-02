@@ -177,8 +177,11 @@ class OnlineRetrospectiveEpisodeMemory:
         action_horizon: int,
         semantic_dim: int,
         gripper_indices: tuple[int, ...] = (),
+        action_mode: str = "delta",
         recent_event_capacity: int = 6,
         action_summary_capacity: int = 2,
+        change_threshold_floor: float = 0.08,
+        change_threshold_ceiling: float = 0.85,
         episode_namespace: str = "libero-eval",
     ) -> None:
         self._semantic_dim = _nonnegative_int(semantic_dim, "semantic_dim")
@@ -201,9 +204,12 @@ class OnlineRetrospectiveEpisodeMemory:
         self._memory = EpisodeWorkingMemory(
             EpisodeMemoryConfig(
                 action_dim=action_dim,
+                action_mode=action_mode,
                 gripper_indices=gripper_indices,
                 max_recent_events=recent_event_capacity,
                 max_action_summaries=action_summary_capacity,
+                change_threshold_floor=change_threshold_floor,
+                change_threshold_ceiling=change_threshold_ceiling,
             )
         )
         self._episode_index: int | None = None
@@ -296,13 +302,30 @@ class OnlineRetrospectiveEpisodeMemory:
         movement = config.movement_indices
         mean = np.zeros((action_dim,), dtype=np.float32)
         displacement = np.zeros((action_dim,), dtype=np.float32)
+        summarized = np.array(actions, copy=True, dtype=np.float32)
         if movement:
-            mean[list(movement)] = actions[:, movement].mean(
-                axis=0, dtype=np.float32
-            )
-            displacement[list(movement)] = actions[:, movement].sum(
-                axis=0, dtype=np.float32
-            )
+            if config.action_mode == "absolute_target":
+                if max(movement) >= int(
+                    snapshot.latest_observation.proprio.shape[0]
+                ):
+                    raise OnlineEpisodeMemoryError(
+                        "absolute-action preview requires proprio for every "
+                        "movement action channel"
+                    )
+                summarized[:, movement] -= snapshot.latest_observation.proprio[
+                    list(movement)
+                ][None, :]
+                mean[list(movement)] = summarized[:, movement].mean(
+                    axis=0, dtype=np.float32
+                )
+                displacement[list(movement)] = summarized[-1, list(movement)]
+            else:
+                mean[list(movement)] = summarized[:, movement].mean(
+                    axis=0, dtype=np.float32
+                )
+                displacement[list(movement)] = summarized[:, movement].sum(
+                    axis=0, dtype=np.float32
+                )
         terminal = np.zeros((action_dim,), dtype=np.float32)
         if config.gripper_indices:
             terminal[list(config.gripper_indices)] = actions[
@@ -310,7 +333,7 @@ class OnlineRetrospectiveEpisodeMemory:
             ]
         bends: list[float] = []
         if movement and actions.shape[0] > 1:
-            vectors = actions[:, movement].astype(np.float64, copy=False)
+            vectors = summarized[:, movement].astype(np.float64, copy=False)
             for previous, current in zip(vectors[:-1], vectors[1:], strict=True):
                 denominator = float(
                     np.linalg.norm(previous) * np.linalg.norm(current)
@@ -364,10 +387,11 @@ class OnlineRetrospectiveEpisodeMemory:
                 ):
                     best_similarity = similarity
                     best_distance = distance
-        repeated = bool(
-            best_similarity >= config.repetition_cosine_threshold
-            and best_distance <= config.repetition_distance_threshold
-        )
+        # The preview is intentionally not labelled stagnant: it has not yet
+        # been paired with the current factual world/VAE observation.  The
+        # committed summary on the next replan performs the progress-coupled
+        # repetition decision.
+        repeated = False
         return np.ascontiguousarray(
             np.concatenate(
                 (
@@ -557,6 +581,15 @@ class OnlineRetrospectiveEpisodeMemory:
                 "event_written": bool(update.event_written),
                 "change_score": float(update.change_score),
                 "write_threshold": float(update.write_threshold),
+                "change_components": [
+                    float(value) for value in update.change_components.tolist()
+                ],
+                "repetition_similarity": float(
+                    update.action_summary.repetition_similarity
+                ),
+                "progress_coupled_repeated": bool(
+                    update.action_summary.repeated
+                ),
                 "repeated_attempt_count": int(
                     update.event_status.repeated_attempt_count
                 ),

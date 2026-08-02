@@ -47,6 +47,7 @@ from .adapter_config import (
 )
 from .consequence import (
     ActionUtilityReranker,
+    SourceAcceptance,
     SourceConfidenceGate,
     build_action_effect_utility_targets,
     build_corruption_controls,
@@ -82,7 +83,7 @@ from .video_adapter import build_video_layer_adapters
 
 
 WARM_RETROSPECTION_CHECKPOINT_SCHEMA = "warm.retrospection-checkpoint"
-WARM_RETROSPECTION_CHECKPOINT_VERSION = 4
+WARM_RETROSPECTION_CHECKPOINT_VERSION = 5
 WARM_ONLINE_ABLATION_MODES = frozenset(
     {"full", "context_only", "source_only_no_consequence"}
 )
@@ -1226,6 +1227,35 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             inference_gate_threshold=cfg.inference_source_gate_threshold,
             hard_reject=phase == "infer",
         )
+        forced_rejection = torch.zeros_like(
+            selection.memory_mask, dtype=torch.bool
+        )
+        if phase == "train" and ctx.forced_rejection_mask is not None:
+            forced_rejection = ctx.forced_rejection_mask
+            if (
+                forced_rejection.dtype != torch.bool
+                or forced_rejection.shape != selection.memory_mask.shape
+                or forced_rejection.device != selection.memory_mask.device
+            ):
+                raise WarmRetrospectionError(
+                    "forced_rejection_mask must be bool [B] on the model device"
+                )
+            # Hard negatives supervise rejection but must never become the
+            # action-flow source while the gate is still learning.  V2 gave
+            # those rows a non-zero source during early optimization.
+            acceptance = SourceAcceptance(
+                effective_probability=torch.where(
+                    forced_rejection,
+                    torch.zeros_like(acceptance.effective_probability),
+                    acceptance.effective_probability,
+                ),
+                quality=torch.where(
+                    forced_rejection,
+                    torch.zeros_like(acceptance.quality),
+                    acceptance.quality,
+                ),
+                accepted_mask=acceptance.accepted_mask & ~forced_rejection,
+            )
         relevance_gate = acceptance.effective_probability.to(
             dtype=base_gaussian.dtype
         )
@@ -1319,11 +1349,6 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             future_valid = ctx.future_valid_mask
             supervised_rows = future_valid & action_valid.any(dim=1)
             utility_valid = valid & supervised_rows.unsqueeze(1)
-            forced_rejection = (
-                torch.zeros_like(supervised_rows)
-                if ctx.forced_rejection_mask is None
-                else ctx.forced_rejection_mask
-            )
             if (
                 forced_rejection.dtype != torch.bool
                 or forced_rejection.shape != supervised_rows.shape
@@ -1460,6 +1485,17 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
         corruption_applied = candidate_payload.applied
         if phase == "infer" and memory_corruption == "wrong_event":
             corruption_applied = valid.any(dim=1)
+        ordinary_memory_rows = selection.memory_mask & ~forced_rejection
+        normal_source_exposure = (
+            relevance_gate[ordinary_memory_rows].mean()
+            if bool(ordinary_memory_rows.any().item())
+            else zero
+        )
+        forced_source_leak = (
+            relevance_gate[forced_rejection].mean()
+            if bool(forced_rejection.any().item())
+            else zero
+        )
         metrics = {
             "loss_warm_retrieval": losses["retrieval"],
             "loss_warm_bridge": losses["bridge"],
@@ -1471,6 +1507,10 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             "warm_learned_gate_mean": gate.probability.mean(),
             "warm_source_quality_mean": acceptance.quality.mean(),
             "warm_selected_memory_rate": source_memory_mask.float().mean(),
+            "warm_forced_rejection_rate": forced_rejection.float().mean(),
+            "warm_normal_source_exposure_mean": normal_source_exposure,
+            "warm_forced_source_leak_mean": forced_source_leak,
+            "warm_stagnation_mean": stagnation.mean(),
             "warm_consequence_mean": selection_consistency[valid].mean()
             if bool(valid.any().item())
             else zero,

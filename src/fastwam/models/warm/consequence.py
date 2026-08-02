@@ -1101,13 +1101,16 @@ def calibrate_source_acceptance(
     inference_gate_threshold: float,
     hard_reject: bool,
 ) -> SourceAcceptance:
-    """Combine learned usefulness with ambiguity and factual progress evidence.
+    """Make the learned-gate source usable without hiding training exposure.
 
-    Candidate-only ranking logits have no calibrated absolute origin.  This
-    layer consequently uses probability concentration and normalized entropy,
-    then decays memory influence when the real closed-loop action history is
-    repeating.  Inference additionally exposes an explicit Gaussian null
-    decision so a weak memory cannot perturb every replan indefinitely.
+    Candidate probability and entropy are meaningful *eligibility* checks,
+    but they are not a calibrated mixture coefficient.  In particular, a
+    bank containing many equivalent demonstrations has high candidate-index
+    entropy even though its action mode is unambiguous.  The learned utility
+    gate therefore owns source strength.  Training uses that gate directly so
+    Action DiT actually observes memory-conditioned sources; inference adds
+    conservative hard eligibility and factual no-progress fallback, then only
+    attenuates accepted sources by progress evidence.
     """
 
     if not isinstance(gate, GateOutput):
@@ -1170,34 +1173,33 @@ def calibrate_source_acceptance(
     if not isinstance(hard_reject, bool):
         raise TypeError("hard_reject must be bool")
 
-    probability_quality = (
-        (selection.selected_probability - minimum)
-        / max(1.0 - minimum, 1e-6)
-    ).clamp(0.0, 1.0)
-    entropy_quality = (
-        (maximum_entropy - selection.normalized_entropy) / maximum_entropy
-    ).clamp(0.0, 1.0)
-    progress_quality = torch.exp(-decay * stagnation.float()).to(
-        dtype=gate.probability.dtype
-    )
-    quality = torch.sqrt(probability_quality * entropy_quality) * progress_quality
-    effective = gate.probability * quality
-    # Even during differentiable training, a candidate whose calibrated
-    # quality is exactly zero is an explicit null source.  Keeping that row
-    # marked as accepted would make source-usage telemetry disagree with the
-    # tensor that actually enters flow matching.
-    accepted = selection.memory_mask & (effective > 0)
     if hard_reject:
-        accepted = (
-            accepted
+        eligible = (
+            selection.memory_mask
+            & (selection.selected_probability >= minimum)
+            & (selection.normalized_entropy <= maximum_entropy)
             & (stagnation < hard_stagnation)
-            & (effective >= gate_threshold)
         )
+        accepted = eligible & (gate.probability >= gate_threshold)
+        progress_quality = torch.exp(-decay * stagnation.float()).to(
+            dtype=gate.probability.dtype
+        )
+        quality = torch.where(
+            eligible, progress_quality, torch.zeros_like(progress_quality)
+        )
+        effective = gate.probability * quality
         effective = torch.where(accepted, effective, torch.zeros_like(effective))
     else:
+        # Do not apply deployment heuristics during differentiable training.
+        # V2 multiplied three conservative factors here and reduced the mean
+        # source exposure to <1%, so the action expert never learned the very
+        # source transport evaluated online.
+        quality = selection.memory_mask.to(dtype=gate.probability.dtype)
+        effective = gate.probability
         effective = torch.where(
             selection.memory_mask, effective, torch.zeros_like(effective)
         )
+        accepted = selection.memory_mask & (effective > 0)
     return SourceAcceptance(
         effective_probability=effective,
         quality=quality,

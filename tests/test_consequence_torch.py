@@ -19,6 +19,7 @@ from fastwam.models.warm.consequence import (
     FORCE_NULL,
     ActionUtilityReranker,
     ConsequenceAlignmentError,
+    GateOutput,
     SourceConfidenceGate,
     build_action_effect_utility_targets,
     build_corruption_controls,
@@ -295,6 +296,56 @@ def test_factual_stagnation_forces_explicit_gaussian_null() -> None:
     )
     assert acceptance.accepted_mask.tolist() == [False]
     assert acceptance.effective_probability.tolist() == [0.0]
+
+
+def test_training_source_exposure_is_not_multiplied_by_deployment_heuristics() -> None:
+    selection = select_consequence_candidate(
+        torch.zeros(1, 3),
+        torch.zeros(1, 3),
+        torch.ones(1, 3),
+        torch.ones(1, 3, dtype=torch.bool),
+        automatic_null=False,
+        selection_temperature=0.25,
+    )
+    # This deliberately ambiguous row fails the deployment entropy check, but
+    # its learned gate must still expose Action DiT to a differentiable source
+    # during training.  Otherwise the gate/source path starves before it can
+    # learn to disambiguate equivalent demonstrations.
+    probability = torch.tensor([0.4])
+    gate = GateOutput(
+        logits=torch.logit(probability),
+        probability=probability,
+        features=torch.zeros(1, 5),
+        memory_mask=selection.memory_mask,
+    )
+    training = calibrate_source_acceptance(
+        gate,
+        selection,
+        torch.tensor([1.0]),
+        minimum_candidate_probability=0.9,
+        maximum_candidate_entropy=0.1,
+        stagnation_decay=3.0,
+        stagnation_hard_threshold=0.1,
+        inference_gate_threshold=0.9,
+        hard_reject=False,
+    )
+    assert training.accepted_mask.tolist() == [True]
+    torch.testing.assert_close(training.effective_probability, probability)
+    assert training.quality.tolist() == [1.0]
+
+    inference = calibrate_source_acceptance(
+        gate,
+        selection,
+        torch.tensor([1.0]),
+        minimum_candidate_probability=0.9,
+        maximum_candidate_entropy=0.1,
+        stagnation_decay=3.0,
+        stagnation_hard_threshold=0.1,
+        inference_gate_threshold=0.9,
+        hard_reject=True,
+    )
+    assert inference.accepted_mask.tolist() == [False]
+    assert inference.effective_probability.tolist() == [0.0]
 
 
 def test_contracts_reject_nonfinite_broadcast_and_invalid_forcing() -> None:

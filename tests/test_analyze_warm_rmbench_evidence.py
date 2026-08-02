@@ -23,7 +23,12 @@ def test_evidence_summary_distinguishes_candidate_and_source_selection() -> None
             "model_input_stats": {},
             "model_action_chunk_stats": {},
             "environment_action_chunk_stats": {},
-            "factual_update_after_replan": {"repeated_attempt_count": 2},
+            "factual_update_after_replan": {
+                "repeated_attempt_count": 2,
+                "observation_updates": 1,
+                "event_written": False,
+                "executed_environment_prefix_count": 4,
+            },
             "model": {
                 "retrieval": {"cosine_scores": [0.9, 0.89]},
                 "source": {
@@ -43,6 +48,11 @@ def test_evidence_summary_distinguishes_candidate_and_source_selection() -> None
         {
             "kind": "replan",
             "episode_index": 0,
+            "factual_update_after_replan": {
+                "observation_updates": 1,
+                "event_written": True,
+                "executed_environment_prefix_count": 4,
+            },
             "model": {
                 "retrieval": {"cosine_scores": [0.92, 0.80]},
                 "source": {
@@ -75,6 +85,10 @@ def test_evidence_summary_distinguishes_candidate_and_source_selection() -> None
     assert result["maximum_repeated_attempt_count"] == 2
     assert result["input_stats_coverage"] == 0.5
     assert result["action_stats_coverage"] == 0.5
+    assert result["episode_event_write_rate"] == 0.5
+    assert result["executed_environment_actions"] == 8
+    assert result["quantiles"]["learned_gate"]["p50"] is not None
+    assert result["failure_signals"] == []
 
 
 def test_missing_new_diagnostics_are_reported_as_unknown() -> None:

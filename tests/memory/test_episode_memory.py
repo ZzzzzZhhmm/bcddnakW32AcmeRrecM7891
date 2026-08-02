@@ -228,8 +228,10 @@ def test_action_summary_contains_displacement_gripper_curvature_and_repetition()
     assert first.action_summary.curvature == pytest.approx(0.5)
     assert first.action_summary.repeated is False
 
+    # A repeated command is stagnation only when the factual world did not
+    # progress.  This avoids labelling normal multi-chunk approaches as loops.
     second = memory.record_observation(
-        cap, observation=_observation("a", 2, 2.0), executed_actions=actions
+        cap, observation=_observation("a", 2, 1.0), executed_actions=actions
     )
     assert second.action_summary.repeated is True
     assert second.action_summary.repetition_similarity == pytest.approx(1.0)
@@ -240,6 +242,47 @@ def test_action_summary_contains_displacement_gripper_curvature_and_repetition()
     assert second.event_status.repeated_attempt_count == 1
     assert len(memory.snapshot().executed_action_summaries) == 2
     assert not second.action_summary.mean_displacement.flags.writeable
+
+
+def test_absolute_target_summary_is_relative_to_factual_start_and_progress_coupled() -> None:
+    memory = EpisodeWorkingMemory(
+        _config(
+            action_mode="absolute_target",
+            max_action_summaries=3,
+            change_weights=(0.0, 0.0, 1.0, 0.0),
+        )
+    )
+    start = np.asarray([10.0, -3.0, 0.0, 99.0], dtype=np.float32)
+    cap = memory.begin_episode(_observation("absolute", 0, 0.0, proprio=start))
+    targets = np.asarray(
+        [[10.2, -2.9, -1.0], [10.4, -2.8, -1.0]], dtype=np.float32
+    )
+    first = memory.record_observation(
+        cap,
+        observation=_observation("absolute", 1, 0.0, proprio=start),
+        executed_actions=targets,
+    )
+    np.testing.assert_allclose(
+        first.action_summary.mean_displacement, [0.3, 0.15, 0.0], atol=1e-6
+    )
+    np.testing.assert_allclose(
+        first.action_summary.final_displacement, [0.4, 0.2, 0.0], atol=1e-6
+    )
+    second = memory.record_observation(
+        cap,
+        observation=_observation("absolute", 2, 0.0, proprio=start),
+        executed_actions=targets,
+    )
+    assert second.action_summary.repeated is True
+    progressed = memory.record_observation(
+        cap,
+        observation=_observation("absolute", 3, 1.0, proprio=start),
+        executed_actions=targets,
+    )
+    assert progressed.action_summary.repetition_similarity == pytest.approx(1.0)
+    assert progressed.action_summary.repeated is False
+    assert progressed.event_status.repeated_similar_action is False
+    assert progressed.event_status.repeated_attempt_count == 0
 
 
 def test_adaptive_threshold_uses_only_prior_scores_and_bounds_history() -> None:

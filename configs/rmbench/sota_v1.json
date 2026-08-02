@@ -5,7 +5,7 @@
     "data_profile": "scale200-dev190",
     "train_steps": 30000,
     "sampler_mode": "rmbench_task_event_balanced",
-    "event_boost": 1.5,
+    "event_boost": 2.0,
     "recent_event_capacity": 20,
     "action_summary_capacity": 8,
     "replan_steps": 10

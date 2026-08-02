@@ -160,6 +160,11 @@ def _action_summary_vector(
     action_horizon: int,
     gripper_indices: tuple[int, ...],
     previous_signatures: tuple[np.ndarray, ...],
+    start_proprio: np.ndarray | None = None,
+    action_mode: str = "delta",
+    factual_progress: float = 0.0,
+    factual_outcome_available: bool = True,
+    stationary_progress_threshold: float = 0.03,
     repetition_cosine_threshold: float = 0.97,
     repetition_distance_threshold: float = 0.20,
 ) -> tuple[np.ndarray, np.ndarray]:
@@ -171,19 +176,49 @@ def _action_summary_vector(
             "episode action summary requires non-empty [T,Da] actions"
         )
     action_dim = int(values.shape[1])
+    if action_mode not in {"delta", "absolute_target"}:
+        raise RetrospectiveFeatureStoreError(
+            "action_mode must be 'delta' or 'absolute_target'"
+        )
+    if not np.isfinite(factual_progress) or factual_progress < 0.0:
+        raise RetrospectiveFeatureStoreError(
+            "factual_progress must be finite and non-negative"
+        )
+    if not isinstance(factual_outcome_available, bool):
+        raise TypeError("factual_outcome_available must be bool")
     movement = tuple(index for index in range(action_dim) if index not in gripper_indices)
+    summarized = np.array(values, copy=True, dtype=np.float32)
+    if action_mode == "absolute_target":
+        if start_proprio is None:
+            raise RetrospectiveFeatureStoreError(
+                "absolute_target summaries require factual start_proprio"
+            )
+        start = np.asarray(start_proprio, dtype=np.float32)
+        if start.shape != (action_dim,) or not np.isfinite(start).all():
+            raise RetrospectiveFeatureStoreError(
+                "start_proprio must be finite shape [action_dim]"
+            )
+        if movement:
+            summarized[:, movement] -= start[list(movement)][None, :]
     mean = np.zeros((action_dim,), dtype=np.float32)
     displacement = np.zeros((action_dim,), dtype=np.float32)
     if movement:
-        mean[list(movement)] = values[:, movement].mean(axis=0, dtype=np.float32)
-        displacement[list(movement)] = values[:, movement].sum(axis=0, dtype=np.float32)
+        mean[list(movement)] = summarized[:, movement].mean(
+            axis=0, dtype=np.float32
+        )
+        if action_mode == "absolute_target":
+            displacement[list(movement)] = summarized[-1, list(movement)]
+        else:
+            displacement[list(movement)] = summarized[:, movement].sum(
+                axis=0, dtype=np.float32
+            )
     terminal = np.zeros((action_dim,), dtype=np.float32)
     if gripper_indices:
         terminal[list(gripper_indices)] = values[-1, list(gripper_indices)]
 
     curvature_values: list[float] = []
     if movement and values.shape[0] > 1:
-        vectors = values[:, movement].astype(np.float64, copy=False)
+        vectors = summarized[:, movement].astype(np.float64, copy=False)
         for left, right in zip(vectors[:-1], vectors[1:], strict=True):
             denominator = float(np.linalg.norm(left) * np.linalg.norm(right))
             if denominator > 1.0e-8:
@@ -235,10 +270,12 @@ def _action_summary_vector(
             ):
                 repetition = similarity
                 best_distance = distance
-        repeated = float(
-            repetition >= repetition_cosine_threshold
-            and best_distance <= repetition_distance_threshold
-        )
+    repeated = float(
+        factual_outcome_available
+        and repetition >= repetition_cosine_threshold
+        and best_distance <= repetition_distance_threshold
+        and factual_progress <= stationary_progress_threshold
+    )
     scalars = np.asarray(
         [
             min(1.0, float(values.shape[0]) / float(action_horizon)),
@@ -267,6 +304,21 @@ def _factual_payload(features: Any, frame: int) -> dict[str, np.ndarray]:
     }
 
 
+def _relative_feature_change(previous: np.ndarray, current: np.ndarray) -> float:
+    """Scale-invariant factual change used by training/online stagnation."""
+
+    left = np.asarray(previous, dtype=np.float64)
+    right = np.asarray(current, dtype=np.float64)
+    if left.shape != right.shape or not left.size:
+        raise RetrospectiveFeatureStoreError(
+            "factual progress features must share one non-empty shape"
+        )
+    denominator = float(np.linalg.norm(left)) + float(np.linalg.norm(right))
+    if denominator <= 1.0e-8:
+        return 0.0
+    return float(np.clip(np.linalg.norm(right - left) / denominator, 0.0, 1.0))
+
+
 def _causal_event_frames_by_query(
     features: Any,
     *,
@@ -276,6 +328,9 @@ def _causal_event_frames_by_query(
     semantic_dim: int,
     gripper_indices: tuple[int, ...],
     recent_event_capacity: int,
+    action_mode: str = "delta",
+    change_threshold_floor: float = 0.08,
+    change_threshold_ceiling: float = 0.85,
 ) -> Mapping[int, tuple[int, ...]]:
     """Replay the exact online state machine without reading a future suffix.
 
@@ -293,7 +348,10 @@ def _causal_event_frames_by_query(
             action_horizon=action_horizon,
             semantic_dim=semantic_dim,
             gripper_indices=gripper_indices,
+            action_mode=action_mode,
             recent_event_capacity=recent_event_capacity,
+            change_threshold_floor=change_threshold_floor,
+            change_threshold_ceiling=change_threshold_ceiling,
         )
         memory.begin_episode(residue)
         writes: list[int] = []
@@ -402,6 +460,9 @@ class RetrospectiveFeatureStore:
         action_summary_capacity: int = 2,
         action_summary_chunk_size: int | None = None,
         gripper_indices: Iterable[int] = (),
+        action_mode: str = "delta",
+        change_threshold_floor: float = 0.08,
+        change_threshold_ceiling: float = 0.85,
     ) -> None:
         if not isinstance(collection, FeatureCacheCollection):
             raise TypeError("collection must be FeatureCacheCollection")
@@ -457,6 +518,8 @@ class RetrospectiveFeatureStore:
             parsed_gripper.append(int(value))
         if len(set(parsed_gripper)) != len(parsed_gripper):
             raise ValueError("gripper_indices must be unique")
+        if action_mode not in {"delta", "absolute_target"}:
+            raise ValueError("action_mode must be 'delta' or 'absolute_target'")
 
         records = {
             (
@@ -502,6 +565,9 @@ class RetrospectiveFeatureStore:
                 semantic_dim=semantic_shape[-1],
                 gripper_indices=parsed_gripper_tuple,
                 recent_event_capacity=int(recent_event_capacity),
+                action_mode=action_mode,
+                change_threshold_floor=float(change_threshold_floor),
+                change_threshold_ceiling=float(change_threshold_ceiling),
             )
             if record_index % 100 == 0 or record_index == len(records):
                 logger.info(
@@ -517,6 +583,7 @@ class RetrospectiveFeatureStore:
         self._action_summary_capacity = int(action_summary_capacity)
         self._action_summary_chunk_size = int(action_summary_chunk_size)
         self._gripper_indices = parsed_gripper_tuple
+        self._action_mode = action_mode
 
     @classmethod
     def from_paths(
@@ -667,7 +734,7 @@ class RetrospectiveFeatureStore:
         summary_mask = np.zeros(
             (self._action_summary_capacity,), dtype=np.bool_
         )
-        chunks: list[np.ndarray] = []
+        chunks: list[tuple[int, int, np.ndarray]] = []
         end = frame
         # Keep one additional predecessor while constructing the tensors.  It
         # may be evicted from the returned bounded history, but the newest
@@ -677,17 +744,42 @@ class RetrospectiveFeatureStore:
             start = max(0, end - self._action_summary_chunk_size)
             chunk = np.asarray(features.model_actions[start:end], dtype=np.float32)
             if chunk.shape[0] > 0:
-                chunks.append(chunk)
+                chunks.append((start, end, chunk))
             end = start
         chunks.reverse()
         previous_signatures: list[np.ndarray] = []
         summary_vectors: list[np.ndarray] = []
-        for chunk in chunks:
+        for start, stop, chunk in chunks:
+            # Online, the newest executed prefix is visible as a preview at
+            # inference time, but its current observation is committed only
+            # after that inference returns.  Earlier chunks have factual
+            # post-action observations and may establish no-progress loops.
+            factual_outcome_available = stop < frame
+            semantic_progress = (
+                _relative_feature_change(
+                    features.semantic_features[start],
+                    features.semantic_features[stop],
+                )
+                if factual_outcome_available
+                else 0.0
+            )
+            vae_progress = (
+                _relative_feature_change(
+                    features.vae_features[start],
+                    features.vae_features[stop],
+                )
+                if factual_outcome_available
+                else 0.0
+            )
             vector, signature = _action_summary_vector(
                 chunk,
                 action_horizon=self._action_horizon,
                 gripper_indices=self._gripper_indices,
                 previous_signatures=tuple(previous_signatures),
+                start_proprio=features.proprio[start],
+                action_mode=self._action_mode,
+                factual_progress=max(semantic_progress, vae_progress),
+                factual_outcome_available=factual_outcome_available,
             )
             summary_vectors.append(vector)
             previous_signatures.append(signature)

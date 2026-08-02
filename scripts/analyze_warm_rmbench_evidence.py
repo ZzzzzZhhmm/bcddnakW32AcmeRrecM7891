@@ -37,6 +37,37 @@ class _Mean:
         return self.total / self.count if self.count else None
 
 
+class _UnitHistogram:
+    """Bounded-memory approximate quantiles for normalized diagnostics."""
+
+    def __init__(self, bins: int = 1000) -> None:
+        self.bins = bins
+        self.counts = [0] * bins
+        self.count = 0
+
+    def add(self, value: object) -> None:
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            return
+        number = float(value)
+        if not math.isfinite(number):
+            return
+        number = min(1.0, max(0.0, number))
+        index = min(self.bins - 1, int(number * self.bins))
+        self.counts[index] += 1
+        self.count += 1
+
+    def quantile(self, probability: float) -> float | None:
+        if not self.count:
+            return None
+        target = max(1, math.ceil(probability * self.count))
+        cumulative = 0
+        for index, count in enumerate(self.counts):
+            cumulative += count
+            if cumulative >= target:
+                return (index + 0.5) / self.bins
+        return 1.0
+
+
 def _mapping(value: object, field: str) -> Mapping[str, Any]:
     if not isinstance(value, Mapping):
         raise EvidenceAnalysisError(f"{field} must be an object")
@@ -74,6 +105,9 @@ def analyze_records(records: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
     repeated_attempt_max = 0
     input_stats_records = 0
     action_stats_records = 0
+    factual_update_records = 0
+    event_write_records = 0
+    executed_environment_actions = 0
     means = {
         name: _Mean()
         for name in (
@@ -87,6 +121,7 @@ def analyze_records(records: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
             "top1_top2_cosine_gap",
         )
     }
+    distributions = {name: _UnitHistogram() for name in means}
     previous_event_by_episode: dict[int, tuple[str, int, int]] = {}
 
     for line_number, record in enumerate(records, start=1):
@@ -128,6 +163,7 @@ def analyze_records(records: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
             "stagnation_score",
         ):
             means[name].add(source.get(name))
+            distributions[name].add(source.get(name))
         entropy = source.get("normalized_entropy")
         stagnation = source.get("stagnation_score")
         if (
@@ -155,11 +191,23 @@ def analyze_records(records: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
                 means["top1_top2_cosine_gap"].add(
                     float(scores[0]) - float(scores[1])
                 )
+                distributions["top1_top2_cosine_gap"].add(
+                    float(scores[0]) - float(scores[1])
+                )
             except (TypeError, ValueError):
                 pass
 
         update = record.get("factual_update_after_replan")
         if isinstance(update, Mapping):
+            if int(update.get("observation_updates", 0) or 0) > 0:
+                factual_update_records += 1
+                event_write_records += int(update.get("event_written") is True)
+            try:
+                executed_environment_actions += int(
+                    update.get("executed_environment_prefix_count", 0) or 0
+                )
+            except (TypeError, ValueError):
+                pass
             try:
                 repeated_attempt_max = max(
                     repeated_attempt_max,
@@ -192,6 +240,19 @@ def analyze_records(records: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
     def ratio(numerator: int, denominator: int) -> float | None:
         return numerator / denominator if denominator else None
 
+    source_rate = ratio(memory_selected, replans)
+    event_rate = ratio(event_write_records, factual_update_records)
+    failure_signals: list[str] = []
+    if source_rate is not None and source_rate < 0.01:
+        failure_signals.append("memory_source_starvation")
+    if source_rate is not None and source_rate > 0.99:
+        failure_signals.append("memory_source_always_on")
+    stagnation_median = distributions["stagnation_score"].quantile(0.5)
+    if stagnation_median is not None and stagnation_median >= 0.75:
+        failure_signals.append("factual_stagnation_saturated")
+    if event_rate is not None and event_rate < 0.05:
+        failure_signals.append("episode_event_write_starvation")
+
     return {
         "schema": "warm.rmbench-evidence-analysis",
         "version": 1,
@@ -203,7 +264,7 @@ def analyze_records(records: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
         "success_rate": ratio(successes, ended),
         "replans": replans,
         "candidate_selection_rate": ratio(candidate_selected, replans),
-        "memory_source_acceptance_rate": ratio(memory_selected, replans),
+        "memory_source_acceptance_rate": source_rate,
         "high_entropy_memory_source_rate": ratio(
             high_entropy_selected, entropy_observations
         ),
@@ -214,9 +275,21 @@ def analyze_records(records: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
             thread_continuations, thread_comparable
         ),
         "maximum_repeated_attempt_count": repeated_attempt_max,
+        "factual_update_records": factual_update_records,
+        "episode_event_write_rate": event_rate,
+        "executed_environment_actions": executed_environment_actions,
         "input_stats_coverage": ratio(input_stats_records, replans),
         "action_stats_coverage": ratio(action_stats_records, replans),
         "means": {name: mean.value() for name, mean in means.items()},
+        "quantiles": {
+            name: {
+                "p50": distribution.quantile(0.5),
+                "p90": distribution.quantile(0.9),
+                "p99": distribution.quantile(0.99),
+            }
+            for name, distribution in distributions.items()
+        },
+        "failure_signals": failure_signals,
     }
 
 
