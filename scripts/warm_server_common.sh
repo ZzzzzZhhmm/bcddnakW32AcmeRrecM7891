@@ -138,6 +138,88 @@ warm_configure_offline_logging() {
   export HF_DATASETS_OFFLINE="${HF_DATASETS_OFFLINE:-1}"
 }
 
+# Configure compiler/autotune caches on node-local storage before importing
+# DeepSpeed.  DeepSpeed 0.18.5 probes TRITON_CACHE_DIR with `df` during import
+# and does not first create the directory.  A fresh ACP container therefore
+# exits before the training entrypoint is reached when the default
+# ~/.triton/autotune path is absent.  Keeping compiler caches under /tmp also
+# avoids Triton/Inductor lock contention and slow finalization on AFS/NFS.
+warm_configure_job_local_caches() {
+  local root="${1:-}"
+  local directory probe available_kib fs_type
+  if [[ -z "${root}" ]]; then
+    warm_die "job-local cache root must be provided" || return
+  fi
+  case "${root}" in
+    /*) ;;
+    *) warm_die "job-local cache root must be absolute: ${root}" || return ;;
+  esac
+
+  # Formal ACP jobs must not put compiler caches on the persistent AFS mount.
+  # The caller may use another node-local absolute path when /tmp is small.
+  case "${root}" in
+    /mnt/afs|/mnt/afs/*)
+      warm_die "job-local compiler cache cannot be placed on AFS: ${root}" || return
+      ;;
+  esac
+
+  umask 077
+  for directory in \
+    "${root}" \
+    "${root}/triton/autotune" \
+    "${root}/torchinductor" \
+    "${root}/cuda" \
+    "${root}/xdg" \
+    "${root}/hf_datasets"; do
+    mkdir -p -- "${directory}" || {
+      warm_die "cannot create job-local cache directory: ${directory}"
+      return
+    }
+    if [[ ! -d "${directory}" || ! -w "${directory}" ]]; then
+      warm_die "job-local cache directory is not writable: ${directory}" || return
+    fi
+  done
+
+  probe="${root}/.warm-write-probe.$$"
+  if ! printf 'warm-cache-probe\n' > "${probe}"; then
+    warm_die "cannot write job-local cache probe: ${root}" || return
+  fi
+  rm -f -- "${probe}"
+
+  available_kib="$(df -Pk -- "${root}" | awk 'NR == 2 {print $4}')" || {
+    warm_die "cannot inspect free space for job-local cache: ${root}"
+    return
+  }
+  if [[ ! "${available_kib}" =~ ^[0-9]+$ ]]; then
+    warm_die "invalid free-space result for job-local cache: ${available_kib}" || return
+  fi
+  if (( available_kib < 1048576 )); then
+    warm_die "job-local cache has less than 1 GiB free: ${root}" || return
+  fi
+  fs_type="$(df -PT -- "${root}" | awk 'NR == 2 {print $2}')" || {
+    warm_die "cannot inspect filesystem type for job-local cache: ${root}"
+    return
+  }
+  case "${fs_type}" in
+    nfs|nfs4|fuse.s3fs|fuse.*afs*)
+      warm_die "job-local cache resolved to a network filesystem (${fs_type}): ${root}" || return
+      ;;
+  esac
+
+  export WARM_JOB_LOCAL_CACHE_ROOT="${root}"
+  export TRITON_CACHE_DIR="${root}/triton/autotune"
+  export TORCHINDUCTOR_CACHE_DIR="${root}/torchinductor"
+  export CUDA_CACHE_PATH="${root}/cuda"
+  export XDG_CACHE_HOME="${root}/xdg"
+  export HF_DATASETS_CACHE="${root}/hf_datasets"
+
+  printf 'job_local_cache=%s fs_type=%s available_gib=%s triton_cache=%s\n' \
+    "${root}" \
+    "${fs_type}" \
+    "$((available_kib / 1048576))" \
+    "${TRITON_CACHE_DIR}"
+}
+
 warm_refuse_existing_output() {
   local path="$1"
   if [[ -e "${path}" || -L "${path}" ]]; then

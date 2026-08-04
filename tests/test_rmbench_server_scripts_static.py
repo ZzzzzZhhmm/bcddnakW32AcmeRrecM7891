@@ -18,6 +18,12 @@ def test_common_server_guard_is_private_clean_pinned_and_offline_by_default() ->
     assert 'WANDB_MODE:-offline' in source
     assert 'HF_HUB_OFFLINE:-1' in source
     assert "WARM_ALLOW_NETWORK_LOGGING" in source
+    assert "warm_configure_job_local_caches" in source
+    assert 'export TRITON_CACHE_DIR="${root}/triton/autotune"' in source
+    assert 'export TORCHINDUCTOR_CACHE_DIR="${root}/torchinductor"' in source
+    assert 'export CUDA_CACHE_PATH="${root}/cuda"' in source
+    assert 'available_kib < 1048576' in source
+    assert 'job-local cache resolved to a network filesystem' in source
     assert "push URL must be the literal DISABLED" in source
     assert "warm_register_safe_directory" in source
     assert 'git config --global --add safe.directory "${canonical}"' in source
@@ -112,6 +118,11 @@ def test_score_oriented_task_launchers_bind_registry_batch_and_online_memory() -
     assert "status --porcelain --untracked-files=all" in acp_specialist
     assert 'cd "${WARM_TRAIN_CODE_DIR}"' in acp_specialist
     assert "fastwam import escaped the isolated training worktree" in acp_specialist
+    assert "warm_configure_job_local_caches" in acp_specialist
+    assert "WARM_JOB_LOCAL_CACHE_ROOT" in acp_specialist
+    assert acp_specialist.index("warm_configure_job_local_caches") < acp_specialist.index(
+        "torch.cuda.device_count()"
+    )
     assert "rmbench_sota_matrix.json" in contract
     assert "WARM_RMBENCH_TASK" in contract
     assert "seed=3407" in evaluation

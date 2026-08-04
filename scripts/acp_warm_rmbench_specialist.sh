@@ -121,6 +121,16 @@ register_git_safe_directory "${WARM_TRAIN_CODE_DIR}"
 export PYTHONPATH="${WARM_TRAIN_CODE_DIR}/src:${WARM_TRAIN_CODE_DIR}:${PYTHONPATH:-}"
 cd "${WARM_TRAIN_CODE_DIR}"
 
+# DeepSpeed is imported by Accelerate before scripts/train.py runs.  Configure
+# and create its Triton cache now so a fresh ACP container cannot fail while
+# probing a missing /root/.triton/autotune directory.  Use node-local storage,
+# not AFS, for compiler caches and locks.
+# shellcheck source=scripts/warm_server_common.sh
+source "${WARM_TRAIN_CODE_DIR}/scripts/warm_server_common.sh"
+WARM_JOB_LOCAL_CACHE_ROOT="${WARM_JOB_LOCAL_CACHE_ROOT:-/tmp/${USER:-warm}/warm-rmbench-cache/${HOSTNAME:-local}/${WARM_RMBENCH_SPECIALIST_TASK}}"
+warm_configure_job_local_caches "${WARM_JOB_LOCAL_CACHE_ROOT}" \
+  || fail "job-local compiler cache preflight failed"
+
 IFS=',' read -r -a CUDA_DEVICE_LIST <<< "${CUDA_VISIBLE_DEVICES}"
 if (( ${#CUDA_DEVICE_LIST[@]} != 4 )); then
   fail "specialist training requires exactly four visible GPUs; got ${CUDA_VISIBLE_DEVICES}"
