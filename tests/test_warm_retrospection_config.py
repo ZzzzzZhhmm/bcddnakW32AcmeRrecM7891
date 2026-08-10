@@ -47,6 +47,7 @@ def _config_payload() -> dict[str, object]:
         "stagnation_hard_threshold": 0.75,
         "thread_score_weight": 0.75,
         "thread_switch_penalty": 0.25,
+        "thread_reuse_penalty": 1.0,
         "thread_backtrack_tolerance": 16,
         "thread_forward_window": 256,
         "thread_max_null_steps": 3,

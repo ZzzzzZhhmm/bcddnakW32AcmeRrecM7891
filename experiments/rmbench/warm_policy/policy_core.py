@@ -379,6 +379,28 @@ def validate_warm_model_telemetry(
         raise RMBenchPolicyBoundaryError(
             "WARM thread_prior telemetry is invalid"
         )
+    if type(source.get("thread_source_eligible")) is not bool:
+        raise RMBenchPolicyBoundaryError(
+            "WARM thread_source_eligible telemetry is invalid"
+        )
+    try:
+        action_offset = int(source.get("thread_action_offset", -1))
+    except (TypeError, ValueError) as exc:
+        raise RMBenchPolicyBoundaryError("WARM thread_action_offset is invalid") from exc
+    if isinstance(source.get("thread_action_offset"), bool) or action_offset < 0:
+        raise RMBenchPolicyBoundaryError("WARM thread_action_offset is invalid")
+    try:
+        phase_elapsed = int(source.get("thread_phase_elapsed_actions", -1))
+    except (TypeError, ValueError) as exc:
+        raise RMBenchPolicyBoundaryError(
+            "WARM thread_phase_elapsed_actions telemetry is invalid"
+        ) from exc
+    if isinstance(
+        source.get("thread_phase_elapsed_actions"), bool
+    ) or phase_elapsed < 0:
+        raise RMBenchPolicyBoundaryError(
+            "WARM thread_phase_elapsed_actions telemetry is invalid"
+        )
     try:
         episode_query_delta_norm = float(
             source.get("episode_query_delta_norm", float("nan"))

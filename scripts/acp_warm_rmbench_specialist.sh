@@ -176,11 +176,10 @@ export WARM_RMBENCH_STAGE=specialist
 export WARM_RMBENCH_SPECIALIST_TASK
 
 SPECIALIST_RUN_ROOT="${WARM_SPECIALIST_RUN_ROOT:-${PROJECT_DIR}/runs/rmbench_official50_specialists}"
-# Retrospection checkpoint v5 changes both the source-acceptance semantics and
-# the causal absolute-qpos episode summary.  It is intentionally incompatible
-# with v1/v2 specialists: resuming either optimizer would preserve a policy
-# that never learned memory-conditioned source transport.
-export WARM_TRAIN_OUTPUT="${WARM_TRAIN_OUTPUT:-${SPECIALIST_RUN_ROOT}/${WARM_RMBENCH_SPECIALIST_TASK}-s3407-v3}"
+# Retrospection checkpoint v6 adds a causal event-phase cursor.  It is
+# intentionally incompatible with v1-v3 specialists: older runtimes reset the
+# cursor on every same-event replan and can loop one memory source forever.
+export WARM_TRAIN_OUTPUT="${WARM_TRAIN_OUTPUT:-${SPECIALIST_RUN_ROOT}/${WARM_RMBENCH_SPECIALIST_TASK}-s3407-v4}"
 export WARM_PREFLIGHT_RESOLVE="${WARM_PREFLIGHT_RESOLVE:-true}"
 export WARM_PREFLIGHT_OUTPUT="${WARM_PREFLIGHT_OUTPUT:-${WARM_TRAIN_OUTPUT}.resolved_config.preflight.yaml}"
 export WARM_WANDB_ENABLED="${WARM_WANDB_ENABLED:-false}"

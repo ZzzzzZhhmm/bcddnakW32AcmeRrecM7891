@@ -145,8 +145,8 @@ def test_rmbench_specialist_eval_launcher_pins_checkpoint_training_commit() -> N
     assert "PYTHONDONTWRITEBYTECODE=1" in source
     assert "build_warm_rmbench_sota_task_contract_server.sh" in source
     assert "evaluate_warm_rmbench_task_server.sh" in source
-    assert "formal100-s3407-v3" in source
-    assert "-s3407-v3" in source
+    assert "formal100-s3407-v4" in source
+    assert "-s3407-v4" in source
     runtime_check = _read("check_warm_rmbench_eval_runtime.py")
     assert "expected exactly one visible CUDA device" in runtime_check
     assert "rmbench_f77_contract_v1/run_contract_bundle.py" in source

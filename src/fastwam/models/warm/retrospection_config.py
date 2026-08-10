@@ -91,6 +91,12 @@ class WarmRetrospectionConfig:
     # calibrated source gate rejects memory.
     thread_score_weight: float = 0.75
     thread_switch_penalty: float = 0.25
+    # Once one retrieved event phase has supplied a complete action horizon,
+    # reusing that phase is no longer evidence of temporal continuation.  The
+    # online cursor penalizes and source-rejects same/backward phases until a
+    # genuinely later event is retrieved.  This prevents a visually stable
+    # nearest neighbour from becoming an infinite action-source loop.
+    thread_reuse_penalty: float = 1.0
     thread_backtrack_tolerance: int = 16
     thread_forward_window: int = 256
     thread_max_null_steps: int = 3
@@ -249,6 +255,7 @@ class WarmRetrospectionConfig:
             "stagnation_hard_threshold",
             "thread_score_weight",
             "thread_switch_penalty",
+            "thread_reuse_penalty",
             "corruption_normal_weight",
             "corruption_drop_weight",
             "corruption_null_weight",

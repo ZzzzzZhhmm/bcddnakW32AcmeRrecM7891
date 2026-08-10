@@ -117,3 +117,37 @@ def test_missing_new_diagnostics_are_reported_as_unknown() -> None:
     assert result["memory_source_acceptance_rate"] == 1.0
     assert result["high_entropy_memory_source_rate"] is None
     assert result["high_stagnation_memory_source_rate"] is None
+
+
+def test_repeated_event_phase_collapse_is_reported() -> None:
+    event = {"dataset_id": "bank", "episode_index": 7, "start_frame": 587}
+    records = [{"kind": "episode_begin", "episode_index": 0}]
+    records.extend(
+        {
+            "kind": "replan",
+            "episode_index": 0,
+            "factual_update_after_replan": {
+                "observation_updates": 1,
+                "event_written": False,
+                "executed_environment_prefix_count": 4,
+            },
+            "model": {
+                "retrieval": {"cosine_scores": [0.9, 0.89]},
+                "source": {
+                    "candidate_selected": True,
+                    "memory_selected": True,
+                    "selected_event_id": event,
+                },
+            },
+        }
+        for _ in range(120)
+    )
+
+    result = MODULE.analyze_records(records)
+
+    assert result["dominant_selected_memory_event"]["count"] == 120
+    assert result["exact_event_repetition_rate"] == 1.0
+    assert result["phase_locked_transition_rate"] == 1.0
+    assert result["maximum_consecutive_phase_replans"] == 120
+    assert "dominant_memory_event_collapse" in result["failure_signals"]
+    assert "memory_event_phase_lock" in result["failure_signals"]

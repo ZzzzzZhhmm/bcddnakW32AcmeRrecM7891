@@ -929,7 +929,8 @@ class RMBenchWarmPolicy:
         instruction = self._instruction_for(task_env)
         prompt = DEFAULT_PROMPT.format(task=instruction)
         raw_cameras = factual_cameras(observation)
-        proprio = _normalize_state(factual_joint_state(observation), self.processor)
+        factual_qpos = factual_joint_state(observation)
+        proprio = _normalize_state(factual_qpos, self.processor)
         start = time.perf_counter()
         online_step = self.retriever.retrieve(
             query_id,
@@ -972,6 +973,19 @@ class RMBenchWarmPolicy:
         )
         if not np.allclose(round_trip, model_chunk, rtol=1e-5, atol=2e-6):
             raise RuntimeError("RMBench action normalization round trip drifted")
+        executed_prefix = np.ascontiguousarray(
+            environment_chunk[: self.replan_steps], dtype=np.float32
+        )
+        qpos_delta = np.ascontiguousarray(
+            executed_prefix - factual_qpos[None, :], dtype=np.float32
+        )
+        qpos_step_delta = np.ascontiguousarray(
+            np.diff(
+                np.concatenate((factual_qpos[None, :], executed_prefix), axis=0),
+                axis=0,
+            ),
+            dtype=np.float32,
+        )
         self.queue.publish(round_trip, environment_chunk)
         model_telemetry = self._validated_model_telemetry(
             output.get("warm_online_telemetry"), online_step=online_step
@@ -1006,6 +1020,8 @@ class RMBenchWarmPolicy:
             "model_input_stats": _array_summary(online_step.model_input),
             "model_input_sha256": online_step.model_input_sha256,
             "proprio_sha256": online_step.proprio_sha256,
+            "factual_qpos_stats": _array_summary(factual_qpos),
+            "normalized_proprio_stats": _array_summary(proprio),
             "candidate_count": int(sum(online_step.candidate_valid_mask)),
             "candidates": candidates,
             "history_before_replan": history_evidence,
@@ -1014,6 +1030,18 @@ class RMBenchWarmPolicy:
             "environment_action_chunk_sha256": sha256_array(environment_chunk),
             "model_action_chunk_stats": _array_summary(model_chunk),
             "environment_action_chunk_stats": _array_summary(environment_chunk),
+            "executed_prefix_qpos_delta_stats": _array_summary(qpos_delta),
+            "executed_prefix_qpos_step_delta_stats": _array_summary(
+                qpos_step_delta
+            ),
+            "executed_prefix_arm_delta_stats": {
+                "left": _array_summary(qpos_delta[:, :6]),
+                "right": _array_summary(qpos_delta[:, 7:13]),
+            },
+            "executed_prefix_gripper_targets": {
+                "left": [float(value) for value in executed_prefix[:, 6]],
+                "right": [float(value) for value in executed_prefix[:, 13]],
+            },
             "model": model_telemetry,
         }
         if self.timing_enabled:

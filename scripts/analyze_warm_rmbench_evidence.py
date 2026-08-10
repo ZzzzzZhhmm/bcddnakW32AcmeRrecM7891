@@ -102,6 +102,9 @@ def analyze_records(records: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
     stagnation_observations = 0
     thread_comparable = 0
     thread_continuations = 0
+    exact_event_repetitions = 0
+    phase_locked_transitions = 0
+    maximum_consecutive_phase_replans = 0
     repeated_attempt_max = 0
     input_stats_records = 0
     action_stats_records = 0
@@ -123,6 +126,8 @@ def analyze_records(records: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
     }
     distributions = {name: _UnitHistogram() for name in means}
     previous_event_by_episode: dict[int, tuple[str, int, int]] = {}
+    phase_run_by_episode: dict[int, int] = {}
+    selected_event_counts: Counter[tuple[str, int, int]] = Counter()
 
     for line_number, record in enumerate(records, start=1):
         if not isinstance(record, Mapping):
@@ -142,6 +147,7 @@ def analyze_records(records: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
             episode_ended.add(episode)
             successes += int(record.get("success") is True)
             previous_event_by_episode.pop(episode, None)
+            phase_run_by_episode.pop(episode, None)
             continue
         if kind != "replan":
             continue
@@ -226,12 +232,25 @@ def analyze_records(records: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
         event = _event_key(source.get("selected_event_id"))
         if not selected_source or event is None:
             continue
+        selected_event_counts[event] += 1
         previous = previous_event_by_episode.get(episode)
         if previous is not None:
             thread_comparable += 1
             same_rollout = event[:2] == previous[:2]
             monotonic = event[2] + 16 >= previous[2]
             thread_continuations += int(same_rollout and monotonic)
+            exact_event_repetitions += int(event == previous)
+            same_phase = abs(event[2] - previous[2]) <= 16
+            phase_locked_transitions += int(same_phase)
+            phase_run_by_episode[episode] = (
+                phase_run_by_episode.get(episode, 1) + 1 if same_phase else 1
+            )
+        else:
+            phase_run_by_episode[episode] = 1
+        maximum_consecutive_phase_replans = max(
+            maximum_consecutive_phase_replans,
+            phase_run_by_episode[episode],
+        )
         previous_event_by_episode[episode] = event
 
     replans = kinds["replan"]
@@ -242,6 +261,21 @@ def analyze_records(records: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
 
     source_rate = ratio(memory_selected, replans)
     event_rate = ratio(event_write_records, factual_update_records)
+    dominant_event_count = (
+        selected_event_counts.most_common(1)[0][1]
+        if selected_event_counts
+        else 0
+    )
+    dominant_event = (
+        selected_event_counts.most_common(1)[0][0]
+        if selected_event_counts
+        else None
+    )
+    dominant_event_rate = ratio(dominant_event_count, memory_selected)
+    exact_event_repetition_rate = ratio(
+        exact_event_repetitions, thread_comparable
+    )
+    phase_lock_rate = ratio(phase_locked_transitions, thread_comparable)
     failure_signals: list[str] = []
     if source_rate is not None and source_rate < 0.01:
         failure_signals.append("memory_source_starvation")
@@ -252,6 +286,19 @@ def analyze_records(records: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
         failure_signals.append("factual_stagnation_saturated")
     if event_rate is not None and event_rate < 0.05:
         failure_signals.append("episode_event_write_starvation")
+    if (
+        memory_selected >= 100
+        and dominant_event_rate is not None
+        and dominant_event_rate >= 0.25
+    ):
+        failure_signals.append("dominant_memory_event_collapse")
+    if (
+        thread_comparable >= 100
+        and phase_lock_rate is not None
+        and phase_lock_rate >= 0.80
+        and maximum_consecutive_phase_replans >= 16
+    ):
+        failure_signals.append("memory_event_phase_lock")
 
     return {
         "schema": "warm.rmbench-evidence-analysis",
@@ -273,6 +320,23 @@ def analyze_records(records: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
         ),
         "thread_continuation_rate": ratio(
             thread_continuations, thread_comparable
+        ),
+        "exact_event_repetition_rate": exact_event_repetition_rate,
+        "phase_locked_transition_rate": phase_lock_rate,
+        "maximum_consecutive_phase_replans": (
+            maximum_consecutive_phase_replans
+        ),
+        "unique_selected_memory_events": len(selected_event_counts),
+        "dominant_selected_memory_event": (
+            None
+            if dominant_event is None
+            else {
+                "dataset_id": dominant_event[0],
+                "episode_index": dominant_event[1],
+                "start_frame": dominant_event[2],
+                "count": dominant_event_count,
+                "rate": dominant_event_rate,
+            }
         ),
         "maximum_repeated_attempt_count": repeated_attempt_max,
         "factual_update_records": factual_update_records,

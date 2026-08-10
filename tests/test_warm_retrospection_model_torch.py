@@ -118,6 +118,7 @@ def _config() -> WarmRetrospectionConfig:
         maximum_candidate_entropy=1.0,
         inference_source_gate_threshold=0.0,
         stagnation_hard_threshold=1.0,
+        episode_action_chunk_size=2,
     )
 
 
@@ -317,6 +318,8 @@ def test_online_context_carries_factual_candidate_start_proprio() -> None:
         [[1.0, 2.0, 3.0], [0.0, 0.0, 0.0]], dtype=np.float32
     )
     online_step = SimpleNamespace(
+        query_id=SimpleNamespace(episode_index=3, frame_index=10),
+        event_ids=(EventId("train", 0, 7, 4), None),
         context_key=np.zeros((CONTEXT_DIM,), dtype=np.float32),
         candidate_means=np.zeros(
             (2, ACTION_HORIZON, ACTION_DIM), dtype=np.float32
@@ -390,6 +393,26 @@ def test_full_source_path_preserves_shapes_and_exact_null_fallback() -> None:
     assert model._last_retrospection_diagnostics[
         "factual_vae_latent"
     ].shape == (2, 2, 4, 8)
+
+
+def test_exhausted_thread_candidate_cannot_seed_action_source() -> None:
+    model = _model().eval()
+    context = _source_context(with_teachers=False)
+    context = replace(
+        context,
+        candidate_thread_source_eligible=torch.zeros_like(
+            context.candidate_valid_mask, dtype=torch.bool
+        ),
+    )
+
+    gaussian, output = _resolve(model, context, phase="infer")
+
+    assert torch.equal(output.source, gaussian)
+    assert output.memory_mask.tolist() == [False, False]
+    assert output.source_gate.tolist() == [0.0, 0.0]
+    assert model._last_retrospection_diagnostics[
+        "thread_source_eligible"
+    ].tolist() == [False, False]
 
 
 def test_full_training_source_exposes_finite_auxiliary_losses() -> None:
@@ -498,19 +521,40 @@ def test_online_thread_prior_prefers_monotonic_event_continuation_and_resets() -
     model._warm_thread_query_frame = 20
     model._warm_thread_episode_index = 3
     step = SimpleNamespace(
-        query_id=SimpleNamespace(episode_index=3, frame_index=24),
+        query_id=SimpleNamespace(episode_index=3, frame_index=22),
         event_ids=(
-            EventId("train", 0, 7, 104),
+            EventId("train", 0, 7, 102),
             EventId("train", 0, 7, 20),
-            EventId("train", 0, 8, 104),
+            EventId("train", 0, 8, 102),
         ),
         candidate_valid_mask=np.asarray([True, True, True]),
     )
-    prior = model._online_thread_prior(step)
+    prior, eligible, offsets = model._online_thread_constraints(step)
     assert prior.shape == (1, 3)
+    assert eligible.tolist() == [[True, False, True]]
+    assert offsets.tolist() == [[0, 4, 0]]
     assert float(prior[0, 0]) > 0.0
     assert float(prior[0, 1]) < 0.0
-    assert float(prior[0, 2]) < 0.0
+    assert 0.0 <= float(prior[0, 2]) < float(prior[0, 0])
+
+    exhausted = SimpleNamespace(
+        query_id=SimpleNamespace(episode_index=3, frame_index=24),
+        event_ids=(
+            EventId("train", 0, 7, 100),
+            EventId("train", 0, 8, 100),
+            EventId("train", 0, 7, 120),
+        ),
+        candidate_valid_mask=np.asarray([True, True, True]),
+    )
+    exhausted_prior, exhausted_eligible, exhausted_offsets = model._online_thread_constraints(
+        exhausted
+    )
+    assert exhausted_eligible.tolist() == [[False, False, True]]
+    assert exhausted_offsets.tolist() == [[4, 4, 0]]
+    expected_penalty = -model._require_retrospection().thread_reuse_penalty
+    assert float(exhausted_prior[0, 0]) == expected_penalty
+    assert float(exhausted_prior[0, 1]) == expected_penalty
+    assert float(exhausted_prior[0, 2]) > 0.0
 
     model.reset_warm_online_episode()
     torch.testing.assert_close(model._online_thread_prior(step), torch.zeros(1, 3))

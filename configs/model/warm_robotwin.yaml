@@ -38,3 +38,7 @@ retrospection:
   # could dominate learned utility after the first accepted demonstration.
   thread_score_weight: 0.20
   thread_switch_penalty: 0.05
+  # A retrieved 32-step action event may seed at most one causal horizon.
+  # Afterwards its phase (and any phase-aligned exemplar from another demo)
+  # is source-ineligible until retrieval advances to a later event.
+  thread_reuse_penalty: 1.0

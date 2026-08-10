@@ -83,7 +83,7 @@ from .video_adapter import build_video_layer_adapters
 
 
 WARM_RETROSPECTION_CHECKPOINT_SCHEMA = "warm.retrospection-checkpoint"
-WARM_RETROSPECTION_CHECKPOINT_VERSION = 5
+WARM_RETROSPECTION_CHECKPOINT_VERSION = 6
 WARM_ONLINE_ABLATION_MODES = frozenset(
     {"full", "context_only", "source_only_no_consequence"}
 )
@@ -142,6 +142,8 @@ class RetrospectiveSourceContext:
     forced_candidate_indices: torch.Tensor | None = None
     forced_rejection_mask: torch.Tensor | None = None
     candidate_thread_prior: torch.Tensor | None = None
+    candidate_thread_source_eligible: torch.Tensor | None = None
+    candidate_thread_action_offset: torch.Tensor | None = None
 
 
 def _as_config(
@@ -304,6 +306,82 @@ def _gather_candidate(
         rows = torch.nonzero(valid, as_tuple=False).squeeze(1)
         output[rows] = values[rows, indices[rows]]
     return output
+
+
+def _advance_online_candidate_payload(
+    *,
+    actions: np.ndarray,
+    start_proprio: np.ndarray,
+    timing: np.ndarray,
+    offsets: np.ndarray,
+    valid: np.ndarray,
+    config: WarmRetrospectionConfig,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Advance a reused event to the unexecuted suffix of its action chunk.
+
+    Online control executes only a short prefix before replanning.  Reusing
+    the same 32-step event without this cursor would execute its first prefix
+    repeatedly and could never reach a later gripper transition.  Absolute
+    qpos canonicalization is re-anchored at the target immediately preceding
+    the suffix; delta-action payloads need only the temporal shift.
+    """
+
+    action_values = np.array(actions, copy=True, dtype=np.float32)
+    start_values = np.array(start_proprio, copy=True, dtype=np.float32)
+    timing_values = np.array(timing, copy=True, dtype=np.float32)
+    offset_values = np.asarray(offsets)
+    valid_values = np.asarray(valid)
+    count, horizon, action_dim = action_values.shape
+    if start_values.shape != (count, config.proprio_dim):
+        raise WarmRetrospectionError("online candidate start proprio is invalid")
+    if timing_values.shape != (count, config.timing_dim):
+        raise WarmRetrospectionError("online candidate timing is invalid")
+    if offset_values.shape != (count,) or valid_values.shape != (count,):
+        raise WarmRetrospectionError("online thread offsets are not candidate-aligned")
+    if horizon != config.action_horizon or action_dim != config.action_dim:
+        raise WarmRetrospectionError("online action cursor received an invalid shape")
+
+    gripper = set(config.canonical_gripper_dims)
+    movement = tuple(index for index in range(action_dim) if index not in gripper)
+    for row in np.flatnonzero(valid_values).tolist():
+        offset = int(offset_values[row])
+        if offset <= 0 or offset >= horizon:
+            continue
+        original = np.array(action_values[row], copy=True)
+        remaining = horizon - offset
+        action_values[row, :remaining] = original[offset:]
+        action_values[row, remaining:] = original[-1]
+        if (
+            config.canonical_action_mode == "start_proprio_delta"
+            and config.proprio_dim == action_dim
+            and movement
+        ):
+            start_values[row, list(movement)] = original[
+                offset - 1, list(movement)
+            ]
+
+        # Timing is [close_phase, close_valid, open_phase, open_valid].
+        # Shift transition locations onto the padded suffix timeline and mark
+        # transitions that already happened as absent.
+        for phase_index, valid_index in ((0, 1), (2, 3)):
+            if timing_values[row, valid_index] <= 0.0:
+                continue
+            transition = int(
+                round(float(timing_values[row, phase_index]) * max(horizon - 1, 1))
+            )
+            shifted = transition - offset
+            if shifted <= 0:
+                timing_values[row, phase_index] = 0.0
+                timing_values[row, valid_index] = 0.0
+            else:
+                timing_values[row, phase_index] = np.float32(
+                    shifted / max(horizon - 1, 1)
+                )
+    return (
+        np.ascontiguousarray(action_values),
+        np.ascontiguousarray(start_values),
+        np.ascontiguousarray(timing_values),
+    )
 
 
 def _apply_inference_memory_corruption(
@@ -640,8 +718,17 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
         self._warm_thread_episode_index = None
         self._warm_thread_null_steps = 0
 
-    def _online_thread_prior(self, online_step: Any) -> torch.Tensor:
-        """Favor monotonic continuation of one useful demonstration event."""
+    def _online_thread_constraints(
+        self, online_step: Any
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        """Return temporal ranking prior and source eligibility.
+
+        The query-frame anchor marks when the current *event phase* was first
+        accepted.  It must not move when retrieval returns the same phase (or
+        a phase-aligned exemplar from another demonstration).  Resetting that
+        anchor every replan lets one nearest neighbour seed the policy
+        forever, because it is always only one replan from the expectation.
+        """
 
         cfg = self._require_retrospection()
         events = tuple(online_step.event_ids)
@@ -656,30 +743,67 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             self.reset_warm_online_episode()
         self._warm_thread_episode_index = query_episode
         prior = np.zeros((len(events),), dtype=np.float32)
+        source_eligible = np.array(valid, dtype=np.bool_, copy=True)
+        action_offsets = np.zeros((len(events),), dtype=np.int64)
         previous = self._warm_thread_event
         previous_query = self._warm_thread_query_frame
         if previous is None or previous_query is None:
-            return torch.as_tensor(
-                prior, device=self.device, dtype=self.torch_dtype
-            ).unsqueeze(0)
-        expected = int(previous.start_frame) + max(query_frame - previous_query, 0)
+            return (
+                torch.as_tensor(
+                    prior, device=self.device, dtype=self.torch_dtype
+                ).unsqueeze(0),
+                torch.as_tensor(
+                    source_eligible, device=self.device, dtype=torch.bool
+                ).unsqueeze(0),
+                torch.as_tensor(
+                    action_offsets, device=self.device, dtype=torch.long
+                ).unsqueeze(0),
+            )
+        elapsed = max(query_frame - previous_query, 0)
+        expected = int(previous.start_frame) + elapsed
         for index, (event, is_valid) in enumerate(zip(events, valid, strict=True)):
             if not bool(is_valid) or event is None:
                 continue
-            if event.episode_key != previous.episode_key:
-                prior[index] = -float(cfg.thread_switch_penalty)
-                continue
-            if int(event.start_frame) + cfg.thread_backtrack_tolerance < int(
-                previous.start_frame
+            phase_delta = int(event.start_frame) - int(previous.start_frame)
+            if phase_delta <= cfg.thread_backtrack_tolerance:
+                action_offsets[index] = min(
+                    max(elapsed - phase_delta, 0), cfg.action_horizon
+                )
+            # Event frames are phase coordinates.  Candidate caches normally
+            # contain aligned examples from several demonstrations, so a
+            # rollout-id switch cannot be allowed to evade the reuse guard.
+            if (
+                phase_delta <= cfg.thread_backtrack_tolerance
+                and action_offsets[index] + cfg.episode_action_chunk_size
+                > cfg.action_horizon
             ):
+                prior[index] = -float(cfg.thread_reuse_penalty)
+                source_eligible[index] = False
+                continue
+            if phase_delta < -cfg.thread_backtrack_tolerance:
                 prior[index] = -float(cfg.thread_score_weight)
                 continue
             distance = abs(int(event.start_frame) - expected)
             coherence = max(0.0, 1.0 - distance / float(cfg.thread_forward_window))
             prior[index] = float(cfg.thread_score_weight) * coherence
-        return torch.as_tensor(
-            prior, device=self.device, dtype=self.torch_dtype
-        ).unsqueeze(0)
+            if event.episode_key != previous.episode_key:
+                prior[index] -= float(cfg.thread_switch_penalty)
+        return (
+            torch.as_tensor(
+                prior, device=self.device, dtype=self.torch_dtype
+            ).unsqueeze(0),
+            torch.as_tensor(
+                source_eligible, device=self.device, dtype=torch.bool
+            ).unsqueeze(0),
+            torch.as_tensor(
+                action_offsets, device=self.device, dtype=torch.long
+            ).unsqueeze(0),
+        )
+
+    def _online_thread_prior(self, online_step: Any) -> torch.Tensor:
+        """Compatibility helper returning only the temporal ranking prior."""
+
+        return self._online_thread_constraints(online_step)[0]
 
     def configure_trainable_modules(self):
         """Adapt Action DiT, WARM modules, and selected Video DiT adapters.
@@ -1227,6 +1351,51 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             inference_gate_threshold=cfg.inference_source_gate_threshold,
             hard_reject=phase == "infer",
         )
+        thread_source_eligible = torch.ones_like(
+            selection.memory_mask, dtype=torch.bool
+        )
+        thread_action_offset = torch.zeros_like(
+            selection.candidate_indices, dtype=torch.long
+        )
+        if phase == "infer" and ctx.candidate_thread_source_eligible is not None:
+            candidate_eligible = ctx.candidate_thread_source_eligible
+            if (
+                candidate_eligible.dtype != torch.bool
+                or candidate_eligible.shape != ctx.candidate_valid_mask.shape
+                or candidate_eligible.device != ctx.candidate_valid_mask.device
+            ):
+                raise WarmRetrospectionError(
+                    "candidate_thread_source_eligible must be bool [B,K] on "
+                    "the model device"
+                )
+            thread_source_eligible = _gather_candidate(
+                candidate_eligible, selection.candidate_indices
+            )
+            if ctx.candidate_thread_action_offset is not None:
+                offsets = ctx.candidate_thread_action_offset
+                if offsets.dtype != torch.long or offsets.shape != candidate_eligible.shape:
+                    raise WarmRetrospectionError(
+                        "candidate_thread_action_offset must be int64 [B,K]"
+                    )
+                thread_action_offset = _gather_candidate(
+                    offsets, selection.candidate_indices
+                )
+            # Ranking may still choose an exhausted phase when no forward
+            # event is in the current visual top-K.  That event can remain a
+            # context token, but it must not seed the action flow again.
+            acceptance = SourceAcceptance(
+                effective_probability=torch.where(
+                    thread_source_eligible,
+                    acceptance.effective_probability,
+                    torch.zeros_like(acceptance.effective_probability),
+                ),
+                quality=torch.where(
+                    thread_source_eligible,
+                    acceptance.quality,
+                    torch.zeros_like(acceptance.quality),
+                ),
+                accepted_mask=acceptance.accepted_mask & thread_source_eligible,
+            )
         forced_rejection = torch.zeros_like(
             selection.memory_mask, dtype=torch.bool
         )
@@ -1530,6 +1699,8 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
                 if ctx.candidate_thread_prior is None
                 else ctx.candidate_thread_prior
             ).detach(),
+            "thread_source_eligible": thread_source_eligible.detach(),
+            "thread_action_offset": thread_action_offset.detach(),
             "episode_query_delta_norm": torch.linalg.vector_norm(
                 (phase_aware_query - ctx.query_context).float(), dim=-1
             ).detach(),
@@ -1707,20 +1878,27 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
                     raise WarmRetrospectionError(
                         "online episode_action_mask must match action summaries"
                     )
+        thread_prior, thread_source_eligible, thread_action_offset = (
+            self._online_thread_constraints(online_step)
+        )
+        actions, starts, timing = _advance_online_candidate_payload(
+            actions=np.asarray(online_step.candidate_means),
+            start_proprio=np.asarray(facts.start_proprio),
+            timing=np.asarray(facts.gripper_timing),
+            offsets=thread_action_offset[0].cpu().numpy(),
+            valid=np.asarray(facts.candidate_valid_mask),
+            config=cfg,
+        )
         return RetrospectiveSourceContext(
             query_context=tensor(online_step.context_key, self.torch_dtype),
             candidate_context=tensor(facts.context_keys, self.torch_dtype),
-            candidate_actions=tensor(
-                online_step.candidate_means, self.torch_dtype
-            ),
-            candidate_start_proprio=tensor(
-                facts.start_proprio, self.torch_dtype
-            ),
+            candidate_actions=tensor(actions, self.torch_dtype),
+            candidate_start_proprio=tensor(starts, self.torch_dtype),
             candidate_effect_pre=tensor(facts.effect_pre, self.torch_dtype),
             candidate_effect_delta=tensor(
                 facts.effect_delta, self.torch_dtype
             ),
-            candidate_timing=tensor(facts.gripper_timing, self.torch_dtype),
+            candidate_timing=tensor(timing, self.torch_dtype),
             candidate_support=tensor(facts.support, self.torch_dtype),
             candidate_valid_mask=tensor(
                 facts.candidate_valid_mask, torch.bool
@@ -1729,7 +1907,9 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             episode_mask=episode_valid,
             episode_action_summaries=action_history,
             episode_action_mask=action_history_valid,
-            candidate_thread_prior=self._online_thread_prior(online_step),
+            candidate_thread_prior=thread_prior,
+            candidate_thread_source_eligible=thread_source_eligible,
+            candidate_thread_action_offset=thread_action_offset,
         )
 
     @torch.no_grad()
@@ -1837,12 +2017,41 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
         source_memory_selected = bool(
             diagnostics["source_memory_mask"].reshape(-1)[0].cpu().item()
         )
+        selected_thread_eligible = bool(
+            diagnostics["thread_source_eligible"]
+            .reshape(-1)[0]
+            .cpu()
+            .item()
+        )
+        phase_was_exhausted = (
+            self._warm_thread_query_frame is not None
+            and int(online_step.query_id.frame_index)
+            - int(self._warm_thread_query_frame)
+            >= self._require_retrospection().action_horizon
+        )
         if source_memory_selected and selected_event is not None:
-            self._warm_thread_event = selected_event
-            self._warm_thread_query_frame = int(online_step.query_id.frame_index)
+            previous_event = self._warm_thread_event
+            if (
+                previous_event is None
+                or self._warm_thread_query_frame is None
+                or int(selected_event.start_frame)
+                > int(previous_event.start_frame)
+                + self._require_retrospection().thread_backtrack_tolerance
+            ):
+                # Only a genuinely later event advances the causal phase
+                # clock.  Same-phase exemplars retain the original anchor.
+                self._warm_thread_event = selected_event
+                self._warm_thread_query_frame = int(
+                    online_step.query_id.frame_index
+                )
             self._warm_thread_episode_index = int(
                 online_step.query_id.episode_index
             )
+            self._warm_thread_null_steps = 0
+        elif phase_was_exhausted:
+            # This is the deliberate fallback for an exhausted phase.  Keep
+            # its high-water mark even if ranking chooses the null component:
+            # three Gaussian replans must not reopen the exact same event loop.
             self._warm_thread_null_steps = 0
         else:
             self._warm_thread_null_steps += 1
@@ -1930,6 +2139,22 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
                         .reshape(-1)[0]
                         .cpu()
                         .item()
+                    ),
+                    "thread_source_eligible": selected_thread_eligible,
+                    "thread_action_offset": int(
+                        diagnostics["thread_action_offset"]
+                        .reshape(-1)[0]
+                        .cpu()
+                        .item()
+                    ),
+                    "thread_phase_elapsed_actions": (
+                        0
+                        if self._warm_thread_query_frame is None
+                        else max(
+                            int(online_step.query_id.frame_index)
+                            - int(self._warm_thread_query_frame),
+                            0,
+                        )
                     ),
                     "episode_query_delta_norm": float(
                         diagnostics["episode_query_delta_norm"]
