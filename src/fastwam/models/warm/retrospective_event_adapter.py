@@ -332,6 +332,7 @@ class RetrospectiveEventAdapter(nn.Module):
         text_mask: torch.Tensor,
         event_delta_tokens: torch.Tensor,
         event_delta_mask: torch.Tensor,
+        observed_effect_prior: torch.Tensor | None = None,
     ) -> RetrospectiveEventAdapterOutput:
         cfg = self.config
         actions = _finite_tensor(
@@ -495,9 +496,31 @@ class RetrospectiveEventAdapter(nn.Module):
         delta_projected = delta_projected.masked_fill(
             ~delta_valid.unsqueeze(-1), 0.0
         )
-        pooled_observed_effect = _masked_mean(
-            event_delta, delta_valid, dim=2
-        )
+        if observed_effect_prior is None:
+            pooled_observed_effect = _masked_mean(
+                event_delta, delta_valid, dim=2
+            )
+        else:
+            pooled_observed_effect = _finite_tensor(
+                observed_effect_prior,
+                field="observed_effect_prior",
+                rank=3,
+                width=cfg.effect_dim,
+            )
+            if tuple(pooled_observed_effect.shape[:2]) != (batch, candidates):
+                raise RetrospectiveEventAdapterError(
+                    "observed_effect_prior must share warped_actions [B,K]"
+                )
+            if (
+                pooled_observed_effect.device != actions.device
+                or pooled_observed_effect.dtype != actions.dtype
+            ):
+                raise RetrospectiveEventAdapterError(
+                    "observed_effect_prior must share action device and dtype"
+                )
+            pooled_observed_effect = pooled_observed_effect.masked_fill(
+                ~valid.unsqueeze(-1), 0.0
+            )
         predicted_effect = self.predict_effects(
             actions=adapted,
             observed_effect_prior=pooled_observed_effect,

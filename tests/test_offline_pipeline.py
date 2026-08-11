@@ -8,6 +8,7 @@ import pytest
 from fastwam.datasets.lerobot.audit import load_audit_report
 from fastwam.datasets.lerobot.episode_catalog import EpisodeCatalog
 from fastwam.memory.bank_builder import EpisodeFeatures
+from fastwam.memory.candidate_cache import QueryId
 from fastwam.memory.event_mining import EventMiningConfig
 from fastwam.memory.feature_cache import FeatureCacheMetadata, save_episode_feature_cache
 from fastwam.memory.offline_pipeline import (
@@ -17,6 +18,7 @@ from fastwam.memory.offline_pipeline import (
     build_candidate_cache_from_collection,
     build_event_bank_from_collection,
     build_oracle_queries_from_collection,
+    factual_state_query_starts,
     fixed_horizon_query_starts,
     load_feature_cache_collection,
     validate_feature_collection_against_catalog,
@@ -287,6 +289,45 @@ def test_bank_query_validation_rejects_encoded_content_overlap(
 def test_fixed_horizon_query_starts_are_tail_complete() -> None:
     assert fixed_horizon_query_starts(3, action_horizon=4, stride=2) == ()
     assert fixed_horizon_query_starts(10, action_horizon=4, stride=4) == (0, 4, 6)
+    assert factual_state_query_starts(0, stride=2) == ()
+    assert factual_state_query_starts(9, stride=4) == (0, 4, 8)
+
+
+def test_candidate_cache_can_cover_every_factual_state_including_terminal(
+    tmp_path: Path,
+) -> None:
+    train = load_feature_cache_collection(
+        [
+            _save(tmp_path / "train", _episode(0)),
+            _save(tmp_path / "train", _episode(1)),
+        ]
+    )
+    bank, _, provenance = build_event_bank_from_collection(
+        train,
+        mining_config=EventMiningConfig(action_horizon=4),
+        start_mode="uniform",
+        data_binding=_binding(),
+    )
+    bank.save(
+        tmp_path / "bank",
+        action_normalizer={"file_sha256": HASHES["normalizer_hash"]},
+        encoder={"file_sha256": HASHES["encoder_hash"]},
+        camera_layout={"file_sha256": HASHES["camera_hash"]},
+        provenance=provenance,
+    )
+    cache = build_candidate_cache_from_collection(
+        type(bank).load(tmp_path / "bank"),
+        train,
+        action_horizon=4,
+        query_stride=1,
+        top_k=4,
+        query_split="train",
+        include_partial_action_queries=True,
+    )
+    assert len(cache) == 18
+    assert QueryId("libero", 0, 0, 8) in cache.query_ids
+    assert QueryId("libero", 0, 1, 8) in cache.query_ids
+    assert all(row for row in cache.candidates)
 
 
 def test_catalog_audit_is_the_split_authority(tmp_path: Path) -> None:

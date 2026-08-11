@@ -25,11 +25,12 @@ WARM_TOKENIZER="${WARM_TOKENIZER:-${PROJECT_DIR}/checkpoints/Wan-AI/Wan2.1-T2V-1
 
 WARM_RMBENCH_TASK="${WARM_RMBENCH_TASK:-}"
 WARM_ROOT_SEED="${WARM_ROOT_SEED:-3407}"
-WARM_EVAL_LABEL="${WARM_EVAL_LABEL:-formal100-s3407-v4}"
+WARM_EVAL_LABEL="${WARM_EVAL_LABEL:-formal100-s3407-v5}"
 WARM_EVAL_BASE="${WARM_EVAL_BASE:-${PROJECT_DIR}_evaluations}"
 WARM_EVAL_WORKTREE_ROOT="${WARM_EVAL_WORKTREE_ROOT:-${WARM_EVAL_BASE}/code}"
 WARM_RMBENCH_EVAL_BASE="${WARM_RMBENCH_EVAL_BASE:-${WARM_EVAL_BASE}/rmbench_official50}"
 WARM_SPECIALIST_RUN_ROOT="${WARM_SPECIALIST_RUN_ROOT:-${PROJECT_DIR}/runs/rmbench_official50_specialists}"
+WARM_RMBENCH_DATA_PROFILE="${WARM_RMBENCH_DATA_PROFILE:-official50-dev45}"
 export CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES:-0}"
 
 RMBENCH_CODE_REVISION="${RMBENCH_CODE_REVISION:-57ee09cbc6267bc36ca0ac2d8d1c5c3b245c112c}"
@@ -108,10 +109,17 @@ FINAL_STEP="${WARM_FINAL_STEP:-${DEFAULT_FINAL_STEP}}"
 [[ "${FINAL_STEP}" =~ ^[1-9][0-9]*$ ]] \
   || fail "WARM_FINAL_STEP must be a positive integer"
 STEP_TEXT="$(printf '%06d' "${FINAL_STEP}")"
-WARM_TRAIN_RUN_DIR="${WARM_TRAIN_RUN_DIR:-${WARM_SPECIALIST_RUN_ROOT}/${WARM_RMBENCH_TASK}-s3407-v4}"
+WARM_TRAIN_RUN_DIR="${WARM_TRAIN_RUN_DIR:-${WARM_SPECIALIST_RUN_ROOT}/${WARM_RMBENCH_TASK}-${WARM_RMBENCH_DATA_PROFILE}-s3407-v5}"
 WARM_CHECKPOINT="${WARM_CHECKPOINT:-${WARM_TRAIN_RUN_DIR}/checkpoints/weights/step_${STEP_TEXT}.pt}"
 WARM_TRAINING_ATTESTATION="${WARM_TRAINING_ATTESTATION:-${WARM_CHECKPOINT%.pt}.training.json}"
 WARM_TRAIN_CONFIG="${WARM_TRAIN_CONFIG:-}"
+M1="${WARM_ARTIFACT_ROOT}/m1"
+M2="${WARM_ARTIFACT_ROOT}/m2"
+TRAIN_FEATURES="${M1}/features/train_features.list"
+DEV_FEATURES="${M1}/features/dev_features.list"
+TRAIN_CANDIDATES="${M2}/candidates/hybrid_h32_train_k32"
+DEV_CANDIDATES="${M2}/candidates/hybrid_h32_dev_k32"
+QUALIFICATION="${M1}/qualification/rmbench_h32.json"
 
 required_paths=(
   "${WARM_CHECKPOINT}"
@@ -122,19 +130,47 @@ required_paths=(
   "${WARM_VAE_CHECKPOINT}"
   "${WARM_TEXT_ENCODER}"
   "${WARM_TOKENIZER}"
-  "${WARM_ARTIFACT_ROOT}/m1/banks/hybrid_h32"
-  "${WARM_ARTIFACT_ROOT}/m1/features/contracts/normalizer_contract.json"
-  "${WARM_ARTIFACT_ROOT}/m1/features/contracts/encoder_contract.json"
-  "${WARM_ARTIFACT_ROOT}/m1/features/contracts/camera_contract.json"
-  "${WARM_ARTIFACT_ROOT}/m1/train_stats/dataset_stats.json"
-  "${WARM_ARTIFACT_ROOT}/m1/rmbench_catalog.json"
-  "${WARM_ARTIFACT_ROOT}/m1/rmbench_audit.json"
-  "${WARM_ARTIFACT_ROOT}/m2/contracts/hybrid_h32_train_source.json"
-  "${WARM_ARTIFACT_ROOT}/m2/contracts/hybrid_h32_dev_source.json"
+  "${M1}/banks/hybrid_h32"
+  "${M1}/features/contracts/normalizer_contract.json"
+  "${M1}/features/contracts/encoder_contract.json"
+  "${M1}/features/contracts/camera_contract.json"
+  "${M1}/train_stats/dataset_stats.json"
+  "${M1}/rmbench_catalog.json"
+  "${M1}/rmbench_audit.json"
+  "${TRAIN_FEATURES}"
+  "${DEV_FEATURES}"
+  "${TRAIN_CANDIDATES}"
+  "${DEV_CANDIDATES}"
+  "${QUALIFICATION}"
+  "${M2}/contracts/hybrid_h32_train_source.json"
+  "${M2}/contracts/hybrid_h32_dev_source.json"
 )
 for path in "${required_paths[@]}"; do
   [[ -e "${path}" ]] || fail "required evaluation input not found: ${path}"
 done
+
+# Evaluation consumes the same immutable temporal bank and candidate corpus as
+# training.  Recompute the complete no-training qualification instead of
+# trusting that a report with the expected filename still describes the bytes
+# on disk.  This closes the train/eval gap after interrupted artifact rebuilds
+# or manual AFS copies.
+export PYTHONPATH="${PROJECT_DIR}/src:${PROJECT_DIR}"
+"${PYTHON_BIN}" "${PROJECT_DIR}/scripts/qualify_warm_rmbench_artifacts.py" \
+  --bank "${M1}/banks/hybrid_h32" \
+  --train-feature-list "${TRAIN_FEATURES}" \
+  --train-candidate-cache "${TRAIN_CANDIDATES}" \
+  --dev-feature-list "${DEV_FEATURES}" \
+  --dev-candidate-cache "${DEV_CANDIDATES}" \
+  --output "${QUALIFICATION}" \
+  --action-horizon 32 \
+  --query-stride 4 \
+  --max-event-stride 4 \
+  --phase-tolerance 0.10 \
+  --phase-recall-threshold 32=0.85 \
+  --phase-recall-threshold 128=0.95 \
+  --parity-max-queries 2048 \
+  --require-partial-action-queries \
+  --verify-existing
 
 # The formal contract builder re-hashes the full checkpoint. This lightweight
 # preflight validates identity fields before creating a Git worktree or output.

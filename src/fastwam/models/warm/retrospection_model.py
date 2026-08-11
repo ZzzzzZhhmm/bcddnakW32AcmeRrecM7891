@@ -25,6 +25,8 @@ from fastwam.datasets.warm_retrospective import (
     WARM_CANDIDATE_CONTEXT,
     WARM_CANDIDATE_EFFECT_DELTA,
     WARM_CANDIDATE_EFFECT_PRE,
+    WARM_CANDIDATE_EVENT_ORDINAL,
+    WARM_CANDIDATE_NORMALIZED_PHASE,
     WARM_CANDIDATE_START_PROPRIO,
     WARM_CANDIDATE_SUPPORT,
     WARM_CANDIDATE_TIMING,
@@ -32,8 +34,15 @@ from fastwam.datasets.warm_retrospective import (
     WARM_CURRENT_SEMANTIC,
     WARM_EPISODE_MASK,
     WARM_EPISODE_ACTION_MASK,
+    WARM_EPISODE_ACTION_RELATIVE_AGE,
     WARM_EPISODE_ACTION_SUMMARIES,
+    WARM_EPISODE_RELATIVE_AGE,
+    WARM_EPISODE_ROLE_IDS,
     WARM_EPISODE_TOKENS,
+    EPISODE_ROLE_ACTION,
+    EPISODE_ROLE_EVENT,
+    EPISODE_ROLE_PADDING,
+    _gripper_timing_from_actions,
     WARM_FUTURE_VALID,
     WARM_TARGET_EFFECT,
 )
@@ -83,7 +92,7 @@ from .video_adapter import build_video_layer_adapters
 
 
 WARM_RETROSPECTION_CHECKPOINT_SCHEMA = "warm.retrospection-checkpoint"
-WARM_RETROSPECTION_CHECKPOINT_VERSION = 6
+WARM_RETROSPECTION_CHECKPOINT_VERSION = 8
 WARM_ONLINE_ABLATION_MODES = frozenset(
     {"full", "context_only", "source_only_no_consequence"}
 )
@@ -134,6 +143,8 @@ class RetrospectiveSourceContext:
     episode_mask: torch.Tensor
     episode_action_summaries: torch.Tensor
     episode_action_mask: torch.Tensor
+    candidate_normalized_phase: torch.Tensor | None = None
+    candidate_event_ordinal: torch.Tensor | None = None
     current_semantic_teacher: torch.Tensor | None = None
     target_effect: torch.Tensor | None = None
     target_action: torch.Tensor | None = None
@@ -144,6 +155,9 @@ class RetrospectiveSourceContext:
     candidate_thread_prior: torch.Tensor | None = None
     candidate_thread_source_eligible: torch.Tensor | None = None
     candidate_thread_action_offset: torch.Tensor | None = None
+    episode_role_ids: torch.Tensor | None = None
+    episode_relative_age: torch.Tensor | None = None
+    episode_action_relative_age: torch.Tensor | None = None
 
 
 def _as_config(
@@ -259,8 +273,45 @@ def _warp_candidate_actions(
     )
 
 
-def _mean_effect(tokens: torch.Tensor) -> torch.Tensor:
-    return tokens.mean(dim=-2)
+def _spatial_effect_summary(
+    delta_tokens: torch.Tensor,
+    pre_tokens: torch.Tensor | None = None,
+) -> torch.Tensor:
+    """Change-attentive fixed summary of row-major 2x2 semantic effects.
+
+    A plain mean lets unchanged/background cells dominate and can cancel an
+    object that leaves one cell and enters another.  Weight each spatial cell
+    by its observed transition energy, with an epsilon prior that becomes
+    exactly uniform for a zero transition.  This is deterministic, has no
+    learned target encoder to collapse the consequence objective, and avoids
+    arbitrary hand-assigned quadrant constants.  A small state term uses the
+    same factual attention to distinguish incompatible pre-states.
+    """
+
+    if delta_tokens.ndim < 3 or int(delta_tokens.shape[-2]) != 4:
+        raise WarmRetrospectionError(
+            "semantic effects must contain four row-major 2x2 tokens"
+        )
+    energy = delta_tokens.float().square().mean(dim=-1)
+    epsilon = torch.finfo(torch.float32).eps
+    weights = (energy + epsilon) / (
+        energy.sum(dim=-1, keepdim=True) + 4.0 * epsilon
+    )
+    weights = weights.to(dtype=delta_tokens.dtype)
+    # ``weights`` already carries every leading batch/candidate dimension.
+    # Only append the feature axis; singleton-leading reshapes accidentally
+    # worked for B=K=1 but failed for real distributed batches.
+    expanded_weights = weights.unsqueeze(-1)
+    summary = (delta_tokens * expanded_weights).sum(dim=-2)
+    if pre_tokens is not None:
+        if pre_tokens.shape != delta_tokens.shape:
+            raise WarmRetrospectionError(
+                "effect pre-state and delta tokens must share a shape"
+            )
+        summary = summary + 0.05 * (
+            pre_tokens * expanded_weights
+        ).sum(dim=-2)
+    return summary
 
 
 def _smooth_rms(
@@ -306,82 +357,6 @@ def _gather_candidate(
         rows = torch.nonzero(valid, as_tuple=False).squeeze(1)
         output[rows] = values[rows, indices[rows]]
     return output
-
-
-def _advance_online_candidate_payload(
-    *,
-    actions: np.ndarray,
-    start_proprio: np.ndarray,
-    timing: np.ndarray,
-    offsets: np.ndarray,
-    valid: np.ndarray,
-    config: WarmRetrospectionConfig,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Advance a reused event to the unexecuted suffix of its action chunk.
-
-    Online control executes only a short prefix before replanning.  Reusing
-    the same 32-step event without this cursor would execute its first prefix
-    repeatedly and could never reach a later gripper transition.  Absolute
-    qpos canonicalization is re-anchored at the target immediately preceding
-    the suffix; delta-action payloads need only the temporal shift.
-    """
-
-    action_values = np.array(actions, copy=True, dtype=np.float32)
-    start_values = np.array(start_proprio, copy=True, dtype=np.float32)
-    timing_values = np.array(timing, copy=True, dtype=np.float32)
-    offset_values = np.asarray(offsets)
-    valid_values = np.asarray(valid)
-    count, horizon, action_dim = action_values.shape
-    if start_values.shape != (count, config.proprio_dim):
-        raise WarmRetrospectionError("online candidate start proprio is invalid")
-    if timing_values.shape != (count, config.timing_dim):
-        raise WarmRetrospectionError("online candidate timing is invalid")
-    if offset_values.shape != (count,) or valid_values.shape != (count,):
-        raise WarmRetrospectionError("online thread offsets are not candidate-aligned")
-    if horizon != config.action_horizon or action_dim != config.action_dim:
-        raise WarmRetrospectionError("online action cursor received an invalid shape")
-
-    gripper = set(config.canonical_gripper_dims)
-    movement = tuple(index for index in range(action_dim) if index not in gripper)
-    for row in np.flatnonzero(valid_values).tolist():
-        offset = int(offset_values[row])
-        if offset <= 0 or offset >= horizon:
-            continue
-        original = np.array(action_values[row], copy=True)
-        remaining = horizon - offset
-        action_values[row, :remaining] = original[offset:]
-        action_values[row, remaining:] = original[-1]
-        if (
-            config.canonical_action_mode == "start_proprio_delta"
-            and config.proprio_dim == action_dim
-            and movement
-        ):
-            start_values[row, list(movement)] = original[
-                offset - 1, list(movement)
-            ]
-
-        # Timing is [close_phase, close_valid, open_phase, open_valid].
-        # Shift transition locations onto the padded suffix timeline and mark
-        # transitions that already happened as absent.
-        for phase_index, valid_index in ((0, 1), (2, 3)):
-            if timing_values[row, valid_index] <= 0.0:
-                continue
-            transition = int(
-                round(float(timing_values[row, phase_index]) * max(horizon - 1, 1))
-            )
-            shifted = transition - offset
-            if shifted <= 0:
-                timing_values[row, phase_index] = 0.0
-                timing_values[row, valid_index] = 0.0
-            else:
-                timing_values[row, phase_index] = np.float32(
-                    shifted / max(horizon - 1, 1)
-                )
-    return (
-        np.ascontiguousarray(action_values),
-        np.ascontiguousarray(start_values),
-        np.ascontiguousarray(timing_values),
-    )
 
 
 def _apply_inference_memory_corruption(
@@ -602,6 +577,18 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             nn.GELU(),
             nn.Linear(cfg.semantic_dim, cfg.semantic_dim),
         )
+        # Episode memory is causal state, not an unordered visual cache.
+        # Roles distinguish the initial anchor, compressed factual events,
+        # the latest factual observation, and executed-action summaries.
+        self.episode_role_embedding = nn.Embedding(5, cfg.semantic_dim)
+        self.episode_age_projection = nn.Sequential(
+            nn.Linear(3, cfg.semantic_dim),
+            nn.SiLU(),
+            nn.Linear(cfg.semantic_dim, cfg.semantic_dim),
+        )
+        nn.init.zeros_(self.episode_role_embedding.weight)
+        nn.init.zeros_(self.episode_age_projection[-1].weight)
+        nn.init.zeros_(self.episode_age_projection[-1].bias)
         self.episode_query_projection = nn.Sequential(
             nn.LayerNorm(cfg.semantic_dim),
             nn.Linear(cfg.semantic_dim, cfg.context_dim, bias=False),
@@ -609,6 +596,17 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
         query_projection = self.episode_query_projection[-1]
         assert isinstance(query_projection, nn.Linear)
         nn.init.zeros_(query_projection.weight)
+        # Candidate phase is factual event metadata, not an inferred cursor.
+        # It lets the history-conditioned query distinguish identical visual
+        # states at early/middle/late task phases without slicing or padding a
+        # stored action chunk at inference time.
+        self.candidate_phase_projection = nn.Sequential(
+            nn.Linear(4, cfg.context_dim),
+            nn.SiLU(),
+            nn.Linear(cfg.context_dim, cfg.context_dim),
+        )
+        nn.init.zeros_(self.candidate_phase_projection[-1].weight)
+        nn.init.zeros_(self.candidate_phase_projection[-1].bias)
         self.gist_to_text = nn.Linear(cfg.gist_dim, cfg.text_dim, bias=False)
         self.action_context_to_text = nn.Linear(
             cfg.event_model_dim, cfg.text_dim, bias=False
@@ -723,11 +721,11 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """Return temporal ranking prior and source eligibility.
 
-        The query-frame anchor marks when the current *event phase* was first
-        accepted.  It must not move when retrieval returns the same phase (or
-        a phase-aligned exemplar from another demonstration).  Resetting that
-        anchor every replan lets one nearest neighbour seed the policy
-        forever, because it is always only one replan from the expectation.
+        Raw frame indices are compared only inside one source demonstration.
+        An accepted event is never converted into an artificial shifted
+        suffix.  Its exact row is suppressed, later factual events receive a
+        small coherence prior, and the event bank's explicit successor lane
+        supplies the next complete state-action-effect entry.
         """
 
         cfg = self._require_retrospection()
@@ -738,7 +736,6 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
                 "online candidate ids and validity mask are not aligned"
             )
         query_episode = int(online_step.query_id.episode_index)
-        query_frame = int(online_step.query_id.frame_index)
         if self._warm_thread_episode_index not in (None, query_episode):
             self.reset_warm_online_episode()
         self._warm_thread_episode_index = query_episode
@@ -746,8 +743,7 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
         source_eligible = np.array(valid, dtype=np.bool_, copy=True)
         action_offsets = np.zeros((len(events),), dtype=np.int64)
         previous = self._warm_thread_event
-        previous_query = self._warm_thread_query_frame
-        if previous is None or previous_query is None:
+        if previous is None:
             return (
                 torch.as_tensor(
                     prior, device=self.device, dtype=self.torch_dtype
@@ -759,35 +755,34 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
                     action_offsets, device=self.device, dtype=torch.long
                 ).unsqueeze(0),
             )
-        elapsed = max(query_frame - previous_query, 0)
-        expected = int(previous.start_frame) + elapsed
         for index, (event, is_valid) in enumerate(zip(events, valid, strict=True)):
             if not bool(is_valid) or event is None:
                 continue
+            if event.episode_key != previous.episode_key:
+                # Different demonstrations have unrelated raw frame scales.
+                continue
             phase_delta = int(event.start_frame) - int(previous.start_frame)
-            if phase_delta <= cfg.thread_backtrack_tolerance:
-                action_offsets[index] = min(
-                    max(elapsed - phase_delta, 0), cfg.action_horizon
-                )
-            # Event frames are phase coordinates.  Candidate caches normally
-            # contain aligned examples from several demonstrations, so a
-            # rollout-id switch cannot be allowed to evade the reuse guard.
-            if (
-                phase_delta <= cfg.thread_backtrack_tolerance
-                and action_offsets[index] + cfg.episode_action_chunk_size
-                > cfg.action_horizon
-            ):
+            # Dense H32 banks advance in four-frame increments.  The previous
+            # implementation compared the positive delta to the legacy
+            # ``thread_backtrack_tolerance`` (16), which rejected the next
+            # four factual successors and defeated the explicit continuation
+            # lane.  Only the same or a genuinely older event is exhausted;
+            # every strictly later event remains eligible for fresh closed-
+            # loop reranking and consequence gating.
+            if phase_delta <= 0:
                 prior[index] = -float(cfg.thread_reuse_penalty)
                 source_eligible[index] = False
+                # Record that the complete H-step event lease has been
+                # consumed.  The row is rejected as a source, but retaining
+                # this causal cursor in diagnostics/telemetry prevents a
+                # silent reset to prefix zero in downstream policy code.
+                action_offsets[index] = int(cfg.action_horizon)
                 continue
-            if phase_delta < -cfg.thread_backtrack_tolerance:
-                prior[index] = -float(cfg.thread_score_weight)
-                continue
-            distance = abs(int(event.start_frame) - expected)
-            coherence = max(0.0, 1.0 - distance / float(cfg.thread_forward_window))
+            coherence = max(
+                0.0,
+                1.0 - phase_delta / float(cfg.thread_forward_window),
+            )
             prior[index] = float(cfg.thread_score_weight) * coherence
-            if event.episode_key != previous.episode_key:
-                prior[index] -= float(cfg.thread_switch_penalty)
         return (
             torch.as_tensor(
                 prior, device=self.device, dtype=self.torch_dtype
@@ -832,7 +827,10 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             self.utility_reranker,
             self.source_confidence_gate,
             self.episode_action_projection,
+            self.episode_role_embedding,
+            self.episode_age_projection,
             self.episode_query_projection,
+            self.candidate_phase_projection,
             self.gist_to_text,
             self.action_context_to_text,
             self.video_layer_adapters,
@@ -935,8 +933,14 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
         candidate_effect = self._tensor(
             sample, WARM_CANDIDATE_EFFECT_DELTA, dtype=self.torch_dtype
         )
+        candidate_effect_pre = self._tensor(
+            sample, WARM_CANDIDATE_EFFECT_PRE, dtype=self.torch_dtype
+        )
         target_effect = self._tensor(
             sample, WARM_TARGET_EFFECT, dtype=self.torch_dtype
+        )
+        current_semantic_teacher = self._tensor(
+            sample, WARM_CURRENT_SEMANTIC, dtype=self.torch_dtype
         )
         split = self._query_split_from_sample(sample, batch_size=batch)
 
@@ -996,8 +1000,12 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             warped_candidate_actions.float() - action.unsqueeze(1).float()
         ).square().mean(dim=(-1, -2))
         raw_effect_distance = (
-            _mean_effect(candidate_effect).float()
-            - _mean_effect(target_effect).unsqueeze(1).float()
+            _spatial_effect_summary(
+                candidate_effect, candidate_effect_pre
+            ).float()
+            - _spatial_effect_summary(
+                target_effect, current_semantic_teacher
+            ).unsqueeze(1).float()
         ).square().mean(dim=-1)
         incompatibility = raw_action_distance + raw_effect_distance
         hard_indices = torch.zeros((batch,), dtype=torch.long, device=self.device)
@@ -1079,6 +1087,12 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             candidate_support=masked(
                 WARM_CANDIDATE_SUPPORT, dtype=self.torch_dtype
             ),
+            candidate_normalized_phase=masked(
+                WARM_CANDIDATE_NORMALIZED_PHASE, dtype=self.torch_dtype
+            ),
+            candidate_event_ordinal=masked(
+                WARM_CANDIDATE_EVENT_ORDINAL, dtype=torch.long
+            ),
             candidate_valid_mask=effective,
             episode_tokens=self._tensor(
                 sample, WARM_EPISODE_TOKENS, dtype=self.torch_dtype
@@ -1092,9 +1106,18 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             episode_action_mask=self._tensor(
                 sample, WARM_EPISODE_ACTION_MASK, dtype=torch.bool
             ),
-            current_semantic_teacher=self._tensor(
-                sample, WARM_CURRENT_SEMANTIC, dtype=self.torch_dtype
+            episode_role_ids=self._tensor(
+                sample, WARM_EPISODE_ROLE_IDS, dtype=torch.long
             ),
+            episode_relative_age=self._tensor(
+                sample, WARM_EPISODE_RELATIVE_AGE, dtype=self.torch_dtype
+            ),
+            episode_action_relative_age=self._tensor(
+                sample,
+                WARM_EPISODE_ACTION_RELATIVE_AGE,
+                dtype=self.torch_dtype,
+            ),
+            current_semantic_teacher=current_semantic_teacher,
             target_effect=target_effect,
             target_action=action,
             target_action_valid_mask=action_valid,
@@ -1215,11 +1238,122 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             raise WarmRetrospectionError(
                 "episode action summaries/mask violate the configured shape"
             )
-        action_history_tokens = self.episode_action_projection(
-            ctx.episode_action_summaries
+
+        def age_features(value: torch.Tensor) -> torch.Tensor:
+            return torch.stack(
+                (
+                    value,
+                    torch.sin(torch.pi * value),
+                    torch.cos(torch.pi * value),
+                ),
+                dim=-1,
+            )
+
+        if ctx.episode_role_ids is None:
+            episode_role_ids = torch.full(
+                ctx.episode_mask.shape,
+                EPISODE_ROLE_EVENT,
+                dtype=torch.long,
+                device=ctx.episode_mask.device,
+            ).masked_fill(~ctx.episode_mask, EPISODE_ROLE_PADDING)
+        else:
+            episode_role_ids = ctx.episode_role_ids.to(
+                device=ctx.episode_mask.device, dtype=torch.long
+            )
+        if episode_role_ids.shape != ctx.episode_mask.shape:
+            raise WarmRetrospectionError(
+                "episode role ids must match episode token mask"
+            )
+        if bool(
+            ((episode_role_ids < EPISODE_ROLE_PADDING) | (episode_role_ids > 3))
+            .any()
+            .item()
+        ):
+            raise WarmRetrospectionError("episode role ids must lie in [0,3]")
+        if bool(
+            (
+                (ctx.episode_mask & (episode_role_ids == EPISODE_ROLE_PADDING))
+                | (~ctx.episode_mask & (episode_role_ids != EPISODE_ROLE_PADDING))
+            )
+            .any()
+            .item()
+        ):
+            raise WarmRetrospectionError(
+                "episode role padding must agree with the episode mask"
+            )
+        if ctx.episode_relative_age is None:
+            episode_relative_age = torch.zeros(
+                ctx.episode_mask.shape,
+                dtype=ctx.episode_tokens.dtype,
+                device=ctx.episode_tokens.device,
+            )
+        else:
+            episode_relative_age = ctx.episode_relative_age.to(
+                device=ctx.episode_tokens.device,
+                dtype=ctx.episode_tokens.dtype,
+            )
+        if episode_relative_age.shape != ctx.episode_mask.shape:
+            raise WarmRetrospectionError(
+                "episode relative age must match episode token mask"
+            )
+        if bool(
+            (
+                ~torch.isfinite(episode_relative_age)
+                | (episode_relative_age < 0.0)
+                | (episode_relative_age > 1.0)
+            )
+            .any()
+            .item()
+        ):
+            raise WarmRetrospectionError(
+                "episode relative ages must be finite values in [0,1]"
+            )
+        if ctx.episode_action_relative_age is None:
+            action_relative_age = torch.zeros(
+                ctx.episode_action_mask.shape,
+                dtype=ctx.episode_action_summaries.dtype,
+                device=ctx.episode_action_summaries.device,
+            )
+        else:
+            action_relative_age = ctx.episode_action_relative_age.to(
+                device=ctx.episode_action_summaries.device,
+                dtype=ctx.episode_action_summaries.dtype,
+            )
+        if action_relative_age.shape != ctx.episode_action_mask.shape:
+            raise WarmRetrospectionError(
+                "episode action relative age must match action history mask"
+            )
+        if bool(
+            (
+                ~torch.isfinite(action_relative_age)
+                | (action_relative_age < 0.0)
+                | (action_relative_age > 1.0)
+            )
+            .any()
+            .item()
+        ):
+            raise WarmRetrospectionError(
+                "episode action relative ages must be finite values in [0,1]"
+            )
+
+        typed_episode_tokens = (
+            ctx.episode_tokens
+            + self.episode_role_embedding(episode_role_ids)
+            + self.episode_age_projection(age_features(episode_relative_age))
+        ).masked_fill(~ctx.episode_mask.unsqueeze(-1), 0.0)
+        action_role_ids = torch.full(
+            ctx.episode_action_mask.shape,
+            EPISODE_ROLE_ACTION,
+            dtype=torch.long,
+            device=ctx.episode_action_mask.device,
+        )
+        action_history_tokens = (
+            self.episode_action_projection(ctx.episode_action_summaries)
+            + self.episode_role_embedding(action_role_ids)
+            + self.episode_age_projection(age_features(action_relative_age))
         ).masked_fill(~ctx.episode_action_mask.unsqueeze(-1), 0.0)
         episode_tokens = torch.cat(
-            (ctx.episode_tokens, action_history_tokens), dim=1
+            (typed_episode_tokens, action_history_tokens), dim=1
         )
         episode_mask = torch.cat(
             (ctx.episode_mask, ctx.episode_action_mask), dim=1
@@ -1231,6 +1365,48 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
         phase_aware_query = ctx.query_context + self.episode_query_projection(
             pooled_episode
         )
+        if ctx.candidate_normalized_phase is None:
+            candidate_phase = torch.zeros_like(valid, dtype=ctx.query_context.dtype)
+        else:
+            candidate_phase = ctx.candidate_normalized_phase.to(
+                device=valid.device, dtype=ctx.query_context.dtype
+            )
+        if ctx.candidate_event_ordinal is None:
+            candidate_ordinal = torch.zeros_like(valid, dtype=torch.long)
+        else:
+            candidate_ordinal = ctx.candidate_event_ordinal.to(
+                device=valid.device, dtype=torch.long
+            )
+        if candidate_phase.shape != valid.shape or candidate_ordinal.shape != valid.shape:
+            raise WarmRetrospectionError(
+                "candidate phase and ordinal must match candidate_valid_mask"
+            )
+        if bool(
+            (
+                ~torch.isfinite(candidate_phase)
+                | (candidate_phase < 0.0)
+                | (candidate_phase > 1.0)
+                | (candidate_ordinal < 0)
+            ).any().item()
+        ):
+            raise WarmRetrospectionError(
+                "candidate phase must be finite in [0,1] and ordinal non-negative"
+            )
+        ordinal_feature = candidate_ordinal.to(dtype=candidate_phase.dtype)
+        ordinal_feature = ordinal_feature / (ordinal_feature + 8.0)
+        candidate_phase_features = torch.stack(
+            (
+                candidate_phase,
+                torch.sin(torch.pi * candidate_phase),
+                torch.cos(torch.pi * candidate_phase),
+                ordinal_feature,
+            ),
+            dim=-1,
+        ).masked_fill(~valid.unsqueeze(-1), 0.0)
+        phase_aware_candidate_context = (
+            ctx.candidate_context
+            + self.candidate_phase_projection(candidate_phase_features)
+        ).masked_fill(~valid.unsqueeze(-1), 0.0)
         # The required world transition is a query-only prediction.  Long-term
         # candidates are explicitly hidden here so an event can never help
         # manufacture the criterion that later accepts that same event.
@@ -1266,12 +1442,28 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             text_mask=text_context_mask,
             event_delta_tokens=event_delta_input,
             event_delta_mask=event_mask,
+            observed_effect_prior=(
+                torch.zeros_like(
+                    _spatial_effect_summary(
+                        candidate_payload.effect_delta,
+                        candidate_payload.effect_pre,
+                    )
+                )
+                if source_only
+                else _spatial_effect_summary(
+                    candidate_payload.effect_delta,
+                    candidate_payload.effect_pre,
+                )
+            ),
         )
-        observed_effect = _mean_effect(candidate_payload.effect_delta)
+        observed_effect = _spatial_effect_summary(
+            candidate_payload.effect_delta,
+            candidate_payload.effect_pre,
+        )
         action_summary = _candidate_action_summary(event.adapted_action_mean)
         reranker_scores = self.utility_reranker(
             phase_aware_query,
-            ctx.candidate_context,
+            phase_aware_candidate_context,
             action_summary,
             torch.zeros_like(observed_effect) if source_only else observed_effect,
             candidate_payload.timing,
@@ -1494,6 +1686,10 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             "gate": zero,
             "adaptation": zero,
         }
+        gate_target_metric = torch.zeros_like(gate.probability)
+        gate_supervised_mask = torch.zeros_like(
+            selection.memory_mask, dtype=torch.bool
+        )
         if phase == "train":
             if (
                 ctx.target_action is None
@@ -1505,7 +1701,10 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
                 raise WarmRetrospectionError(
                     "training context is missing stop-gradient teachers"
                 )
-            target_effect = _mean_effect(ctx.target_effect)
+            target_effect = _spatial_effect_summary(
+                ctx.target_effect,
+                ctx.current_semantic_teacher,
+            )
             action_valid = ctx.target_action_valid_mask
             if (
                 action_valid.dtype != torch.bool
@@ -1516,12 +1715,13 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
                     "target_action_valid_mask must be bool [B,H]"
                 )
             future_valid = ctx.future_valid_mask
-            supervised_rows = future_valid & action_valid.any(dim=1)
-            utility_valid = valid & supervised_rows.unsqueeze(1)
+            action_supervised_rows = action_valid.any(dim=1)
+            effect_supervised_rows = future_valid & action_supervised_rows
+            utility_valid = valid & action_supervised_rows.unsqueeze(1)
             if (
                 forced_rejection.dtype != torch.bool
-                or forced_rejection.shape != supervised_rows.shape
-                or forced_rejection.device != supervised_rows.device
+                or forced_rejection.shape != action_supervised_rows.shape
+                or forced_rejection.device != action_supervised_rows.device
             ):
                 raise WarmRetrospectionError(
                     "forced_rejection_mask must be bool [B] on the model device"
@@ -1537,6 +1737,7 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
                 target_effect,
                 utility_valid,
                 action_valid_mask=action_valid,
+                effect_valid_mask=future_valid,
                 effect_weight=cfg.utility_effect_weight,
                 temperature=cfg.utility_temperature,
             )
@@ -1546,14 +1747,14 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             losses["bridge"] = self.semantic_bridge.alignment_loss(
                 bridge, ctx.current_semantic_teacher
             )
-            if bool(supervised_rows.any().item()):
+            if bool(effect_supervised_rows.any().item()):
                 losses["gist"] = self.retrospective_gist.future_alignment_loss(
                     required_gist,
                     target_effect,
-                    sample_mask=supervised_rows,
+                    sample_mask=effect_supervised_rows,
                     magnitude_weight=cfg.magnitude_weight,
                 )
-            if bool(supervised_rows.any().item()):
+            if bool(effect_supervised_rows.any().item()):
                 # Ordinary demonstrations provide one factual transition:
                 # current world + executed GT action -> observed future
                 # semantic delta.  Train the exact same predictor used for
@@ -1561,7 +1762,7 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
                 factual_effect = self.retrospective_event_adapter.predict_effects(
                     actions=ctx.target_action.unsqueeze(1),
                     observed_effect_prior=torch.zeros_like(target_effect).unsqueeze(1),
-                    candidate_valid_mask=supervised_rows.unsqueeze(1),
+                    candidate_valid_mask=effect_supervised_rows.unsqueeze(1),
                     world_tokens=bridge.world_tokens,
                     world_mask=bridge.token_mask,
                 )
@@ -1569,7 +1770,7 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
                     self.retrospective_event_adapter.effect_alignment_loss(
                         factual_effect,
                         target_effect,
-                        candidate_mask=supervised_rows.unsqueeze(1),
+                        candidate_mask=effect_supervised_rows.unsqueeze(1),
                         magnitude_weight=cfg.magnitude_weight,
                     )
                 )
@@ -1579,7 +1780,9 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
                 # hard-negative rows are excluded.  Together with the zero-
                 # prior factual call above, this trains the stored-effect prior
                 # without permitting a pure identity shortcut.
-                candidate_effect_rows = utility.valid_rows & non_hard_rows
+                candidate_effect_rows = (
+                    utility.valid_rows & effect_supervised_rows & non_hard_rows
+                )
                 if bool(candidate_effect_rows.any().item()):
                     candidate_effect_weights = utility.probabilities * (
                         candidate_effect_rows.unsqueeze(1).to(
@@ -1605,8 +1808,9 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
                 ctx.target_action,
                 selected_effect,
                 target_effect,
-                selection.memory_mask & supervised_rows,
+                selection.memory_mask & action_supervised_rows,
                 action_valid_mask=action_valid,
+                effect_valid_mask=future_valid,
                 effect_weight=cfg.gate_effect_weight,
                 temperature=cfg.gate_temperature,
             )
@@ -1615,8 +1819,13 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
                 torch.zeros_like(gate_target),
                 gate_target,
             )
+            gate_target_metric = gate_target
+            gate_supervised_mask = action_supervised_rows
             losses["gate"] = utility_supervised_gate_bce(
-                gate, gate_target, sample_mask=supervised_rows
+                gate,
+                gate_target,
+                sample_mask=action_supervised_rows,
+                include_null_rows=True,
             )
             action_squared = (
                 event.adapted_action_mean.float()
@@ -1665,6 +1874,25 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             if bool(forced_rejection.any().item())
             else zero
         )
+        gate_positive_rows = gate_supervised_mask & (gate_target_metric >= 0.5)
+        gate_negative_rows = gate_supervised_mask & (gate_target_metric < 0.5)
+        gate_positive_probability = (
+            gate.probability[gate_positive_rows].mean()
+            if bool(gate_positive_rows.any().item())
+            else zero
+        )
+        gate_negative_probability = (
+            gate.probability[gate_negative_rows].mean()
+            if bool(gate_negative_rows.any().item())
+            else zero
+        )
+        gate_brier = (
+            (gate.probability[gate_supervised_mask] - gate_target_metric[gate_supervised_mask])
+            .square()
+            .mean()
+            if bool(gate_supervised_mask.any().item())
+            else zero
+        )
         metrics = {
             "loss_warm_retrieval": losses["retrieval"],
             "loss_warm_bridge": losses["bridge"],
@@ -1679,6 +1907,16 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             "warm_forced_rejection_rate": forced_rejection.float().mean(),
             "warm_normal_source_exposure_mean": normal_source_exposure,
             "warm_forced_source_leak_mean": forced_source_leak,
+            "warm_gate_target_mean": (
+                gate_target_metric[gate_supervised_mask].mean()
+                if bool(gate_supervised_mask.any().item())
+                else zero
+            ),
+            "warm_gate_positive_probability": gate_positive_probability,
+            "warm_gate_negative_probability": gate_negative_probability,
+            "warm_gate_positive_row_rate": gate_positive_rows.float().mean(),
+            "warm_gate_negative_row_rate": gate_negative_rows.float().mean(),
+            "warm_gate_brier": gate_brier,
             "warm_stagnation_mean": stagnation.mean(),
             "warm_consequence_mean": selection_consistency[valid].mean()
             if bool(valid.any().item())
@@ -1768,6 +2006,9 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
         episode_mask: torch.Tensor | np.ndarray | None,
         episode_action_summaries: torch.Tensor | np.ndarray | None,
         episode_action_mask: torch.Tensor | np.ndarray | None,
+        episode_role_ids: torch.Tensor | np.ndarray | None,
+        episode_relative_age: torch.Tensor | np.ndarray | None,
+        episode_action_relative_age: torch.Tensor | np.ndarray | None,
     ) -> RetrospectiveSourceContext:
         cfg = self._require_retrospection()
 
@@ -1786,6 +2027,8 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             "start_proprio": (expected_k, cfg.proprio_dim),
             "gripper_timing": (expected_k, cfg.timing_dim),
             "support": (expected_k,),
+            "normalized_phase": (expected_k,),
+            "event_ordinal": (expected_k,),
         }
         for field, expected in expected_shapes.items():
             if tuple(np.asarray(getattr(facts, field)).shape) != expected:
@@ -1839,6 +2082,41 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
                     raise WarmRetrospectionError(
                         "online episode_mask must match episode_tokens"
                     )
+        if episode_role_ids is None:
+            role_ids = torch.full(
+                episode_valid.shape,
+                EPISODE_ROLE_EVENT,
+                device=self.device,
+                dtype=torch.long,
+            ).masked_fill(~episode_valid, EPISODE_ROLE_PADDING)
+        else:
+            role_ids = torch.as_tensor(
+                episode_role_ids, device=self.device, dtype=torch.long
+            )
+            if role_ids.ndim == 1:
+                role_ids = role_ids.unsqueeze(0)
+            if role_ids.shape != episode_valid.shape:
+                raise WarmRetrospectionError(
+                    "online episode_role_ids must match episode_tokens"
+                )
+        if episode_relative_age is None:
+            relative_age = torch.zeros(
+                episode_valid.shape,
+                device=self.device,
+                dtype=self.torch_dtype,
+            )
+        else:
+            relative_age = torch.as_tensor(
+                episode_relative_age,
+                device=self.device,
+                dtype=self.torch_dtype,
+            )
+            if relative_age.ndim == 1:
+                relative_age = relative_age.unsqueeze(0)
+            if relative_age.shape != episode_valid.shape:
+                raise WarmRetrospectionError(
+                    "online episode_relative_age must match episode_tokens"
+                )
         if episode_action_summaries is None:
             action_history = torch.zeros(
                 (1, 1, cfg.episode_action_summary_dim),
@@ -1878,28 +2156,58 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
                     raise WarmRetrospectionError(
                         "online episode_action_mask must match action summaries"
                     )
+        if episode_action_relative_age is None:
+            action_relative_age = torch.zeros(
+                action_history_valid.shape,
+                device=self.device,
+                dtype=self.torch_dtype,
+            )
+        else:
+            action_relative_age = torch.as_tensor(
+                episode_action_relative_age,
+                device=self.device,
+                dtype=self.torch_dtype,
+            )
+            if action_relative_age.ndim == 1:
+                action_relative_age = action_relative_age.unsqueeze(0)
+            if action_relative_age.shape != action_history_valid.shape:
+                raise WarmRetrospectionError(
+                    "online episode_action_relative_age must match action summaries"
+                )
         thread_prior, thread_source_eligible, thread_action_offset = (
             self._online_thread_constraints(online_step)
         )
-        actions, starts, timing = _advance_online_candidate_payload(
-            actions=np.asarray(online_step.candidate_means),
-            start_proprio=np.asarray(facts.start_proprio),
-            timing=np.asarray(facts.gripper_timing),
-            offsets=thread_action_offset[0].cpu().numpy(),
-            valid=np.asarray(facts.candidate_valid_mask),
-            config=cfg,
-        )
+        candidate_means = np.asarray(online_step.candidate_means, dtype=np.float32)
+        if cfg.canonical_gripper_dims:
+            candidate_timing = _gripper_timing_from_actions(
+                candidate_means,
+                np.asarray(facts.start_proprio, dtype=np.float32),
+                np.asarray(facts.candidate_valid_mask, dtype=np.bool_),
+                tuple(cfg.canonical_gripper_dims),
+            )
+        else:
+            candidate_timing = np.asarray(facts.gripper_timing, dtype=np.float32)
         return RetrospectiveSourceContext(
             query_context=tensor(online_step.context_key, self.torch_dtype),
             candidate_context=tensor(facts.context_keys, self.torch_dtype),
-            candidate_actions=tensor(actions, self.torch_dtype),
-            candidate_start_proprio=tensor(starts, self.torch_dtype),
+            candidate_actions=tensor(
+                candidate_means, self.torch_dtype
+            ),
+            candidate_start_proprio=tensor(
+                np.asarray(facts.start_proprio), self.torch_dtype
+            ),
             candidate_effect_pre=tensor(facts.effect_pre, self.torch_dtype),
             candidate_effect_delta=tensor(
                 facts.effect_delta, self.torch_dtype
             ),
-            candidate_timing=tensor(timing, self.torch_dtype),
+            candidate_timing=tensor(
+                candidate_timing, self.torch_dtype
+            ),
             candidate_support=tensor(facts.support, self.torch_dtype),
+            candidate_normalized_phase=tensor(
+                facts.normalized_phase, self.torch_dtype
+            ),
+            candidate_event_ordinal=tensor(facts.event_ordinal, torch.long),
             candidate_valid_mask=tensor(
                 facts.candidate_valid_mask, torch.bool
             ),
@@ -1907,6 +2215,9 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             episode_mask=episode_valid,
             episode_action_summaries=action_history,
             episode_action_mask=action_history_valid,
+            episode_role_ids=role_ids,
+            episode_relative_age=relative_age,
+            episode_action_relative_age=action_relative_age,
             candidate_thread_prior=thread_prior,
             candidate_thread_source_eligible=thread_source_eligible,
             candidate_thread_action_offset=thread_action_offset,
@@ -1921,6 +2232,9 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
         episode_mask: torch.Tensor | np.ndarray | None = None,
         episode_action_summaries: torch.Tensor | np.ndarray | None = None,
         episode_action_mask: torch.Tensor | np.ndarray | None = None,
+        episode_role_ids: torch.Tensor | np.ndarray | None = None,
+        episode_relative_age: torch.Tensor | np.ndarray | None = None,
+        episode_action_relative_age: torch.Tensor | np.ndarray | None = None,
         negative_prompt: str | None = None,
         text_cfg_scale: float = 1.0,
         num_inference_steps: int = 20,
@@ -1960,6 +2274,9 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             episode_mask=episode_mask,
             episode_action_summaries=episode_action_summaries,
             episode_action_mask=episode_action_mask,
+            episode_role_ids=episode_role_ids,
+            episode_relative_age=episode_relative_age,
+            episode_action_relative_age=episode_action_relative_age,
         )
         output = FastWAM.infer_action(
             self,
@@ -2023,35 +2340,12 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             .cpu()
             .item()
         )
-        phase_was_exhausted = (
-            self._warm_thread_query_frame is not None
-            and int(online_step.query_id.frame_index)
-            - int(self._warm_thread_query_frame)
-            >= self._require_retrospection().action_horizon
-        )
         if source_memory_selected and selected_event is not None:
-            previous_event = self._warm_thread_event
-            if (
-                previous_event is None
-                or self._warm_thread_query_frame is None
-                or int(selected_event.start_frame)
-                > int(previous_event.start_frame)
-                + self._require_retrospection().thread_backtrack_tolerance
-            ):
-                # Only a genuinely later event advances the causal phase
-                # clock.  Same-phase exemplars retain the original anchor.
-                self._warm_thread_event = selected_event
-                self._warm_thread_query_frame = int(
-                    online_step.query_id.frame_index
-                )
+            self._warm_thread_event = selected_event
+            self._warm_thread_query_frame = int(online_step.query_id.frame_index)
             self._warm_thread_episode_index = int(
                 online_step.query_id.episode_index
             )
-            self._warm_thread_null_steps = 0
-        elif phase_was_exhausted:
-            # This is the deliberate fallback for an exhausted phase.  Keep
-            # its high-water mark even if ranking chooses the null component:
-            # three Gaussian replans must not reopen the exact same event loop.
             self._warm_thread_null_steps = 0
         else:
             self._warm_thread_null_steps += 1
@@ -2060,6 +2354,18 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             ):
                 self._warm_thread_event = None
                 self._warm_thread_query_frame = None
+        staged_successor = retriever.stage_selected_successor(
+            online_step,
+            selected_index,
+            source_accepted=bool(
+                source_memory_selected
+                and selected_event is not None
+                and selected_thread_eligible
+            ),
+        )
+        output["warm_retrospection"]["staged_successor_row"] = int(
+            staged_successor
+        )
         output["warm_online_telemetry"] = _json_safe(
             {
                 "experiment": {
@@ -2194,7 +2500,10 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             "utility_reranker",
             "source_confidence_gate",
             "episode_action_projection",
+            "episode_role_embedding",
+            "episode_age_projection",
             "episode_query_projection",
+            "candidate_phase_projection",
             "gist_to_text",
             "action_context_to_text",
             "video_layer_adapters",
@@ -2258,7 +2567,10 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             "utility_reranker",
             "source_confidence_gate",
             "episode_action_projection",
+            "episode_role_embedding",
+            "episode_age_projection",
             "episode_query_projection",
+            "candidate_phase_projection",
             "gist_to_text",
             "action_context_to_text",
             "video_layer_adapters",
@@ -2300,7 +2612,10 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             "utility_reranker",
             "source_confidence_gate",
             "episode_action_projection",
+            "episode_role_embedding",
+            "episode_age_projection",
             "episode_query_projection",
+            "candidate_phase_projection",
             "gist_to_text",
             "action_context_to_text",
             "video_layer_adapters",

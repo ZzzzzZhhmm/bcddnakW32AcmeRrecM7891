@@ -111,7 +111,9 @@ def _resolve_context_len(context_lens: set[int]) -> int:
     return next(iter(context_lens))
 
 
-def _read_unique_prompts(dataset_dirs: list[str]) -> list[str]:
+def _read_unique_prompts(
+    dataset_dirs: list[str], *, include_rmbench_unseen: bool = False
+) -> list[str]:
     prompts: list[str] = []
     seen = set()
     total_task_rows = 0
@@ -135,6 +137,44 @@ def _read_unique_prompts(dataset_dirs: list[str]) -> list[str]:
                 if prompt not in seen:
                     seen.add(prompt)
                     prompts.append(prompt)
+
+        # Converted RMBench datasets retain every official language variant
+        # without duplicating videos or parquet rows.  Cache all *seen*
+        # variants so the training dataset can choose them deterministically.
+        # Unseen evaluation wording is deliberately excluded unless the caller
+        # explicitly labels this cache generation as transductive.
+        variants_path = Path(ds_dir) / "meta" / "warm_instruction_variants.jsonl"
+        if variants_path.is_file():
+            for line_idx, line in enumerate(
+                variants_path.read_text(encoding="utf-8").splitlines(), start=1
+            ):
+                if not line.strip():
+                    continue
+                record = json.loads(line)
+                expected = {"episode_index", "primary", "seen", "unseen"}
+                if not isinstance(record, dict) or set(record) != expected:
+                    raise ValueError(
+                        f"Invalid RMBench instruction variants at "
+                        f"{variants_path}:{line_idx}"
+                    )
+                fields = ("seen", "unseen") if include_rmbench_unseen else ("seen",)
+                for field in fields:
+                    values = record[field]
+                    if not isinstance(values, list):
+                        raise TypeError(
+                            f"{variants_path}:{line_idx}:{field} must be a list"
+                        )
+                    for task in values:
+                        if not isinstance(task, str) or not task:
+                            raise ValueError(
+                                f"{variants_path}:{line_idx}:{field} contains "
+                                "an invalid instruction"
+                            )
+                        prompt = DEFAULT_PROMPT.format(task=task)
+                        total_task_rows += 1
+                        if prompt not in seen:
+                            seen.add(prompt)
+                            prompts.append(prompt)
 
     logger.info(
         "Loaded %d task rows from %d datasets, deduplicated to %d prompts.",
@@ -199,7 +239,18 @@ def main(cfg: DictConfig):
     else:
         if not dataset_dirs:
             raise ValueError("No `dataset_dirs` found under `cfg.data`.")
-        prompts = _read_unique_prompts(dataset_dirs)
+        include_unseen = _to_bool(
+            cfg.get("include_rmbench_unseen_in_text_cache", False)
+        )
+        if include_unseen:
+            logger.warning(
+                "include_rmbench_unseen_in_text_cache=true: this is an explicit "
+                "transductive RMBench cache and must not be reported as the "
+                "publication-fair protocol"
+            )
+        prompts = _read_unique_prompts(
+            dataset_dirs, include_rmbench_unseen=include_unseen
+        )
     if not prompts:
         logger.warning("No prompts found from tasks.jsonl; nothing to do.")
         return

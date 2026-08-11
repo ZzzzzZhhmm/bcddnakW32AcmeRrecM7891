@@ -66,6 +66,33 @@ case "${STAGE}" in
   shared|specialist) ;;
   *) warm_die "WARM_RMBENCH_STAGE must be shared or specialist" ;;
 esac
+INITIALIZATION_CHECKPOINT="${WARM_INITIALIZATION_CHECKPOINT:-}"
+INITIALIZATION_PARENT_CONFIG="${WARM_INITIALIZATION_PARENT_CONFIG:-}"
+INITIALIZATION_FORK_MANIFEST="${WARM_INITIALIZATION_FORK_MANIFEST:-}"
+INITIALIZATION_FORK_REASON="${WARM_INITIALIZATION_FORK_REASON:-}"
+ALLOW_DIRECT_BASE_SPECIALIST="${WARM_RMBENCH_ALLOW_DIRECT_BASE_SPECIALIST:-false}"
+if [[ "${ALLOW_DIRECT_BASE_SPECIALIST}" != "true" && \
+      "${ALLOW_DIRECT_BASE_SPECIALIST}" != "false" ]]; then
+  warm_die "WARM_RMBENCH_ALLOW_DIRECT_BASE_SPECIALIST must be true or false"
+fi
+if [[ "${STAGE}" == "shared" ]]; then
+  if [[ -n "${INITIALIZATION_CHECKPOINT}${INITIALIZATION_PARENT_CONFIG}${INITIALIZATION_FORK_MANIFEST}${INITIALIZATION_FORK_REASON}" ]]; then
+    warm_die "shared training cannot consume specialist-fork initialization"
+  fi
+elif [[ -n "${INITIALIZATION_CHECKPOINT}" ]]; then
+  warm_require_file_or_directory \
+    "${INITIALIZATION_CHECKPOINT}" \
+    "${INITIALIZATION_CHECKPOINT%.pt}.training.json" \
+    "${INITIALIZATION_PARENT_CONFIG}"
+  [[ -n "${INITIALIZATION_FORK_MANIFEST}" ]] \
+    || warm_die "WARM_INITIALIZATION_FORK_MANIFEST is required"
+  [[ -n "${INITIALIZATION_FORK_REASON}" ]] \
+    || warm_die "WARM_INITIALIZATION_FORK_REASON is required"
+  [[ -z "${WARM_RESUME_STATE}" ]] \
+    || warm_die "specialist initialization and WARM_RESUME_STATE are mutually exclusive"
+elif [[ "${ALLOW_DIRECT_BASE_SPECIALIST}" != "true" ]]; then
+  warm_die "specialist training requires a shared WARM checkpoint; direct base is opt-in only"
+fi
 
 M1="${WARM_ARTIFACT_ROOT}/m1"
 M2="${WARM_ARTIFACT_ROOT}/m2"
@@ -76,10 +103,12 @@ DEV_CONTRACT="${M2}/contracts/hybrid_h32_dev_source.json"
 TRAIN_STATS="${M1}/train_stats/dataset_stats.json"
 CATALOG="${M1}/rmbench_catalog.json"
 AUDIT="${M1}/rmbench_audit.json"
+QUALIFICATION="${M1}/qualification/rmbench_h32.json"
 
 warm_require_file_or_directory \
   "${FASTWAM_BASE_CHECKPOINT}" \
   "${RMBENCH_LEROBOT_ROOT}" \
+  "${RMBENCH_LEROBOT_ROOT}/meta/warm_instruction_variants.jsonl" \
   "${RMBENCH_TEXT_CACHE}" \
   "${M1}/rmbench_conversion_manifest.json" \
   "${CATALOG}" \
@@ -89,6 +118,7 @@ warm_require_file_or_directory \
   "${M1}/features/train_features.list" \
   "${M1}/features/dev_features.list" \
   "${M1}/banks/hybrid_h32" \
+  "${QUALIFICATION}" \
   "${TRAIN_CACHE}" \
   "${DEV_CACHE}" \
   "${TRAIN_CONTRACT}" \
@@ -154,6 +184,26 @@ python scripts/validate_rmbench_conversion.py \
   --rmbench-code-revision "${RMBENCH_CODE_REVISION}" \
   --skip-artifact-byte-hashes
 
+# Recompute the no-training acceptance gate from immutable bytes.  Merely
+# finding a stale JSON report is insufficient: any bank/cache rebuild or
+# changed threshold must fail before a GPU process is launched.
+python scripts/qualify_warm_rmbench_artifacts.py \
+  --bank "${M1}/banks/hybrid_h32" \
+  --train-feature-list "${M1}/features/train_features.list" \
+  --train-candidate-cache "${TRAIN_CACHE}" \
+  --dev-feature-list "${M1}/features/dev_features.list" \
+  --dev-candidate-cache "${DEV_CACHE}" \
+  --output "${QUALIFICATION}" \
+  --action-horizon 32 \
+  --query-stride 4 \
+  --max-event-stride 4 \
+  --phase-tolerance 0.10 \
+  --phase-recall-threshold 32=0.85 \
+  --phase-recall-threshold 128=0.95 \
+  --parity-max-queries 2048 \
+  --require-partial-action-queries \
+  --verify-existing
+
 NPROC_PER_NODE="${NPROC_PER_NODE:-1}"
 NUM_MACHINES="${NUM_MACHINES:-${NNODES:-1}}"
 export NUM_MACHINES
@@ -203,7 +253,7 @@ for override in "$@"; do
   key="${key#+}"
   key="${key#~}"
   case "${key}" in
-    task|data|data.*|model|model.*|output_dir|resume|seed|max_steps|run_steps|batch_size|gradient_accumulation_steps|sampler|sampler.*|wandb.enabled|wandb.mode|--config-name|--config-name*)
+    task|data|data.*|model|model.*|output_dir|resume|initialization_checkpoint|initialization_fork_manifest|rmbench_training_stage|allow_direct_base_specialist|seed|max_steps|run_steps|batch_size|gradient_accumulation_steps|sampler|sampler.*|wandb.enabled|wandb.mode|--config-name|--config-name*)
       warm_die "protected formal-training override is not allowed: ${override}"
       ;;
   esac
@@ -217,6 +267,8 @@ TRAIN_OVERRIDES=(
   "model.run_contract_path=${TRAIN_CONTRACT}"
   "model.validation_run_contract_path=${DEV_CONTRACT}"
   "model.base_checkpoint_path=${FASTWAM_BASE_CHECKPOINT}"
+  "rmbench_training_stage=${STAGE}"
+  "allow_direct_base_specialist=${ALLOW_DIRECT_BASE_SPECIALIST}"
   "seed=${ROOT_SEED}"
   "max_steps=${TRAIN_STEPS}"
   "batch_size=${PER_DEVICE_BATCH_SIZE}"
@@ -249,6 +301,12 @@ TRAIN_OVERRIDES=(
   "data.warm_candidates.val.retrospective_action_summary_chunk_size=${REPLAN_STEPS}"
   "model.retrospection.episode_action_chunk_size=${REPLAN_STEPS}"
 )
+if [[ -n "${INITIALIZATION_CHECKPOINT}" ]]; then
+  TRAIN_OVERRIDES+=(
+    "initialization_checkpoint=${INITIALIZATION_CHECKPOINT}"
+    "initialization_fork_manifest=${INITIALIZATION_FORK_MANIFEST}"
+  )
+fi
 if [[ -n "${WARM_RESUME_STATE}" ]]; then
   TRAIN_OVERRIDES+=("resume=${WARM_RESUME_STATE}")
 fi
@@ -272,6 +330,16 @@ if [[ "${WARM_PREFLIGHT_RESOLVE:-true}" == "true" ]]; then
   mv -f -- "${PREFLIGHT_TEMP}" "${PREFLIGHT_OUTPUT}"
   trap - EXIT
   printf 'RMBench Hydra preflight: %s\n' "${PREFLIGHT_OUTPUT}"
+  if [[ -n "${INITIALIZATION_CHECKPOINT}" ]]; then
+    python scripts/build_warm_training_fork_manifest.py \
+      --parent-checkpoint "${INITIALIZATION_CHECKPOINT}" \
+      --parent-config "${INITIALIZATION_PARENT_CONFIG}" \
+      --child-config "${PREFLIGHT_OUTPUT}" \
+      --output "${INITIALIZATION_FORK_MANIFEST}" \
+      --fork-reason "${INITIALIZATION_FORK_REASON}"
+  fi
+elif [[ -n "${INITIALIZATION_CHECKPOINT}" ]]; then
+  warm_die "formal specialist fork requires WARM_PREFLIGHT_RESOLVE=true"
 fi
 
 exec bash scripts/train_zero1.sh "${NPROC_PER_NODE}" "${TRAIN_OVERRIDES[@]}"

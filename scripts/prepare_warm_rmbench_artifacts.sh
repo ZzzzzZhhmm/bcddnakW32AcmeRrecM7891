@@ -15,6 +15,14 @@ RMBENCH_SOURCE_REVISION="${RMBENCH_SOURCE_REVISION:-${RMBENCH_DATASET_REVISION}}
 WARM_RMBENCH_DATA_PROFILE="${WARM_RMBENCH_DATA_PROFILE:-official50-dev45}"
 RMBENCH_SOURCE_DATASET="${RMBENCH_SOURCE_DATASET:-TianxingChen/RMBench}"
 RMBENCH_DATASET_ID="${RMBENCH_DATASET_ID:-rmbench_demo_clean_v1}"
+# One bank anchor per closed-loop replan interval.
+# Change-point/gripper events are unioned with these dense anchors by hybrid
+# mining, so event semantics remain factual and no online suffix shifting is
+# needed to manufacture intermediate phases.
+WARM_RMBENCH_REPLAN_STRIDE="${WARM_RMBENCH_REPLAN_STRIDE:-4}"
+if [[ ! "${WARM_RMBENCH_REPLAN_STRIDE}" =~ ^[1-9][0-9]*$ ]]; then
+  warm_die "WARM_RMBENCH_REPLAN_STRIDE must be a positive integer"
+fi
 
 warm_require_env \
   WARM_ARTIFACT_ROOT \
@@ -133,6 +141,7 @@ python scripts/build_warm_event_bank.py \
   --encoder-contract "${FEATURES}/contracts/encoder_contract.json" \
   --camera-contract "${FEATURES}/contracts/camera_contract.json" \
   --action-horizon 32 \
+  --uniform-stride "${WARM_RMBENCH_REPLAN_STRIDE}" \
   --start-mode hybrid
 
 python scripts/evaluate_warm_oracle.py \
@@ -141,7 +150,7 @@ python scripts/evaluate_warm_oracle.py \
   --catalog "${M1}/rmbench_catalog.json" \
   --audit-report "${AUDIT}" \
   --output "${M1}/oracle/hybrid_h32.json" \
-  --query-stride 4 \
+  --query-stride "${WARM_RMBENCH_REPLAN_STRIDE}" \
   --top-k 1,4,8,16,32 \
   --arm-loss mse
 
@@ -153,6 +162,9 @@ for split in train dev; do
     feature_list="${FEATURES}/dev_features.list"
     cache="${DEV_CANDIDATES}"
   fi
+  # Candidate caches remain frame-complete because the runtime dataset
+  # binds samples to exact QueryIds; phase-aware sampling is a training
+  # policy, not a lossy cache-build shortcut.
   python scripts/build_warm_candidate_cache.py \
     --bank "${BANK}" \
     --catalog "${M1}/rmbench_catalog.json" \
@@ -161,9 +173,31 @@ for split in train dev; do
     --output "${cache}" \
     --query-split "${split}" \
     --query-stride 1 \
+    --include-partial-action-queries \
     --top-k 32 \
     --summary "${M2}/candidates/hybrid_h32_${split}_k32.summary.json"
 done
+
+# No expensive WARM optimization is allowed to consume a merely
+# schema-valid bank.  Prove dense temporal chains, phase coverage in every
+# trajectory third, and exact train/dev teacher-forced retrieval parity first.
+python scripts/qualify_warm_rmbench_artifacts.py \
+  --bank "${BANK}" \
+  --train-feature-list "${FEATURES}/train_features.list" \
+  --train-candidate-cache "${TRAIN_CANDIDATES}" \
+  --dev-feature-list "${FEATURES}/dev_features.list" \
+  --dev-candidate-cache "${DEV_CANDIDATES}" \
+  --output "${M1}/qualification/rmbench_h32.json" \
+  --action-horizon 32 \
+  --query-stride "${WARM_RMBENCH_REPLAN_STRIDE:-4}" \
+  --max-event-stride "${WARM_RMBENCH_REPLAN_STRIDE:-4}" \
+  --phase-tolerance "${WARM_RMBENCH_PHASE_TOLERANCE:-0.10}" \
+  --phase-recall-threshold \
+    "32=${WARM_RMBENCH_MIN_PHASE_RECALL_K32:-0.85}" \
+  --phase-recall-threshold \
+    "128=${WARM_RMBENCH_MIN_PHASE_RECALL_K128:-0.95}" \
+  --parity-max-queries "${WARM_RMBENCH_PARITY_MAX_QUERIES:-2048}" \
+  --require-partial-action-queries
 
 python scripts/build_warm_source_run_contract.py \
   --bank "${BANK}" \
@@ -188,4 +222,5 @@ printf '%s\n' \
   "  dataset:       ${RMBENCH_LEROBOT_ROOT}" \
   "  train contract: ${TRAIN_CONTRACT}" \
   "  dev contract:   ${DEV_CONTRACT}" \
-  "  oracle report:  ${M1}/oracle/hybrid_h32.json"
+  "  oracle report:  ${M1}/oracle/hybrid_h32.json" \
+  "  qualification:  ${M1}/qualification/rmbench_h32.json"

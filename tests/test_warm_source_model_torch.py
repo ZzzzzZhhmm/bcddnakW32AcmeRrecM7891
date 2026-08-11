@@ -205,7 +205,8 @@ class _OnlineDino:
     def encode(_frames, *, batch_size):
         assert batch_size == 1
         return SimpleNamespace(
-            cls=np.asarray([[1.0, 0.0]], dtype=np.float32)
+            cls=np.asarray([[1.0, 0.0]], dtype=np.float32),
+            spatial=np.arange(8, dtype=np.float32).reshape(1, 4, 2),
         )
 
 
@@ -1199,6 +1200,118 @@ def test_deepspeed_numerics_contract_requires_observable_overflow_state() -> Non
     trainer.model.optimizer.check_grad_overflow = False
     with pytest.raises(RuntimeError, match="did not enable"):
         trainer._validate_deepspeed_numerics_contract()
+
+
+def test_gradient_evidence_hooks_survive_post_backward_grad_clear() -> None:
+    class Branches(torch.nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            for name in (
+                "action_expert",
+                "proprio_encoder",
+                "semantic_bridge",
+                "retrospective_gist",
+                "gist_to_text",
+                "retrospective_event_adapter",
+                "action_context_to_text",
+                "utility_reranker",
+                "source_confidence_gate",
+                "episode_action_projection",
+                "episode_role_embedding",
+                "episode_age_projection",
+                "episode_query_projection",
+                "candidate_phase_projection",
+            ):
+                setattr(self, name, torch.nn.Linear(2, 2))
+            self.video_layer_adapters = torch.nn.ModuleDict(
+                {"0": torch.nn.Linear(2, 2)}
+            )
+
+    model = Branches()
+
+    class Accelerator:
+        device = torch.device("cpu")
+
+        @staticmethod
+        def unwrap_model(_model):
+            return _model
+
+        @staticmethod
+        def reduce(value, reduction):
+            assert reduction == "sum"
+            return value
+
+    trainer = object.__new__(Wan22Trainer)
+    trainer.model = model
+    trainer.accelerator = Accelerator()
+    trainer._warm_gradient_hook_squares = {}
+    trainer._warm_gradient_hook_handles = []
+    trainer._install_warm_gradient_evidence_hooks()
+
+    value = torch.ones(1, 2)
+    loss = sum(
+        module(value).sum()
+        for module in model.children()
+        if not isinstance(module, torch.nn.ModuleDict)
+    ) + model.video_layer_adapters["0"](value).sum()
+    loss.backward()
+    # Reproduce DeepSpeed engine.step()/zero_grad before trainer telemetry.
+    model.zero_grad(set_to_none=True)
+    norms = trainer._warm_gradient_group_norms()
+
+    assert set(norms) == {
+        "warm_grad_action_expert",
+        "warm_grad_proprio_bridge",
+        "warm_grad_semantic_bridge",
+        "warm_grad_gist",
+        "warm_grad_event_adapter",
+        "warm_grad_reranker",
+        "warm_grad_source_gate",
+        "warm_grad_episode_memory",
+        "warm_grad_video_adapters",
+    }
+    assert all(value > 0.0 for value in norms.values())
+    assert all(
+        value == 0.0 for value in trainer._warm_gradient_group_norms().values()
+    )
+    for handle in trainer._warm_gradient_hook_handles:
+        handle.remove()
+
+
+def test_deterministic_dev_subset_round_robins_tasks_before_strata() -> None:
+    strata = tuple(
+        (task, f"{task}-episode-{episode}", progress, critical)
+        for task in ("a", "b", "c")
+        for episode in range(2)
+        for progress in range(3)
+        for critical in (False, True)
+    )
+
+    class Dataset:
+        def __len__(self) -> int:
+            return len(strata)
+
+        def sampling_strata(self):
+            return strata
+
+    trainer = object.__new__(Wan22Trainer)
+    trainer.val_dataset = Dataset()
+    trainer.eval_num_samples = 9
+    trainer.seed = 3407
+    trainer.global_step = 500
+    trainer.accelerator = SimpleNamespace(num_processes=1)
+
+    first = trainer._deterministic_eval_indices()
+    second = trainer._deterministic_eval_indices()
+
+    assert first == second
+    assert len(first) == len(set(first)) == 9
+    selected_tasks = [strata[index][0] for index in first]
+    assert {task: selected_tasks.count(task) for task in ("a", "b", "c")} == {
+        "a": 3,
+        "b": 3,
+        "c": 3,
+    }
 
 
 class _AcceleratorStub:

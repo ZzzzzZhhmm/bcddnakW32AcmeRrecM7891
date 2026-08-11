@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Four-H100 ACP entrypoint for one official50 RMBench WARM specialist.
+# Four-H100 ACP entrypoint for official50 RMBench WARM shared/specialist runs.
 #
 # The primary checkout is an operator workspace: it may be updated while long
 # jobs are running. Formal checkpoint attestations require the code tree to
@@ -16,6 +16,7 @@ set -euo pipefail
 PROJECT_DIR="${PROJECT_DIR:-/mnt/afs/task3_2/L202500276_lwz/projects/WARM}"
 CONDA_ENV_DIR="${CONDA_ENV_DIR:-/mnt/afs/task3_2/L202500276_lwz/envs/warm}"
 WARM_RMBENCH_SPECIALIST_TASK="${WARM_RMBENCH_SPECIALIST_TASK:-}"
+WARM_RMBENCH_STAGE="${WARM_RMBENCH_STAGE:-specialist}"
 CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES:-0,1,2,3}"
 WARM_TRAIN_CODE_DIR="${WARM_TRAIN_CODE_DIR:-}"
 
@@ -36,16 +37,23 @@ register_git_safe_directory() {
   fi
 }
 
-if [[ -z "${WARM_RMBENCH_SPECIALIST_TASK}" ]]; then
-  fail "WARM_RMBENCH_SPECIALIST_TASK is required"
-fi
-
-case "${WARM_RMBENCH_SPECIALIST_TASK}" in
-  observe_and_pickup|rearrange_blocks|put_back_block|swap_blocks|swap_T|\
-  blocks_ranking_try|press_button|cover_blocks|battery_try) ;;
-  *)
-    fail "unsupported RMBench specialist task: ${WARM_RMBENCH_SPECIALIST_TASK}"
+case "${WARM_RMBENCH_STAGE}" in
+  shared)
+    [[ -z "${WARM_RMBENCH_SPECIALIST_TASK}" ]] \
+      || fail "shared stage must not set WARM_RMBENCH_SPECIALIST_TASK"
     ;;
+  specialist)
+    [[ -n "${WARM_RMBENCH_SPECIALIST_TASK}" ]] \
+      || fail "specialist stage requires WARM_RMBENCH_SPECIALIST_TASK"
+    case "${WARM_RMBENCH_SPECIALIST_TASK}" in
+      observe_and_pickup|rearrange_blocks|put_back_block|swap_blocks|swap_T|\
+      blocks_ranking_try|press_button|cover_blocks|battery_try) ;;
+      *)
+        fail "unsupported RMBench specialist task: ${WARM_RMBENCH_SPECIALIST_TASK}"
+        ;;
+    esac
+    ;;
+  *) fail "WARM_RMBENCH_STAGE must be shared or specialist" ;;
 esac
 
 if [[ ! -x "${CONDA_ENV_DIR}/bin/python" || \
@@ -105,6 +113,8 @@ if [[ -z "${WARM_TRAIN_CODE_DIR}" ]]; then
     PROJECT_DIR="${PROJECT_DIR}" \
     WARM_TRAIN_CODE_DIR="${TRAIN_CODE}" \
     WARM_CODE_REVISION="${TRAIN_COMMIT}" \
+    WARM_RMBENCH_STAGE="${WARM_RMBENCH_STAGE}" \
+    WARM_RMBENCH_SPECIALIST_TASK="${WARM_RMBENCH_SPECIALIST_TASK}" \
     bash "${TRAIN_CODE}/scripts/acp_warm_rmbench_specialist.sh" "$@"
 fi
 
@@ -127,7 +137,7 @@ cd "${WARM_TRAIN_CODE_DIR}"
 # not AFS, for compiler caches and locks.
 # shellcheck source=scripts/warm_server_common.sh
 source "${WARM_TRAIN_CODE_DIR}/scripts/warm_server_common.sh"
-WARM_JOB_LOCAL_CACHE_ROOT="${WARM_JOB_LOCAL_CACHE_ROOT:-/tmp/${USER:-warm}/warm-rmbench-cache/${HOSTNAME:-local}/${WARM_RMBENCH_SPECIALIST_TASK}}"
+WARM_JOB_LOCAL_CACHE_ROOT="${WARM_JOB_LOCAL_CACHE_ROOT:-/tmp/${USER:-warm}/warm-rmbench-cache/${HOSTNAME:-local}/${WARM_RMBENCH_SPECIALIST_TASK:-shared}}"
 warm_configure_job_local_caches "${WARM_JOB_LOCAL_CACHE_ROOT}" \
   || fail "job-local compiler cache preflight failed"
 
@@ -171,15 +181,56 @@ export WARM_ARTIFACT_ROOT="${WARM_ARTIFACT_ROOT:-${PROJECT_DIR}_artifacts/rmbenc
 export RMBENCH_LEROBOT_ROOT="${RMBENCH_LEROBOT_ROOT:-/mnt/afs/task3_2/L202500276_lwz/datasets/rmbench_official50_lerobot}"
 export RMBENCH_TEXT_CACHE="${RMBENCH_TEXT_CACHE:-${PROJECT_DIR}_artifacts/text/rmbench_official50_v1}"
 export FASTWAM_BASE_CHECKPOINT="${FASTWAM_BASE_CHECKPOINT:-${PROJECT_DIR}/checkpoints/fastwam_release/robotwin_uncond_3cam_384.pt}"
-export WARM_RMBENCH_DATA_PROFILE=official50-dev45
-export WARM_RMBENCH_STAGE=specialist
+export WARM_RMBENCH_DATA_PROFILE="${WARM_RMBENCH_DATA_PROFILE:-official50-dev45}"
+export WARM_RMBENCH_STAGE
 export WARM_RMBENCH_SPECIALIST_TASK
+case "${WARM_RMBENCH_DATA_PROFILE}" in
+  official50-dev45|scale200-dev190|scale500-dev480) ;;
+  *) fail "unsupported RMBench data profile: ${WARM_RMBENCH_DATA_PROFILE}" ;;
+esac
 
 SPECIALIST_RUN_ROOT="${WARM_SPECIALIST_RUN_ROOT:-${PROJECT_DIR}/runs/rmbench_official50_specialists}"
-# Retrospection checkpoint v6 adds a causal event-phase cursor.  It is
-# intentionally incompatible with v1-v3 specialists: older runtimes reset the
-# cursor on every same-event replan and can loop one memory source forever.
-export WARM_TRAIN_OUTPUT="${WARM_TRAIN_OUTPUT:-${SPECIALIST_RUN_ROOT}/${WARM_RMBENCH_SPECIALIST_TASK}-s3407-v4}"
+SHARED_RUN_ROOT="${WARM_SHARED_RUN_ROOT:-${PROJECT_DIR}/runs/rmbench_official50_shared}"
+# V5 uses dense factual events, explicit successor rows, same-domain typed
+# episode memory, independent dual-gripper timing, and checkpoint schema v8.
+# It is incompatible with earlier specialists whose sparse bank / phase
+# cursor could loop one source forever or collapse both gripper channels.
+if [[ "${WARM_RMBENCH_STAGE}" == "shared" ]]; then
+  export WARM_TRAIN_OUTPUT="${WARM_TRAIN_OUTPUT:-${SHARED_RUN_ROOT}/shared-${WARM_RMBENCH_DATA_PROFILE}-s3407-v5}"
+else
+  export WARM_TRAIN_OUTPUT="${WARM_TRAIN_OUTPUT:-${SPECIALIST_RUN_ROOT}/${WARM_RMBENCH_SPECIALIST_TASK}-${WARM_RMBENCH_DATA_PROFILE}-s3407-v5}"
+fi
+
+# A formal specialist starts from the complete shared WARM model, but with a
+# brand-new optimizer/scheduler/step trajectory.  Falling back to the generic
+# FastWAM base is intentionally noisy and requires an explicit research-only
+# acknowledgement.
+if [[ "${WARM_RMBENCH_STAGE}" == "specialist" ]]; then
+  WARM_RMBENCH_ALLOW_DIRECT_BASE_SPECIALIST="${WARM_RMBENCH_ALLOW_DIRECT_BASE_SPECIALIST:-false}"
+  if [[ "${WARM_RMBENCH_ALLOW_DIRECT_BASE_SPECIALIST}" != "true" && \
+        "${WARM_RMBENCH_ALLOW_DIRECT_BASE_SPECIALIST}" != "false" ]]; then
+    fail "WARM_RMBENCH_ALLOW_DIRECT_BASE_SPECIALIST must be true or false"
+  fi
+  if [[ -z "${WARM_RMBENCH_SHARED_CHECKPOINT:-}" ]]; then
+    WARM_RMBENCH_SHARED_CHECKPOINT="${SHARED_RUN_ROOT}/shared-${WARM_RMBENCH_DATA_PROFILE}-s3407-v5/checkpoints/weights/step_030000.pt"
+  fi
+  if [[ -f "${WARM_RMBENCH_SHARED_CHECKPOINT}" ]]; then
+    export WARM_INITIALIZATION_CHECKPOINT="$(cd -- "$(dirname -- "${WARM_RMBENCH_SHARED_CHECKPOINT}")" && pwd -P)/$(basename -- "${WARM_RMBENCH_SHARED_CHECKPOINT}")"
+    export WARM_INITIALIZATION_PARENT_CONFIG="$(dirname -- "$(dirname -- "$(dirname -- "${WARM_INITIALIZATION_CHECKPOINT}")")")/config.yaml"
+    export WARM_INITIALIZATION_FORK_MANIFEST="${WARM_TRAIN_OUTPUT}.fork.json"
+    export WARM_INITIALIZATION_FORK_REASON="shared nine-task WARM to ${WARM_RMBENCH_SPECIALIST_TASK} specialist; fresh optimizer/scheduler/step"
+    [[ -f "${WARM_INITIALIZATION_CHECKPOINT%.pt}.training.json" ]] \
+      || fail "shared WARM checkpoint lacks formal training attestation: ${WARM_INITIALIZATION_CHECKPOINT}"
+    [[ -f "${WARM_INITIALIZATION_PARENT_CONFIG}" ]] \
+      || fail "shared WARM parent config is missing: ${WARM_INITIALIZATION_PARENT_CONFIG}"
+  elif [[ "${WARM_RMBENCH_ALLOW_DIRECT_BASE_SPECIALIST}" == "true" ]]; then
+    printf 'WARNING: explicit direct-base specialist fallback enabled; no shared WARM initialization\n' >&2
+    unset WARM_INITIALIZATION_CHECKPOINT WARM_INITIALIZATION_PARENT_CONFIG \
+      WARM_INITIALIZATION_FORK_MANIFEST WARM_INITIALIZATION_FORK_REASON
+  else
+    fail "shared WARM checkpoint is required before specialists: ${WARM_RMBENCH_SHARED_CHECKPOINT}"
+  fi
+fi
 export WARM_PREFLIGHT_RESOLVE="${WARM_PREFLIGHT_RESOLVE:-true}"
 export WARM_PREFLIGHT_OUTPUT="${WARM_PREFLIGHT_OUTPUT:-${WARM_TRAIN_OUTPUT}.resolved_config.preflight.yaml}"
 export WARM_WANDB_ENABLED="${WARM_WANDB_ENABLED:-false}"
@@ -198,8 +249,9 @@ if [[ -n "${WARM_RESUME_STATE:-}" ]]; then
   TEE_ARGS=(-a)
 fi
 
-printf 'task=%s\noutput=%s\nconsole_log=%s\ncommit=%s\n' \
-  "${WARM_RMBENCH_SPECIALIST_TASK}" \
+printf 'stage=%s\ntask=%s\noutput=%s\nconsole_log=%s\ncommit=%s\n' \
+  "${WARM_RMBENCH_STAGE}" \
+  "${WARM_RMBENCH_SPECIALIST_TASK:-all}" \
   "${WARM_TRAIN_OUTPUT}" \
   "${CONSOLE_LOG}" \
   "${WARM_CODE_REVISION}"
@@ -207,9 +259,10 @@ printf 'task=%s\noutput=%s\nconsole_log=%s\ncommit=%s\n' \
 set -o pipefail
 bash scripts/train_warm_rmbench_server.sh \
   num_workers=4 \
-  learning_rate=1.0e-4 \
+  learning_rate=5.0e-5 \
   weight_decay=1.0e-2 \
   log_every=10 \
   save_every=1000 \
-  eval_every=0 \
+  eval_every=500 \
+  eval_num_samples=32 \
   2>&1 | tee "${TEE_ARGS[@]}" "${CONSOLE_LOG}"

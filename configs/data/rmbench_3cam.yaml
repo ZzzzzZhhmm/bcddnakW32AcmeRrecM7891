@@ -34,6 +34,12 @@ train:
   is_training_set: true
   pretrained_norm_stats: ${oc.env:RMBENCH_DATASET_STATS,./data/rmbench/dataset_stats.json}
   skip_padding_as_possible: false
+  # Publication-fair language augmentation: distribute demonstrations over
+  # all official ``seen`` wordings.  Official ``unseen`` evaluation prompts
+  # are not admitted by this policy.
+  instruction_variant_manifest_path: ${oc.env:RMBENCH_LEROBOT_ROOT,./data/rmbench/rmbench_9task_lerobot}/meta/warm_instruction_variants.jsonl
+  instruction_variant_policy: seen_deterministic
+  instruction_variant_seed: 3407
   concat_multi_camera: robotwin
   processor:
     _target_: fastwam.datasets.lerobot.processors.fastwam_processor.FastWAMProcessor
@@ -73,6 +79,11 @@ val:
   is_training_set: false
   pretrained_norm_stats: ${data.train.pretrained_norm_stats}
   skip_padding_as_possible: false
+  instruction_variant_manifest_path: ${data.train.instruction_variant_manifest_path}
+  # Keep checkpoint selection stable on one canonical seen wording.  Unseen
+  # language remains an evaluation-only distribution.
+  instruction_variant_policy: primary
+  instruction_variant_seed: ${data.train.instruction_variant_seed}
   concat_multi_camera: robotwin
   processor:
     _target_: fastwam.datasets.lerobot.processors.fastwam_processor.FastWAMProcessor

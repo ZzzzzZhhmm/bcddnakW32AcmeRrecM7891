@@ -94,7 +94,11 @@ class EventMiningResult:
 
     ``windows[:, 0]`` is inclusive and ``windows[:, 1]`` is exclusive.
     ``component_scores`` contains the independently median/MAD-normalized
-    change signals used in the composite ``scores``.
+    change signals used in the composite ``scores``.  Windows are sorted by
+    factual start time. ``normalized_phases`` maps start frames to ``[0, 1]``
+    using the final valid start as one; ``event_ordinals`` and the successor
+    arrays describe that exact per-episode sequence.  A terminal successor is
+    represented by ``-1`` in both successor arrays.
     """
 
     scores: NDArray[np.float64]
@@ -103,6 +107,10 @@ class EventMiningResult:
     forced_gripper_indices: NDArray[np.int64]
     window_starts: NDArray[np.int64]
     windows: NDArray[np.int64]
+    normalized_phases: NDArray[np.float32]
+    event_ordinals: NDArray[np.int64]
+    successor_window_indices: NDArray[np.int64]
+    successor_start_frames: NDArray[np.int64]
 
 
 def robust_mad_normalize(
@@ -416,8 +424,26 @@ def mine_episode_events(
         windows = np.column_stack(
             (starts, starts + config.action_horizon)
         ).astype(np.int64, copy=False)
+        max_start = scores.shape[0] - config.action_horizon
+        if max_start == 0:
+            normalized_phases = np.zeros(starts.shape, dtype=np.float32)
+        else:
+            normalized_phases = np.asarray(
+                starts.astype(np.float64) / float(max_start),
+                dtype=np.float32,
+            )
+        event_ordinals = np.arange(starts.size, dtype=np.int64)
+        successor_window_indices = np.full(starts.shape, -1, dtype=np.int64)
+        successor_start_frames = np.full(starts.shape, -1, dtype=np.int64)
+        if starts.size > 1:
+            successor_window_indices[:-1] = event_ordinals[1:]
+            successor_start_frames[:-1] = starts[1:]
     else:
         windows = np.empty((0, 2), dtype=np.int64)
+        normalized_phases = np.empty((0,), dtype=np.float32)
+        event_ordinals = np.empty((0,), dtype=np.int64)
+        successor_window_indices = np.empty((0,), dtype=np.int64)
+        successor_start_frames = np.empty((0,), dtype=np.int64)
 
     return EventMiningResult(
         scores=scores,
@@ -426,6 +452,10 @@ def mine_episode_events(
         forced_gripper_indices=forced,
         window_starts=starts,
         windows=windows,
+        normalized_phases=normalized_phases,
+        event_ordinals=event_ordinals,
+        successor_window_indices=successor_window_indices,
+        successor_start_frames=successor_start_frames,
     )
 
 

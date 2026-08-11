@@ -59,6 +59,10 @@ def test_rmbench_artifact_script_is_exact_three_camera_h32_pipeline() -> None:
         assert f"observation.images.{camera}" in source
     assert "--benchmark-profile robotwin" in source
     assert "--action-horizon 32" in source
+    assert 'WARM_RMBENCH_REPLAN_STRIDE="${WARM_RMBENCH_REPLAN_STRIDE:-4}"' in source
+    assert '--uniform-stride "${WARM_RMBENCH_REPLAN_STRIDE}"' in source
+    assert source.count('--query-stride "${WARM_RMBENCH_REPLAN_STRIDE}"') == 1
+    assert "--query-stride 1" in source
     assert "--expected-action-dim 14" in source
     assert "--query-split train" in source
     assert "--query-split dev" in source
@@ -74,6 +78,9 @@ def test_rmbench_training_and_eval_launchers_bind_contracts_and_closed_controls(
     assert "wandb.mode=online" not in training
     assert "protected formal-training override" in training
     assert "data.*|model|model.*|output_dir|resume" in training
+    assert "qualify_warm_rmbench_artifacts.py" in training
+    assert "--verify-existing" in training
+    assert "rmbench_h32.json" in training
     assert "run_rmbench_manager.py" in evaluation
     assert "WARM_RMBENCH_ONLINE_CONTRACT" in evaluation
     assert '${EXPERIMENT_ID}/${task_name}.json' in evaluation
@@ -99,6 +106,9 @@ def test_score_oriented_task_launchers_bind_registry_batch_and_online_memory() -
     assert "rmbench_task_event_balanced" not in training  # resolved by registry
     assert "sampler.mode=${SAMPLER_MODE}" in training
     assert "WARM_RESUME_STATE" in training
+    assert "WARM_INITIALIZATION_CHECKPOINT" in training
+    assert "build_warm_training_fork_manifest.py" in training
+    assert "specialist training requires a shared WARM checkpoint" in training
     assert "trainer_state.json" in training
     assert "WARM_PREFLIGHT_RESOLVE" in training
     assert "--cfg job --resolve" in training
@@ -107,6 +117,8 @@ def test_score_oriented_task_launchers_bind_registry_batch_and_online_memory() -
     assert "GRADIENT_ACCUMULATION_STEPS=4" in acp_specialist
     assert "TARGET_GLOBAL_BATCH_SIZE=128" in acp_specialist
     assert "official50-dev45" in acp_specialist
+    assert "WARM_RMBENCH_SHARED_CHECKPOINT" in acp_specialist
+    assert "WARM_INITIALIZATION_FORK_MANIFEST" in acp_specialist
     assert "save_every=1000" in acp_specialist
     assert "worktree add --detach" in acp_specialist
     assert 'WARM_TRAIN_CODE_DIR="${WARM_TRAIN_CODE_DIR:-}"' in acp_specialist
@@ -145,8 +157,8 @@ def test_rmbench_specialist_eval_launcher_pins_checkpoint_training_commit() -> N
     assert "PYTHONDONTWRITEBYTECODE=1" in source
     assert "build_warm_rmbench_sota_task_contract_server.sh" in source
     assert "evaluate_warm_rmbench_task_server.sh" in source
-    assert "formal100-s3407-v4" in source
-    assert "-s3407-v4" in source
+    assert "formal100-s3407-v5" in source
+    assert "-s3407-v5" in source
     runtime_check = _read("check_warm_rmbench_eval_runtime.py")
     assert "expected exactly one visible CUDA device" in runtime_check
     assert "rmbench_f77_contract_v1/run_contract_bundle.py" in source
@@ -155,6 +167,12 @@ def test_rmbench_specialist_eval_launcher_pins_checkpoint_training_commit() -> N
     assert 'WARM_EVALUATION_NAMESPACE_BASE' in source
     assert "warm-rmbench-eval" in source
     assert "check_warm_rmbench_eval_runtime.py" in source
+    assert "qualify_warm_rmbench_artifacts.py" in source
+    assert "--verify-existing" in source
+    assert "qualification/rmbench_h32.json" in source
+    assert source.index("qualify_warm_rmbench_artifacts.py") < source.index(
+        "worktree add --detach"
+    )
     assert "bootstrap_warm_rmbench_eval_env.sh once in CCI" in source
     assert source.index("check_warm_rmbench_eval_runtime.py") < source.index(
         "BUILD RMBENCH SPECIALIST CONTRACT"

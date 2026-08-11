@@ -153,6 +153,130 @@ def factual_joint_state(observation: Mapping[str, Any]) -> np.ndarray:
     return np.ascontiguousarray(vector)
 
 
+def audit_qpos_execution(
+    *,
+    before: Any,
+    target: Any,
+    after: Any,
+    command_threshold: float = 1.0e-2,
+    motion_threshold: float = 1.0e-5,
+) -> dict[str, Any]:
+    """Fail closed when RMBench silently drops a commanded arm trajectory.
+
+    The official ``take_action(..., action_type='qpos')`` catches TOPP
+    exceptions internally.  On that path the affected arm is never actuated,
+    while the evaluator still increments its policy step and returns normally.
+    Grippers are excluded because their controller is independent from TOPP.
+    """
+
+    arrays: dict[str, np.ndarray] = {}
+    for name, value in (("before", before), ("target", target), ("after", after)):
+        array = np.asarray(value, dtype=np.float32)
+        if array.shape != (14,) or not np.isfinite(array).all():
+            raise RMBenchPolicyBoundaryError(
+                f"qpos execution audit {name} must be finite shape [14]"
+            )
+        arrays[name] = np.ascontiguousarray(array)
+    if (
+        not np.isfinite(command_threshold)
+        or not np.isfinite(motion_threshold)
+        or command_threshold <= 0.0
+        or motion_threshold <= 0.0
+        or motion_threshold >= command_threshold
+    ):
+        raise ValueError("qpos execution audit thresholds are invalid")
+
+    records: dict[str, dict[str, float | bool]] = {}
+    silent: list[str] = []
+    for name, indices in {"left": slice(0, 6), "right": slice(7, 13)}.items():
+        commanded = arrays["target"][indices] - arrays["before"][indices]
+        factual = arrays["after"][indices] - arrays["before"][indices]
+        command_norm = float(np.linalg.norm(commanded))
+        motion_norm = float(np.linalg.norm(factual))
+        required = command_norm >= float(command_threshold)
+        dropped = bool(required and motion_norm <= float(motion_threshold))
+        records[name] = {
+            "command_norm": command_norm,
+            "motion_norm": motion_norm,
+            "before_error": command_norm,
+            "after_error": float(
+                np.linalg.norm(
+                    arrays["target"][indices] - arrays["after"][indices]
+                )
+            ),
+            "motion_required": bool(required),
+            "silent_drop": dropped,
+        }
+        if dropped:
+            silent.append(name)
+    if silent:
+        raise RMBenchPolicyBoundaryError(
+            "official RMBench qpos executor silently dropped TOPP motion for "
+            + ", ".join(silent)
+        )
+    return {
+        "command_threshold": float(command_threshold),
+        "motion_threshold": float(motion_threshold),
+        "arms": records,
+    }
+
+
+def replace_bridge_world_tokens_with_factual_dino(
+    model_output: Mapping[str, Any],
+    factual_world_tokens: Any,
+) -> dict[str, Any]:
+    """Bind episode memory to factual DINO tokens from online retrieval.
+
+    The complete model emits its learned semantic-bridge tokens for action
+    inference.  RMBench working memory, however, is trained on M1's frozen
+    DINO 2x2 spatial tokens.  The online retriever already computed those
+    tokens from the current real observation; this boundary replaces only the
+    world-token field while preserving the model-certified factual VAE latent
+    and proprioception.  No prediction or second DINO forward is admitted.
+    """
+
+    if not isinstance(model_output, Mapping):
+        raise RMBenchPolicyBoundaryError("WARM model output must be a mapping")
+    payload = model_output.get("warm_factual_observation")
+    expected = {"world_tokens", "vae_latent", "proprio"}
+    if not isinstance(payload, Mapping) or set(payload) != expected:
+        raise RMBenchPolicyBoundaryError(
+            "WARM factual observation fields are incomplete"
+        )
+    tokens = np.asarray(factual_world_tokens)
+    if (
+        tokens.dtype != np.dtype(np.float32)
+        or tokens.ndim != 2
+        or tokens.shape[0] != 4
+        or not np.isfinite(tokens).all()
+    ):
+        raise RMBenchPolicyBoundaryError(
+            "retriever factual world tokens must be finite float32 [4,D]"
+        )
+    if tokens.flags.writeable:
+        raise RMBenchPolicyBoundaryError(
+            "retriever factual world tokens must be immutable"
+        )
+    bridge = payload["world_tokens"]
+    try:
+        bridge_shape = tuple(int(value) for value in bridge.shape)
+    except (AttributeError, TypeError, ValueError) as exc:
+        raise RMBenchPolicyBoundaryError(
+            "model bridge world tokens must expose a concrete shape"
+        ) from exc
+    if bridge_shape != tokens.shape:
+        raise RMBenchPolicyBoundaryError(
+            "factual DINO and model bridge world-token shapes differ: "
+            f"{tokens.shape} != {bridge_shape}"
+        )
+
+    result = dict(model_output)
+    factual = dict(payload)
+    factual["world_tokens"] = tokens
+    result["warm_factual_observation"] = factual
+    return result
+
+
 def _event_identity(value: Any | None) -> dict[str, Any] | None:
     if value is None:
         return None
@@ -526,6 +650,8 @@ __all__ = [
     "RecedingHorizonQueue",
     "factual_cameras",
     "factual_joint_state",
+    "audit_qpos_execution",
+    "replace_bridge_world_tokens_with_factual_dino",
     "resolve_task_bundle_paths",
     "validate_warm_model_telemetry",
 ]

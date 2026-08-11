@@ -314,6 +314,19 @@ def test_synthetic_conversion_is_factual_hashed_atomic_and_split_safe(
     instruction_by_index = {
         int(row["task_index"]): row["task"] for row in task_rows
     }
+    instruction_variant_rows = [
+        json.loads(line)
+        for line in (
+            output / "meta" / "warm_instruction_variants.jsonl"
+        ).read_text(encoding="utf-8").splitlines()
+    ]
+    assert [row["episode_index"] for row in instruction_variant_rows] == [0, 1]
+    for row in instruction_variant_rows:
+        assert row["primary"]
+        assert row["seen"]
+        assert row["primary"] in row["seen"]
+        assert isinstance(row["unseen"], list)
+        assert not (set(row["seen"]) & set(row["unseen"]))
 
     for episode in manifest["episodes"]:
         output_index = episode["output_episode_index"]
@@ -326,6 +339,10 @@ def test_synthetic_conversion_is_factual_hashed_atomic_and_split_safe(
         assert len(parquet_task_indices) == 1
         parquet_task_index = int(next(iter(parquet_task_indices)))
         assert instruction_by_index[parquet_task_index] == episode["instruction"]
+        variants = instruction_variant_rows[output_index]
+        assert variants["primary"] == episode["instruction"]
+        assert variants["seen"] == episode["instruction_variants"]["seen"]
+        assert variants["unseen"] == episode["instruction_variants"]["unseen"]
         np.testing.assert_array_equal(states, expected_qpos[source_index][:-1])
         np.testing.assert_array_equal(actions, expected_qpos[source_index][1:])
         assert table.num_rows == 3

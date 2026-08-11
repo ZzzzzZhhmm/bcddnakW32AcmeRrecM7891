@@ -203,6 +203,13 @@ def test_start_proprio_canonicalization_contract_is_closed() -> None:
     ):
         WarmRetrospectionConfig.from_dict(duplicate)
 
+    timing_mismatch = dict(payload, timing_dim=8)
+    with pytest.raises(
+        WarmRetrospectionConfigError,
+        match="four phase/validity facts",
+    ):
+        WarmRetrospectionConfig.from_dict(timing_mismatch)
+
     noncanonical = _config_payload()
     noncanonical["canonical_gripper_dims"] = [2]
     with pytest.raises(

@@ -11,22 +11,26 @@ import numpy as np
 from .event_bank import EventBank
 from .event_mining import EventMiningConfig, StartMode, mine_episode_events
 from .payload_names import (
+    ACTION_VALID_MASK,
     CONTAINS_FORCED_GRIPPER,
     EFFECT_POST,
     EFFECT_PRE,
+    EVENT_ORDINAL,
     EVENT_SCORE,
     FEATURE_EPISODE_SHA256,
     MODEL_SPACE_ACTION,
+    NORMALIZED_PHASE,
     OBSERVED_GRIPPER_STATE,
     SOURCE_EPISODE_SHA256,
     START_PROPRIO,
+    SUCCESSOR_EVENT_START_FRAME,
+    SUCCESSOR_ROW,
     TASK_INDEX,
 )
 from .schema import EventId
 
 
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
-
 
 def _float32_time_array(
     name: str,
@@ -171,6 +175,66 @@ def _assert_shared_shape(
             )
 
 
+def _validate_temporal_bank_arrays(
+    event_ids: Sequence[EventId],
+    *,
+    action: np.ndarray,
+    effect_pre: np.ndarray,
+    effect_post: np.ndarray,
+    observed_gripper: np.ndarray,
+    normalized_phase: np.ndarray,
+    event_ordinal: np.ndarray,
+    successor_bank_row: np.ndarray,
+    successor_start_frame: np.ndarray,
+    action_valid_mask: np.ndarray,
+) -> None:
+    """Fail closed if one state-action-effect row loses temporal identity."""
+
+    count = len(event_ids)
+    if action.ndim != 3 or action.shape[0] != count:
+        raise AssertionError("action payload must be [events,horizon,action_dim]")
+    horizon = int(action.shape[1])
+    if effect_pre.shape != effect_post.shape or effect_pre.shape[0] != count:
+        raise AssertionError("pre/post effect payloads must be row aligned")
+    if observed_gripper.shape != (count, horizon + 1):
+        raise AssertionError("gripper timing must cover both ends of every action")
+    if action_valid_mask.shape != (count, horizon) or not action_valid_mask.all():
+        raise AssertionError("factual fixed-horizon actions must be fully valid")
+    if normalized_phase.shape != (count,) or (
+        np.any(normalized_phase < 0.0) or np.any(normalized_phase > 1.0)
+    ):
+        raise AssertionError("normalized event phases must lie in [0,1]")
+    for name, value in (
+        (EVENT_ORDINAL, event_ordinal),
+        (SUCCESSOR_ROW, successor_bank_row),
+        (SUCCESSOR_EVENT_START_FRAME, successor_start_frame),
+    ):
+        if value.dtype != np.dtype(np.int64) or value.shape != (count,):
+            raise AssertionError(f"{name} must be int64 [events]")
+
+    for row, event_id in enumerate(event_ids):
+        ordinal = int(event_ordinal[row])
+        if ordinal < 0:
+            raise AssertionError("event ordinals must be non-negative")
+        successor = int(successor_bank_row[row])
+        successor_start = int(successor_start_frame[row])
+        if successor < 0:
+            if successor != -1 or successor_start != -1:
+                raise AssertionError("terminal successors must use the -1 sentinel")
+            continue
+        if successor >= count:
+            raise AssertionError("successor bank row is out of bounds")
+        successor_id = event_ids[successor]
+        if successor_id.episode_key != event_id.episode_key:
+            raise AssertionError("successor must remain inside the factual episode")
+        if int(event_ordinal[successor]) != ordinal + 1:
+            raise AssertionError("successor must be the next event ordinal")
+        if successor_id.start_frame <= event_id.start_frame:
+            raise AssertionError("successor must advance factual episode time")
+        if successor_id.start_frame != successor_start:
+            raise AssertionError("successor row and successor event id disagree")
+
+
 def build_event_bank(
     episodes: Sequence[EpisodeFeatures],
     *,
@@ -204,6 +268,11 @@ def build_event_bank(
     task_indices: list[int] = []
     event_scores: list[float] = []
     contains_forced_gripper: list[bool] = []
+    normalized_phases: list[float] = []
+    event_ordinals: list[int] = []
+    successor_bank_rows: list[int] = []
+    successor_start_frames: list[int] = []
+    action_valid_masks: list[np.ndarray] = []
     source_episode_hashes: list[np.ndarray] = []
     feature_episode_hashes: list[np.ndarray] = []
 
@@ -223,7 +292,8 @@ def build_event_bank(
             vae_features=episode.vae_features,
         )
         forced_set = set(int(value) for value in result.forced_gripper_indices)
-        for start, stop in result.windows.tolist():
+        episode_bank_row = len(event_ids)
+        for local_index, (start, stop) in enumerate(result.windows.tolist()):
             event_ids.append(
                 EventId(
                     episode.dataset_id,
@@ -248,6 +318,22 @@ def build_event_bank(
             contains_forced_gripper.append(
                 any(index in forced_set for index in range(start, stop))
             )
+            normalized_phases.append(float(result.normalized_phases[local_index]))
+            event_ordinals.append(int(result.event_ordinals[local_index]))
+            successor_local = int(result.successor_window_indices[local_index])
+            successor_bank_rows.append(
+                -1 if successor_local < 0 else episode_bank_row + successor_local
+            )
+            successor_start_frames.append(
+                int(result.successor_start_frames[local_index])
+            )
+            # Event windows are never padded or resampled.  Retaining the
+            # explicit validity mask makes this invariant machine-checkable
+            # and prevents a future online adapter from silently treating a
+            # shifted/padded suffix as a factual bank event.
+            action_valid_masks.append(
+                np.ones((mining_config.action_horizon,), dtype=np.bool_)
+            )
             source_episode_hashes.append(
                 np.frombuffer(bytes.fromhex(episode.source_episode_sha256), dtype=np.uint8)
             )
@@ -260,10 +346,7 @@ def build_event_bank(
             "Event selection produced an empty bank; use uniform/hybrid mode or audit signals"
         )
 
-    return EventBank.from_arrays(
-        event_ids,
-        np.ascontiguousarray(np.stack(keys).astype(np.float32, copy=False)),
-        **{
+    arrays = {
             MODEL_SPACE_ACTION: np.ascontiguousarray(
                 np.stack(action_chunks).astype(np.float32, copy=False)
             ),
@@ -286,14 +369,54 @@ def build_event_bank(
             CONTAINS_FORCED_GRIPPER: np.ascontiguousarray(
                 np.asarray(contains_forced_gripper, dtype=np.bool_)
             ),
+            NORMALIZED_PHASE: np.ascontiguousarray(
+                np.asarray(normalized_phases, dtype=np.float32)
+            ),
+            EVENT_ORDINAL: np.ascontiguousarray(
+                np.asarray(event_ordinals, dtype=np.int64)
+            ),
+            SUCCESSOR_ROW: np.ascontiguousarray(
+                np.asarray(successor_bank_rows, dtype=np.int64)
+            ),
+            SUCCESSOR_EVENT_START_FRAME: np.ascontiguousarray(
+                np.asarray(successor_start_frames, dtype=np.int64)
+            ),
+            ACTION_VALID_MASK: np.ascontiguousarray(
+                np.stack(action_valid_masks).astype(np.bool_, copy=False)
+            ),
             SOURCE_EPISODE_SHA256: np.ascontiguousarray(
                 np.stack(source_episode_hashes)
             ),
             FEATURE_EPISODE_SHA256: np.ascontiguousarray(
                 np.stack(feature_episode_hashes)
             ),
-        },
+    }
+    _validate_temporal_bank_arrays(
+        event_ids,
+        action=arrays[MODEL_SPACE_ACTION],
+        effect_pre=arrays[EFFECT_PRE],
+        effect_post=arrays[EFFECT_POST],
+        observed_gripper=arrays[OBSERVED_GRIPPER_STATE],
+        normalized_phase=arrays[NORMALIZED_PHASE],
+        event_ordinal=arrays[EVENT_ORDINAL],
+        successor_bank_row=arrays[SUCCESSOR_ROW],
+        successor_start_frame=arrays[SUCCESSOR_EVENT_START_FRAME],
+        action_valid_mask=arrays[ACTION_VALID_MASK],
+    )
+
+    return EventBank.from_arrays(
+        event_ids,
+        np.ascontiguousarray(np.stack(keys).astype(np.float32, copy=False)),
+        **arrays,
     )
 
 
-__all__ = ["EpisodeFeatures", "build_event_bank"]
+__all__ = [
+    "ACTION_VALID_MASK",
+    "EVENT_ORDINAL",
+    "NORMALIZED_PHASE",
+    "SUCCESSOR_EVENT_START_FRAME",
+    "SUCCESSOR_ROW",
+    "EpisodeFeatures",
+    "build_event_bank",
+]

@@ -40,6 +40,7 @@ from fastwam.memory.online_retrieval import (
     derive_online_query_seed,
     make_online_query_id,
     online_query_dataset_id,
+    _validate_robotwin_temporal_bank,
 )
 from fastwam.memory.payload_names import (
     CONTAINS_FORCED_GRIPPER,
@@ -136,15 +137,18 @@ class _FrozenNumpyDino:
         self.image_mean = tuple(dino["image_mean"])
         self.image_std = tuple(dino["image_std"])
         self.seen_frames: list[np.ndarray] = []
+        self.encode_calls = 0
 
     def encode(self, frames: Any, *, batch_size: int) -> SimpleNamespace:
         array = np.asarray(frames)
         assert batch_size == 1
         assert array.dtype == np.float32
         assert array.shape == (1, 3, 224, 224)
+        self.encode_calls += 1
         self.seen_frames.append(np.array(array, copy=True))
         return SimpleNamespace(
-            cls=np.asarray([[1.0, 0.0, 0.0]], dtype=np.float32)
+            cls=np.asarray([[1.0, 0.0, 0.0]], dtype=np.float32),
+            spatial=np.arange(12, dtype=np.float32).reshape(1, 4, 3),
         )
 
 
@@ -491,6 +495,14 @@ def _load_retriever(artifacts: _Artifacts) -> FrozenDinoOnlineRetriever:
     )
 
 
+def test_robotwin_online_bridge_rejects_pre_v5_event_bank(tmp_path: Path) -> None:
+    artifacts = _make_artifacts(tmp_path)
+    bank = EventBank.load(artifacts.bank_directory)
+
+    with pytest.raises(OnlineArtifactContractError, match="temporal payloads"):
+        _validate_robotwin_temporal_bank(bank, action_horizon=HORIZON)
+
+
 def _raw_cameras() -> dict[str, np.ndarray]:
     return {
         "image": np.full((224, 224, 3), 64, dtype=np.uint8),
@@ -554,6 +566,15 @@ def test_artifact_bound_retrieval_matches_m1_full_bank_stable_search_and_padding
     np.testing.assert_allclose(
         artifacts.dino.seen_frames[-1], np.float32(64.0 / 255.0)
     )
+    assert artifacts.dino.encode_calls == 1
+    np.testing.assert_array_equal(
+        step.factual_world_tokens,
+        np.arange(12, dtype=np.float32).reshape(4, 3),
+    )
+    assert not step.factual_world_tokens.flags.writeable
+    with pytest.raises(ValueError):
+        step.factual_world_tokens.setflags(write=True)
+    assert retriever.factual_world_tokens(step) is step.factual_world_tokens
     assert step.raw_camera_sha256["image"] == sha256_array(_raw_cameras()["image"])
     assert not step.model_input.flags.writeable
     assert not step.candidate_means.flags.writeable
@@ -756,9 +777,32 @@ def test_episode_transition_rejects_a_delivered_but_unconsumed_step(
     with pytest.raises(OnlineEpisodeStateError, match="unconsumed BoundOnlineStep"):
         retriever.begin_episode(1)
     retriever.validate_bound_step(step)
+    assert retriever.factual_world_tokens(step) is step.factual_world_tokens
     retriever.begin_episode(1)
     with pytest.raises(OnlineBoundStepError, match="active episode"):
         retriever.assert_owned_bound_step(step)
+    with pytest.raises(OnlineBoundStepError, match="active episode"):
+        retriever.factual_world_tokens(step)
+
+
+def test_factual_world_tokens_are_covered_by_bound_step_integrity(
+    tmp_path: Path,
+) -> None:
+    artifacts = _make_artifacts(tmp_path)
+    retriever = _load_retriever(artifacts)
+    retriever.begin_episode(0)
+    step = retriever.retrieve(
+        retriever.make_query_id(1),
+        _raw_cameras(),
+        task_description=TASK_A,
+        prompt=TASK_A,
+        proprio=np.asarray([0.0, 0.0], dtype=np.float32),
+    )
+    forged = np.array(step.factual_world_tokens, copy=True)
+    forged[0, 0] += np.float32(1.0)
+    object.__setattr__(step, "factual_world_tokens", forged)
+    with pytest.raises(OnlineBoundStepError, match="factual_world_tokens"):
+        retriever.factual_world_tokens(step)
 
 
 def test_bound_step_recomputes_prompt_and_proprio_hashes_before_consumption(

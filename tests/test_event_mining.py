@@ -112,6 +112,26 @@ def test_uniform_event_and_hybrid_starts_have_explicit_boundary_behavior() -> No
     np.testing.assert_array_equal(hybrid, [0, 3, 4, 6])
 
 
+def test_phase_and_successor_metadata_follow_the_exact_sorted_windows() -> None:
+    actions, proprio, gripper = _constant_episode(10)
+    result = mine_episode_events(
+        actions,
+        proprio,
+        gripper,
+        config=EventMiningConfig(action_horizon=4, uniform_stride=4),
+        start_mode="uniform",
+    )
+
+    np.testing.assert_array_equal(result.window_starts, [0, 4, 6])
+    np.testing.assert_allclose(
+        result.normalized_phases,
+        np.asarray([0.0, 4.0 / 6.0, 1.0], dtype=np.float32),
+    )
+    np.testing.assert_array_equal(result.event_ordinals, [0, 1, 2])
+    np.testing.assert_array_equal(result.successor_window_indices, [1, 2, -1])
+    np.testing.assert_array_equal(result.successor_start_frames, [4, 6, -1])
+
+
 def test_windows_are_exact_slices_of_original_actions_without_resampling() -> None:
     num_actions = 13
     horizon = 4
@@ -159,6 +179,10 @@ def test_event_mode_can_return_no_windows_when_no_event_exists() -> None:
     assert result.candidate_indices.shape == (0,)
     assert result.window_starts.shape == (0,)
     assert result.windows.shape == (0, 2)
+    assert result.normalized_phases.shape == (0,)
+    assert result.event_ordinals.shape == (0,)
+    assert result.successor_window_indices.shape == (0,)
+    assert result.successor_start_frames.shape == (0,)
 
 
 def test_short_episodes_and_misaligned_inputs_are_rejected() -> None:

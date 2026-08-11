@@ -8,7 +8,7 @@
     "event_boost": 2.0,
     "recent_event_capacity": 20,
     "action_summary_capacity": 8,
-    "replan_steps": 10
+    "replan_steps": 4
   },
   "tasks": {
     "observe_and_pickup": {
@@ -16,7 +16,7 @@
       "train_steps": 6000,
       "recent_event_capacity": 6,
       "action_summary_capacity": 2,
-      "replan_steps": 8,
+      "replan_steps": 4,
       "inference_steps": 8,
       "top_k": 16
     },
@@ -25,7 +25,7 @@
       "train_steps": 8000,
       "recent_event_capacity": 8,
       "action_summary_capacity": 3,
-      "replan_steps": 6,
+      "replan_steps": 4,
       "inference_steps": 10,
       "top_k": 32
     },
@@ -34,7 +34,7 @@
       "train_steps": 8000,
       "recent_event_capacity": 8,
       "action_summary_capacity": 3,
-      "replan_steps": 6,
+      "replan_steps": 4,
       "inference_steps": 10,
       "top_k": 32
     },
@@ -43,7 +43,7 @@
       "train_steps": 10000,
       "recent_event_capacity": 10,
       "action_summary_capacity": 4,
-      "replan_steps": 6,
+      "replan_steps": 4,
       "inference_steps": 10,
       "top_k": 32
     },
@@ -52,7 +52,7 @@
       "train_steps": 10000,
       "recent_event_capacity": 10,
       "action_summary_capacity": 4,
-      "replan_steps": 6,
+      "replan_steps": 4,
       "inference_steps": 10,
       "top_k": 32
     },

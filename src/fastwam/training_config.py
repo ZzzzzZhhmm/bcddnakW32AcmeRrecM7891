@@ -44,6 +44,9 @@ def validate_training_config(cfg: Any) -> None:
     require_int("save_every", minimum=0)
     require_int("eval_every", minimum=0)
     require_int("eval_num_inference_steps", minimum=1)
+    # Zero means a deterministic full-DEV pass.  Positive values request a
+    # deterministic task/event-stratified subset.
+    require_int("eval_num_samples", minimum=0, default=1)
     require_int("max_nonfinite_gradient_skips", minimum=1, default=3)
     seed = require_int("seed", minimum=1)
     if seed >= 2**32 - 1:
@@ -95,6 +98,33 @@ def validate_training_config(cfg: Any) -> None:
     if not isinstance(allow_unattested, bool):
         raise TypeError(
             "allow_unattested_warm_checkpoints must resolve to a boolean"
+        )
+    initialization_checkpoint = cfg.get("initialization_checkpoint")
+    initialization_manifest = cfg.get("initialization_fork_manifest")
+    has_initialization_checkpoint = initialization_checkpoint not in (None, "", False)
+    has_initialization_manifest = initialization_manifest not in (None, "", False)
+    if has_initialization_checkpoint != has_initialization_manifest:
+        raise ValueError(
+            "initialization_checkpoint and initialization_fork_manifest must "
+            "be either both null or both populated"
+        )
+    if has_initialization_checkpoint and cfg.get("resume") not in (None, "", False):
+        raise ValueError("weights-only initialization is mutually exclusive with resume")
+    stage = cfg.get("rmbench_training_stage")
+    if stage not in (None, "shared", "specialist"):
+        raise ValueError("rmbench_training_stage must be null, shared, or specialist")
+    if stage == "shared" and has_initialization_checkpoint:
+        raise ValueError("shared RMBench training cannot use specialist initialization")
+    allow_direct_base = cfg.get("allow_direct_base_specialist", False)
+    if not isinstance(allow_direct_base, bool):
+        raise TypeError("allow_direct_base_specialist must be a boolean")
+    if stage == "specialist" and not has_initialization_checkpoint and not allow_direct_base:
+        raise ValueError(
+            "formal RMBench specialist training requires an attested shared-WARM fork"
+        )
+    if allow_direct_base and stage != "specialist":
+        raise ValueError(
+            "allow_direct_base_specialist is valid only for RMBench specialist training"
         )
 
     sampler = cfg.get("sampler", {})

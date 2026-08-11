@@ -1,4 +1,5 @@
 import logging
+import hashlib
 import json
 import inspect
 import os
@@ -6,6 +7,7 @@ import re
 from math import ceil
 from pathlib import Path
 import time
+from typing import Any
 from uuid import uuid4
 
 import numpy as np
@@ -84,6 +86,11 @@ class Wan22Trainer:
         self.save_every = int(cfg.save_every)
         self.eval_every = int(cfg.eval_every)
         self.eval_num_inference_steps = int(cfg.eval_num_inference_steps)
+        self.eval_num_samples = int(cfg.get("eval_num_samples", 1))
+        self.rmbench_training_stage = cfg.get("rmbench_training_stage")
+        self.allow_direct_base_specialist = bool(
+            cfg.get("allow_direct_base_specialist", False)
+        )
         self.gradient_accumulation_steps = int(cfg.gradient_accumulation_steps)
         self.max_grad_norm = float(cfg.max_grad_norm)
         self.max_nonfinite_gradient_skips = int(
@@ -98,6 +105,10 @@ class Wan22Trainer:
         self.sampler_event_boost = float(sampler_cfg.get("event_boost", 1.5))
         
         self.resume = cfg.resume
+        self.initialization_checkpoint = cfg.get("initialization_checkpoint", None)
+        self.initialization_fork_manifest = cfg.get(
+            "initialization_fork_manifest", None
+        )
         allow_unattested = cfg.get("allow_unattested_warm_checkpoints", False)
         if not isinstance(allow_unattested, bool):
             raise TypeError("allow_unattested_warm_checkpoints must be a boolean")
@@ -143,7 +154,14 @@ class Wan22Trainer:
         # optimizer/DeepSpeed initialization.  Complete WARM returns Action
         # DiT, compact retrospective modules, selected video adapters, and
         # the optional proprio bridge while leaving the 5B backbone frozen.
-        trainable_params = self._apply_dit_only_train_mode(self.model)
+        trainable_stage = (
+            None
+            if self.allow_direct_base_specialist
+            else self.rmbench_training_stage
+        )
+        trainable_params = self._apply_dit_only_train_mode(
+            self.model, training_stage=trainable_stage
+        )
         self.optimizer = torch.optim.AdamW(
             trainable_params,
             lr=self.learning_rate,
@@ -175,6 +193,16 @@ class Wan22Trainer:
         self.weights_dir = os.path.join(self.checkpoint_root, "weights")
         self.state_dir = os.path.join(self.checkpoint_root, "state")
         self.eval_dir = os.path.join(self.output_dir, "eval")
+        self.training_metrics_path = os.path.join(
+            self.output_dir, "training_metrics.jsonl"
+        )
+        # DeepSpeed executes ``engine.step()`` from inside
+        # ``accelerator.backward`` and may clear ``parameter.grad`` before the
+        # trainer regains control.  Lightweight parameter hooks preserve
+        # per-branch gradient evidence without retaining full gradients or
+        # cloning model weights.
+        self._warm_gradient_hook_squares: dict[str, torch.Tensor] = {}
+        self._warm_gradient_hook_handles: list[Any] = []
 
         ensure_dir(self.output_dir)
         ensure_dir(self.checkpoint_root)
@@ -187,6 +215,7 @@ class Wan22Trainer:
         self.model, self.optimizer, self.train_loader, self.scheduler = self.accelerator.prepare(
             self.model, self.optimizer, self.train_loader, self.scheduler
         )
+        self._install_warm_gradient_evidence_hooks()
         self._validate_deepspeed_numerics_contract()
         # Formal provenance must describe the actual objects and distributed
         # runtime returned by Accelerate/DeepSpeed, not only the pre-prepare
@@ -350,7 +379,10 @@ class Wan22Trainer:
             "utility_reranker",
             "source_confidence_gate",
             "episode_action_projection",
+            "episode_role_embedding",
+            "episode_age_projection",
             "episode_query_projection",
+            "candidate_phase_projection",
             "gist_to_text",
             "action_context_to_text",
             "video_layer_adapters",
@@ -385,6 +417,9 @@ class Wan22Trainer:
 
     def _record_skipped_update(self, *, reason: str, sample) -> None:
         self._consecutive_nonfinite_gradient_skips += 1
+        # Never let an overflowed/blocked backward contribute positive
+        # learning evidence to a later qualified metric record.
+        self._warm_gradient_hook_squares.clear()
         self.optimizer.zero_grad(set_to_none=True)
         if self.accelerator.is_main_process:
             logger.warning(
@@ -443,6 +478,7 @@ class Wan22Trainer:
             capture_training_runtime,
             prepare_formal_resume_lineage,
         )
+        from .models.warm.training_fork import prepare_formal_fork_lineage
 
         resolved_config = OmegaConf.to_container(self.cfg, resolve=True)
         if not isinstance(resolved_config, dict):
@@ -477,8 +513,67 @@ class Wan22Trainer:
             training_runtime=capture_training_runtime(self.accelerator),
             repository_root=repository_root,
         )
-        if self.resume in (None, "", False):
+        if (
+            self.resume in (None, "", False)
+            and self.initialization_checkpoint in (None, "", False)
+        ):
             return context
+
+        if self.initialization_checkpoint not in (None, "", False):
+            checkpoint_path = Path(
+                str(self.initialization_checkpoint)
+            ).expanduser().resolve()
+            manifest_path = Path(
+                str(self.initialization_fork_manifest)
+            ).expanduser().resolve()
+            envelope: list[object] = [None]
+            if self.accelerator.is_main_process:
+                try:
+                    logger.info(
+                        "Validating formal shared-WARM specialist fork before "
+                        "weights-only load: checkpoint=%s manifest=%s",
+                        checkpoint_path,
+                        manifest_path,
+                    )
+                    envelope[0] = {
+                        "ok": True,
+                        "lineage": prepare_formal_fork_lineage(
+                            checkpoint_path,
+                            manifest_path,
+                            current_context=context,
+                        ),
+                    }
+                except Exception as error:
+                    envelope[0] = {
+                        "ok": False,
+                        "error_type": type(error).__name__,
+                        "error": str(error),
+                    }
+            if torch.distributed.is_initialized():
+                torch.distributed.broadcast_object_list(envelope, src=0)
+            result = envelope[0]
+            if not isinstance(result, dict) or result.get("ok") is not True:
+                detail = (
+                    f"{result.get('error_type')}: {result.get('error')}"
+                    if isinstance(result, dict)
+                    else "rank 0 did not publish a fork-lineage result"
+                )
+                raise ValueError(
+                    f"formal WARM specialist-fork validation failed: {detail}"
+                )
+            lineage = result.get("lineage")
+            if not isinstance(lineage, dict):
+                raise ValueError("formal WARM fork returned invalid lineage")
+            bound = context.with_fork_lineage(lineage)
+            logger.info(
+                "Bound formal WARM fork lineage: parent_checkpoint=%s "
+                "parent_commit=%s manifest=%s reason=%s",
+                str(bound.parent_checkpoint_sha256)[:12],
+                str(bound.fork_parent_git_commit)[:12],
+                str(bound.fork_manifest_sha256)[:12],
+                bound.fork_reason,
+            )
+            return bound
 
         resume_path = Path(str(self.resume)).expanduser().resolve()
         envelope: list[object] = [None]
@@ -554,6 +649,41 @@ class Wan22Trainer:
             return
         self.wandb_run.log(payload, step=self.global_step)
 
+    def _append_training_metrics(
+        self,
+        *,
+        loss: float,
+        grad_norm: float,
+        learning_rate: float,
+        steps_per_second: float,
+        metrics: dict[str, float],
+    ) -> None:
+        """Publish machine-readable evidence for the post-smoke gate."""
+
+        if not self.accelerator.is_main_process:
+            return
+        record = {
+            "schema": "warm.training-metrics",
+            "version": 1,
+            "step": int(self.global_step),
+            "stage": self.rmbench_training_stage,
+            "loss": float(loss),
+            "grad_norm": float(grad_norm),
+            "learning_rate": float(learning_rate),
+            "steps_per_second": float(steps_per_second),
+            "metrics": {
+                str(key): float(value) for key, value in sorted(metrics.items())
+            },
+        }
+        payload = json.dumps(
+            record,
+            sort_keys=True,
+            separators=(",", ":"),
+            allow_nan=False,
+        )
+        with open(self.training_metrics_path, "a", encoding="utf-8") as stream:
+            stream.write(payload + "\n")
+
     def _finish_wandb(self):
         if getattr(self, "wandb_run", None) is None:
             return
@@ -569,6 +699,9 @@ class Wan22Trainer:
         try:
             self._finish_wandb()
         finally:
+            for handle in getattr(self, "_warm_gradient_hook_handles", ()):
+                handle.remove()
+            self._warm_gradient_hook_handles = []
             # Accelerator owns the process group created by Accelerate/
             # DeepSpeed.  Explicit teardown prevents NCCL resources from
             # leaking at normal completion and on Python-level exceptions.
@@ -623,8 +756,9 @@ class Wan22Trainer:
         else:  # guarded by validate_training_config; retained fail-closed.
             raise ValueError(f"unsupported sampler mode {self.sampler_mode!r}")
         logger.info(
-            "Training sampler: mode=%s event_boost=%.3f samples=%d",
+            "Training sampler: mode=%s schema=%s event_boost=%.3f samples=%d",
             self.sampler_mode,
+            getattr(self.train_sampler, "sampling_schema", "random"),
             self.sampler_event_boost,
             len(dataset),
         )
@@ -720,6 +854,27 @@ class Wan22Trainer:
         return f"{eta_h:02d}:{eta_m:02d}:{eta_s:02d}", steps_per_sec
 
     def _resume_or_load_checkpoint(self):
+        if self.initialization_checkpoint not in (None, "", False):
+            if self.global_step != 0 or self.epoch != 0 or self.batch_in_epoch != 0:
+                raise ValueError(
+                    "specialist fork must start with fresh optimizer/scheduler/step state"
+                )
+            checkpoint = Path(str(self.initialization_checkpoint)).expanduser().resolve()
+            logger.info(
+                "Loading attested shared WARM model weights for a fresh specialist "
+                "optimizer trajectory: %s",
+                checkpoint,
+            )
+            self.accelerator.unwrap_model(self.model).load_checkpoint(
+                str(checkpoint), optimizer=None
+            )
+            self.optimizer.zero_grad(set_to_none=True)
+            self._verify_formal_fork_after_load()
+            logger.info(
+                "Specialist fork initialized: global_step=0 optimizer_state=fresh "
+                "scheduler_state=fresh sampler_state=fresh"
+            )
+            return
         resume = self.resume
         if not resume:
             return
@@ -736,6 +891,39 @@ class Wan22Trainer:
             "Loaded .pt weights only; distributed optimizer/scheduler/step "
             "state was not restored."
         )
+
+    def _verify_formal_fork_after_load(self) -> None:
+        """Revalidate all fork bytes after model loading to close TOCTOU races."""
+
+        context = self._warm_training_attestation_context
+        if context is None or context.lineage_kind != "fork":
+            return
+        from .memory.manifest import sha256_file
+        from .models.warm.training_attestation import training_attestation_path
+
+        checkpoint = Path(str(self.initialization_checkpoint)).expanduser().resolve()
+        manifest = Path(str(self.initialization_fork_manifest)).expanduser().resolve()
+        sidecar = training_attestation_path(checkpoint)
+        actual = {
+            "parent_checkpoint_sha256": sha256_file(checkpoint),
+            "parent_training_attestation_sha256": sha256_file(sidecar),
+            "fork_manifest_sha256": sha256_file(manifest),
+        }
+        expected = {
+            "parent_checkpoint_sha256": context.parent_checkpoint_sha256,
+            "parent_training_attestation_sha256": (
+                context.parent_training_attestation_sha256
+            ),
+            "fork_manifest_sha256": context.fork_manifest_sha256,
+        }
+        differing = sorted(key for key in expected if actual[key] != expected[key])
+        if differing:
+            raise ValueError(
+                "formal WARM fork artifacts changed during model load: "
+                + ", ".join(differing)
+            )
+        if self.global_step != 0:
+            raise ValueError("weights-only specialist fork restored a parent step")
 
     def _verify_formal_resume_after_load(self, state_dir: str) -> None:
         """Close the validation/load TOCTOU window for attested resumes."""
@@ -797,10 +985,21 @@ class Wan22Trainer:
             "Applying model trainable-module contract and freezing all other components."
         )
         model = self.accelerator.unwrap_model(self.model)
-        self._apply_dit_only_train_mode(model)
+        trainable_stage = (
+            None
+            if self.allow_direct_base_specialist
+            else self.rmbench_training_stage
+        )
+        self._apply_dit_only_train_mode(
+            model, training_stage=trainable_stage
+        )
 
     @staticmethod
-    def _apply_dit_only_train_mode(model):
+    def _apply_dit_only_train_mode(model, *, training_stage=None):
+        if training_stage not in (None, "shared", "specialist"):
+            raise ValueError(
+                "training_stage must be null, shared, or specialist"
+            )
         configure = getattr(model, "configure_trainable_modules", None)
         if callable(configure):
             configured = configure()
@@ -812,6 +1011,24 @@ class Wan22Trainer:
                 ]
             else:
                 trainable = list(configured)
+            if training_stage == "specialist":
+                action_expert = getattr(model, "action_expert", None)
+                if action_expert is None:
+                    raise ValueError(
+                        "RMBench specialist scope requires model.action_expert"
+                    )
+                # The shared WARM stage adapts the 1B Action DiT across all
+                # nine tasks.  A 45-demo specialist may tune compact WARM
+                # adapters, but must not catastrophically rewrite that field.
+                action_expert.eval()
+                action_expert.requires_grad_(False)
+                trainable = [
+                    parameter for parameter in trainable if parameter.requires_grad
+                ]
+                logger.info(
+                    "RMBench specialist scope freezes the shared Action DiT; "
+                    "only compact WARM/proprio/video-adapter parameters train."
+                )
             if not trainable:
                 raise ValueError(
                     "model.configure_trainable_modules() returned no trainable parameters"
@@ -952,8 +1169,11 @@ class Wan22Trainer:
             "warm_future_valid": 0,
             "warm_episode_tokens": 2,
             "warm_episode_mask": 1,
+            "warm_episode_role_ids": 1,
+            "warm_episode_relative_age": 1,
             "warm_episode_action_summaries": 2,
             "warm_episode_action_mask": 1,
+            "warm_episode_action_relative_age": 1,
         }
         for key, unbatched_rank in extra_tensor_ranks.items():
             if key not in sample:
@@ -979,6 +1199,106 @@ class Wan22Trainer:
                 batched[key] = sample[key]
         return batched
 
+    def _warm_gradient_group_modules(self) -> dict[str, tuple[Any, ...]]:
+        """Return the exact trainable branches covered by smoke evidence."""
+
+        model = self.accelerator.unwrap_model(self.model)
+        return {
+            "action_expert": (getattr(model, "action_expert", None),),
+            "proprio_bridge": (getattr(model, "proprio_encoder", None),),
+            "semantic_bridge": (getattr(model, "semantic_bridge", None),),
+            "gist": (
+                getattr(model, "retrospective_gist", None),
+                getattr(model, "gist_to_text", None),
+            ),
+            "event_adapter": (
+                getattr(model, "retrospective_event_adapter", None),
+                getattr(model, "action_context_to_text", None),
+            ),
+            "reranker": (getattr(model, "utility_reranker", None),),
+            "source_gate": (getattr(model, "source_confidence_gate", None),),
+            "episode_memory": (
+                getattr(model, "episode_action_projection", None),
+                getattr(model, "episode_role_embedding", None),
+                getattr(model, "episode_age_projection", None),
+                getattr(model, "episode_query_projection", None),
+                getattr(model, "candidate_phase_projection", None),
+            ),
+            "video_adapters": (getattr(model, "video_layer_adapters", None),),
+        }
+
+    def _install_warm_gradient_evidence_hooks(self) -> None:
+        """Capture non-zero branch gradients before DeepSpeed clears them.
+
+        One representative trainable parameter per module is sufficient for
+        a fail-closed connectivity check and avoids launching a reduction for
+        every parameter in the 1B Action DiT.  Multi-module groups (episode
+        memory and condition projections) register one representative for
+        each constituent module, so a disconnected companion path cannot be
+        hidden by selecting only the first module.
+        """
+
+        if self._warm_gradient_hook_handles:
+            raise RuntimeError("WARM gradient evidence hooks are already installed")
+
+        for group_name, modules in self._warm_gradient_group_modules().items():
+            for module in modules:
+                if module is None:
+                    continue
+                parameters = [
+                    parameter
+                    for parameter in module.parameters()
+                    if parameter.requires_grad and parameter.numel() > 0
+                ]
+                if not parameters:
+                    continue
+                representative = parameters[-1]
+
+                def capture(
+                    gradient: torch.Tensor,
+                    *,
+                    name: str = group_name,
+                ) -> torch.Tensor:
+                    squared = gradient.detach().float().square().sum().double()
+                    previous = self._warm_gradient_hook_squares.get(name)
+                    self._warm_gradient_hook_squares[name] = (
+                        squared if previous is None else previous + squared
+                    )
+                    return gradient
+
+                self._warm_gradient_hook_handles.append(
+                    representative.register_hook(capture)
+                )
+
+    def _warm_gradient_group_norms(self) -> dict[str, float]:
+        """Distributed backward-hook norms proving each WARM branch learns."""
+
+        group_modules = self._warm_gradient_group_modules()
+        output: dict[str, float] = {}
+        for name, modules in group_modules.items():
+            parameter_count = 0
+            for module in modules:
+                if module is None:
+                    continue
+                for parameter in module.parameters():
+                    if not parameter.requires_grad:
+                        continue
+                    parameter_count += int(parameter.numel())
+            if parameter_count == 0:
+                continue
+            local_squared = self._warm_gradient_hook_squares.pop(name, None)
+            if local_squared is None:
+                local_squared = torch.zeros(
+                    (), device=self.accelerator.device, dtype=torch.float64
+                )
+            global_squared = self.accelerator.reduce(
+                local_squared, reduction="sum"
+            )
+            output[f"warm_grad_{name}"] = float(
+                global_squared.clamp_min(0.0).sqrt().item()
+            )
+        return output
+
     @torch.no_grad()
     def evaluate(self):
         if self.val_dataset is None:
@@ -995,6 +1315,12 @@ class Wan22Trainer:
         )
         model.eval()
 
+        if getattr(model, "trainer_evaluation_mode", "full") == "loss_only":
+            result = self._evaluate_loss_only(model)
+            if was_train_scope_active:
+                self._set_dit_only_train_mode()
+            return result
+
         # eval_index = (self.global_step + self.accelerator.process_index) % len(self.val_dataset)
         rng = torch.Generator(device="cpu").manual_seed(self.global_step + self.accelerator.process_index)
         eval_index = torch.randint(0, len(self.val_dataset), (1,), generator=rng).item()
@@ -1006,16 +1332,7 @@ class Wan22Trainer:
         val_loss_tensor = val_loss_tensor.detach().float().reshape(1)
         val_loss = float(val_loss_tensor.item())
 
-        if getattr(model, "trainer_evaluation_mode", "full") == "loss_only":
-            gathered = self.accelerator.gather_for_metrics(val_loss_tensor)
-            result = {
-                "val_loss": float(gathered.mean().item()),
-                "evaluation_mode": "loss_only",
-            }
-            if was_train_scope_active:
-                self._set_dit_only_train_mode()
-            return result
-        
+
         prompt = sample["prompt"][0]
         video0 = sample["video"][0] # Tensor [3, T, H, W] in (-1, 1)
         action = sample["action"][0] if "action" in sample and sample["action"] is not None else None
@@ -1186,6 +1503,165 @@ class Wan22Trainer:
             result["action_l2"] = float(action_l2_mean)
         if action_l1_mean is not None:
             result["action_l1"] = float(action_l1_mean)
+        return result
+
+    def _deterministic_eval_indices(self) -> list[int]:
+        """Select a stable, task/event-stratified DEV subset.
+
+        ``eval_num_samples=0`` requests the complete DEV window set.  Positive
+        values use deterministic round-robin strata when the retrospective
+        adapter exposes them, avoiding the previous one-random-window metric.
+        """
+
+        if self.val_dataset is None:
+            return []
+        dataset_size = len(self.val_dataset)
+        if dataset_size < 1:
+            raise ValueError("validation dataset must not be empty")
+        requested = (
+            dataset_size
+            if self.eval_num_samples == 0
+            else min(self.eval_num_samples, dataset_size)
+        )
+        requested = min(
+            dataset_size,
+            max(requested, int(self.accelerator.num_processes)),
+        )
+        strata_fn = getattr(self.val_dataset, "sampling_strata", None)
+        if not callable(strata_fn):
+            generator = np.random.default_rng(self.seed + self.global_step)
+            return [int(value) for value in generator.permutation(dataset_size)[:requested]]
+        strata = tuple(strata_fn())
+        if len(strata) != dataset_size:
+            raise ValueError(
+                "validation sampling_strata length does not match dataset length"
+            )
+        def round_robin(sequences: list[list[int]]) -> list[int]:
+            output: list[int] = []
+            cursor = 0
+            while True:
+                progressed = False
+                for sequence in sequences:
+                    if cursor < len(sequence):
+                        output.append(sequence[cursor])
+                        progressed = True
+                if not progressed:
+                    return output
+                cursor += 1
+
+        # Build a deterministic hierarchy matching the training sampler:
+        # task -> episode -> progress bin -> row.  Interleaving only complete
+        # tuple strata would stop after the first lexicographic groups when
+        # requested << number of strata, silently evaluating one task during
+        # the nine-task shared stage.
+        hierarchy: dict[object, dict[object, dict[object, list[int]]]] = {}
+        for index, raw_key in enumerate(strata):
+            key = tuple(raw_key) if isinstance(raw_key, (tuple, list)) else (raw_key,)
+            task = key[0]
+            episode = key[1] if len(key) >= 4 else "legacy"
+            progress = key[2] if len(key) >= 4 else key[1:]
+            hierarchy.setdefault(task, {}).setdefault(episode, {}).setdefault(
+                progress, []
+            ).append(index)
+
+        task_sequences: list[list[int]] = []
+        for task in sorted(hierarchy, key=repr):
+            episode_sequences: list[list[int]] = []
+            for episode in sorted(hierarchy[task], key=repr):
+                bin_sequences: list[list[int]] = []
+                for progress in sorted(hierarchy[task][episode], key=repr):
+                    members = hierarchy[task][episode][progress]
+                    digest = hashlib.sha256(
+                        f"{self.seed}:{self.global_step}:{task!r}:"
+                        f"{episode!r}:{progress!r}".encode("utf-8")
+                    ).digest()
+                    offset = int.from_bytes(digest[:8], "big") % len(members)
+                    bin_sequences.append(members[offset:] + members[:offset])
+                episode_sequences.append(round_robin(bin_sequences))
+            task_sequences.append(round_robin(episode_sequences))
+        selected = round_robin(task_sequences)[:requested]
+        if len(selected) != requested or len(set(selected)) != requested:
+            raise RuntimeError("deterministic validation selector produced invalid indices")
+        return selected
+
+    @torch.no_grad()
+    def _evaluate_loss_only(self, model) -> dict[str, object]:
+        selected = self._deterministic_eval_indices()
+        rank = int(self.accelerator.process_index)
+        world = int(self.accelerator.num_processes)
+        local_indices = selected[rank::world]
+        loss_sum = torch.zeros((), device=self.accelerator.device, dtype=torch.float64)
+        local_count = torch.zeros((), device=self.accelerator.device, dtype=torch.float64)
+        metric_sums: dict[str, torch.Tensor] = {}
+        for eval_index in local_indices:
+            sample = self._to_batched_eval_sample(self.val_dataset[eval_index])
+            with self.accelerator.autocast():
+                loss, loss_dict = model.training_loss(sample)
+            detached = loss.detach().to(
+                device=self.accelerator.device, dtype=torch.float64
+            )
+            if detached.ndim != 0 or not bool(torch.isfinite(detached).item()):
+                raise FloatingPointError(
+                    f"non-finite validation loss at dataset index {eval_index}"
+                )
+            loss_sum += detached
+            local_count += 1.0
+            for key, value in loss_dict.items():
+                scalar = torch.as_tensor(
+                    value, device=self.accelerator.device, dtype=torch.float64
+                ).detach()
+                if scalar.numel() != 1 or not bool(torch.isfinite(scalar).all().item()):
+                    raise FloatingPointError(
+                        f"invalid validation metric {key!r} at index {eval_index}"
+                    )
+                metric_sums.setdefault(
+                    str(key),
+                    torch.zeros((), device=self.accelerator.device, dtype=torch.float64),
+                )
+                metric_sums[str(key)] += scalar.reshape(())
+        packed = torch.stack([loss_sum, local_count])
+        packed = self.accelerator.reduce(packed, reduction="sum")
+        total_count = int(packed[1].item())
+        if total_count != len(selected):
+            raise RuntimeError(
+                f"validation sample count mismatch: {total_count} != {len(selected)}"
+            )
+        result: dict[str, object] = {
+            "val_loss": float((packed[0] / packed[1]).item()),
+            "val_num_samples": total_count,
+            "evaluation_mode": "loss_only",
+        }
+        local_metric_keys = sorted(metric_sums)
+        if torch.distributed.is_initialized():
+            gathered_keys: list[object] = [
+                None for _ in range(torch.distributed.get_world_size())
+            ]
+            torch.distributed.all_gather_object(gathered_keys, local_metric_keys)
+            all_metric_keys = sorted(
+                {
+                    str(key)
+                    for rank_keys in gathered_keys
+                    for key in (rank_keys or [])
+                }
+            )
+        else:
+            all_metric_keys = local_metric_keys
+        for key in all_metric_keys:
+            local_sum = metric_sums.get(
+                key,
+                torch.zeros((), device=self.accelerator.device, dtype=torch.float64),
+            )
+            reduced = self.accelerator.reduce(local_sum, reduction="sum")
+            result[f"val_{key}"] = float((reduced / packed[1]).item())
+        logger.info(
+            "Deterministic DEV evaluation: samples=%d/%d strata=%s val_loss=%.6f",
+            total_count,
+            len(self.val_dataset),
+            "task_episode_progress_event"
+            if callable(getattr(self.val_dataset, "sampling_strata", None))
+            else "none",
+            result["val_loss"],
+        )
         return result
 
     def _save_weights_checkpoint(self, step_tag: str):
@@ -1443,6 +1919,12 @@ class Wan22Trainer:
                 self.accelerator.backward(loss)
 
                 if self.accelerator.sync_gradients:
+                    gradient_group_metrics: dict[str, float] = {}
+                    if (
+                        self.log_every > 0
+                        and (self.global_step + 1) % self.log_every == 0
+                    ):
+                        gradient_group_metrics = self._warm_gradient_group_norms()
                     grad_norm = self.accelerator.clip_grad_norm_(self.model.parameters(), self.max_grad_norm)
                     grad_norm_tensor = torch.as_tensor(
                         grad_norm,
@@ -1535,6 +2017,7 @@ class Wan22Trainer:
                         global_loss_metrics[key] = float(
                             self.accelerator.gather(metric_tensor).mean().item()
                         )
+                    global_loss_metrics.update(gradient_group_metrics)
                     global_grad_norm = float(gathered_grad_norms.mean().item())
 
                     current_lr = float(self.optimizer.param_groups[0]["lr"])
@@ -1561,6 +2044,14 @@ class Wan22Trainer:
                             eta_str,
                         )
                         logger.info(description)
+
+                        self._append_training_metrics(
+                            loss=global_loss,
+                            grad_norm=global_grad_norm,
+                            learning_rate=current_lr,
+                            steps_per_second=steps_per_sec,
+                            metrics=global_loss_metrics,
+                        )
 
                         wandb_payload = {
                             "train/loss": global_loss,

@@ -37,8 +37,10 @@ for _path in (PROJECT_ROOT, SRC_ROOT):
 from .policy_core import (  # noqa: E402
     JsonlEvidenceWriter,
     RecedingHorizonQueue,
+    audit_qpos_execution,
     factual_cameras,
     factual_joint_state,
+    replace_bridge_world_tokens_with_factual_dino,
     resolve_task_bundle_paths,
     validate_warm_model_telemetry,
 )
@@ -952,6 +954,13 @@ class RMBenchWarmPolicy:
         }
         with torch.no_grad():
             output = self.model.infer_action(**infer_kwargs)
+        # Reuse the exact factual 2x2 DINO tokens computed by retrieval.  The
+        # retriever revalidates ownership/content after model capability use;
+        # no second DINO forward and no predicted future enter working memory.
+        factual_world_tokens = self.retriever.factual_world_tokens(online_step)
+        output = replace_bridge_world_tokens_with_factual_dino(
+            output, factual_world_tokens
+        )
         factual_update = self.controller.commit_factual_replan_observation(
             frame_index=frame_index, model_output=output
         )
@@ -1009,6 +1018,10 @@ class RMBenchWarmPolicy:
             "query_id": _query_dict(query_id),
             "instruction_sha256": _text_digest(instruction),
             "bound_step_sha256": online_step.step_sha256,
+            "factual_world_token_source": "retriever_dino_spatial_2x2",
+            "factual_world_tokens_sha256": (
+                online_step.factual_world_tokens_sha256
+            ),
             "context_key_sha256": online_step.context_key_sha256,
             "candidate_payload_sha256": online_step.candidate_payload_sha256,
             "raw_camera_sha256": dict(online_step.raw_camera_sha256),
@@ -1054,8 +1067,16 @@ class RMBenchWarmPolicy:
         if not self.queue:
             self._replan(observation, task_env)
         queued = self.queue.pop()
+        factual_qpos_before = factual_joint_state(observation)
         task_env.take_action(queued.environment_space, action_type="qpos")
-        # Record only after the simulator accepted the command.
+        factual_qpos_after = factual_joint_state(task_env.get_obs())
+        execution_audit = audit_qpos_execution(
+            before=factual_qpos_before,
+            target=queued.environment_space,
+            after=factual_qpos_after,
+        )
+        # Record only after factual state proves the simulator did not silently
+        # discard either arm's TOPP trajectory.
         self.controller.note_executed_action(
             queued.environment_space,
             model_space_action=queued.model_space,
@@ -1071,6 +1092,11 @@ class RMBenchWarmPolicy:
                     queued.environment_space
                 ),
                 "model_action_sha256": sha256_array(queued.model_space),
+                "factual_qpos_before_sha256": sha256_array(
+                    factual_qpos_before
+                ),
+                "factual_qpos_after_sha256": sha256_array(factual_qpos_after),
+                "execution_audit": execution_audit,
             }
         )
         self._executed_policy_actions += 1

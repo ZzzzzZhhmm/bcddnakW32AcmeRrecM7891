@@ -335,6 +335,7 @@ def build_action_effect_utility_targets(
     candidate_valid_mask: torch.Tensor,
     *,
     action_valid_mask: torch.Tensor | None = None,
+    effect_valid_mask: torch.Tensor | None = None,
     candidate_timing: torch.Tensor | None = None,
     target_timing: torch.Tensor | None = None,
     effect_weight: float = 1.0,
@@ -419,6 +420,19 @@ def build_action_effect_utility_targets(
     effect_distance = (
         effects.float() - effect_target.unsqueeze(1).float()
     ).square().mean(dim=-1)
+    if effect_valid_mask is not None:
+        effect_valid = _require_tensor(effect_valid_mask, "effect_valid_mask")
+        if (
+            effect_valid.dtype != torch.bool
+            or effect_valid.shape != (batch_size,)
+            or effect_valid.device != candidates.device
+        ):
+            raise ConsequenceAlignmentError(
+                "effect_valid_mask must be bool [B] on the action device"
+            )
+        effect_distance = effect_distance * effect_valid[:, None].to(
+            dtype=effect_distance.dtype
+        )
     timing_distance = torch.zeros_like(action_distance)
     if (candidate_timing is None) != (target_timing is None):
         raise ConsequenceAlignmentError(
@@ -1173,33 +1187,25 @@ def calibrate_source_acceptance(
     if not isinstance(hard_reject, bool):
         raise TypeError("hard_reject must be bool")
 
+    # Candidate-index entropy is not action-mode entropy: a dense bank can
+    # contain many interchangeable demonstrations.  It therefore remains an
+    # observed gate feature, never a hard veto.  Train and deployment share
+    # exactly the same progress attenuation; deployment adds only the final
+    # configured decision threshold used to avoid numerically tiny sources.
+    del minimum, maximum_entropy
+    eligible = selection.memory_mask & (stagnation < hard_stagnation)
+    progress_quality = torch.exp(-decay * stagnation.float()).to(
+        dtype=gate.probability.dtype
+    )
+    quality = torch.where(
+        eligible, progress_quality, torch.zeros_like(progress_quality)
+    )
+    effective = gate.probability * quality
     if hard_reject:
-        eligible = (
-            selection.memory_mask
-            & (selection.selected_probability >= minimum)
-            & (selection.normalized_entropy <= maximum_entropy)
-            & (stagnation < hard_stagnation)
-        )
         accepted = eligible & (gate.probability >= gate_threshold)
-        progress_quality = torch.exp(-decay * stagnation.float()).to(
-            dtype=gate.probability.dtype
-        )
-        quality = torch.where(
-            eligible, progress_quality, torch.zeros_like(progress_quality)
-        )
-        effective = gate.probability * quality
         effective = torch.where(accepted, effective, torch.zeros_like(effective))
     else:
-        # Do not apply deployment heuristics during differentiable training.
-        # V2 multiplied three conservative factors here and reduced the mean
-        # source exposure to <1%, so the action expert never learned the very
-        # source transport evaluated online.
-        quality = selection.memory_mask.to(dtype=gate.probability.dtype)
-        effective = gate.probability
-        effective = torch.where(
-            selection.memory_mask, effective, torch.zeros_like(effective)
-        )
-        accepted = selection.memory_mask & (effective > 0)
+        accepted = eligible & (effective > 0)
     return SourceAcceptance(
         effective_probability=effective,
         quality=quality,
@@ -1215,6 +1221,7 @@ def utility_supervised_gate_target(
     memory_mask: torch.Tensor,
     *,
     action_valid_mask: torch.Tensor | None = None,
+    effect_valid_mask: torch.Tensor | None = None,
     effect_weight: float = 1.0,
     temperature: float = 1.0,
 ) -> torch.Tensor:
@@ -1287,6 +1294,19 @@ def utility_supervised_gate_target(
     effect_distance = (
         effect.float() - effect_target.float()
     ).square().mean(dim=-1)
+    if effect_valid_mask is not None:
+        effect_valid = _require_tensor(effect_valid_mask, "effect_valid_mask")
+        if (
+            effect_valid.dtype != torch.bool
+            or effect_valid.shape != (selected.shape[0],)
+            or effect_valid.device != selected.device
+        ):
+            raise ConsequenceAlignmentError(
+                "effect_valid_mask must be bool [B] on the action device"
+            )
+        effect_distance = effect_distance * effect_valid.to(
+            dtype=effect_distance.dtype
+        )
     target = torch.exp(-(action_distance + effect_lambda * effect_distance) / tau)
     target = torch.where(mask, target, torch.zeros_like(target))
     return target.to(dtype=selected.dtype).detach()
@@ -1297,6 +1317,7 @@ def utility_supervised_gate_bce(
     target: torch.Tensor,
     *,
     sample_mask: torch.Tensor | None = None,
+    include_null_rows: bool = False,
     reduction: Reduction = "mean",
 ) -> torch.Tensor:
     """BCE-with-logits over selected-memory rows; all-null batches are safe."""
@@ -1315,6 +1336,8 @@ def utility_supervised_gate_bce(
         )
     if bool(torch.any(targets < 0).item()) or bool(torch.any(targets > 1).item()):
         raise ConsequenceAlignmentError("gate target must lie in [0,1]")
+    if not isinstance(include_null_rows, bool):
+        raise TypeError("include_null_rows must be bool")
     if sample_mask is not None:
         supervised = _require_tensor(sample_mask, "sample_mask")
         if (
@@ -1325,7 +1348,7 @@ def utility_supervised_gate_bce(
             raise ConsequenceAlignmentError(
                 "sample_mask must be bool [B] on the gate device"
             )
-        mask = mask & supervised
+        mask = supervised if include_null_rows else mask & supervised
     if reduction not in ("none", "mean", "sum"):
         raise ConsequenceAlignmentError(
             "reduction must be 'none', 'mean', or 'sum'"

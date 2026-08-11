@@ -183,18 +183,18 @@ def test_attestation_round_trips_and_hashes_canonically() -> None:
     assert json.loads(first.encode()) == first.to_dict()
 
 
-def test_v2_attestation_requires_complete_resume_lineage(
+def test_v3_attestation_requires_complete_resume_lineage(
     tmp_path: Path,
 ) -> None:
     repository, _ = _git_repository(tmp_path / "repository")
     fresh = _context(repository).build(
         checkpoint_sha256=DIGEST, actual_global_step=17
     )
-    assert fresh.version == 2
+    assert fresh.version == 3
     assert fresh.resume_step is None
     value = fresh.to_dict()
     value["resume_step"] = 10
-    with pytest.raises(TrainingAttestationError, match="all null or all populated"):
+    with pytest.raises(TrainingAttestationError, match="fresh training"):
         WarmTrainingAttestation.from_dict(value)
 
 
@@ -390,7 +390,8 @@ def test_formal_resume_upgrades_v1_parent_and_binds_exact_state_tree(
         checkpoint_sha256="f" * 64,
         actual_global_step=18,
     )
-    assert continued.version == 2
+    assert continued.version == 3
+    assert continued.lineage_kind == "resume"
     assert continued.parent_checkpoint_sha256 == sha256_file(weights)
     assert continued.resume_step == 17
     assert WarmTrainingAttestation.from_dict(continued.to_dict()) == continued

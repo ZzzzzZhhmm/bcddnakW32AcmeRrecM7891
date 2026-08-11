@@ -101,6 +101,39 @@ def test_action_effect_soft_targets_and_masked_kl_include_null_rows_safely() -> 
     assert null_loss.item() == 0.0
 
 
+def test_terminal_action_rows_use_action_utility_without_future_effect() -> None:
+    candidate_actions = torch.tensor(
+        [[[[0.0], [0.0]], [[1.0], [1.0]]]]
+    )
+    target_action = torch.zeros(1, 2, 1)
+    # Candidate zero has the worse stored effect but the correct action.
+    candidate_effects = torch.tensor([[[100.0], [0.0]]])
+    targets = build_action_effect_utility_targets(
+        candidate_actions,
+        target_action,
+        candidate_effects,
+        torch.zeros(1, 1),
+        torch.ones(1, 2, dtype=torch.bool),
+        action_valid_mask=torch.tensor([[True, False]]),
+        effect_valid_mask=torch.tensor([False]),
+        effect_weight=100.0,
+    )
+    assert targets.effect_distance.tolist() == [[0.0, 0.0]]
+    assert targets.probabilities[0, 0] > targets.probabilities[0, 1]
+
+    gate_target = utility_supervised_gate_target(
+        torch.zeros(1, 2, 1),
+        target_action,
+        torch.full((1, 1), 100.0),
+        torch.zeros(1, 1),
+        torch.tensor([True]),
+        action_valid_mask=torch.tensor([[True, False]]),
+        effect_valid_mask=torch.tensor([False]),
+        effect_weight=100.0,
+    )
+    torch.testing.assert_close(gate_target, torch.ones(1))
+
+
 def test_consequence_consistency_checks_direction_and_log_magnitude() -> None:
     predicted = torch.tensor([[[3.0, 4.0], [6.0, 8.0], [-3.0, -4.0]]])
     gist = torch.tensor([[3.0, 4.0]])

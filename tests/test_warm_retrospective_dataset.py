@@ -39,13 +39,17 @@ from fastwam.datasets.warm_retrospective import (  # noqa: E402
     WARM_CURRENT_SEMANTIC,
     WARM_EPISODE_MASK,
     WARM_EPISODE_ACTION_MASK,
+    WARM_EPISODE_ACTION_RELATIVE_AGE,
     WARM_EPISODE_ACTION_SUMMARIES,
+    WARM_EPISODE_RELATIVE_AGE,
+    WARM_EPISODE_ROLE_IDS,
     WARM_EPISODE_TOKENS,
     WARM_FUTURE_SEMANTIC,
     WARM_FUTURE_VALID,
     WARM_TARGET_EFFECT,
     _action_summary_vector,
     _causal_event_frames_by_query,
+    _gripper_timing_from_actions,
     collect_feature_payloads,
     collect_feature_payloads_from_list,
 )
@@ -74,6 +78,26 @@ from tests.test_runtime_candidates import (  # noqa: E402
     _action_contract,
     _write_artifacts,
 )
+
+
+def test_dual_gripper_timing_preserves_independent_channels() -> None:
+    actions = np.zeros((2, 4, 14), dtype=np.float32)
+    starts = np.zeros((2, 14), dtype=np.float32)
+    valid = np.asarray([True, False])
+    actions[0, :, 6] = np.asarray([0.0, -1.0, -1.0, 0.0])
+    actions[0, :, 13] = np.asarray([0.0, 0.0, 1.0, 1.0])
+
+    timing = _gripper_timing_from_actions(
+        actions, starts, valid, (6, 13)
+    )
+
+    assert timing.shape == (2, 8)
+    # Left closes at phase 2/4 and re-opens at 4/4.  Right opens at 3/4.
+    np.testing.assert_allclose(
+        timing[0],
+        np.asarray([0.5, 1.0, 1.0, 1.0, 0.0, 0.0, 0.75, 1.0]),
+    )
+    np.testing.assert_array_equal(timing[1], np.zeros(8, dtype=np.float32))
 
 
 def _episode(*, semantic_width: int = 2) -> EpisodeFeatures:
@@ -291,8 +315,11 @@ def test_retrospective_adapter_has_fixed_shapes_and_zero_sentinel_rows(
         WARM_TARGET_EFFECT: (2, 2),
         WARM_EPISODE_TOKENS: (6, 2),
         WARM_EPISODE_MASK: (6,),
+        WARM_EPISODE_ROLE_IDS: (6,),
+        WARM_EPISODE_RELATIVE_AGE: (6,),
         WARM_EPISODE_ACTION_SUMMARIES: (2, 13),
         WARM_EPISODE_ACTION_MASK: (2,),
+        WARM_EPISODE_ACTION_RELATIVE_AGE: (2,),
     }
     for field, shape in expected_shapes.items():
         assert tuple(sample[field].shape) == shape, field
@@ -547,6 +574,16 @@ def test_offline_payload_matches_online_episode_state_machine(tmp_path: Path) ->
         payload[WARM_EPISODE_TOKENS][payload[WARM_EPISODE_MASK]],
         history.episode_tokens,
     )
+    np.testing.assert_array_equal(
+        payload[WARM_EPISODE_ROLE_IDS][payload[WARM_EPISODE_MASK]],
+        history.episode_role_ids,
+    )
+    np.testing.assert_allclose(
+        payload[WARM_EPISODE_RELATIVE_AGE][payload[WARM_EPISODE_MASK]],
+        history.episode_relative_age,
+        rtol=0.0,
+        atol=1.0e-7,
+    )
     np.testing.assert_allclose(
         payload[WARM_EPISODE_ACTION_SUMMARIES][
             payload[WARM_EPISODE_ACTION_MASK]
@@ -554,6 +591,14 @@ def test_offline_payload_matches_online_episode_state_machine(tmp_path: Path) ->
         history.episode_action_summaries,
         rtol=0.0,
         atol=1.0e-6,
+    )
+    np.testing.assert_allclose(
+        payload[WARM_EPISODE_ACTION_RELATIVE_AGE][
+            payload[WARM_EPISODE_ACTION_MASK]
+        ],
+        history.episode_action_relative_age,
+        rtol=0.0,
+        atol=1.0e-7,
     )
 
 

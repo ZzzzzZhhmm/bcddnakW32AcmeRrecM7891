@@ -640,6 +640,15 @@ def _convert_episode(
         "source_episode_index": plan.source.source_episode_index,
         "split": plan.split,
         "instruction": plan.source.instruction,
+        # Keep the complete official wording inventory bound to this episode.
+        # Runtime training is publication-fair by default and samples only
+        # ``seen``.  ``unseen`` is retained for auditability and for an
+        # explicitly labelled transductive ablation; it is never silently
+        # admitted by the dataset loader.
+        "instruction_variants": {
+            key: list(value)
+            for key, value in sorted(plan.source.instruction_variants.items())
+        },
         "instruction_variant_counts": {
             key: len(value)
             for key, value in sorted(plan.source.instruction_variants.items())
@@ -795,6 +804,18 @@ def _publish_metadata(
     meta = staging_root / "meta"
     _write_json(meta / "info.json", info)
     _write_jsonl(meta / "episodes.jsonl", (item.episode_row for item in ordered))
+    _write_jsonl(
+        meta / "warm_instruction_variants.jsonl",
+        (
+            {
+                "episode_index": item.output_episode_index,
+                "primary": str(item.manifest_row["instruction"]),
+                "seen": list(item.manifest_row["instruction_variants"]["seen"]),
+                "unseen": list(item.manifest_row["instruction_variants"]["unseen"]),
+            }
+            for item in ordered
+        ),
+    )
     instructions = sorted(
         {str(item.episode_row["tasks"][0]) for item in ordered}
     )
@@ -877,7 +898,11 @@ def _publish_metadata(
             "camera_order": list(OFFICIAL_CAMERA_KEYS),
             "action_dim": ACTION_DIM,
             "language_prompt_contract": (
-                "parquet.task_index -> meta/tasks.jsonl natural seen instruction"
+                "parquet.task_index -> meta/tasks.jsonl primary natural seen "
+                "instruction; meta/warm_instruction_variants.jsonl binds all "
+                "official seen/unseen variants; training defaults to deterministic "
+                "seen-only sampling and requires an explicit transductive flag to "
+                "admit unseen wording"
             ),
             "retrieval_task_contract": (
                 "meta/episodes.jsonl.warm_task_identity -> exact official task name"

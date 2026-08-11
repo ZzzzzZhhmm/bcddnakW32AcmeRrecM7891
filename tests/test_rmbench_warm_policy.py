@@ -25,8 +25,12 @@ JsonlEvidenceWriter = _CORE.JsonlEvidenceWriter
 PROCESSOR_CAMERA_KEYS = _CORE.PROCESSOR_CAMERA_KEYS
 RMBenchPolicyBoundaryError = _CORE.RMBenchPolicyBoundaryError
 RecedingHorizonQueue = _CORE.RecedingHorizonQueue
+audit_qpos_execution = _CORE.audit_qpos_execution
 factual_cameras = _CORE.factual_cameras
 factual_joint_state = _CORE.factual_joint_state
+replace_bridge_world_tokens_with_factual_dino = (
+    _CORE.replace_bridge_world_tokens_with_factual_dino
+)
 resolve_task_bundle_paths = _CORE.resolve_task_bundle_paths
 validate_warm_model_telemetry = _CORE.validate_warm_model_telemetry
 
@@ -68,6 +72,94 @@ def test_policy_core_rejects_ambiguous_camera_or_action_shapes() -> None:
     observation["joint_action"]["vector"] = np.zeros((13,), dtype=np.float32)
     with pytest.raises(RMBenchPolicyBoundaryError, match=r"\[14\]"):
         factual_joint_state(observation)
+
+
+def test_qpos_execution_audit_accepts_factual_arm_motion() -> None:
+    before = np.zeros((14,), dtype=np.float32)
+    target = before.copy()
+    target[:6] = 0.2
+    target[7:13] = -0.1
+    after = target * np.float32(0.5)
+
+    audit = audit_qpos_execution(before=before, target=target, after=after)
+
+    assert audit["arms"]["left"]["motion_required"] is True
+    assert audit["arms"]["right"]["motion_required"] is True
+    assert audit["arms"]["left"]["silent_drop"] is False
+    assert audit["arms"]["right"]["silent_drop"] is False
+
+
+def test_qpos_execution_audit_allows_arm_noop_and_ignores_gripper_only() -> None:
+    before = np.zeros((14,), dtype=np.float32)
+    target = before.copy()
+    target[6] = 1.0
+    target[13] = -1.0
+
+    audit = audit_qpos_execution(before=before, target=target, after=before)
+
+    assert audit["arms"]["left"]["motion_required"] is False
+    assert audit["arms"]["right"]["motion_required"] is False
+
+
+@pytest.mark.parametrize("arm_slice", [slice(0, 6), slice(7, 13)])
+def test_qpos_execution_audit_rejects_silently_dropped_arm_motion(
+    arm_slice: slice,
+) -> None:
+    before = np.zeros((14,), dtype=np.float32)
+    target = before.copy()
+    target[arm_slice] = 0.1
+
+    with pytest.raises(RMBenchPolicyBoundaryError, match="silently dropped"):
+        audit_qpos_execution(before=before, target=target, after=before)
+
+
+def test_qpos_execution_audit_rejects_malformed_values_and_thresholds() -> None:
+    valid = np.zeros((14,), dtype=np.float32)
+    with pytest.raises(RMBenchPolicyBoundaryError, match=r"shape \[14\]"):
+        audit_qpos_execution(before=valid[:13], target=valid, after=valid)
+    with pytest.raises(ValueError, match="thresholds"):
+        audit_qpos_execution(
+            before=valid,
+            target=valid,
+            after=valid,
+            command_threshold=1.0e-5,
+            motion_threshold=1.0e-2,
+        )
+
+
+def test_policy_core_replaces_bridge_tokens_only_with_immutable_factual_dino() -> None:
+    bridge = np.full((4, 3), -7.0, dtype=np.float32)
+    vae = np.full((2, 2), 5.0, dtype=np.float32)
+    proprio = np.arange(14, dtype=np.float32)
+    output = {
+        "action": np.zeros((1, 32, 14), dtype=np.float32),
+        "warm_factual_observation": {
+            "world_tokens": bridge,
+            "vae_latent": vae,
+            "proprio": proprio,
+        },
+    }
+    source = np.arange(12, dtype=np.float32).reshape(4, 3)
+    tokens = np.frombuffer(source.tobytes(), dtype=np.float32).reshape(4, 3)
+
+    replaced = replace_bridge_world_tokens_with_factual_dino(output, tokens)
+
+    assert replaced is not output
+    assert replaced["warm_factual_observation"] is not output[
+        "warm_factual_observation"
+    ]
+    assert replaced["warm_factual_observation"]["world_tokens"] is tokens
+    assert replaced["warm_factual_observation"]["vae_latent"] is vae
+    assert replaced["warm_factual_observation"]["proprio"] is proprio
+    assert output["warm_factual_observation"]["world_tokens"] is bridge
+
+    with pytest.raises(RMBenchPolicyBoundaryError, match="immutable"):
+        replace_bridge_world_tokens_with_factual_dino(output, source)
+    wrong_shape = np.frombuffer(
+        np.zeros((4, 2), dtype=np.float32).tobytes(), dtype=np.float32
+    ).reshape(4, 2)
+    with pytest.raises(RMBenchPolicyBoundaryError, match="shapes differ"):
+        replace_bridge_world_tokens_with_factual_dino(output, wrong_shape)
 
 
 def test_receding_horizon_queue_retains_paired_exact_actions() -> None:
@@ -334,6 +426,8 @@ def test_deploy_policy_exposes_official_signatures_and_full_warm_boundaries() ->
         "self.controller.issue_query_id(frame_index)",
         "self.controller.note_executed_action(",
         "self.controller.commit_factual_replan_observation(",
+        "self.retriever.factual_world_tokens(online_step)",
+        "replace_bridge_world_tokens_with_factual_dino(",
         'task_env.take_action(queued.environment_space, action_type="qpos")',
         "atexit.register(self._atexit)",
         "configure_experiment(",
@@ -342,6 +436,10 @@ def test_deploy_policy_exposes_official_signatures_and_full_warm_boundaries() ->
     )
     for fragment in required_fragments:
         assert fragment in source
+    infer_pos = source.index("self.model.infer_action(**infer_kwargs)")
+    factual_pos = source.index("self.retriever.factual_world_tokens(online_step)")
+    commit_pos = source.index("self.controller.commit_factual_replan_observation(")
+    assert infer_pos < factual_pos < commit_pos
 
 
 def test_deploy_yaml_has_no_unattested_artifact_defaults() -> None:

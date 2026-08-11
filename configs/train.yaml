@@ -26,6 +26,9 @@ log_every: 10
 save_every: 100
 eval_every: 50
 eval_num_inference_steps: 10
+# Loss-only WARM validation uses a deterministic task/event-stratified subset.
+# Set to 0 only when a complete DEV-window pass is affordable.
+eval_num_samples: 32
 
 # training
 gradient_accumulation_steps: 1
@@ -42,6 +45,13 @@ max_grad_norm: 1.0
 max_nonfinite_gradient_skips: 3
 weight_decay: 0.0
 resume: null
+# A specialist fork loads only complete, attested WARM model weights.  It is
+# mutually exclusive with ``resume`` and never imports parent optimizer,
+# scheduler, sampler, epoch, or global-step state.
+initialization_checkpoint: null
+initialization_fork_manifest: null
+rmbench_training_stage: null
+allow_direct_base_specialist: false
 
 # Explicit debug escape hatch for manually synchronized server worktrees.
 # When true, WARM checkpoints are saved normally but no formal

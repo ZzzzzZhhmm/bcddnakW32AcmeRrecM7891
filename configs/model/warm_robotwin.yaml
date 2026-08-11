@@ -11,7 +11,11 @@ retrospection:
   action_dim: 14
   action_horizon: 32
   proprio_dim: 14
-  episode_action_chunk_size: 10
+  # Four phase/validity facts for each independent left/right gripper.
+  # Executable candidate actions retain both channels; do not collapse them
+  # into the scalar event-mining gripper signal used by the legacy bank.
+  timing_dim: 8
+  episode_action_chunk_size: 4
   # Native RoboTwin/RMBench actions are absolute 14D qpos commands.  Translate
   # the two 6D arm commands by the factual start-state offset while preserving
   # the left/right gripper commands at indices 6 and 13 exactly.

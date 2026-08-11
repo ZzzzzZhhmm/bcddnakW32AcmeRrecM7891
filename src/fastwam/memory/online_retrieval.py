@@ -54,11 +54,15 @@ from .manifest import (
     sha256_path_tree,
 )
 from .payload_names import (
+    ACTION_VALID_MASK,
     EFFECT_POST,
     EFFECT_PRE,
+    EVENT_ORDINAL,
     MODEL_SPACE_ACTION,
+    NORMALIZED_PHASE,
     OBSERVED_GRIPPER_STATE,
     START_PROPRIO,
+    SUCCESSOR_ROW,
     TASK_INDEX,
 )
 from .schema import EventId
@@ -330,6 +334,7 @@ def _step_digest(step: "BoundOnlineStep") -> str:
         "raw_camera_sha256": dict(step.raw_camera_sha256),
         "processed_camera_sha256": dict(step.processed_camera_sha256),
         "model_input_sha256": step.model_input_sha256,
+        "factual_world_tokens_sha256": step.factual_world_tokens_sha256,
         "context_key_sha256": step.context_key_sha256,
         "event_ids": event_rows,
         "bank_rows_sha256": sha256_array(step.bank_rows),
@@ -374,6 +379,7 @@ class BoundOnlineStep:
     raw_camera_sha256: Mapping[str, str]
     processed_camera_sha256: Mapping[str, str]
     model_input: np.ndarray
+    factual_world_tokens: np.ndarray
     context_key: np.ndarray
     event_ids: tuple[EventId | None, ...]
     bank_rows: np.ndarray
@@ -386,6 +392,7 @@ class BoundOnlineStep:
     prompt_sha256: str = field(init=False)
     proprio_sha256: str | None = field(init=False)
     model_input_sha256: str = field(init=False)
+    factual_world_tokens_sha256: str = field(init=False)
     context_key_sha256: str = field(init=False)
     candidate_payload_sha256: str = field(init=False)
     step_sha256: str = field(init=False)
@@ -427,6 +434,17 @@ class BoundOnlineStep:
             )
         if np.any(model_input < -1.0) or np.any(model_input > 1.0):
             raise OnlineBoundStepError("model_input must lie in [-1,1]")
+        factual_world = _readonly_array(
+            self.factual_world_tokens,
+            dtype=np.dtype(np.float32),
+            field_name="factual_world_tokens",
+            rank=2,
+        )
+        if factual_world.shape[0] != 4:
+            raise OnlineBoundStepError(
+                "factual_world_tokens must contain the four row-major 2x2 "
+                "DINO spatial tokens"
+            )
         context_key = _readonly_array(
             self.context_key,
             dtype=np.dtype(np.float32),
@@ -527,6 +545,7 @@ class BoundOnlineStep:
             ),
         )
         object.__setattr__(self, "model_input", model_input)
+        object.__setattr__(self, "factual_world_tokens", factual_world)
         object.__setattr__(self, "context_key", context_key)
         object.__setattr__(self, "event_ids", events)
         object.__setattr__(self, "bank_rows", rows)
@@ -546,6 +565,11 @@ class BoundOnlineStep:
             None if proprio is None else sha256_array(proprio),
         )
         object.__setattr__(self, "model_input_sha256", sha256_array(model_input))
+        object.__setattr__(
+            self,
+            "factual_world_tokens_sha256",
+            sha256_array(factual_world),
+        )
         object.__setattr__(self, "context_key_sha256", sha256_array(context_key))
         object.__setattr__(
             self, "candidate_payload_sha256", sha256_array(means)
@@ -567,6 +591,7 @@ class BoundOnlineStep:
     def _assert_integrity(self) -> None:
         for name, array in (
             ("model_input", self.model_input),
+            ("factual_world_tokens", self.factual_world_tokens),
             ("context_key", self.context_key),
             ("bank_rows", self.bank_rows),
             ("cosine_scores", self.cosine_scores),
@@ -577,6 +602,11 @@ class BoundOnlineStep:
                 raise OnlineBoundStepError(f"bound step array {name} became writable")
         if sha256_array(self.model_input) != self.model_input_sha256:
             raise OnlineBoundStepError("bound model_input content changed")
+        if (
+            sha256_array(self.factual_world_tokens)
+            != self.factual_world_tokens_sha256
+        ):
+            raise OnlineBoundStepError("bound factual world token content changed")
         if sha256_array(self.context_key) != self.context_key_sha256:
             raise OnlineBoundStepError("bound context_key content changed")
         if sha256_array(self.candidate_means) != self.candidate_payload_sha256:
@@ -613,6 +643,10 @@ class OnlineCandidateFacts:
     observed_gripper: np.ndarray
     gripper_timing: np.ndarray
     support: np.ndarray
+    normalized_phase: np.ndarray
+    event_ordinal: np.ndarray
+    successor_row: np.ndarray
+    action_valid_mask: np.ndarray
 
     def __post_init__(self) -> None:
         step_sha256 = _digest(self.step_sha256, "step_sha256")
@@ -676,6 +710,30 @@ class OnlineCandidateFacts:
             field_name="support",
             rank=1,
         )
+        normalized_phase = _readonly_array(
+            self.normalized_phase,
+            dtype=np.dtype(np.float32),
+            field_name="normalized_phase",
+            rank=1,
+        )
+        event_ordinal = _readonly_array(
+            self.event_ordinal,
+            dtype=np.dtype(np.int64),
+            field_name="event_ordinal",
+            rank=1,
+        )
+        successor_row = _readonly_array(
+            self.successor_row,
+            dtype=np.dtype(np.int64),
+            field_name="successor_row",
+            rank=1,
+        )
+        action_valid_mask = _readonly_array(
+            self.action_valid_mask,
+            dtype=np.dtype(np.bool_),
+            field_name="action_valid_mask",
+            rank=2,
+        )
         count = int(valid.size)
         leading_arrays = (
             ("context_keys", context),
@@ -686,6 +744,10 @@ class OnlineCandidateFacts:
             ("observed_gripper", gripper),
             ("gripper_timing", timing),
             ("support", support),
+            ("normalized_phase", normalized_phase),
+            ("event_ordinal", event_ordinal),
+            ("successor_row", successor_row),
+            ("action_valid_mask", action_valid_mask),
         )
         for name, array in leading_arrays:
             if int(array.shape[0]) != count:
@@ -708,6 +770,24 @@ class OnlineCandidateFacts:
             raise OnlineBoundStepError(
                 "every valid factual exemplar must have support exactly one"
             )
+        if action_valid_mask.shape[1:] != (gripper.shape[1] - 1,):
+            raise OnlineBoundStepError(
+                "action_valid_mask horizon must match observed gripper"
+            )
+        if np.any(normalized_phase[valid] < 0.0) or np.any(
+            normalized_phase[valid] > 1.0
+        ):
+            raise OnlineBoundStepError(
+                "valid candidate normalized phases must lie in [0,1]"
+            )
+        if np.any(event_ordinal[valid] < 0):
+            raise OnlineBoundStepError(
+                "valid candidate event ordinals must be non-negative"
+            )
+        if not bool(action_valid_mask[valid].all()):
+            raise OnlineBoundStepError(
+                "valid bank events must contain a full factual action horizon"
+            )
         for name, array in leading_arrays:
             if np.any(array[~valid] != 0):
                 raise OnlineBoundStepError(
@@ -724,6 +804,10 @@ class OnlineCandidateFacts:
         object.__setattr__(self, "observed_gripper", gripper)
         object.__setattr__(self, "gripper_timing", timing)
         object.__setattr__(self, "support", support)
+        object.__setattr__(self, "normalized_phase", normalized_phase)
+        object.__setattr__(self, "event_ordinal", event_ordinal)
+        object.__setattr__(self, "successor_row", successor_row)
+        object.__setattr__(self, "action_valid_mask", action_valid_mask)
 
     def as_mapping(self) -> Mapping[str, np.ndarray]:
         """Return a read-only field mapping suitable for model adapters."""
@@ -739,6 +823,10 @@ class OnlineCandidateFacts:
                 "observed_gripper": self.observed_gripper,
                 "gripper_timing": self.gripper_timing,
                 "support": self.support,
+                "normalized_phase": self.normalized_phase,
+                "event_ordinal": self.event_ordinal,
+                "successor_row": self.successor_row,
+                "action_valid_mask": self.action_valid_mask,
             }
         )
 
@@ -1159,6 +1247,77 @@ def _external_array(value: Any, field_name: str) -> np.ndarray:
         ) from exc
 
 
+def _validate_robotwin_temporal_bank(
+    bank: EventBank, *, action_horizon: int
+) -> None:
+    """Require V5's factual event chain before RMBench deployment."""
+
+    required = (
+        NORMALIZED_PHASE,
+        EVENT_ORDINAL,
+        SUCCESSOR_ROW,
+        ACTION_VALID_MASK,
+    )
+    missing = [name for name in required if name not in bank.payloads]
+    if missing:
+        raise OnlineArtifactContractError(
+            "RMBench online bank lacks V5 temporal payloads: "
+            + ", ".join(missing)
+        )
+    count = len(bank)
+    phase = bank.payload(NORMALIZED_PHASE)
+    ordinal = bank.payload(EVENT_ORDINAL)
+    successor = bank.payload(SUCCESSOR_ROW)
+    action_mask = bank.payload(ACTION_VALID_MASK)
+    if (
+        phase.dtype != np.dtype(np.float32)
+        or phase.shape != (count,)
+        or not np.isfinite(phase).all()
+        or np.any(phase < 0.0)
+        or np.any(phase > 1.0)
+    ):
+        raise OnlineArtifactContractError(
+            "RMBench normalized_phase must be finite float32 [events] in [0,1]"
+        )
+    if ordinal.dtype != np.dtype(np.int64) or ordinal.shape != (count,) or np.any(
+        ordinal < 0
+    ):
+        raise OnlineArtifactContractError(
+            "RMBench event_ordinal must be non-negative int64 [events]"
+        )
+    if (
+        successor.dtype != np.dtype(np.int64)
+        or successor.shape != (count,)
+        or np.any(successor < INVALID_BANK_ROW)
+        or np.any(successor >= count)
+    ):
+        raise OnlineArtifactContractError(
+            "RMBench successor_row must be -1 or a valid int64 bank row"
+        )
+    expected_mask_shape = (count, int(action_horizon))
+    if (
+        action_mask.dtype != np.dtype(np.bool_)
+        or action_mask.shape != expected_mask_shape
+        or not bool(action_mask.all())
+    ):
+        raise OnlineArtifactContractError(
+            "RMBench action_valid_mask must prove a complete factual horizon"
+        )
+    for row, successor_row in enumerate(successor.tolist()):
+        if successor_row == INVALID_BANK_ROW:
+            continue
+        current = bank.event_ids[row]
+        following = bank.event_ids[int(successor_row)]
+        if (
+            following.episode_key != current.episode_key
+            or following.start_frame <= current.start_frame
+            or int(ordinal[int(successor_row)]) != int(ordinal[row]) + 1
+        ):
+            raise OnlineArtifactContractError(
+                "RMBench successor rows must advance exactly one factual event"
+            )
+
+
 class FrozenDinoOnlineRetriever:
     """Stateful, contract-bound online frozen-DINO retrieval bridge."""
 
@@ -1202,6 +1361,10 @@ class FrozenDinoOnlineRetriever:
             expected_action_horizon=online_run_contract.action_horizon,
             expected_action_dim=online_run_contract.action_dim,
         )
+        if benchmark_profile == "robotwin":
+            _validate_robotwin_temporal_bank(
+                bank, action_horizon=self._summary.action_horizon
+            )
         # TASK_INDEX is validated as immutable bank metadata, but it must not
         # filter retrieval.  M1 exact_cosine_v1 searches the complete bank and
         # carries task identity inside each task-conditioned context key.
@@ -1226,6 +1389,10 @@ class FrozenDinoOnlineRetriever:
         # stale capability later in the same episode.
         self._delivered_step_digests: dict[QueryId, str] = {}
         self._model_consumed: set[QueryId] = set()
+        # A selected event contributes only a *candidate* continuation lane.
+        # The next factual observation still reranks/gates it; no action suffix
+        # is shifted or replayed and the Gaussian fallback remains available.
+        self._continuation_rows: tuple[int, ...] = ()
 
     @classmethod
     def from_artifacts(
@@ -1599,6 +1766,7 @@ class FrozenDinoOnlineRetriever:
             self._consumed.clear()
             self._delivered_step_digests.clear()
             self._model_consumed.clear()
+            self._continuation_rows = ()
 
     def make_query_id(self, frame_index: int) -> QueryId:
         frame = _nonnegative_int(frame_index, "frame_index")
@@ -1706,16 +1874,74 @@ class FrozenDinoOnlineRetriever:
             query,
             top_k=self._online_run_contract.top_k,
         )
-        rows = np.ascontiguousarray(
-            [result.index for result in results], dtype=np.int64
-        )
-        scores = np.ascontiguousarray(
-            np.clip(
-                [result.score for result in results], -1.0, 1.0
-            ),
-            dtype=np.float64,
-        )
+        scored = {int(result.index): float(result.score) for result in results}
+        for row in self._continuation_rows:
+            if row < 0 or row >= len(self._bank):
+                raise OnlineRetrievalError(
+                    "staged successor row is outside the immutable event bank"
+                )
+            candidate = np.asarray(self._bank.context_keys[row], dtype=np.float64)
+            denominator = query_norm * float(np.linalg.norm(candidate))
+            if denominator <= 0.0:
+                raise OnlineRetrievalError("successor context key has zero norm")
+            scored[row] = float(np.clip(np.dot(query, candidate) / denominator, -1.0, 1.0))
+        ranked = sorted(scored.items(), key=lambda item: (-item[1], item[0]))
+        top_k = self._online_run_contract.top_k
+        continuation = [row for row in self._continuation_rows if row in scored]
+        reserved = set(continuation[: min(len(continuation), top_k)])
+        selected = [item for item in ranked if item[0] in reserved]
+        selected.extend(item for item in ranked if item[0] not in reserved)
+        selected = selected[:top_k]
+        selected.sort(key=lambda item: (-item[1], item[0]))
+        rows = np.ascontiguousarray([item[0] for item in selected], dtype=np.int64)
+        scores = np.ascontiguousarray([item[1] for item in selected], dtype=np.float64)
         return rows, scores
+
+    def stage_selected_successor(
+        self,
+        step: BoundOnlineStep,
+        selected_candidate_index: int,
+        *,
+        source_accepted: bool,
+    ) -> int:
+        """Stage the selected event's fresh next entry for one later query.
+
+        This never mutates candidate actions.  It only reserves the factual
+        successor as an additional retrieval hypothesis; the next current
+        observation and learned consequence gate decide whether it is useful.
+        """
+
+        with self._lock:
+            owned = self._assert_owned_bound_step(step)
+            if not source_accepted:
+                self._continuation_rows = ()
+                return INVALID_BANK_ROW
+            index = int(selected_candidate_index)
+            if index < 0 or index >= owned.valid_count:
+                raise OnlineBoundStepError(
+                    "accepted source must identify a valid candidate index"
+                )
+            row = int(owned.bank_rows[index])
+            if SUCCESSOR_ROW not in self._bank.payloads:
+                self._continuation_rows = ()
+                return INVALID_BANK_ROW
+            successor = int(self._bank.payload(SUCCESSOR_ROW)[row])
+            if successor == INVALID_BANK_ROW:
+                self._continuation_rows = ()
+                return successor
+            if successor < 0 or successor >= len(self._bank):
+                raise OnlineBoundStepError("bank successor row is out of range")
+            current_event = self._bank.event_ids[row]
+            next_event = self._bank.event_ids[successor]
+            if (
+                next_event.episode_key != current_event.episode_key
+                or next_event.start_frame <= current_event.start_frame
+            ):
+                raise OnlineBoundStepError(
+                    "bank successor must advance within the same source episode"
+                )
+            self._continuation_rows = (successor,)
+            return successor
 
     def retrieve(
         self,
@@ -1780,6 +2006,19 @@ class FrozenDinoOnlineRetriever:
             ):
                 raise OnlineRetrievalError(
                     "DINO encoder must return float32 CLS features [1,D]"
+                )
+            spatial_features = np.asarray(
+                getattr(dino_features, "spatial", None)
+            )
+            expected_spatial_shape = (1, 4, int(cls_features.shape[1]))
+            if (
+                spatial_features.dtype != np.dtype(np.float32)
+                or spatial_features.shape != expected_spatial_shape
+                or not np.isfinite(spatial_features).all()
+            ):
+                raise OnlineRetrievalError(
+                    "DINO encoder must return finite float32 spatial features "
+                    f"{expected_spatial_shape} from the same factual forward"
                 )
             keys = build_m1_context_keys(
                 cls_features,
@@ -1859,6 +2098,9 @@ class FrozenDinoOnlineRetriever:
                 raw_camera_sha256=raw_hashes,
                 processed_camera_sha256=processed_hashes,
                 model_input=np.ascontiguousarray(prepared.vae_frames, dtype=np.float32),
+                factual_world_tokens=np.ascontiguousarray(
+                    spatial_features[0], dtype=np.float32
+                ),
                 context_key=context_key,
                 event_ids=tuple(events),
                 bank_rows=rows,
@@ -1882,6 +2124,19 @@ class FrozenDinoOnlineRetriever:
             return step
         finally:
             self._release_query(query_id, success=succeeded)
+
+    def factual_world_tokens(self, step: BoundOnlineStep) -> np.ndarray:
+        """Return the immutable factual DINO 2x2 tokens for one owned step.
+
+        The tokens are captured from the same frozen-DINO forward used to
+        construct the retrieval context key.  This method performs a complete
+        non-consuming ownership and digest proof, so it remains valid after
+        the model has consumed its one-shot policy capability but fails closed
+        once the retriever advances to another episode.
+        """
+
+        owned = self.assert_owned_bound_step(step)
+        return owned.factual_world_tokens
 
     def _assert_owned_bound_step(
         self,
@@ -2075,6 +2330,16 @@ class FrozenDinoOnlineRetriever:
             (count, self._summary.action_horizon + 1), dtype=np.float32
         )
         support = np.zeros((count,), dtype=np.float32)
+        normalized_phase = np.zeros((count,), dtype=np.float32)
+        event_ordinal = np.zeros((count,), dtype=np.int64)
+        # Invalid candidate slots follow the same exact-zero padding contract
+        # as every other factual field.  A *valid* terminal event can still
+        # carry ``INVALID_BANK_ROW`` (-1) from the bank payload to indicate
+        # that the event has no factual successor.
+        successor_row = np.zeros((count,), dtype=np.int64)
+        action_valid_mask = np.zeros(
+            (count, self._summary.action_horizon), dtype=np.bool_
+        )
 
         if rows.size:
             # Indexing occurs only after explicit non-negative/range checks;
@@ -2087,6 +2352,16 @@ class FrozenDinoOnlineRetriever:
                 OBSERVED_GRIPPER_STATE
             )[rows]
             support[positions] = np.float32(1.0)
+            if NORMALIZED_PHASE in self._bank.payloads:
+                normalized_phase[positions] = self._bank.payload(NORMALIZED_PHASE)[rows]
+            if EVENT_ORDINAL in self._bank.payloads:
+                event_ordinal[positions] = self._bank.payload(EVENT_ORDINAL)[rows]
+            if SUCCESSOR_ROW in self._bank.payloads:
+                successor_row[positions] = self._bank.payload(SUCCESSOR_ROW)[rows]
+            if ACTION_VALID_MASK in self._bank.payloads:
+                action_valid_mask[positions] = self._bank.payload(ACTION_VALID_MASK)[rows]
+            elif self._benchmark_profile != "robotwin":
+                action_valid_mask[positions] = True
 
         effect_delta = np.ascontiguousarray(
             effect_post - effect_pre, dtype=np.float32
@@ -2103,6 +2378,10 @@ class FrozenDinoOnlineRetriever:
             observed_gripper=observed_gripper,
             gripper_timing=timing,
             support=support,
+            normalized_phase=normalized_phase,
+            event_ordinal=event_ordinal,
+            successor_row=successor_row,
+            action_valid_mask=action_valid_mask,
         )
 
     def gather_candidate_facts(

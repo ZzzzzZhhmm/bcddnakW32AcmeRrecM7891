@@ -24,7 +24,7 @@ from fastwam.memory.manifest import sha256_file
 
 
 TRAINING_ATTESTATION_SCHEMA = "warm.training-attestation"
-TRAINING_ATTESTATION_VERSION = 2
+TRAINING_ATTESTATION_VERSION = 3
 
 # These are the only resolved-config values intentionally removed from the
 # fixed/null shared recipe.  W&B routing/enablement remains bound; only its
@@ -95,7 +95,7 @@ _FIELDS_V1 = frozenset(
         "git_commit",
     }
 )
-_LINEAGE_FIELDS = frozenset(
+_RESUME_LINEAGE_FIELDS = frozenset(
     {
         "parent_checkpoint_sha256",
         "parent_training_attestation_sha256",
@@ -103,7 +103,26 @@ _LINEAGE_FIELDS = frozenset(
         "resume_step",
     }
 )
-_FIELDS_V2 = _FIELDS_V1 | _LINEAGE_FIELDS
+_FORK_LINEAGE_FIELDS = frozenset(
+    {
+        "parent_checkpoint_sha256",
+        "parent_training_attestation_sha256",
+        "fork_manifest_sha256",
+        "fork_reason",
+        "fork_parent_git_commit",
+        "fork_parent_resolved_train_config_sha256",
+    }
+)
+_FIELDS_V2 = _FIELDS_V1 | _RESUME_LINEAGE_FIELDS
+_FIELDS_V3 = _FIELDS_V2 | frozenset(
+    {
+        "lineage_kind",
+        "fork_manifest_sha256",
+        "fork_reason",
+        "fork_parent_git_commit",
+        "fork_parent_resolved_train_config_sha256",
+    }
+)
 _STEP_TAG = re.compile(r"step_(\d{6,})")
 
 _TRAINING_RUNTIME_FIELDS = frozenset(
@@ -736,6 +755,11 @@ class WarmTrainingAttestation:
     parent_training_attestation_sha256: str | None = None
     resume_state_sha256: str | None = None
     resume_step: int | None = None
+    lineage_kind: str = "none"
+    fork_manifest_sha256: str | None = None
+    fork_reason: str | None = None
+    fork_parent_git_commit: str | None = None
+    fork_parent_resolved_train_config_sha256: str | None = None
     shared_recipe_ignored_paths: tuple[str, ...] = SHARED_RECIPE_IGNORED_PATHS
     schema: str = TRAINING_ATTESTATION_SCHEMA
     version: int = TRAINING_ATTESTATION_VERSION
@@ -746,7 +770,7 @@ class WarmTrainingAttestation:
                 f"unsupported training-attestation schema {self.schema!r}"
             )
         version = _integer(self.version, "version", minimum=1)
-        if version not in (1, TRAINING_ATTESTATION_VERSION):
+        if version not in (1, 2, TRAINING_ATTESTATION_VERSION):
             raise TrainingAttestationError(
                 f"unsupported training-attestation version {version}"
             )
@@ -767,6 +791,8 @@ class WarmTrainingAttestation:
             "parent_checkpoint_sha256",
             "parent_training_attestation_sha256",
             "resume_state_sha256",
+            "fork_manifest_sha256",
+            "fork_parent_resolved_train_config_sha256",
         ):
             object.__setattr__(
                 self,
@@ -820,6 +846,12 @@ class WarmTrainingAttestation:
         if _GIT_COMMIT.fullmatch(self.git_commit) is None:
             raise TrainingAttestationError(
                 "git_commit must be a lowercase 40-character commit SHA"
+            )
+        if self.fork_parent_git_commit is not None and _GIT_COMMIT.fullmatch(
+            self.fork_parent_git_commit
+        ) is None:
+            raise TrainingAttestationError(
+                "fork_parent_git_commit must be a lowercase 40-character commit SHA"
             )
 
         for field, minimum in (
@@ -886,23 +918,70 @@ class WarmTrainingAttestation:
                 "effective_batch_size does not match per-device batch, "
                 "gradient accumulation, and world size"
             )
-        lineage = (
+        resume_lineage = (
             self.parent_checkpoint_sha256,
             self.parent_training_attestation_sha256,
             self.resume_state_sha256,
             self.resume_step,
         )
+        fork_lineage = (
+            self.parent_checkpoint_sha256,
+            self.parent_training_attestation_sha256,
+            self.fork_manifest_sha256,
+            self.fork_reason,
+            self.fork_parent_git_commit,
+            self.fork_parent_resolved_train_config_sha256,
+        )
         if version == 1:
-            if any(item is not None for item in lineage):
+            if any(item is not None for item in resume_lineage + fork_lineage[2:]):
                 raise TrainingAttestationError(
-                    "v1 training attestations cannot contain resume lineage"
+                    "v1 training attestations cannot contain lineage"
                 )
-        elif any(item is not None for item in lineage) and not all(
-            item is not None for item in lineage
-        ):
-            raise TrainingAttestationError(
-                "resume lineage fields must be either all null or all populated"
-            )
+        elif version == 2:
+            if self.lineage_kind != "none" or any(
+                item is not None for item in fork_lineage[2:]
+            ):
+                raise TrainingAttestationError(
+                    "v2 training attestations cannot contain fork lineage"
+                )
+            if any(item is not None for item in resume_lineage) and not all(
+                item is not None for item in resume_lineage
+            ):
+                raise TrainingAttestationError(
+                    "resume lineage fields must be either all null or all populated"
+                )
+        else:
+            if self.lineage_kind not in {"none", "resume", "fork"}:
+                raise TrainingAttestationError(
+                    "lineage_kind must be one of ['none', 'resume', 'fork']"
+                )
+            if self.lineage_kind == "none":
+                if any(item is not None for item in resume_lineage + fork_lineage[2:]):
+                    raise TrainingAttestationError(
+                        "fresh training cannot contain parent lineage"
+                    )
+            elif self.lineage_kind == "resume":
+                if not all(item is not None for item in resume_lineage):
+                    raise TrainingAttestationError(
+                        "resume lineage fields must all be populated"
+                    )
+                if any(item is not None for item in fork_lineage[2:]):
+                    raise TrainingAttestationError(
+                        "resume lineage cannot contain fork fields"
+                    )
+            else:
+                if not all(item is not None for item in fork_lineage):
+                    raise TrainingAttestationError(
+                        "fork lineage fields must all be populated"
+                    )
+                if self.resume_state_sha256 is not None or self.resume_step is not None:
+                    raise TrainingAttestationError(
+                        "fork lineage cannot contain resume state or step"
+                    )
+                if not isinstance(self.fork_reason, str) or not self.fork_reason.strip():
+                    raise TrainingAttestationError("fork_reason must be non-empty")
+                if len(self.fork_reason) > 512:
+                    raise TrainingAttestationError("fork_reason is too long")
         if self.resume_step is not None:
             object.__setattr__(
                 self,
@@ -966,6 +1045,18 @@ class WarmTrainingAttestation:
                     "resume_step": self.resume_step,
                 }
             )
+        if self.version >= 3:
+            value.update(
+                {
+                    "lineage_kind": self.lineage_kind,
+                    "fork_manifest_sha256": self.fork_manifest_sha256,
+                    "fork_reason": self.fork_reason,
+                    "fork_parent_git_commit": self.fork_parent_git_commit,
+                    "fork_parent_resolved_train_config_sha256": (
+                        self.fork_parent_resolved_train_config_sha256
+                    ),
+                }
+            )
         return value
 
     @classmethod
@@ -974,8 +1065,12 @@ class WarmTrainingAttestation:
             raise TypeError("training attestation must be a mapping")
         raw_version = value.get("version")
         version = _integer(raw_version, "version", minimum=1)
-        expected_fields = _FIELDS_V1 if version == 1 else _FIELDS_V2
-        if version not in (1, TRAINING_ATTESTATION_VERSION):
+        expected_fields = (
+            _FIELDS_V1
+            if version == 1
+            else (_FIELDS_V2 if version == 2 else _FIELDS_V3)
+        )
+        if version not in (1, 2, TRAINING_ATTESTATION_VERSION):
             raise TrainingAttestationError(
                 f"unsupported training-attestation version {version}"
             )
@@ -994,6 +1089,16 @@ class WarmTrainingAttestation:
                     "parent_training_attestation_sha256": None,
                     "resume_state_sha256": None,
                     "resume_step": None,
+                }
+            )
+        if version < 3:
+            payload.update(
+                {
+                    "lineage_kind": "none",
+                    "fork_manifest_sha256": None,
+                    "fork_reason": None,
+                    "fork_parent_git_commit": None,
+                    "fork_parent_resolved_train_config_sha256": None,
                 }
             )
         paths = payload["shared_recipe_ignored_paths"]
@@ -1064,6 +1169,11 @@ class WarmTrainingRunContext:
     parent_training_attestation_sha256: str | None = None
     resume_state_sha256: str | None = None
     resume_step: int | None = None
+    lineage_kind: str = "none"
+    fork_manifest_sha256: str | None = None
+    fork_reason: str | None = None
+    fork_parent_git_commit: str | None = None
+    fork_parent_resolved_train_config_sha256: str | None = None
 
     @classmethod
     def create(
@@ -1239,12 +1349,12 @@ class WarmTrainingRunContext:
     ) -> "WarmTrainingRunContext":
         """Bind a fully verified parent state to all subsequently saved weights."""
 
-        if not isinstance(lineage, Mapping) or set(lineage) != _LINEAGE_FIELDS:
+        if not isinstance(lineage, Mapping) or set(lineage) != _RESUME_LINEAGE_FIELDS:
             actual = set(lineage) if isinstance(lineage, Mapping) else set()
             raise TrainingAttestationError(
                 "invalid formal resume lineage; "
-                f"missing={sorted(_LINEAGE_FIELDS - actual)}, "
-                f"extra={sorted(actual - _LINEAGE_FIELDS)}"
+                f"missing={sorted(_RESUME_LINEAGE_FIELDS - actual)}, "
+                f"extra={sorted(actual - _RESUME_LINEAGE_FIELDS)}"
             )
         step = _integer(lineage["resume_step"], "resume_step", minimum=0)
         result = replace(
@@ -1265,8 +1375,59 @@ class WarmTrainingRunContext:
                 _digest(lineage["resume_state_sha256"], "resume_state_sha256")
             ),
             resume_step=step,
+            lineage_kind="resume",
         )
         result.build(checkpoint_sha256="0" * 64, actual_global_step=step)
+        return result
+
+    def with_fork_lineage(
+        self, lineage: Mapping[str, Any]
+    ) -> "WarmTrainingRunContext":
+        """Bind a verified weights-only initialization to child checkpoints."""
+
+        if not isinstance(lineage, Mapping) or set(lineage) != _FORK_LINEAGE_FIELDS:
+            actual = set(lineage) if isinstance(lineage, Mapping) else set()
+            raise TrainingAttestationError(
+                "invalid formal fork lineage; "
+                f"missing={sorted(_FORK_LINEAGE_FIELDS - actual)}, "
+                f"extra={sorted(actual - _FORK_LINEAGE_FIELDS)}"
+            )
+        reason = lineage["fork_reason"]
+        if not isinstance(reason, str) or not reason.strip() or len(reason) > 512:
+            raise TrainingAttestationError(
+                "fork_reason must be a non-empty string of at most 512 characters"
+            )
+        parent_commit = str(lineage["fork_parent_git_commit"])
+        if _GIT_COMMIT.fullmatch(parent_commit) is None:
+            raise TrainingAttestationError("invalid fork parent Git commit")
+        result = replace(
+            self,
+            parent_checkpoint_sha256=str(
+                _digest(
+                    lineage["parent_checkpoint_sha256"],
+                    "parent_checkpoint_sha256",
+                )
+            ),
+            parent_training_attestation_sha256=str(
+                _digest(
+                    lineage["parent_training_attestation_sha256"],
+                    "parent_training_attestation_sha256",
+                )
+            ),
+            lineage_kind="fork",
+            fork_manifest_sha256=str(
+                _digest(lineage["fork_manifest_sha256"], "fork_manifest_sha256")
+            ),
+            fork_reason=reason.strip(),
+            fork_parent_git_commit=parent_commit,
+            fork_parent_resolved_train_config_sha256=str(
+                _digest(
+                    lineage["fork_parent_resolved_train_config_sha256"],
+                    "fork_parent_resolved_train_config_sha256",
+                )
+            ),
+        )
+        result.build(checkpoint_sha256="0" * 64, actual_global_step=0)
         return result
 
     def build(
@@ -1311,6 +1472,13 @@ class WarmTrainingRunContext:
             ),
             resume_state_sha256=self.resume_state_sha256,
             resume_step=self.resume_step,
+            lineage_kind=self.lineage_kind,
+            fork_manifest_sha256=self.fork_manifest_sha256,
+            fork_reason=self.fork_reason,
+            fork_parent_git_commit=self.fork_parent_git_commit,
+            fork_parent_resolved_train_config_sha256=(
+                self.fork_parent_resolved_train_config_sha256
+            ),
         )
 
 

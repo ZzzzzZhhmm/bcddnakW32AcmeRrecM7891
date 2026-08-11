@@ -68,8 +68,11 @@ class EpisodeHistoryInputs:
 
     episode_tokens: np.ndarray
     episode_mask: np.ndarray
+    episode_role_ids: np.ndarray
+    episode_relative_age: np.ndarray
     episode_action_summaries: np.ndarray
     episode_action_mask: np.ndarray
+    episode_action_relative_age: np.ndarray
     snapshot_sha256: str
     observation_count: int
     event_count: int
@@ -96,6 +99,30 @@ class EpisodeHistoryInputs:
             raise OnlineEpisodeMemoryError(
                 "online history is compact and cannot contain padded invalid tokens"
             )
+        role_ids = _readonly(
+            self.episode_role_ids,
+            dtype=np.dtype(np.int64),
+            name="episode_role_ids",
+            rank=1,
+        )
+        relative_age = _readonly(
+            self.episode_relative_age,
+            dtype=np.dtype(np.float32),
+            name="episode_relative_age",
+            rank=1,
+        )
+        if role_ids.shape != mask.shape or relative_age.shape != mask.shape:
+            raise OnlineEpisodeMemoryError(
+                "episode role/age metadata must match the token dimension"
+            )
+        if np.any(role_ids < 1) or np.any(role_ids > 3):
+            raise OnlineEpisodeMemoryError(
+                "compact episode token roles must lie in [1,3]"
+            )
+        if np.any(relative_age < 0.0) or np.any(relative_age > 1.0):
+            raise OnlineEpisodeMemoryError(
+                "episode relative ages must lie in [0,1]"
+            )
         action_summaries = np.ascontiguousarray(
             np.asarray(self.episode_action_summaries), dtype=np.float32
         )
@@ -118,12 +145,30 @@ class EpisodeHistoryInputs:
             raise OnlineEpisodeMemoryError(
                 "online action history is compact and cannot contain padded rows"
             )
+        action_relative_age = np.ascontiguousarray(
+            np.asarray(self.episode_action_relative_age), dtype=np.float32
+        )
+        if action_relative_age.ndim != 1 or action_relative_age.shape != action_mask.shape:
+            raise OnlineEpisodeMemoryError(
+                "episode action relative ages must match action summaries"
+            )
+        if (
+            not np.isfinite(action_relative_age).all()
+            or np.any(action_relative_age < 0.0)
+            or np.any(action_relative_age > 1.0)
+        ):
+            raise OnlineEpisodeMemoryError(
+                "episode action relative ages must be finite values in [0,1]"
+            )
         action_summaries = np.frombuffer(
             action_summaries.tobytes(order="C"), dtype=np.float32
         ).reshape(action_summaries.shape)
         action_mask = np.frombuffer(
             action_mask.tobytes(order="C"), dtype=np.bool_
         ).reshape(action_mask.shape)
+        action_relative_age = np.frombuffer(
+            action_relative_age.tobytes(order="C"), dtype=np.float32
+        ).reshape(action_relative_age.shape)
         if (
             not isinstance(self.snapshot_sha256, str)
             or len(self.snapshot_sha256) != 64
@@ -131,8 +176,13 @@ class EpisodeHistoryInputs:
             raise OnlineEpisodeMemoryError("snapshot_sha256 must be a SHA-256 digest")
         object.__setattr__(self, "episode_tokens", tokens)
         object.__setattr__(self, "episode_mask", mask)
+        object.__setattr__(self, "episode_role_ids", role_ids)
+        object.__setattr__(self, "episode_relative_age", relative_age)
         object.__setattr__(self, "episode_action_summaries", action_summaries)
         object.__setattr__(self, "episode_action_mask", action_mask)
+        object.__setattr__(
+            self, "episode_action_relative_age", action_relative_age
+        )
         for field in (
             "observation_count",
             "event_count",
@@ -147,11 +197,20 @@ class EpisodeHistoryInputs:
         return {
             "episode_tokens": np.array(self.episode_tokens, copy=True, order="C"),
             "episode_mask": np.array(self.episode_mask, copy=True, order="C"),
+            "episode_role_ids": np.array(
+                self.episode_role_ids, copy=True, order="C"
+            ),
+            "episode_relative_age": np.array(
+                self.episode_relative_age, copy=True, order="C"
+            ),
             "episode_action_summaries": np.array(
                 self.episode_action_summaries, copy=True, order="C"
             ),
             "episode_action_mask": np.array(
                 self.episode_action_mask, copy=True, order="C"
+            ),
+            "episode_action_relative_age": np.array(
+                self.episode_action_relative_age, copy=True, order="C"
             ),
         }
 
@@ -164,6 +223,10 @@ class EpisodeHistoryInputs:
             "event_count": self.event_count,
             "action_summary_count": self.action_summary_count,
             "action_summary_width": int(self.episode_action_summaries.shape[1]),
+            "role_counts": {
+                str(role): int(np.count_nonzero(self.episode_role_ids == role))
+                for role in (1, 2, 3)
+            },
         }
 
 
@@ -437,7 +500,28 @@ class OnlineRetrospectiveEpisodeMemory:
         recent.sort(key=lambda item: item[0])
         recent = recent[-snapshot.config.max_recent_events :]
 
-        blocks = [initial.world_tokens, *(tokens for _, tokens in recent)]
+        # The snapshot's latest observation precedes the current replan.
+        # Pending commands bridge that observation to the current factual
+        # query, so age features must use the query frame rather than the
+        # stale snapshot frame.  This is also the exact reference used by the
+        # offline causal replay (`query_payload(frame)`).
+        preview_steps = (
+            0 if preview_actions is None else int(preview_actions.shape[0])
+        )
+        query_frame = latest_frame + preview_steps
+
+        block_specs = [
+            (initial.frame_index, 1, initial.world_tokens),
+            *(
+                (
+                    frame,
+                    3 if frame == latest_frame else 2,
+                    tokens,
+                )
+                for frame, tokens in recent
+            ),
+        ]
+        blocks = [tokens for _, _, tokens in block_specs]
         for index, block in enumerate(blocks):
             if block.ndim != 2 or int(block.shape[1]) != self._semantic_dim:
                 raise OnlineEpisodeMemoryError(
@@ -446,13 +530,60 @@ class OnlineRetrospectiveEpisodeMemory:
                 )
         tokens = np.ascontiguousarray(np.concatenate(blocks, axis=0), dtype=np.float32)
         mask = np.ones((tokens.shape[0],), dtype=np.bool_)
+        age_denominator = float(max(query_frame - initial.frame_index, 1))
+        role_ids = np.ascontiguousarray(
+            np.concatenate(
+                [
+                    np.full((block.shape[0],), role, dtype=np.int64)
+                    for (_, role, _), block in zip(block_specs, blocks, strict=True)
+                ]
+            )
+        )
+        relative_age = np.ascontiguousarray(
+            np.concatenate(
+                [
+                    np.full(
+                        (block.shape[0],),
+                        np.float32(
+                            min(
+                                max(
+                                    (query_frame - frame) / age_denominator,
+                                    0.0,
+                                ),
+                                1.0,
+                            )
+                        ),
+                        dtype=np.float32,
+                    )
+                    for (frame, _, _), block in zip(
+                        block_specs, blocks, strict=True
+                    )
+                ]
+            )
+        )
         vectors = [
             self._summary_vector(summary, snapshot.config)
             for summary in snapshot.executed_action_summaries
         ]
+        action_relative_ages = [
+            np.float32(
+                min(
+                    max(
+                        (query_frame - summary.end_frame) / age_denominator,
+                        0.0,
+                    ),
+                    1.0,
+                )
+            )
+            for summary in snapshot.executed_action_summaries
+        ]
         if preview_actions is not None:
             vectors.append(self._preview_summary_vector(preview_actions, snapshot))
+            action_relative_ages.append(np.float32(0.0))
         vectors = vectors[-snapshot.config.max_action_summaries :]
+        action_relative_ages = action_relative_ages[
+            -snapshot.config.max_action_summaries :
+        ]
         action_width = 3 * snapshot.config.action_dim + 4
         action_summaries = (
             np.stack(vectors, axis=0).astype(np.float32, copy=False)
@@ -462,11 +593,17 @@ class OnlineRetrospectiveEpisodeMemory:
         action_mask = np.ones(
             (action_summaries.shape[0],), dtype=np.bool_
         )
+        action_relative_age = np.ascontiguousarray(
+            np.asarray(action_relative_ages, dtype=np.float32)
+        )
         return EpisodeHistoryInputs(
             episode_tokens=tokens,
             episode_mask=mask,
+            episode_role_ids=role_ids,
+            episode_relative_age=relative_age,
             episode_action_summaries=action_summaries,
             episode_action_mask=action_mask,
+            episode_action_relative_age=action_relative_age,
             snapshot_sha256=snapshot.sha256,
             observation_count=1 + snapshot.counters.observation_updates,
             event_count=len(snapshot.recent_events),

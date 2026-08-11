@@ -876,10 +876,10 @@ class RuntimeCandidateDatasetAdapter(torch.utils.data.Dataset):
                 "action_is_pad disagrees with catalog episode boundaries"
             )
 
-        # Event features contain N states and N-1 factual actions.  A fixed-H
-        # candidate row therefore exists only when t+H < N.  The state/image
-        # padding masks make the complementary tail explicit even when the H
-        # action slots themselves are still inside the episode.
+        # Event features contain N states and N-1 transition-grounded actions.
+        # The masks still have to prove the exact catalog tail.  Whether that
+        # tail may omit a retrieval row is decided separately by the immutable
+        # query-frame policy; V5 RMBench covers every one of the N states.
         expected_tail = frame_index + horizon >= record.length
         observed_tail = any(bool(mask.any().item()) for mask in masks.values())
         if observed_tail != expected_tail:
@@ -887,6 +887,27 @@ class RuntimeCandidateDatasetAdapter(torch.utils.data.Dataset):
                 "sample padding masks disagree with the catalog fixed-horizon tail"
             )
         return expected_tail
+
+    def _allows_missing_candidate_row(
+        self,
+        sample: Mapping[str, Any],
+        *,
+        padded_tail: bool,
+    ) -> bool:
+        """Return whether this exact sample is outside the cache query domain."""
+
+        policy = self._resolver.build_recipe.get(
+            "query_frame_policy", "full_horizon_v1"
+        )
+        if policy == "full_horizon_v1":
+            return padded_tail
+        if policy == "all_factual_states_v1":
+            # The formal RMBench cache covers every catalog observation,
+            # including the final state.  Any missing row is corruption.
+            return False
+        raise RuntimeCandidateDatasetContractError(
+            f"unsupported candidate query_frame_policy {policy!r}"
+        )
 
     def __getitem__(self, index: int) -> dict[str, Any]:
         if isinstance(index, bool) or not isinstance(index, Integral):
@@ -913,6 +934,9 @@ class RuntimeCandidateDatasetAdapter(torch.utils.data.Dataset):
             record=record,
             frame_index=frame_index,
         )
+        allow_missing = self._allows_missing_candidate_row(
+            sample, padded_tail=padded_tail
+        )
         query_id = QueryId(
             record.dataset_id,
             record.dataset_index,
@@ -922,16 +946,18 @@ class RuntimeCandidateDatasetAdapter(torch.utils.data.Dataset):
         try:
             resolved = self._resolver.resolve(
                 query_id,
-                allow_missing=padded_tail,
+                allow_missing=allow_missing,
             )
         except KeyError as exc:
             raise RuntimeCandidateMissingRowError(
-                "candidate cache has no exact row for non-padded sample "
+                "candidate cache has no exact row for non-padded or supervised "
+                "partial-tail sample "
                 f"{query_id!r}"
             ) from exc
-        if padded_tail and resolved.valid_count:
+        if allow_missing and resolved.valid_count:
             raise RuntimeCandidateDatasetContractError(
-                "padded tail unexpectedly resolves to factual candidate events"
+                "query outside the cache domain unexpectedly resolves to factual "
+                "candidate events"
             )
 
         candidate_mu = self._resolver.gather_model_actions(resolved)

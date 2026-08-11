@@ -285,6 +285,81 @@ def test_absolute_target_summary_is_relative_to_factual_start_and_progress_coupl
     assert progressed.event_status.repeated_attempt_count == 0
 
 
+def test_vae_only_change_does_not_clear_factual_stagnation() -> None:
+    memory = EpisodeWorkingMemory(
+        _config(
+            max_action_summaries=3,
+            motion_world_change_threshold=0.08,
+            stationary_world_change_threshold=0.03,
+        )
+    )
+    actions = _actions(scale=0.25)
+    cap = memory.begin_episode(_observation("vae-noise", 0, 1.0, vae=1.0))
+    memory.record_observation(
+        cap,
+        observation=_observation("vae-noise", 1, 1.0, vae=1.0),
+        executed_actions=actions,
+    )
+
+    repeated = memory.record_observation(
+        cap,
+        observation=_observation("vae-noise", 2, 1.0, vae=2.0),
+        executed_actions=actions,
+    )
+
+    assert repeated.change_components[2] == pytest.approx(0.0)
+    assert repeated.change_components[3] > 0.03
+    assert repeated.action_summary.repeated is True
+    assert repeated.event_status.repeated_similar_action is True
+    assert repeated.event_status.repeated_attempt_count == 1
+
+
+def test_world_progress_or_cross_modal_progress_clears_stagnation() -> None:
+    config = _config(
+        max_action_summaries=3,
+        motion_world_change_threshold=0.08,
+        stationary_world_change_threshold=0.03,
+    )
+    actions = _actions(scale=0.25)
+
+    decisive = EpisodeWorkingMemory(config)
+    decisive_cap = decisive.begin_episode(
+        _observation("world-progress", 0, 1.0, vae=1.0)
+    )
+    decisive.record_observation(
+        decisive_cap,
+        observation=_observation("world-progress", 1, 1.0, vae=1.0),
+        executed_actions=actions,
+    )
+    world_progress = decisive.record_observation(
+        decisive_cap,
+        observation=_observation("world-progress", 2, 2.0, vae=1.0),
+        executed_actions=actions,
+    )
+    assert world_progress.change_components[2] >= 0.08
+    assert world_progress.action_summary.repeated is False
+    assert world_progress.event_status.repeated_attempt_count == 0
+
+    corroborated = EpisodeWorkingMemory(config)
+    corroborated_cap = corroborated.begin_episode(
+        _observation("cross-modal-progress", 0, 1.0, vae=1.0)
+    )
+    corroborated.record_observation(
+        corroborated_cap,
+        observation=_observation("cross-modal-progress", 1, 1.0, vae=1.0),
+        executed_actions=actions,
+    )
+    cross_modal_progress = corroborated.record_observation(
+        corroborated_cap,
+        observation=_observation("cross-modal-progress", 2, 1.1, vae=1.1),
+        executed_actions=actions,
+    )
+    assert 0.03 < cross_modal_progress.change_components[2] < 0.08
+    assert cross_modal_progress.change_components[3] > 0.03
+    assert cross_modal_progress.action_summary.repeated is False
+    assert cross_modal_progress.event_status.repeated_attempt_count == 0
+
+
 def test_adaptive_threshold_uses_only_prior_scores_and_bounds_history() -> None:
     config = _config(
         change_weights=(0.0, 0.0, 1.0, 0.0),

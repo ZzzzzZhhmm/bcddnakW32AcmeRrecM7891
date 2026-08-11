@@ -57,6 +57,9 @@ class RobotVideoDataset(torch.utils.data.Dataset):
         concat_multi_camera: str = "horizontal", # "horizontal", "vertical", "robotwin", or None
         override_instruction: Optional[str] = None, # whether to hardcode a specific instruction for all samples, for debugging
         strict_sample_loading: bool = False,
+        instruction_variant_manifest_path: Optional[str] = None,
+        instruction_variant_policy: str = "primary",
+        instruction_variant_seed: int = 3407,
     ):
         self.pretrained_norm_stats_path = (
             None
@@ -80,6 +83,9 @@ class RobotVideoDataset(torch.utils.data.Dataset):
             episode_task_allowlist=episode_task_allowlist,
             global_sample_stride=global_sample_stride,
             strict_sample_loading=strict_sample_loading,
+            instruction_variant_manifest_path=instruction_variant_manifest_path,
+            instruction_variant_policy=instruction_variant_policy,
+            instruction_variant_seed=instruction_variant_seed,
         )
     
         self.num_frames = num_frames

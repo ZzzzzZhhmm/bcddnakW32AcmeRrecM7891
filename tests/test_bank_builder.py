@@ -3,7 +3,15 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from fastwam.memory.bank_builder import EpisodeFeatures, build_event_bank
+from fastwam.memory.bank_builder import (
+    ACTION_VALID_MASK,
+    EVENT_ORDINAL,
+    NORMALIZED_PHASE,
+    SUCCESSOR_EVENT_START_FRAME,
+    SUCCESSOR_ROW,
+    EpisodeFeatures,
+    build_event_bank,
+)
 from fastwam.memory.event_mining import EventMiningConfig
 
 
@@ -54,6 +62,15 @@ def test_builder_keeps_exact_fixed_horizon_actions_and_factual_effects() -> None
         bank.payload("observed_gripper_state")[0], episode.gripper[0:5]
     )
     assert bank.payload("contains_forced_gripper").tolist() == [True, False]
+    np.testing.assert_array_equal(bank.payload(EVENT_ORDINAL), [0, 1])
+    np.testing.assert_array_equal(bank.payload(NORMALIZED_PHASE), [0.0, 1.0])
+    np.testing.assert_array_equal(bank.payload(SUCCESSOR_ROW), [1, -1])
+    np.testing.assert_array_equal(
+        bank.payload(SUCCESSOR_EVENT_START_FRAME), [4, -1]
+    )
+    np.testing.assert_array_equal(
+        bank.payload(ACTION_VALID_MASK), np.ones((2, 4), dtype=np.bool_)
+    )
 
 
 def test_builder_produces_globally_distinct_ids_and_episode_exclusion() -> None:
@@ -66,6 +83,8 @@ def test_builder_produces_globally_distinct_ids_and_episode_exclusion() -> None:
     )
 
     assert len(set(bank.event_ids)) == 4
+    np.testing.assert_array_equal(bank.payload(SUCCESSOR_ROW), [1, -1, 3, -1])
+    np.testing.assert_array_equal(bank.payload(EVENT_ORDINAL), [0, 1, 0, 1])
     results = bank.search(
         np.asarray([1.0, 0.0, 0.0], dtype=np.float32),
         top_k=10,

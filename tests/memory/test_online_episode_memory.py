@@ -106,6 +106,9 @@ def test_exact_executed_prefix_is_committed_only_after_next_real_observation() -
     )
     assert preview is not None
     assert preview.action_summary_count == 1
+    assert preview.episode_role_ids.tolist() == [1] * 4
+    assert preview.episode_relative_age.tolist() == [1.0] * 4
+    assert preview.episode_action_relative_age.tolist() == [0.0]
     preview_vector = preview.episode_action_summaries[-1].copy()
     update = runtime.record_factual_observation(
         frame_index=10,
@@ -121,6 +124,9 @@ def test_exact_executed_prefix_is_committed_only_after_next_real_observation() -
     assert history.action_summary_count == 1
     assert history.episode_action_summaries.shape == (1, 25)
     assert history.episode_action_mask.tolist() == [True]
+    assert history.episode_role_ids.tolist() == [1] * 4 + [3] * 4
+    assert history.episode_relative_age.tolist() == [1.0] * 4 + [0.0] * 4
+    assert history.episode_action_relative_age.tolist() == [0.0]
     # Exact summary layout: mean/final/terminal command + four scalars.
     assert history.episode_action_summaries[0, 20] == 1.0
     assert history.episode_action_summaries[0, 21] == pytest.approx(5 / 16)
@@ -230,7 +236,7 @@ def test_model_payload_is_strict_and_cannot_smuggle_predicted_future_fields() ->
         )
 
 
-def test_episode_reset_invalidates_old_history_and_requires_new_initial_anchor() -> None:
+def test_episode_reset_clears_old_factual_dino_tokens_and_requires_new_anchor() -> None:
     runtime = _runtime()
     runtime.begin_episode(1)
     runtime.record_factual_observation(

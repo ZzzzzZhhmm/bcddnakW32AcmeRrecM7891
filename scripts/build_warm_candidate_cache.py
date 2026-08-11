@@ -35,7 +35,7 @@ from fastwam.utils.artifact_claim import artifact_claim
 
 
 SUMMARY_SCHEMA = "warm.candidate-cache-build-summary"
-SUMMARY_SCHEMA_VERSION = 1
+SUMMARY_SCHEMA_VERSION = 2
 
 
 class CandidateCacheBuildError(RuntimeError):
@@ -144,6 +144,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--query-stride", required=True, type=_positive_int)
     parser.add_argument("--top-k", required=True, type=_positive_int)
+    parser.add_argument(
+        "--include-partial-action-queries",
+        action="store_true",
+        help=(
+            "Materialize every query state with at least one factual future "
+            "action, including terminal partial-horizon rows."
+        ),
+    )
     parser.add_argument("--overwrite", action="store_true")
     parser.add_argument(
         "--summary",
@@ -333,6 +341,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         query_stride=args.query_stride,
         top_k=args.top_k,
         query_split=args.query_split,
+        include_partial_action_queries=args.include_partial_action_queries,
     )
     manifest_path = bank_directory / EVENT_BANK_MANIFEST_FILENAME
     if sha256_file(manifest_path) != initial_bank_manifest_hash:
@@ -366,6 +375,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         "query_stride": args.query_stride,
         "top_k": args.top_k,
         "query_split": args.query_split,
+        "query_frame_policy": (
+            "all_factual_states_v1"
+            if args.include_partial_action_queries
+            else "full_horizon_v1"
+        ),
         "query_data_binding": query_binding.to_dict(),
         "episode_exclusion": [
             "global_episode_identity",

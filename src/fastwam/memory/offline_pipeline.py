@@ -543,6 +543,35 @@ def fixed_horizon_query_starts(
     return tuple(starts)
 
 
+def factual_state_query_starts(
+    num_states: int,
+    *,
+    stride: int,
+) -> tuple[int, ...]:
+    """Return every strided factual observation state.
+
+    Unlike :func:`fixed_horizon_query_starts`, this includes the terminal
+    partial-horizon region.  Those rows are essential for receding-horizon
+    policies: evaluation can retrieve a full historical action exemplar near
+    episode completion even though only a prefix of its current action target
+    and no fixed-horizon future-effect teacher may remain.
+    """
+
+    if isinstance(num_states, bool) or not isinstance(num_states, int):
+        raise TypeError("num_states must be an integer")
+    if num_states < 0:
+        raise OfflinePipelineError("num_states must be non-negative")
+    if stride <= 0:
+        raise OfflinePipelineError("stride must be positive")
+    if num_states == 0:
+        return ()
+    starts = list(range(0, num_states, stride))
+    final_start = num_states - 1
+    if starts[-1] != final_start:
+        starts.append(final_start)
+    return tuple(starts)
+
+
 def build_candidate_cache_from_collection(
     bank: EventBank,
     queries: FeatureCacheCollection,
@@ -551,10 +580,13 @@ def build_candidate_cache_from_collection(
     query_stride: int,
     top_k: int,
     query_split: CandidateQuerySplit = "dev",
+    include_partial_action_queries: bool = False,
 ) -> CandidateCache:
     """Run exact retrieval with identity and source-content episode exclusion."""
 
     query_split = _candidate_query_split(query_split)
+    if not isinstance(include_partial_action_queries, bool):
+        raise TypeError("include_partial_action_queries must be a bool")
     if query_split == "train" and query_stride != 1:
         raise OfflinePipelineError(
             "train candidate caches require query_stride=1 for exact "
@@ -572,11 +604,19 @@ def build_candidate_cache_from_collection(
     candidate_rows: list[tuple[CachedCandidate, ...]] = []
     for record in queries.records:
         episode = record.features
-        for start in fixed_horizon_query_starts(
-            int(episode.model_actions.shape[0]),
-            action_horizon=action_horizon,
-            stride=query_stride,
-        ):
+        num_actions = int(episode.model_actions.shape[0])
+        starts = (
+            factual_state_query_starts(
+                int(episode.context_keys.shape[0]), stride=query_stride
+            )
+            if include_partial_action_queries
+            else fixed_horizon_query_starts(
+                num_actions,
+                action_horizon=action_horizon,
+                stride=query_stride,
+            )
+        )
+        for start in starts:
             query_ids.append(
                 QueryId(
                     episode.dataset_id,
@@ -656,6 +696,7 @@ __all__ = [
     "build_candidate_cache_from_collection",
     "build_event_bank_from_collection",
     "build_oracle_queries_from_collection",
+    "factual_state_query_starts",
     "fixed_horizon_query_starts",
     "load_feature_cache_collection",
     "validate_event_bank_data_binding",

@@ -92,10 +92,11 @@ class WarmRetrospectionConfig:
     thread_score_weight: float = 0.75
     thread_switch_penalty: float = 0.25
     # Once one retrieved event phase has supplied a complete action horizon,
-    # reusing that phase is no longer evidence of temporal continuation.  The
-    # online cursor penalizes and source-rejects same/backward phases until a
-    # genuinely later event is retrieved.  This prevents a visually stable
-    # nearest neighbour from becoming an infinite action-source loop.
+    # reusing that exact/older phase is no longer temporal continuation.  Any
+    # strictly later factual event remains eligible; dense H32 banks normally
+    # advance by only four frames. ``thread_backtrack_tolerance`` is retained
+    # in the serialized config for checkpoint-contract compatibility but is
+    # not allowed to suppress positive successor deltas.
     thread_reuse_penalty: float = 1.0
     thread_backtrack_tolerance: int = 16
     thread_forward_window: int = 256
@@ -217,6 +218,11 @@ class WarmRetrospectionConfig:
         if self.canonical_action_mode == "none" and gripper_dims:
             raise WarmRetrospectionConfigError(
                 "canonical_gripper_dims must be empty when canonical_action_mode='none'"
+            )
+        if gripper_dims and self.timing_dim != 4 * len(gripper_dims):
+            raise WarmRetrospectionConfigError(
+                "timing_dim must provide four phase/validity facts per "
+                "canonical gripper dimension"
             )
         if (
             self.canonical_action_mode == "start_proprio_delta"

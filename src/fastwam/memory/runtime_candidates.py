@@ -45,9 +45,14 @@ _RECIPE_FIELDS = frozenset(
         "query_stride",
         "top_k",
         "query_split",
+        "query_frame_policy",
         "query_data_binding",
         "episode_exclusion",
     }
+)
+_LEGACY_RECIPE_FIELDS = _RECIPE_FIELDS - {"query_frame_policy"}
+_QUERY_FRAME_POLICIES = frozenset(
+    {"full_horizon_v1", "all_factual_states_v1"}
 )
 _BINDING_FIELDS = frozenset(
     {"catalog_sha256", "audit_report_sha256", "split"}
@@ -116,11 +121,14 @@ def _binding(value: object, field: str) -> dict[str, str]:
 
 
 def _runtime_recipe(value: Mapping[str, Any]) -> dict[str, Any]:
-    if not isinstance(value, Mapping) or set(value) != _RECIPE_FIELDS:
-        actual = set(value) if isinstance(value, Mapping) else set()
+    actual = frozenset(value) if isinstance(value, Mapping) else frozenset()
+    if not isinstance(value, Mapping) or actual not in {
+        _RECIPE_FIELDS,
+        _LEGACY_RECIPE_FIELDS,
+    }:
         raise RuntimeCandidateContractError(
             "candidate build_recipe fields are not the closed runtime schema; "
-            f"missing={sorted(_RECIPE_FIELDS - actual)!r}, "
+            f"missing={sorted(_LEGACY_RECIPE_FIELDS - actual)!r}, "
             f"extra={sorted(actual - _RECIPE_FIELDS)!r}"
         )
     if value["implementation"] != "exact_cosine_v1":
@@ -135,6 +143,15 @@ def _runtime_recipe(value: Mapping[str, Any]) -> dict[str, Any]:
         value["query_stride"], "build_recipe.query_stride"
     )
     top_k = _positive_int(value["top_k"], "build_recipe.top_k")
+    query_frame_policy = value.get("query_frame_policy", "full_horizon_v1")
+    if (
+        not isinstance(query_frame_policy, str)
+        or query_frame_policy not in _QUERY_FRAME_POLICIES
+    ):
+        raise RuntimeCandidateContractError(
+            "build_recipe.query_frame_policy must be full_horizon_v1 or "
+            "all_factual_states_v1"
+        )
     if split == "train" and query_stride != 1:
         raise RuntimeCandidateContractError(
             "train candidate cache build_recipe must use query_stride=1"
@@ -158,6 +175,7 @@ def _runtime_recipe(value: Mapping[str, Any]) -> dict[str, Any]:
         "query_stride": query_stride,
         "top_k": top_k,
         "query_split": split,
+        "query_frame_policy": query_frame_policy,
         "query_data_binding": query_binding,
         "episode_exclusion": list(_REQUIRED_EXCLUSIONS),
     }

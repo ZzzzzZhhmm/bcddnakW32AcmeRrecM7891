@@ -52,6 +52,7 @@ from fastwam.models.warm.retrospection_model import (  # noqa: E402
     WarmRetrospectionFastWAM,
     _apply_inference_memory_corruption,
     _smooth_rms,
+    _spatial_effect_summary,
     _warp_candidate_actions,
     _wrong_event_indices,
 )
@@ -82,6 +83,46 @@ def test_smooth_rms_is_zero_and_has_finite_zero_gradient_at_origin() -> None:
     assert residual.grad is not None
     assert torch.isfinite(residual.grad).all()
     assert torch.count_nonzero(residual.grad).item() == 0
+
+
+def test_spatial_effect_summary_is_uniform_at_zero_and_change_attentive() -> None:
+    zero = torch.zeros(1, 4, 3)
+    pre = torch.arange(12, dtype=torch.float32).reshape(1, 4, 3)
+    summary = _spatial_effect_summary(zero, pre)
+    assert torch.allclose(summary, 0.05 * pre.mean(dim=-2))
+
+    delta = torch.zeros(1, 4, 3)
+    delta[:, 2] = torch.tensor([2.0, -1.0, 0.5])
+    attended = _spatial_effect_summary(delta)
+    # One changing spatial cell receives essentially all mass; unchanged
+    # cells cannot dilute it as they would under a global mean.
+    assert torch.allclose(attended, delta[:, 2], atol=1.0e-5, rtol=1.0e-5)
+
+
+def test_spatial_effect_summary_has_finite_gradients_at_zero() -> None:
+    delta = torch.zeros(2, 4, 5, requires_grad=True)
+    _spatial_effect_summary(delta).sum().backward()
+    assert delta.grad is not None
+    assert torch.isfinite(delta.grad).all()
+
+
+def test_spatial_effect_summary_preserves_batch_and_candidate_axes() -> None:
+    delta = torch.zeros(2, 3, 4, 5)
+    pre = torch.arange(2 * 3 * 4 * 5, dtype=torch.float32).reshape(2, 3, 4, 5)
+    delta[0, 1, 2] = 2.0
+    delta[1, 2, 3] = -3.0
+
+    summary = _spatial_effect_summary(delta, pre)
+
+    assert summary.shape == (2, 3, 5)
+    assert torch.isfinite(summary).all()
+    torch.testing.assert_close(
+        summary[0, 1], delta[0, 1, 2] + 0.05 * pre[0, 1, 2]
+    )
+    torch.testing.assert_close(
+        summary[1, 2], delta[1, 2, 3] + 0.05 * pre[1, 2, 3]
+    )
+    torch.testing.assert_close(summary[0, 0], 0.05 * pre[0, 0].mean(dim=0))
 
 
 def test_smooth_rms_matches_ordinary_rms_away_from_origin() -> None:
@@ -432,6 +473,8 @@ def test_full_training_source_exposes_finite_auxiliary_losses() -> None:
         "loss_warm_adaptation",
         "warm_gate_mean",
         "warm_learned_gate_mean",
+        "warm_gate_positive_row_rate",
+        "warm_gate_negative_row_rate",
         "warm_source_quality_mean",
         "warm_selected_memory_rate",
         "warm_forced_rejection_rate",
@@ -514,7 +557,7 @@ def test_online_experiment_controls_are_closed_and_lock_after_inference() -> Non
         )
 
 
-def test_online_thread_prior_prefers_monotonic_event_continuation_and_resets() -> None:
+def test_online_thread_prior_is_local_to_one_source_episode_and_resets() -> None:
     model = _model()
     previous = EventId("train", 0, 7, 100)
     model._warm_thread_event = previous
@@ -530,12 +573,13 @@ def test_online_thread_prior_prefers_monotonic_event_continuation_and_resets() -
         candidate_valid_mask=np.asarray([True, True, True]),
     )
     prior, eligible, offsets = model._online_thread_constraints(step)
+    horizon = model._require_retrospection().action_horizon
     assert prior.shape == (1, 3)
     assert eligible.tolist() == [[True, False, True]]
-    assert offsets.tolist() == [[0, 4, 0]]
+    assert offsets.tolist() == [[0, horizon, 0]]
     assert float(prior[0, 0]) > 0.0
     assert float(prior[0, 1]) < 0.0
-    assert 0.0 <= float(prior[0, 2]) < float(prior[0, 0])
+    assert float(prior[0, 2]) == 0.0
 
     exhausted = SimpleNamespace(
         query_id=SimpleNamespace(episode_index=3, frame_index=24),
@@ -549,15 +593,67 @@ def test_online_thread_prior_prefers_monotonic_event_continuation_and_resets() -
     exhausted_prior, exhausted_eligible, exhausted_offsets = model._online_thread_constraints(
         exhausted
     )
-    assert exhausted_eligible.tolist() == [[False, False, True]]
-    assert exhausted_offsets.tolist() == [[4, 4, 0]]
+    assert exhausted_eligible.tolist() == [[False, True, True]]
+    assert exhausted_offsets.tolist() == [[horizon, 0, 0]]
     expected_penalty = -model._require_retrospection().thread_reuse_penalty
     assert float(exhausted_prior[0, 0]) == expected_penalty
-    assert float(exhausted_prior[0, 1]) == expected_penalty
+    assert float(exhausted_prior[0, 1]) == 0.0
     assert float(exhausted_prior[0, 2]) > 0.0
 
     model.reset_warm_online_episode()
     torch.testing.assert_close(model._online_thread_prior(step), torch.zeros(1, 3))
+
+
+def test_cross_demonstration_thread_constraints_ignore_frame_scale_and_ids() -> None:
+    model = _model()
+    model._warm_thread_event = EventId("train", 0, 7, 100)
+    model._warm_thread_query_frame = 20
+    model._warm_thread_episode_index = 3
+
+    def constraints(events: tuple[EventId, ...], *, query_frame: int = 24):
+        step = SimpleNamespace(
+            query_id=SimpleNamespace(episode_index=3, frame_index=query_frame),
+            event_ids=events,
+            candidate_valid_mask=np.asarray([True] * len(events)),
+        )
+        return model._online_thread_constraints(step)
+
+    ordinary = constraints(
+        (
+            EventId("train", 0, 8, 102),
+            EventId("train", 0, 9, 10_000),
+        )
+    )
+    permuted_and_rescaled = constraints(
+        (
+            EventId("train", 0, 9, 1),
+            EventId("train", 0, 8, 999_999),
+        )
+    )
+    for prior, eligible, offsets in (ordinary, permuted_and_rescaled):
+        torch.testing.assert_close(prior, torch.zeros(1, 2))
+        assert eligible.tolist() == [[True, True]]
+        assert offsets.tolist() == [[0, 0]]
+
+    # Once an independent exemplar is accepted, its exact EventId receives
+    # the ordinary same-episode lease and cannot replay its first prefix.
+    model._warm_thread_event = EventId("train", 0, 8, 999_999)
+    model._warm_thread_query_frame = 24
+    exact_lease = constraints(
+        (
+            EventId("train", 0, 8, 999_999),
+            EventId("train", 0, 9, 999_999),
+        ),
+        query_frame=28,
+    )
+    lease_prior, lease_eligible, lease_offsets = exact_lease
+    expected_penalty = -model._require_retrospection().thread_reuse_penalty
+    assert float(lease_prior[0, 0]) == expected_penalty
+    assert float(lease_prior[0, 1]) == 0.0
+    assert lease_eligible.tolist() == [[False, True]]
+    assert lease_offsets.tolist() == [
+        [model._require_retrospection().action_horizon, 0]
+    ]
 
 
 def test_context_only_keeps_memory_conditioning_but_source_is_exact_gaussian() -> None:

@@ -29,6 +29,7 @@ def test_rmbench_model_context_width_matches_nine_task_vocabulary() -> None:
     assert int(value.retrospection.context_dim) == 768 + 9
     assert int(value.retrospection.action_dim) == 14
     assert int(value.retrospection.action_horizon) == 32
+    assert int(value.retrospection.timing_dim) == 8
     assert value.retrospection.canonical_action_mode == "start_proprio_delta"
     assert list(value.retrospection.canonical_gripper_dims) == [6, 13]
 

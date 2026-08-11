@@ -13,7 +13,14 @@ from scripts.build_warm_event_bank import (
     _load_contract_mapping,
     main,
 )
-from fastwam.memory.bank_builder import EpisodeFeatures
+from fastwam.memory.bank_builder import (
+    ACTION_VALID_MASK,
+    EVENT_ORDINAL,
+    NORMALIZED_PHASE,
+    SUCCESSOR_EVENT_START_FRAME,
+    SUCCESSOR_ROW,
+    EpisodeFeatures,
+)
 from fastwam.memory.event_bank import EventBank, MANIFEST_FILENAME
 from fastwam.memory.feature_cache import FeatureCacheMetadata, save_episode_feature_cache
 from fastwam.memory.manifest import sha256_file
@@ -212,6 +219,21 @@ def test_main_builds_bank_manifest_and_atomic_summary(tmp_path: Path) -> None:
     assert bank.manifest.provenance["feature_contract"] == hashes
     assert len(bank.manifest.provenance["software"]["git_commit"]) == 40
     assert isinstance(bank.manifest.provenance["software"]["git_dirty"], bool)
+    np.testing.assert_array_equal(
+        bank.payload(EVENT_ORDINAL), [0, 1, 2, 0, 1, 2]
+    )
+    np.testing.assert_allclose(
+        bank.payload(NORMALIZED_PHASE), [0.0, 0.75, 1.0, 0.0, 0.75, 1.0]
+    )
+    np.testing.assert_array_equal(
+        bank.payload(SUCCESSOR_ROW), [1, 2, -1, 4, 5, -1]
+    )
+    np.testing.assert_array_equal(
+        bank.payload(SUCCESSOR_EVENT_START_FRAME), [3, 4, -1, 3, 4, -1]
+    )
+    np.testing.assert_array_equal(
+        bank.payload(ACTION_VALID_MASK), np.ones((6, 4), dtype=np.bool_)
+    )
 
     summary_path = tmp_path / "reports" / "summary.json"
     summary = json.loads(summary_path.read_text(encoding="utf-8"))

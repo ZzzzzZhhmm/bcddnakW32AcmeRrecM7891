@@ -812,19 +812,25 @@ def run_training(cfg: DictConfig):
     model_dtype = _mixed_precision_to_model_dtype(mixed_precision)
     model = instantiate(cfg.model, model_dtype=model_dtype, device=model_device)
     evaluation_enabled = int(cfg.get("eval_every", 0)) > 0
+    validate_validation_dataset = getattr(
+        model, "validate_validation_dataset", None
+    )
+    # Formal WARM always binds an independent DEV source contract.  Construct
+    # and validate that dataset even if a debug launch disables periodic
+    # metrics; otherwise a bad DEV cache can survive until checkpoint eval.
+    validation_required = evaluation_enabled or callable(
+        validate_validation_dataset
+    )
     train_ds, val_ds = build_datasets(
-        cfg.data, build_validation=evaluation_enabled
+        cfg.data, build_validation=validation_required
     )
     validate_training_dataset = getattr(model, "validate_training_dataset", None)
     if callable(validate_training_dataset):
         validate_training_dataset(train_ds)
-    validate_validation_dataset = getattr(
-        model, "validate_validation_dataset", None
-    )
     if callable(validate_validation_dataset):
-        if evaluation_enabled and val_ds is train_ds:
+        if val_ds is train_ds:
             raise ValueError(
-                "periodic WARM validation requires a separate catalog-bound "
+                "formal WARM training requires a separate catalog-bound "
                 "dev dataset/cache; reusing the train dataset is forbidden"
             )
         if val_ds is not train_ds:

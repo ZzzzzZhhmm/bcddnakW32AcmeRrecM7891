@@ -1,4 +1,6 @@
 import torch
+import hashlib
+import json
 import numpy as np
 from pathlib import Path
 from typing import List, Literal, Dict, Optional, Any, DefaultDict, Sequence
@@ -38,6 +40,11 @@ class BaseLerobotDataset(torch.utils.data.Dataset):
         # sampling
         global_sample_stride: int = 1,
         strict_sample_loading: bool = False,
+        instruction_variant_manifest_path: Optional[str] = None,
+        instruction_variant_policy: Literal[
+            "primary", "seen_deterministic", "transductive_all_deterministic"
+        ] = "primary",
+        instruction_variant_seed: int = 3407,
     ):
         assert len(dataset_dirs) > 0, "At least one dataset directory is required"
         assert past_action_size == 0
@@ -63,6 +70,29 @@ class BaseLerobotDataset(torch.utils.data.Dataset):
         
         self.global_sample_stride = global_sample_stride
         self.strict_sample_loading = bool(strict_sample_loading)
+        self.instruction_variant_policy = str(instruction_variant_policy)
+        if self.instruction_variant_policy not in {
+            "primary",
+            "seen_deterministic",
+            "transductive_all_deterministic",
+        }:
+            raise ValueError(
+                "instruction_variant_policy must be primary, seen_deterministic, "
+                "or transductive_all_deterministic"
+            )
+        if isinstance(instruction_variant_seed, bool) or not isinstance(
+            instruction_variant_seed, int
+        ):
+            raise TypeError("instruction_variant_seed must be an integer")
+        self.instruction_variant_seed = int(instruction_variant_seed)
+        self.instruction_variant_manifest_path = (
+            None
+            if instruction_variant_manifest_path is None
+            else str(Path(instruction_variant_manifest_path).expanduser().resolve())
+        )
+        self._instruction_variants = self._load_instruction_variants(
+            self.instruction_variant_manifest_path
+        )
 
         self.val_set_proportion = val_set_proportion
         self.is_training_set = is_training_set
@@ -139,8 +169,10 @@ class BaseLerobotDataset(torch.utils.data.Dataset):
             episodes=episodes,
             delta_timestamps=delta_timestamps,
         )
-        
-        # HACK: lerobot 3.0 will fix this
+
+        # HACK: lerobot 3.0 will fix this.  Keep the flattened episode bounds
+        # on the dataset instance: downstream retrospective feature/candidate
+        # adapters use them to bind a sampled frame to its factual episode.
         episode_data_index = []
         end_index = 0
         for dataset in self.multi_dataset._datasets:
@@ -155,6 +187,122 @@ class BaseLerobotDataset(torch.utils.data.Dataset):
             "from": torch.cat([dataset["from"] for dataset in episode_data_index]),
             "to": torch.cat([dataset["to"] for dataset in episode_data_index]),
         }
+
+    def _load_instruction_variants(
+        self, manifest_path: Optional[str]
+    ) -> Dict[int, Dict[str, tuple[str, ...] | str]]:
+        if self.instruction_variant_policy == "primary":
+            if manifest_path is not None and not Path(manifest_path).is_file():
+                raise FileNotFoundError(
+                    f"instruction variant manifest not found: {manifest_path}"
+                )
+            return {}
+        if manifest_path is None:
+            raise ValueError(
+                f"instruction_variant_policy={self.instruction_variant_policy!r} "
+                "requires instruction_variant_manifest_path"
+            )
+        path = Path(manifest_path)
+        if not path.is_file():
+            raise FileNotFoundError(f"instruction variant manifest not found: {path}")
+        rows: Dict[int, Dict[str, tuple[str, ...] | str]] = {}
+        for line_number, raw_line in enumerate(
+            path.read_text(encoding="utf-8").splitlines(), start=1
+        ):
+            if not raw_line.strip():
+                continue
+            try:
+                raw = json.loads(raw_line)
+            except json.JSONDecodeError as error:
+                raise ValueError(
+                    f"invalid instruction variant JSON at {path}:{line_number}"
+                ) from error
+            if not isinstance(raw, dict) or set(raw) != {
+                "episode_index",
+                "primary",
+                "seen",
+                "unseen",
+            }:
+                raise ValueError(
+                    f"invalid instruction variant fields at {path}:{line_number}"
+                )
+            episode_index = raw["episode_index"]
+            if isinstance(episode_index, bool) or not isinstance(episode_index, int):
+                raise TypeError("instruction variant episode_index must be an integer")
+            if episode_index in rows:
+                raise ValueError(
+                    f"duplicate instruction variant episode_index {episode_index}"
+                )
+            normalized: Dict[str, tuple[str, ...] | str] = {}
+            for key in ("seen", "unseen"):
+                value = raw[key]
+                if not isinstance(value, list) or any(
+                    not isinstance(item, str)
+                    or not item
+                    or item != " ".join(item.split())
+                    for item in value
+                ):
+                    raise ValueError(
+                        f"instruction variant {key} must be normalized strings"
+                    )
+                normalized[key] = tuple(value)
+            primary = raw["primary"]
+            if not isinstance(primary, str) or not primary:
+                raise ValueError("instruction variant primary must be non-empty")
+            seen = normalized["seen"]
+            if not seen or primary != seen[0]:
+                raise ValueError(
+                    "instruction variant primary must equal the first seen wording"
+                )
+            normalized["primary"] = primary
+            rows[int(episode_index)] = normalized
+        if not rows:
+            raise ValueError(f"instruction variant manifest is empty: {path}")
+        return rows
+
+    @staticmethod
+    def _scalar_index(value: Any, *, field: str) -> int:
+        if hasattr(value, "detach"):
+            value = value.detach().cpu().reshape(-1)
+            if int(value.numel()) != 1:
+                raise ValueError(f"{field} must contain exactly one scalar")
+            return int(value.item())
+        array = np.asarray(value).reshape(-1)
+        if array.size != 1:
+            raise ValueError(f"{field} must contain exactly one scalar")
+        return int(array[0])
+
+    def _instruction_for_sample(self, lerobot_sample: Dict[str, Any]) -> str:
+        primary = str(lerobot_sample["task"])
+        if self.instruction_variant_policy == "primary":
+            return primary
+        episode_index = self._scalar_index(
+            lerobot_sample["episode_index"], field="episode_index"
+        )
+        frame_index = self._scalar_index(
+            lerobot_sample["frame_index"], field="frame_index"
+        )
+        try:
+            record = self._instruction_variants[episode_index]
+        except KeyError as error:
+            raise ValueError(
+                f"instruction variant manifest lacks episode {episode_index}"
+            ) from error
+        if primary != record["primary"]:
+            raise ValueError(
+                "LeRobot task wording disagrees with instruction variant manifest: "
+                f"episode={episode_index}"
+            )
+        candidates = list(record["seen"])
+        if self.instruction_variant_policy == "transductive_all_deterministic":
+            candidates.extend(record["unseen"])
+        if not candidates:
+            raise ValueError(f"episode {episode_index} has no admissible instruction")
+        identity = (
+            f"{self.instruction_variant_seed}:{episode_index}:{frame_index}"
+        ).encode("utf-8")
+        choice = int.from_bytes(hashlib.sha256(identity).digest()[:8], "big")
+        return str(candidates[choice % len(candidates)])
 
     def _get_action(self, meta, lerobot_sample) -> torch.Tensor:
         key, lerobot_key, raw_shape = meta["key"], meta["lerobot_key"], meta["raw_shape"]
@@ -245,7 +393,7 @@ class BaseLerobotDataset(torch.utils.data.Dataset):
         # Get data from lerobot, organized in nested dict
         sample = {
             "idx": sample_idx,
-            "task": lerobot_sample["task"],
+            "task": self._instruction_for_sample(lerobot_sample),
             "action": {},
             "state": {},
             "images": {},

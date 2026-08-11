@@ -482,6 +482,31 @@ def test_only_catalog_verified_padded_tail_may_use_null_row(tmp_path: Path) -> N
     assert sample[WARM_ORACLE_CANDIDATE_INDEX].item() == -1
 
 
+def test_all_factual_state_cache_resolves_terminal_partial_action_row(
+    tmp_path: Path,
+) -> None:
+    catalog = _catalog()
+    bank_path, cache_path, _ = _write_artifacts(
+        tmp_path,
+        catalog_hash=catalog.content_sha256,
+        query_frame_policy="all_factual_states_v1",
+        include_terminal_query=True,
+    )
+    resolver = RuntimeCandidateResolver.from_artifacts(
+        bank_path,
+        cache_path,
+        expected_query_split="train",
+        expected_query_corpus_sha256=QUERY_CORPUS_HASH,
+        expected_action_space=_action_contract(),
+    )
+    adapter = RuntimeCandidateDatasetAdapter(
+        _BaseDataset([_sample(7)]), resolver, catalog
+    )
+    sample = adapter[0]
+    assert sample[WARM_CANDIDATE_MASK].tolist() == [True, False, False]
+    assert sample[WARM_CANDIDATE_EVENT_INDEX][0].item() != INVALID_BANK_ROW
+
+
 def test_adapter_rejects_false_padding_claim_and_nonunit_stride(tmp_path: Path) -> None:
     resolver, catalog = _resolver_and_catalog(tmp_path)
     false_tail = _sample(2)

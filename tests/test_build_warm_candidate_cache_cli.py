@@ -228,6 +228,7 @@ def test_cli_builds_train_cache_with_stride_one_and_episode_exclusion(
                 str(output),
                 "--query-stride",
                 "1",
+                "--include-partial-action-queries",
                 "--top-k",
                 "3",
             ]
@@ -238,11 +239,15 @@ def test_cli_builds_train_cache_with_stride_one_and_episode_exclusion(
     summary = json.loads(capsys.readouterr().out)
     assert summary["query_split"] == "train"
     assert summary["query_stride"] == 1
-    assert summary["query_count"] == 10
-    assert summary["candidate_count"] == 20
+    assert summary["query_count"] == 18
+    assert summary["candidate_count"] == 36
     restored = CandidateCache.load(output)
     assert restored.manifest is not None
     assert restored.manifest.build_recipe["query_split"] == "train"
+    assert (
+        restored.manifest.build_recipe["query_frame_policy"]
+        == "all_factual_states_v1"
+    )
     assert restored.manifest.build_recipe["query_data_binding"]["split"] == "train"
     assert all(
         candidate.event_id.episode_key != query.episode_key

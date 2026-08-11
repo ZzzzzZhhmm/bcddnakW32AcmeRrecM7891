@@ -1674,12 +1674,20 @@ class EpisodeWorkingMemory:
                 previous.vae_latent, observation.vae_latent
             )
             # Similar commands are normal during a slow approach or grasp.
-            # They become factual *stagnation* evidence only when neither the
-            # semantic world representation nor the VAE observation changed.
-            # This couples action repetition to real closed-loop progress and
-            # prevents absolute-qpos continuity from disabling memory.
-            if summary.repeated and max(world_component, vae_component) > (
-                self._config.stationary_world_change_threshold
+            # Clear repetition only when the semantic world representation
+            # itself reports decisive progress, or when a weaker semantic
+            # change is corroborated by the VAE observation.  A VAE-only
+            # change is deliberately insufficient: reconstruction latents are
+            # sensitive to render noise and must not erase factual stagnation.
+            decisive_world_progress = (
+                world_component >= self._config.motion_world_change_threshold
+            )
+            corroborated_progress = (
+                world_component > self._config.stationary_world_change_threshold
+                and vae_component > self._config.stationary_world_change_threshold
+            )
+            if summary.repeated and (
+                decisive_world_progress or corroborated_progress
             ):
                 summary = ActionSummary(
                     start_frame=summary.start_frame,

@@ -73,6 +73,8 @@ def _write_artifacts(
     audit_hash: str = AUDIT_HASH,
     action_contract: ActionSpaceContract | None = None,
     actions: np.ndarray | None = None,
+    query_frame_policy: str | None = None,
+    include_terminal_query: bool = False,
 ) -> tuple[Path, Path, tuple[EventId, ...]]:
     if action_contract is None:
         action_contract = _action_contract()
@@ -124,19 +126,23 @@ def _write_artifacts(
     manifest_hash = sha256_file(bank_path / MANIFEST_FILENAME)
     content_hash = canonical_event_bank_content_hash(manifest.content_hashes)
 
-    queries = (
+    queries = [
         QueryId("libero", 0, 0, 0),
         QueryId("libero", 0, 0, 1),
-    )
+    ]
+    candidate_rows: list[tuple[CachedCandidate, ...]] = [
+        (
+            CachedCandidate(events[1], 0.8),
+            CachedCandidate(events[2], 0.7),
+        ),
+        (),
+    ]
+    if include_terminal_query:
+        queries.append(QueryId("libero", 0, 0, 7))
+        candidate_rows.append((CachedCandidate(events[1], 0.75),))
     cache = CandidateCache(
         queries,
-        (
-            (
-                CachedCandidate(events[1], 0.8),
-                CachedCandidate(events[2], 0.7),
-            ),
-            (),
-        ),
+        candidate_rows,
     )
     cache_path = tmp_path / "candidates"
     cache.save(
@@ -161,6 +167,11 @@ def _write_artifacts(
                 "source_episode_sha256",
                 "feature_episode_sha256",
             ],
+            **(
+                {}
+                if query_frame_policy is None
+                else {"query_frame_policy": query_frame_policy}
+            ),
         },
     )
     return bank_path, cache_path, events

@@ -26,6 +26,8 @@ from fastwam.memory.offline_pipeline import (
 from fastwam.memory.payload_names import (
     EFFECT_POST,
     EFFECT_PRE,
+    EVENT_ORDINAL,
+    NORMALIZED_PHASE,
     OBSERVED_GRIPPER_STATE,
     START_PROPRIO,
 )
@@ -39,6 +41,7 @@ from .warm_candidates import (
     RuntimeCandidateDatasetAdapter,
     RuntimeCandidateDatasetContractError,
     WARM_CANDIDATE_MASK,
+    WARM_CANDIDATE_MU,
 )
 
 
@@ -50,6 +53,8 @@ WARM_CANDIDATE_START_PROPRIO = "warm_candidate_start_proprio"
 WARM_CANDIDATE_GRIPPER = "warm_candidate_gripper"
 WARM_CANDIDATE_TIMING = "warm_candidate_timing"
 WARM_CANDIDATE_SUPPORT = "warm_candidate_support"
+WARM_CANDIDATE_NORMALIZED_PHASE = "warm_candidate_normalized_phase"
+WARM_CANDIDATE_EVENT_ORDINAL = "warm_candidate_event_ordinal"
 WARM_CURRENT_CONTEXT = "warm_current_context"
 WARM_CURRENT_SEMANTIC = "warm_current_semantic"
 WARM_FUTURE_SEMANTIC = "warm_future_semantic"
@@ -57,8 +62,17 @@ WARM_TARGET_EFFECT = "warm_target_effect"
 WARM_FUTURE_VALID = "warm_future_valid"
 WARM_EPISODE_TOKENS = "warm_episode_tokens"
 WARM_EPISODE_MASK = "warm_episode_mask"
+WARM_EPISODE_ROLE_IDS = "warm_episode_role_ids"
+WARM_EPISODE_RELATIVE_AGE = "warm_episode_relative_age"
 WARM_EPISODE_ACTION_SUMMARIES = "warm_episode_action_summaries"
 WARM_EPISODE_ACTION_MASK = "warm_episode_action_mask"
+WARM_EPISODE_ACTION_RELATIVE_AGE = "warm_episode_action_relative_age"
+
+EPISODE_ROLE_PADDING = 0
+EPISODE_ROLE_INITIAL = 1
+EPISODE_ROLE_EVENT = 2
+EPISODE_ROLE_LATEST = 3
+EPISODE_ROLE_ACTION = 4
 
 logger = get_logger(__name__)
 
@@ -71,6 +85,8 @@ WARM_RETROSPECTIVE_FIELDS = (
     WARM_CANDIDATE_GRIPPER,
     WARM_CANDIDATE_TIMING,
     WARM_CANDIDATE_SUPPORT,
+    WARM_CANDIDATE_NORMALIZED_PHASE,
+    WARM_CANDIDATE_EVENT_ORDINAL,
     WARM_CURRENT_CONTEXT,
     WARM_CURRENT_SEMANTIC,
     WARM_FUTURE_SEMANTIC,
@@ -78,8 +94,11 @@ WARM_RETROSPECTIVE_FIELDS = (
     WARM_FUTURE_VALID,
     WARM_EPISODE_TOKENS,
     WARM_EPISODE_MASK,
+    WARM_EPISODE_ROLE_IDS,
+    WARM_EPISODE_RELATIVE_AGE,
     WARM_EPISODE_ACTION_SUMMARIES,
     WARM_EPISODE_ACTION_MASK,
+    WARM_EPISODE_ACTION_RELATIVE_AGE,
 )
 
 
@@ -628,6 +647,10 @@ class RetrospectiveFeatureStore:
     def action_summary_chunk_size(self) -> int:
         return self._action_summary_chunk_size
 
+    @property
+    def gripper_indices(self) -> tuple[int, ...]:
+        return self._gripper_indices
+
     def has_recent_event(self, query_id: QueryId) -> bool:
         """Whether factual event evidence entered memory in the latest chunk."""
 
@@ -694,9 +717,17 @@ class RetrospectiveFeatureStore:
             (self.max_episode_tokens, token_width), dtype=np.float32
         )
         memory_mask = np.zeros((self.max_episode_tokens,), dtype=np.bool_)
+        memory_role_ids = np.full(
+            (self.max_episode_tokens,), EPISODE_ROLE_PADDING, dtype=np.int64
+        )
+        memory_relative_age = np.zeros(
+            (self.max_episode_tokens,), dtype=np.float32
+        )
         # At frame zero the online model has not yet committed its first
         # factual observation, so the initial query must have empty history.
-        snapshots: list[int] = [] if frame == 0 else [0]
+        snapshots: list[tuple[int, int]] = (
+            [] if frame == 0 else [(0, EPISODE_ROLE_INITIAL)]
+        )
         record_key = (
             query_id.dataset_id,
             query_id.dataset_index,
@@ -713,18 +744,34 @@ class RetrospectiveFeatureStore:
             features.semantic_features,
             capacity=self._recent_event_capacity,
         )
+        recent_snapshots = [index for index in recent_snapshots if index > 0]
         if latest_observed > 0 and latest_observed not in recent_snapshots:
             recent_snapshots = [*recent_snapshots, latest_observed]
         recent_snapshots = sorted(set(recent_snapshots))[
             -self._recent_event_capacity :
         ]
-        snapshots.extend(recent_snapshots)
+        snapshots.extend(
+            (
+                index,
+                (
+                    EPISODE_ROLE_LATEST
+                    if index == latest_observed
+                    else EPISODE_ROLE_EVENT
+                ),
+            )
+            for index in recent_snapshots
+        )
         cursor = 0
-        for index in snapshots:
+        age_denominator = float(max(frame, 1))
+        for index, role_id in snapshots:
             tokens = np.asarray(features.semantic_features[index], dtype=np.float32)
             stop = cursor + int(tokens.shape[0])
             memory[cursor:stop] = tokens
             memory_mask[cursor:stop] = True
+            memory_role_ids[cursor:stop] = role_id
+            memory_relative_age[cursor:stop] = np.float32(
+                min(max((frame - index) / age_denominator, 0.0), 1.0)
+            )
             cursor = stop
 
         summaries = np.zeros(
@@ -733,6 +780,9 @@ class RetrospectiveFeatureStore:
         )
         summary_mask = np.zeros(
             (self._action_summary_capacity,), dtype=np.bool_
+        )
+        summary_relative_age = np.zeros(
+            (self._action_summary_capacity,), dtype=np.float32
         )
         chunks: list[tuple[int, int, np.ndarray]] = []
         end = frame
@@ -749,6 +799,7 @@ class RetrospectiveFeatureStore:
         chunks.reverse()
         previous_signatures: list[np.ndarray] = []
         summary_vectors: list[np.ndarray] = []
+        summary_stops: list[int] = []
         for start, stop, chunk in chunks:
             # Online, the newest executed prefix is visible as a preview at
             # inference time, but its current observation is committed only
@@ -782,15 +833,22 @@ class RetrospectiveFeatureStore:
                 factual_outcome_available=factual_outcome_available,
             )
             summary_vectors.append(vector)
+            summary_stops.append(stop)
             previous_signatures.append(signature)
             previous_signatures = previous_signatures[
                 -self._action_summary_capacity :
             ]
         summary_vectors = summary_vectors[-self._action_summary_capacity :]
+        summary_stops = summary_stops[-self._action_summary_capacity :]
         offset = self._action_summary_capacity - len(summary_vectors)
-        for position, vector in enumerate(summary_vectors, start=offset):
+        for position, (vector, stop) in enumerate(
+            zip(summary_vectors, summary_stops, strict=True), start=offset
+        ):
             summaries[position] = vector
             summary_mask[position] = True
+            summary_relative_age[position] = np.float32(
+                min(max((frame - stop) / age_denominator, 0.0), 1.0)
+            )
 
         return {
             WARM_CURRENT_CONTEXT: np.ascontiguousarray(current_context),
@@ -800,8 +858,13 @@ class RetrospectiveFeatureStore:
             WARM_FUTURE_VALID: np.bool_(future_valid),
             WARM_EPISODE_TOKENS: np.ascontiguousarray(memory),
             WARM_EPISODE_MASK: np.ascontiguousarray(memory_mask),
+            WARM_EPISODE_ROLE_IDS: np.ascontiguousarray(memory_role_ids),
+            WARM_EPISODE_RELATIVE_AGE: np.ascontiguousarray(memory_relative_age),
             WARM_EPISODE_ACTION_SUMMARIES: np.ascontiguousarray(summaries),
             WARM_EPISODE_ACTION_MASK: np.ascontiguousarray(summary_mask),
+            WARM_EPISODE_ACTION_RELATIVE_AGE: np.ascontiguousarray(
+                summary_relative_age
+            ),
         }
 
 
@@ -825,6 +888,60 @@ def _gripper_timing(values: np.ndarray, valid: np.ndarray) -> np.ndarray:
             output[row, 2] = float(opened[0] + 1) / denominator
             output[row, 3] = 1.0
     return output
+
+
+def _gripper_timing_from_actions(
+    actions: np.ndarray,
+    start_proprio: np.ndarray,
+    valid: np.ndarray,
+    gripper_indices: tuple[int, ...],
+) -> np.ndarray:
+    """Return four timing facts per independent gripper command channel.
+
+    The legacy bank keeps one scalar gripper-change signal for event mining.
+    That scalar intentionally detects *any* gripper motion, but it collapses
+    left and right timing on RMBench.  The executable action exemplars and
+    factual start proprio retain both channels, so derive the adapter timing
+    metadata from those losslessly instead of changing the immutable bank
+    signal.  LIBERO has one configured channel and therefore remains 4D;
+    RMBench has channels 6/13 and becomes 8D.
+    """
+
+    actions = np.asarray(actions, dtype=np.float32)
+    start = np.asarray(start_proprio, dtype=np.float32)
+    valid = np.asarray(valid, dtype=np.bool_)
+    indices = tuple(int(value) for value in gripper_indices)
+    if actions.ndim != 3 or start.ndim != 2 or valid.ndim != 1:
+        raise RetrospectiveFeatureStoreError(
+            "candidate action/start/mask shapes are inconsistent"
+        )
+    if actions.shape[0] != start.shape[0] or actions.shape[0] != valid.shape[0]:
+        raise RetrospectiveFeatureStoreError(
+            "candidate action/start/mask counts are inconsistent"
+        )
+    if actions.shape[2] != start.shape[1]:
+        raise RetrospectiveFeatureStoreError(
+            "candidate action and start proprio widths differ"
+        )
+    if not indices or len(set(indices)) != len(indices) or any(
+        index < 0 or index >= actions.shape[2] for index in indices
+    ):
+        raise RetrospectiveFeatureStoreError(
+            "gripper_indices must be unique action dimensions"
+        )
+    if not np.isfinite(actions).all() or not np.isfinite(start).all():
+        raise RetrospectiveFeatureStoreError(
+            "candidate action/start tensors must be finite"
+        )
+    output = np.zeros((actions.shape[0], 4 * len(indices)), dtype=np.float32)
+    for gripper_position, action_index in enumerate(indices):
+        sequence = np.concatenate(
+            [start[:, None, action_index], actions[:, :, action_index]], axis=1
+        )
+        timing = _gripper_timing(sequence, valid)
+        output[:, 4 * gripper_position : 4 * (gripper_position + 1)] = timing
+    output[~valid] = 0.0
+    return np.ascontiguousarray(output)
 
 
 class RuntimeRetrospectiveDatasetAdapter(torch.utils.data.Dataset):
@@ -860,7 +977,9 @@ class RuntimeRetrospectiveDatasetAdapter(torch.utils.data.Dataset):
         self._dataset = dataset
         self._feature_store = feature_store
         self.lerobot_dataset = dataset.lerobot_dataset
-        self._sampling_strata_cache: tuple[tuple[str, bool], ...] | None = None
+        self._sampling_strata_cache: (
+            tuple[tuple[str, str, int, bool], ...] | None
+        ) = None
 
     @property
     def resolver(self) -> RuntimeCandidateResolver:
@@ -878,16 +997,44 @@ class RuntimeRetrospectiveDatasetAdapter(torch.utils.data.Dataset):
     def __len__(self) -> int:
         return len(self._dataset)
 
-    def sampling_strata(self) -> tuple[tuple[str, bool], ...]:
-        """Return deterministic task/recent-event strata for the train sampler."""
+    def sampling_strata(self) -> tuple[tuple[str, str, int, bool], ...]:
+        """Return task/episode/progress/critical-event sampling strata.
+
+        RMBench demonstrations vary by more than four times in duration.  A
+        frame-weighted sampler therefore lets a few long demonstrations and
+        their long approach phases dominate the 45-demo specialist.  The
+        returned metadata lets the sampler allocate equal mass to tasks,
+        episodes, and occupied progress bins before applying the bounded
+        critical-event boost inside each bin.
+        """
 
         cached = self._sampling_strata_cache
         if cached is not None:
             return cached
-        result = tuple(
-            (task_name, self._feature_store.has_recent_event(query_id))
-            for query_id, task_name in self._dataset.sampling_query_records()
-        )
+        progress_bins = 16
+        rows: list[tuple[str, str, int, bool]] = []
+        for query_id, task_name in self._dataset.sampling_query_records():
+            features = self._feature_store._features(query_id)
+            length = int(features.semantic_features.shape[0])
+            frame = int(query_id.frame_index)
+            denominator = max(length - 1, 1)
+            progress_bin = min(
+                progress_bins - 1,
+                (frame * progress_bins) // (denominator + 1),
+            )
+            endpoint = (
+                frame < self._feature_store._action_horizon
+                or frame >= max(0, length - self._feature_store._action_horizon)
+            )
+            critical = bool(
+                endpoint or self._feature_store.has_recent_event(query_id)
+            )
+            episode_key = (
+                f"{query_id.dataset_id}:{query_id.dataset_index}:"
+                f"{query_id.episode_index}"
+            )
+            rows.append((task_name, episode_key, int(progress_bin), critical))
+        result = tuple(rows)
         if len(result) != len(self):  # pragma: no cover - defensive
             raise RetrospectiveFeatureStoreError(
                 "sampling strata do not align with retrospective dataset"
@@ -912,12 +1059,19 @@ class RuntimeRetrospectiveDatasetAdapter(torch.utils.data.Dataset):
         padded_tail = self._dataset._is_explicit_padded_tail(
             sample, record=record, frame_index=frame_index
         )
-        resolved = self.resolver.resolve(query_id, allow_missing=padded_tail)
+        allow_missing = self._dataset._allows_missing_candidate_row(
+            sample, padded_tail=padded_tail
+        )
+        resolved = self.resolver.resolve(query_id, allow_missing=allow_missing)
         valid = np.asarray(resolved.mask, dtype=np.bool_)
         effect_pre = self.resolver.gather_payload(resolved, EFFECT_PRE)
         effect_post = self.resolver.gather_payload(resolved, EFFECT_POST)
         gripper = self.resolver.gather_payload(
             resolved, OBSERVED_GRIPPER_STATE
+        )
+        start_proprio = self.resolver.gather_payload(resolved, START_PROPRIO)
+        candidate_actions = (
+            sample[WARM_CANDIDATE_MU].detach().to(dtype=torch.float32).cpu().numpy()
         )
         payloads: dict[str, np.ndarray | np.bool_] = {
             WARM_CANDIDATE_CONTEXT: self.resolver.gather_context_keys(resolved),
@@ -926,15 +1080,24 @@ class RuntimeRetrospectiveDatasetAdapter(torch.utils.data.Dataset):
             WARM_CANDIDATE_EFFECT_DELTA: np.ascontiguousarray(
                 effect_post - effect_pre, dtype=np.float32
             ),
-            WARM_CANDIDATE_START_PROPRIO: self.resolver.gather_payload(
-                resolved, START_PROPRIO
-            ),
+            WARM_CANDIDATE_START_PROPRIO: start_proprio,
             WARM_CANDIDATE_GRIPPER: gripper,
-            WARM_CANDIDATE_TIMING: _gripper_timing(gripper, valid),
+            WARM_CANDIDATE_TIMING: _gripper_timing_from_actions(
+                candidate_actions,
+                start_proprio,
+                valid,
+                self._feature_store.gripper_indices,
+            ),
             # V1 stores exemplars rather than learned clusters.  Every factual
             # exemplar therefore has support one; event_score remains factual
             # change metadata and is not mislabeled as cluster support.
             WARM_CANDIDATE_SUPPORT: valid.astype(np.float32),
+            WARM_CANDIDATE_NORMALIZED_PHASE: self.resolver.gather_payload(
+                resolved, NORMALIZED_PHASE
+            ),
+            WARM_CANDIDATE_EVENT_ORDINAL: self.resolver.gather_payload(
+                resolved, EVENT_ORDINAL
+            ),
         }
         payloads.update(self._feature_store.query_payload(query_id))
         for key, value in payloads.items():
@@ -959,14 +1122,19 @@ __all__ = [
     "WARM_CANDIDATE_EFFECT_POST",
     "WARM_CANDIDATE_EFFECT_PRE",
     "WARM_CANDIDATE_GRIPPER",
+    "WARM_CANDIDATE_EVENT_ORDINAL",
+    "WARM_CANDIDATE_NORMALIZED_PHASE",
     "WARM_CANDIDATE_START_PROPRIO",
     "WARM_CANDIDATE_SUPPORT",
     "WARM_CANDIDATE_TIMING",
     "WARM_CURRENT_CONTEXT",
     "WARM_CURRENT_SEMANTIC",
     "WARM_EPISODE_MASK",
+    "WARM_EPISODE_ROLE_IDS",
+    "WARM_EPISODE_RELATIVE_AGE",
     "WARM_EPISODE_ACTION_MASK",
     "WARM_EPISODE_ACTION_SUMMARIES",
+    "WARM_EPISODE_ACTION_RELATIVE_AGE",
     "WARM_EPISODE_TOKENS",
     "WARM_FUTURE_SEMANTIC",
     "WARM_FUTURE_VALID",
@@ -974,4 +1142,9 @@ __all__ = [
     "WARM_TARGET_EFFECT",
     "collect_feature_payloads",
     "collect_feature_payloads_from_list",
+    "EPISODE_ROLE_PADDING",
+    "EPISODE_ROLE_INITIAL",
+    "EPISODE_ROLE_EVENT",
+    "EPISODE_ROLE_LATEST",
+    "EPISODE_ROLE_ACTION",
 ]
