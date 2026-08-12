@@ -17,6 +17,7 @@ from fastwam.datasets.rmbench.constants import (
 )
 from fastwam.datasets.rmbench.converter import (
     RMBenchConversionConfig,
+    _atomic_publish_directory,
     convert_rmbench_dataset,
 )
 from fastwam.datasets.rmbench.source import (
@@ -396,6 +397,38 @@ def test_synthetic_conversion_is_factual_hashed_atomic_and_split_safe(
 
     with pytest.raises(FileExistsError, match="already exists"):
         convert_rmbench_dataset(config)
+
+
+def test_atomic_publish_falls_back_to_rename_on_einval(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import ctypes
+    import errno
+    import sys
+
+    if not sys.platform.startswith("linux"):
+        pytest.skip("renameat2 fallback is Linux-specific")
+
+    staging = tmp_path / "staging"
+    output = tmp_path / "output"
+    staging.mkdir()
+    (staging / "marker").write_text("ok", encoding="utf-8")
+
+    class FakeLibC:
+        @staticmethod
+        def renameat2(*_args, **_kwargs) -> int:
+            ctypes.set_errno(errno.EINVAL)
+            return -1
+
+    monkeypatch.setattr(
+        "ctypes.CDLL",
+        lambda *_args, **_kwargs: FakeLibC(),
+    )
+
+    _atomic_publish_directory(staging, output)
+    assert not staging.exists()
+    assert output.is_dir()
+    assert (output / "marker").read_text(encoding="utf-8") == "ok"
 
 
 def test_failed_conversion_does_not_publish_partial_destination(tmp_path: Path) -> None:

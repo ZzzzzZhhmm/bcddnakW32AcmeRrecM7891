@@ -226,6 +226,11 @@ def _atomic_publish_directory(staging: Path, output: Path) -> None:
         error = ctypes.get_errno()
         if error in {errno.EEXIST, errno.ENOTEMPTY}:
             raise FileExistsError(error, os.strerror(error), str(output))
+        if error == errno.EINVAL and not output.exists():
+            # QuarkFS/AFS rejects renameat2(RENAME_NOREPLACE) for directories.
+            # Fall back to plain rename when the destination is known absent.
+            os.rename(staging, output)
+            return
         raise OSError(error, os.strerror(error), str(output))
     raise RuntimeError(
         "this platform lacks a verified atomic no-clobber directory publish primitive"

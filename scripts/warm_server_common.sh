@@ -226,3 +226,17 @@ warm_refuse_existing_output() {
     warm_die "immutable output already exists: ${path}" || return
   fi
 }
+
+# Formal GPU-server scripts must not rely on the container default ``python``.
+# ACP containers often expose a bare miniconda interpreter without WARM deps.
+warm_activate_conda_env() {
+  local env_dir="${CONDA_ENV_DIR:-/mnt/afs/task3_2/L202500276_lwz/envs/warm}"
+  if [[ ! -x "${env_dir}/bin/python" ]]; then
+    warm_die "persistent WARM Python environment is incomplete: ${env_dir}" || return
+  fi
+  export CONDA_ENV_DIR="${env_dir}"
+  export PATH="${env_dir}/bin:${PATH}"
+  export PYTHONNOUSERSITE=1
+  export PYTHONDONTWRITEBYTECODE=1
+  export PYTHONUNBUFFERED=1
+}
