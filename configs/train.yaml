@@ -9,6 +9,9 @@ defaults:
 
 output_dir: ./runs/train/${now:%Y-%m-%d}_${now:%H-%M-%S}
 
+# text-embedding cache generation (scripts/precompute_text_embeds.py)
+overwrite: true
+
 # dataloading
 batch_size: 2
 num_workers: 4
