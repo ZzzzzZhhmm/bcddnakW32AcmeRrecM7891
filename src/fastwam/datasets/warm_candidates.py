@@ -994,22 +994,24 @@ class RuntimeCandidateDatasetAdapter(torch.utils.data.Dataset):
         else:
             action_padding = _bool_padding_vector(sample, "action_is_pad")
             if bool(action_padding.any().item()):
-                raise RuntimeCandidateDatasetContractError(
-                    "factual candidate rows must have a fully factual action horizon"
+                # Partial-action tails still resolve factual candidates for
+                # retrieval/source/gate supervision, but full-horizon oracle
+                # distance is undefined when future teacher steps are padded.
+                oracle_index = -1
+            else:
+                target = action.detach().to(dtype=torch.float32).numpy()
+                distances = np.asarray(
+                    [
+                        action_distance(
+                            candidate_mu[int(slot)],
+                            target,
+                            self._oracle_distance_config,
+                        ).total
+                        for slot in valid_slots
+                    ],
+                    dtype=np.float64,
                 )
-            target = action.detach().to(dtype=torch.float32).numpy()
-            distances = np.asarray(
-                [
-                    action_distance(
-                        candidate_mu[int(slot)],
-                        target,
-                        self._oracle_distance_config,
-                    ).total
-                    for slot in valid_slots
-                ],
-                dtype=np.float64,
-            )
-            oracle_index = int(valid_slots[int(np.argmin(distances))])
+                oracle_index = int(valid_slots[int(np.argmin(distances))])
         sample[WARM_ORACLE_CANDIDATE_INDEX] = torch.tensor(
             oracle_index, dtype=torch.int64
         )

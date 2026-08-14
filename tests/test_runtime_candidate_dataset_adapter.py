@@ -505,6 +505,7 @@ def test_all_factual_state_cache_resolves_terminal_partial_action_row(
     sample = adapter[0]
     assert sample[WARM_CANDIDATE_MASK].tolist() == [True, False, False]
     assert sample[WARM_CANDIDATE_EVENT_INDEX][0].item() != INVALID_BANK_ROW
+    assert sample[WARM_ORACLE_CANDIDATE_INDEX].item() == -1
 
 
 def test_adapter_rejects_false_padding_claim_and_nonunit_stride(tmp_path: Path) -> None:
