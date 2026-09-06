@@ -44,8 +44,15 @@ def test_full_replan_passes_only_prior_history_then_commits_factual_output() -> 
     predict = _source("_predict_action_chunk")
     history_pos = predict.index("retrospective_history_kwargs()")
     infer_pos = predict.index("model.infer_action(**infer_kwargs)")
+    factual_pos = predict.index(
+        "online_runtime.retriever.factual_world_tokens(online_step)"
+    )
+    bind_pos = predict.index("pred = bind_factual_world_tokens(")
     commit_pos = predict.index("commit_factual_replan_observation(")
-    assert history_pos < infer_pos < commit_pos
+    assert history_pos < infer_pos < bind_pos < factual_pos < commit_pos
+    assert (
+        "full WARM factual memory requires a bound online retrieval step" in predict
+    )
     for field in (
         "episode_tokens",
         "episode_mask",

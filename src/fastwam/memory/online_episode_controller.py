@@ -20,6 +20,69 @@ from typing import Any, Mapping
 import numpy as np
 
 
+class FactualObservationBindingError(ValueError):
+    """Raised when a model observation cannot be bound to factual features."""
+
+
+def bind_factual_world_tokens(
+    model_output: Mapping[str, Any],
+    factual_world_tokens: Any,
+) -> dict[str, Any]:
+    """Replace learned bridge tokens with immutable factual DINO tokens.
+
+    WARM uses its semantic bridge for action inference, while causal episode
+    memory is trained on the frozen-DINO 2x2 spatial token domain.  Online
+    retrievers already derive those factual tokens from the current real
+    observation.  This benchmark-neutral boundary swaps only ``world_tokens``
+    after inference, preserving the model-certified VAE latent and
+    proprioception and admitting neither a prediction nor a second encoder
+    forward into memory.
+    """
+
+    if not isinstance(model_output, Mapping):
+        raise FactualObservationBindingError("WARM model output must be a mapping")
+    payload = model_output.get("warm_factual_observation")
+    expected = {"world_tokens", "vae_latent", "proprio"}
+    if not isinstance(payload, Mapping) or set(payload) != expected:
+        raise FactualObservationBindingError(
+            "WARM factual observation fields are incomplete"
+        )
+
+    tokens = np.asarray(factual_world_tokens)
+    if (
+        tokens.dtype != np.dtype(np.float32)
+        or tokens.ndim != 2
+        or tokens.shape[0] != 4
+        or not np.isfinite(tokens).all()
+    ):
+        raise FactualObservationBindingError(
+            "retriever factual world tokens must be finite float32 [4,D]"
+        )
+    if tokens.flags.writeable:
+        raise FactualObservationBindingError(
+            "retriever factual world tokens must be immutable"
+        )
+
+    bridge = payload["world_tokens"]
+    try:
+        bridge_shape = tuple(int(value) for value in bridge.shape)
+    except (AttributeError, TypeError, ValueError) as exc:
+        raise FactualObservationBindingError(
+            "model bridge world tokens must expose a concrete shape"
+        ) from exc
+    if bridge_shape != tokens.shape:
+        raise FactualObservationBindingError(
+            "factual DINO and model bridge world-token shapes differ: "
+            f"{tokens.shape} != {bridge_shape}"
+        )
+
+    result = dict(model_output)
+    factual = dict(payload)
+    factual["world_tokens"] = tokens
+    result["warm_factual_observation"] = factual
+    return result
+
+
 @dataclass(slots=True)
 class OnlineEpisodeController:
     """Own one fail-closed online WARM episode lifecycle.
@@ -208,4 +271,8 @@ class OnlineEpisodeController:
         return evidence
 
 
-__all__ = ["OnlineEpisodeController"]
+__all__ = [
+    "FactualObservationBindingError",
+    "OnlineEpisodeController",
+    "bind_factual_world_tokens",
+]

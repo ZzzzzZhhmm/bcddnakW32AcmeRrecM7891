@@ -677,7 +677,10 @@ class RMBenchWarmPolicy:
             or int(retrospection.action_horizon) != 32
             or int(retrospection.semantic_dim) != 768
             or int(retrospection.proprio_dim) != 14
-            or int(retrospection.timing_dim) != 4
+            # RMBench has two independent grippers.  V5 records four
+            # phase/validity facts for each one, matching the 8-D training
+            # contract rather than the legacy single-gripper width.
+            or int(retrospection.timing_dim) != 8
             or int(retrospection.episode_action_chunk_size) != self.replan_steps
             or int(retrospection.episode_action_summary_dim) != 46
         ):

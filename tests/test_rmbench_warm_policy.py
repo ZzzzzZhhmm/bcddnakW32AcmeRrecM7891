@@ -436,6 +436,8 @@ def test_deploy_policy_exposes_official_signatures_and_full_warm_boundaries() ->
     )
     for fragment in required_fragments:
         assert fragment in source
+    assert "int(retrospection.timing_dim) != 8" in source
+    assert "int(retrospection.timing_dim) != 4" not in source
     infer_pos = source.index("self.model.infer_action(**infer_kwargs)")
     factual_pos = source.index("self.retriever.factual_world_tokens(online_step)")
     commit_pos = source.index("self.controller.commit_factual_replan_observation(")

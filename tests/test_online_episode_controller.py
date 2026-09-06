@@ -6,7 +6,11 @@ import numpy as np
 import pytest
 
 from fastwam.memory.candidate_cache import QueryId
-from fastwam.memory.online_episode_controller import OnlineEpisodeController
+from fastwam.memory.online_episode_controller import (
+    FactualObservationBindingError,
+    OnlineEpisodeController,
+    bind_factual_world_tokens,
+)
 
 
 class _Retriever:
@@ -106,3 +110,38 @@ def test_controller_requires_explicit_episode_seal() -> None:
     controller.begin_episode(0)
     with pytest.raises(RuntimeError, match="end_episode"):
         controller.begin_episode(1)
+
+
+def test_factual_token_binding_replaces_only_bridge_world_tokens() -> None:
+    bridge = np.full((4, 3), -7.0, dtype=np.float32)
+    vae = np.full((2, 2), 5.0, dtype=np.float32)
+    proprio = np.arange(14, dtype=np.float32)
+    output = {
+        "action": np.zeros((1, 32, 14), dtype=np.float32),
+        "warm_factual_observation": {
+            "world_tokens": bridge,
+            "vae_latent": vae,
+            "proprio": proprio,
+        },
+    }
+    source = np.arange(12, dtype=np.float32).reshape(4, 3)
+    tokens = np.frombuffer(source.tobytes(), dtype=np.float32).reshape(4, 3)
+
+    replaced = bind_factual_world_tokens(output, tokens)
+
+    assert replaced is not output
+    assert replaced["warm_factual_observation"] is not output[
+        "warm_factual_observation"
+    ]
+    assert replaced["warm_factual_observation"]["world_tokens"] is tokens
+    assert replaced["warm_factual_observation"]["vae_latent"] is vae
+    assert replaced["warm_factual_observation"]["proprio"] is proprio
+    assert output["warm_factual_observation"]["world_tokens"] is bridge
+
+    with pytest.raises(FactualObservationBindingError, match="immutable"):
+        bind_factual_world_tokens(output, source)
+    wrong_shape = np.frombuffer(
+        np.zeros((4, 2), dtype=np.float32).tobytes(), dtype=np.float32
+    ).reshape(4, 2)
+    with pytest.raises(FactualObservationBindingError, match="shapes differ"):
+        bind_factual_world_tokens(output, wrong_shape)

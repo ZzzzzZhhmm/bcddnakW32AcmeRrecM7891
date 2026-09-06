@@ -16,6 +16,11 @@ from typing import Any, Mapping
 
 import numpy as np
 
+from fastwam.memory.online_episode_controller import (
+    FactualObservationBindingError,
+    bind_factual_world_tokens,
+)
+
 
 PROCESSOR_CAMERA_KEYS = (
     "cam_high",
@@ -235,46 +240,10 @@ def replace_bridge_world_tokens_with_factual_dino(
     and proprioception.  No prediction or second DINO forward is admitted.
     """
 
-    if not isinstance(model_output, Mapping):
-        raise RMBenchPolicyBoundaryError("WARM model output must be a mapping")
-    payload = model_output.get("warm_factual_observation")
-    expected = {"world_tokens", "vae_latent", "proprio"}
-    if not isinstance(payload, Mapping) or set(payload) != expected:
-        raise RMBenchPolicyBoundaryError(
-            "WARM factual observation fields are incomplete"
-        )
-    tokens = np.asarray(factual_world_tokens)
-    if (
-        tokens.dtype != np.dtype(np.float32)
-        or tokens.ndim != 2
-        or tokens.shape[0] != 4
-        or not np.isfinite(tokens).all()
-    ):
-        raise RMBenchPolicyBoundaryError(
-            "retriever factual world tokens must be finite float32 [4,D]"
-        )
-    if tokens.flags.writeable:
-        raise RMBenchPolicyBoundaryError(
-            "retriever factual world tokens must be immutable"
-        )
-    bridge = payload["world_tokens"]
     try:
-        bridge_shape = tuple(int(value) for value in bridge.shape)
-    except (AttributeError, TypeError, ValueError) as exc:
-        raise RMBenchPolicyBoundaryError(
-            "model bridge world tokens must expose a concrete shape"
-        ) from exc
-    if bridge_shape != tokens.shape:
-        raise RMBenchPolicyBoundaryError(
-            "factual DINO and model bridge world-token shapes differ: "
-            f"{tokens.shape} != {bridge_shape}"
-        )
-
-    result = dict(model_output)
-    factual = dict(payload)
-    factual["world_tokens"] = tokens
-    result["warm_factual_observation"] = factual
-    return result
+        return bind_factual_world_tokens(model_output, factual_world_tokens)
+    except FactualObservationBindingError as exc:
+        raise RMBenchPolicyBoundaryError(str(exc)) from exc
 
 
 def _event_identity(value: Any | None) -> dict[str, Any] | None:

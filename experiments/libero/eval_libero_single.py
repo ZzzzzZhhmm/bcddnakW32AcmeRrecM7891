@@ -43,6 +43,7 @@ from fastwam.datasets.lerobot.processors.fastwam_processor import FastWAMProcess
 from fastwam.datasets.lerobot.utils.normalizer import load_dataset_stats_from_json
 from fastwam.utils.pytorch_utils import set_global_seed
 from fastwam.datasets.lerobot.robot_video_dataset import DEFAULT_PROMPT
+from fastwam.memory.online_episode_controller import bind_factual_world_tokens
 from libero.libero import benchmark
 from action_ensembler import ActionEnsembler
 
@@ -1582,6 +1583,18 @@ def _predict_action_chunk(
                 raise RuntimeError(
                     "full WARM factual memory requires an absolute frame index"
                 )
+            if online_step is None or online_runtime.retriever is None:
+                raise RuntimeError(
+                    "full WARM factual memory requires a bound online retrieval step"
+                )
+            # Inference consumes learned semantic-bridge tokens, but episode
+            # memory is trained in the frozen-DINO 2x2 token domain.  Bind the
+            # current real observation's immutable retriever tokens only after
+            # the one-shot model call and before the causal memory commit.
+            pred = bind_factual_world_tokens(
+                pred,
+                online_runtime.retriever.factual_world_tokens(online_step),
+            )
             retrospective_update_evidence = (
                 online_runtime.commit_factual_replan_observation(
                     frame_index=frame_index,
