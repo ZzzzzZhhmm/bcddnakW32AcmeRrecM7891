@@ -3,6 +3,10 @@
 **WARM: World-Action Retrospection via Consequence-Aligned Source Transport**
 的私有研究实现。
 
+真机合作方请从 [Piper 协作说明](docs/real/PARTNER_HANDOFF_ZH.md) 和
+[技术接入步骤](docs/real/README.md) 开始。WARM 团队负责训练，合作方负责现场采集、
+推理与实验；当前提供的是接入及离线校验工具，完整硬件执行入口仍待现场接口联调。
+
 WARM 从跨 episode 记忆库检索真实发生过的“前状态—动作—观测后果”事件，独立预测当前任务
 所需要的世界后果，并仅将后果兼容的历史动作作为 Action DiT 的随机 source 分量；当没有
 可靠记忆时，通过显式 Gaussian null 分量拒绝长期记忆。

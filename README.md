@@ -3,6 +3,11 @@
 Private research implementation of **WARM: World-Action Retrospection via
 Consequence-Aligned Source Transport**.
 
+Real-robot partners can start with the [Chinese Piper handoff](docs/real/PARTNER_HANDOFF_ZH.md)
+and [integration guide](docs/real/README.md). The WARM team trains the models;
+the partner owns on-site collection, inference, and trials. The current kit
+provides interchange and offline validation tools, not a qualified hardware executor.
+
 WARM retrieves factual cross-episode `pre-state -> action -> observed-effect`
 events, predicts the world transition required by the current query without
 showing that predictor any long-term candidate, independently validates the
@@ -18,9 +23,9 @@ official RMBench protocol: automatic factual feature/event preparation,
 immutable bank and candidate contracts, causally matched offline and online
 episode working memory, the complete learned WARM model, checkpoint
 serialization, benchmark policies, a same-data FastWAM comparison, and
-reproducible server launchers. **It has
-not yet received large-scale GPU training or simulator validation.** Local CPU
-and synthetic contract tests establish software behavior only; they do not
+reproducible server launchers. Recorded LIBERO evaluation results are available in
+[`docs/RMBENCH_BENCHMARK_CONFIG_AND_LIBERO_RESULTS_zh.md`](docs/RMBENCH_BENCHMARK_CONFIG_AND_LIBERO_RESULTS_zh.md).
+Local CPU and synthetic contract tests establish software behavior only; they do not
 claim learning effectiveness, benchmark success, latency, or non-regression.
 
 Start here:
