@@ -1,0 +1,26 @@
+{
+  "schema": "warm.source-episodes.v1",
+  "episodes": [
+    {
+      "id": "put_back_block_000",
+      "task": "put_back_block",
+      "path": "put_back_block/demo_clean/data/episode0.hdf5",
+      "instructions": "put_back_block/demo_clean/instructions/episode0.json",
+      "split": "train"
+    },
+    {
+      "id": "put_back_block_001",
+      "task": "put_back_block",
+      "path": "put_back_block/demo_clean/data/episode1.hdf5",
+      "instructions": "put_back_block/demo_clean/instructions/episode1.json",
+      "split": "train"
+    },
+    {
+      "id": "put_back_block_002",
+      "task": "put_back_block",
+      "path": "put_back_block/demo_clean/data/episode2.hdf5",
+      "instructions": "put_back_block/demo_clean/instructions/episode2.json",
+      "split": "dev"
+    }
+  ]
+}

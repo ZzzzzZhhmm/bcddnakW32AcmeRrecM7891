@@ -1,0 +1,25 @@
+{
+  "schema": "warm.source-episodes.v1",
+  "episodes": [
+    {
+      "id": "session_A_001",
+      "path": "session_A/episode_001",
+      "split": "train"
+    },
+    {
+      "id": "session_A_002",
+      "path": "session_A/episode_002",
+      "split": "train"
+    },
+    {
+      "id": "session_B_001",
+      "path": "session_B/episode_001",
+      "split": "dev"
+    },
+    {
+      "id": "session_C_001",
+      "path": "session_C/episode_001",
+      "split": "test"
+    }
+  ]
+}

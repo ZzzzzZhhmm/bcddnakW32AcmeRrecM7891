@@ -171,7 +171,10 @@ python scripts/real/replay_inference.py /absolute/path/to/real_episode \
 
 ## 后续实时接口验收
 
-尚待现场信息完成的模块：相机/SDK 采集桥、raw→training 转换、真实 profile、WARM 后端、
+已增加独立的 [Piper raw→training/记忆预处理](PREPROCESSING_ZH.md)，含单活动臂 7D/7D
+profile、配置、train-only 统计量和统一 memory 接口。现场数据与 GPU 编码仍须验收。
+
+尚待现场信息完成的模块：相机/SDK 采集桥、其他原始遥操作格式导入、WARM 后端、
 本地安全控制进程及网络 server/client。请在排期中列入这些工作，不将它们当作本次已实现。
 
 实时请求至少携带 session、episode、obs_seq、client 采集时间、相机/状态及已实际执行的动作回执。

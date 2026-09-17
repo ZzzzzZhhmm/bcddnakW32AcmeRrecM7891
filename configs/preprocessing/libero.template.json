@@ -1,0 +1,63 @@
+{
+  "schema": "warm.preprocessing.v1",
+  "adapter": "libero_lerobot",
+  "dataset_id": "libero_existing_v1",
+  "output": "../../artifacts/libero_adapter_v1",
+  "source": {
+    "roots": [
+      "../../data/libero_mujoco3.3.2/libero_spatial_no_noops_lerobot"
+    ],
+    "catalog": "../../data/libero_spatial_catalog.json"
+  },
+  "profile": {
+    "action_dim": 7,
+    "state_dim": 8,
+    "fps": 20,
+    "action_horizon": 32,
+    "action_video_freq_ratio": 4,
+    "camera_keys": [
+      "image",
+      "wrist_image"
+    ],
+    "semantic_camera": "image",
+    "image_layout": "horizontal_224",
+    "gripper_action_indices": [
+      6
+    ],
+    "gripper_state_indices": [
+      6,
+      7
+    ],
+    "delta_action_mask": [
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false
+    ],
+    "normalization": "min/max",
+    "control_mode": "libero_delta_eef_axis_angle_plus_gripper",
+    "embodiment": "libero_panda"
+  },
+  "encoders": {
+    "dino_checkpoint": "../../checkpoints/dinov2-base",
+    "dino_model_id": "facebook/dinov2-base",
+    "dino_revision": "UNCONFIRMED_PINNED_COMMIT",
+    "vae_checkpoint": "../../checkpoints/Wan2.2_VAE.pth",
+    "include_vae": true,
+    "device": "cuda",
+    "dtype": "bfloat16",
+    "dino_batch_size": 16,
+    "vae_batch_size": 4
+  },
+  "memory": {
+    "start_mode": "hybrid",
+    "top_k": 32,
+    "mining": {
+      "gripper_change_threshold": 0.001
+    }
+  },
+  "test_only": false
+}

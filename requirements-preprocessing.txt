@@ -1,0 +1,8 @@
+# CPU data preparation only. GPU features use the repository's training environment.
+numpy>=1.26,<3
+h5py>=3.10,<4
+pyarrow>=16,<24
+av>=12,<17
+Pillow>=10,<13
+PyYAML>=6,<7
+opencv-python-headless>=4.8,<5

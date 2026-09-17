@@ -1,0 +1,72 @@
+{
+  "schema": "warm.preprocessing.v1",
+  "adapter": "robotwin2",
+  "dataset_id": "robotwin2_v1",
+  "output": "../../artifacts/robotwin2_v1",
+  "source": {
+    "root": "../../data/robotwin2/raw",
+    "manifest": "robotwin2_episodes.template.json",
+    "layout": "legacy",
+    "image_encoding": "legacy_opencv_rgb_jpeg"
+  },
+  "profile": {
+    "action_dim": 14,
+    "state_dim": 14,
+    "fps": 15,
+    "action_horizon": 32,
+    "action_video_freq_ratio": 4,
+    "camera_keys": [
+      "cam_high",
+      "cam_left_wrist",
+      "cam_right_wrist"
+    ],
+    "semantic_camera": "cam_high",
+    "image_layout": "robotwin_3cam",
+    "gripper_action_indices": [
+      6,
+      13
+    ],
+    "gripper_state_indices": [
+      6,
+      13
+    ],
+    "delta_action_mask": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    "normalization": "z-score",
+    "control_mode": "robotwin_bimanual_qpos_plus_grippers",
+    "embodiment": "robotwin_aloha_agilex"
+  },
+  "encoders": {
+    "dino_checkpoint": "../../checkpoints/dinov2-base",
+    "dino_model_id": "facebook/dinov2-base",
+    "dino_revision": "UNCONFIRMED_PINNED_COMMIT",
+    "vae_checkpoint": "../../checkpoints/Wan2.2_VAE.pth",
+    "include_vae": true,
+    "device": "cuda",
+    "dtype": "bfloat16",
+    "dino_batch_size": 16,
+    "vae_batch_size": 4
+  },
+  "memory": {
+    "start_mode": "hybrid",
+    "top_k": 32,
+    "mining": {
+      "gripper_change_threshold": 0.001
+    }
+  },
+  "test_only": false
+}

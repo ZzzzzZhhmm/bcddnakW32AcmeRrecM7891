@@ -1,0 +1,23 @@
+{
+  "schema": "warm.source-episodes.v1",
+  "episodes": [
+    {
+      "id": "put_back_block_000",
+      "task": "put_back_block",
+      "path": "demo_clean/put_back_block/aloha-agilex/data/episode_0000000.hdf5",
+      "split": "train"
+    },
+    {
+      "id": "put_back_block_001",
+      "task": "put_back_block",
+      "path": "demo_clean/put_back_block/aloha-agilex/data/episode_0000001.hdf5",
+      "split": "train"
+    },
+    {
+      "id": "put_back_block_002",
+      "task": "put_back_block",
+      "path": "demo_clean/put_back_block/aloha-agilex/data/episode_0000002.hdf5",
+      "split": "dev"
+    }
+  ]
+}

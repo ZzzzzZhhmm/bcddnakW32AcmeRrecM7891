@@ -300,3 +300,11 @@ onelogger.log
 
 # ACP job logs
 tmp/
+
+# Independent real-robot workspace: raw teleoperation and generated artifacts.
+/real/piper/raw/
+/real/piper/processed/
+/real/piper/releases/
+!requirements-preprocessing.txt
+/configs/real/*.local.json
+/configs/preprocessing/*.local.json

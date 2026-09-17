@@ -28,6 +28,9 @@ from fastwam.memory.candidate_cache import QueryId
 from fastwam.memory.manifest import sha256_file
 from fastwam.memory.oracle_metrics import ActionDistanceConfig, action_distance
 from fastwam.memory.runtime_candidates import RuntimeCandidateResolver
+from fastwam.real.preprocessing.contract import (
+    PIPER_CONTROL_MODE, PIPER_EMBODIMENT, PIPER_IMAGE_SIGNATURE,
+)
 
 
 WARM_CANDIDATE_MU = "warm_candidate_mu"
@@ -250,6 +253,7 @@ class RuntimeCandidateDatasetAdapter(torch.utils.data.Dataset):
                     (384, 320),
                     "robotwin",
                 ),
+                PIPER_CONTROL_MODE: ((224, 448), "horizontal"),
             }.get(control_mode)
             if expected_video is None:
                 raise RuntimeCandidateDatasetContractError(
@@ -370,15 +374,20 @@ class RuntimeCandidateDatasetAdapter(torch.utils.data.Dataset):
         is_robotwin = contract.control_mode == (
             "robotwin_bimanual_qpos_plus_grippers"
         )
-        if not (is_libero or is_robotwin):
+        is_piper = contract.control_mode == PIPER_CONTROL_MODE
+        if not (is_libero or is_robotwin or is_piper):
             raise RuntimeCandidateDatasetContractError(
                 f"unsupported WARM processor control mode {contract.control_mode!r}"
             )
-        if is_libero:
+        if is_piper and contract.embodiment != PIPER_EMBODIMENT:
+            raise RuntimeCandidateDatasetContractError(
+                "Piper preprocessing requires the single active 6-DoF arm embodiment"
+            )
+        if is_libero or is_piper:
             expected_action_dim = 7
             expected_arm_dims = tuple(range(6))
             expected_gripper_dims = (6,)
-            expected_proprio_dim = 8
+            expected_proprio_dim = 7 if is_piper else 8
             expected_cameras = 2
             expected_norm_mode = "global:min/max"
         else:
@@ -534,6 +543,8 @@ class RuntimeCandidateDatasetAdapter(torch.utils.data.Dataset):
                 ("cam_right_wrist", (3, 240, 320)),
             )
         )
+        if is_piper:
+            expected_images = PIPER_IMAGE_SIGNATURE
         if image_signature != expected_images:
             raise RuntimeCandidateDatasetContractError(
                 "processor camera metadata differs from the benchmark profile"
@@ -568,7 +579,7 @@ class RuntimeCandidateDatasetAdapter(torch.utils.data.Dataset):
             return
         if not isinstance(delta_masks, Mapping):
             raise RuntimeCandidateDatasetContractError(
-                "processor must expose the LIBERO delta-action dimension mask"
+                "processor must expose the Cartesian delta-action dimension mask"
             )
         action_keys = [
             item.get("key")
