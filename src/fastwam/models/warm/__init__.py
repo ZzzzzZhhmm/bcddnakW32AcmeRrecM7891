@@ -113,6 +113,16 @@ __all__ = [
 # The Windows source-development environment intentionally need not install the
 # multi-gigabyte CUDA/PyTorch stack.  Keep the NumPy reference contract
 # importable there, while exposing the Torch runtime whenever torch is present.
+# Retrospection is imported lazily: FastWAM imports source_transport during
+# module import, and an eager retrospection_model import would cycle back.
+_RETROSPECTION_EXPORTS = {
+    "OnlineExperimentControls",
+    "RetrospectiveSourceContext",
+    "WARM_ONLINE_ABLATION_MODES",
+    "WARM_ONLINE_MEMORY_CORRUPTIONS",
+    "WarmRetrospectionError",
+    "WarmRetrospectionFastWAM",
+}
 try:
     from .source_transport import (
         ActionFlowPair,
@@ -124,14 +134,6 @@ try:
         measure_source_geometry,
         resolve_action_source,
         select_source_components,
-    )
-    from .retrospection_model import (
-        OnlineExperimentControls,
-        RetrospectiveSourceContext,
-        WARM_ONLINE_ABLATION_MODES,
-        WARM_ONLINE_MEMORY_CORRUPTIONS,
-        WarmRetrospectionError,
-        WarmRetrospectionFastWAM,
     )
 except ModuleNotFoundError as error:
     if error.name != "torch":
@@ -148,11 +150,14 @@ else:
             "measure_source_geometry",
             "resolve_action_source",
             "select_source_components",
-            "OnlineExperimentControls",
-            "RetrospectiveSourceContext",
-            "WARM_ONLINE_ABLATION_MODES",
-            "WARM_ONLINE_MEMORY_CORRUPTIONS",
-            "WarmRetrospectionError",
-            "WarmRetrospectionFastWAM",
+            *_RETROSPECTION_EXPORTS,
         ]
     )
+
+
+def __getattr__(name: str):
+    if name in _RETROSPECTION_EXPORTS:
+        from . import retrospection_model
+
+        return getattr(retrospection_model, name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

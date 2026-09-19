@@ -307,4 +307,5 @@ tmp/
 /real/piper/releases/
 !requirements-preprocessing.txt
 /configs/real/*.local.json
+/configs/real/*.local.yaml
 /configs/preprocessing/*.local.json
