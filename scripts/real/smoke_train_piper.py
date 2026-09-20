@@ -118,10 +118,11 @@ def build_cfg(config_path: Path):
             "output_dir": str(output_dir),
             "batch_size": int(smoke.batch_size),
             "num_workers": int(smoke.num_workers),
-            "run_steps": int(smoke.run_steps),
+            "run_steps": None if smoke.get("run_steps") is None else int(smoke.run_steps),
+            "max_steps": None if smoke.get("max_steps") is None else int(smoke.max_steps),
             "num_epochs": int(smoke.num_epochs),
             "eval_every": int(smoke.eval_every),
-            "eval_num_samples": int(smoke.get("eval_num_samples", 1)),
+            "eval_num_samples": int(smoke.get("eval_num_samples", 0)),
             "save_every": int(smoke.save_every),
             "log_every": int(smoke.log_every),
             "learning_rate": float(smoke.learning_rate),
@@ -153,9 +154,35 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="do not encode T5 caches; fail if they are missing",
     )
+    parser.add_argument(
+        "--init-checkpoint",
+        type=Path,
+        default=None,
+        help="Piper-shaped FastWAM .pt (after 8D-to-7D migration); loaded as resume weights",
+    )
+    parser.add_argument("--run-steps", type=int, default=None)
+    parser.add_argument("--num-epochs", type=int, default=None)
+    parser.add_argument("--save-every", type=int, default=None)
+    parser.add_argument("--eval-every", type=int, default=None)
+    parser.add_argument("--output-dir", type=Path, default=None)
     args = parser.parse_args(argv)
     config_path = args.config.expanduser().resolve()
     cfg, dataset_dir, cache_dir = build_cfg(config_path)
+    if args.run_steps is not None:
+        cfg.run_steps = int(args.run_steps)
+    if args.num_epochs is not None:
+        cfg.num_epochs = int(args.num_epochs)
+    if args.save_every is not None:
+        cfg.save_every = int(args.save_every)
+    if args.eval_every is not None:
+        cfg.eval_every = int(args.eval_every)
+    if args.output_dir is not None:
+        cfg.output_dir = str(args.output_dir.expanduser().resolve())
+    if args.init_checkpoint is not None:
+        init_path = args.init_checkpoint.expanduser().resolve()
+        if not init_path.is_file():
+            raise FileNotFoundError(f"init checkpoint not found: {init_path}")
+        cfg.resume = str(init_path)
     if args.skip_text_embeds:
         tasks = _load_tasks(dataset_dir)
         missing = [
@@ -165,8 +192,13 @@ def main(argv: list[str] | None = None) -> int:
             raise FileNotFoundError(f"missing text embeds: {missing}")
     else:
         ensure_text_embeds(dataset_dir, cache_dir)
-    print(f"smoke output: {cfg.output_dir}")
-    print(f"run_steps={cfg.run_steps} batch_size={cfg.batch_size}")
+    print(f"fastwam output: {cfg.output_dir}")
+    print(
+        f"num_epochs={cfg.num_epochs} run_steps={cfg.run_steps} "
+        f"batch_size={cfg.batch_size} save_every={cfg.save_every} "
+        f"eval_every={cfg.eval_every} eval_num_samples={cfg.eval_num_samples} "
+        f"init_checkpoint={cfg.get('resume')}"
+    )
     run_training(cfg)
     return 0
 

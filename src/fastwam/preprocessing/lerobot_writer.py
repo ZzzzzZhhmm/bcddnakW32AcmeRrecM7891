@@ -28,18 +28,21 @@ def _stats(array: np.ndarray) -> dict[str, Any]:
             "count": [len(array)]}
 
 
-def write_video(path: Path, images: np.ndarray, fps: int) -> None:
+def write_video(path: Path, images: np.ndarray, fps) -> None:
     import av
+    rate = fps if isinstance(fps, Fraction) else Fraction(fps).limit_denominator(1000)
+    if rate <= 0:
+        raise PreparationError("fps must be positive")
     path.parent.mkdir(parents=True, exist_ok=True)
     with av.open(str(path), mode="w", format="mp4") as container:
-        stream = container.add_stream("libx264", rate=Fraction(fps), options={"crf": "18", "preset": "medium", "threads": "1"})
+        stream = container.add_stream("libx264", rate=rate, options={"crf": "18", "preset": "medium", "threads": "1"})
         stream.width, stream.height = images.shape[2], images.shape[1]
         stream.pix_fmt = "yuv420p"
         stream.codec_context.max_b_frames = 0
-        stream.time_base = stream.codec_context.time_base = Fraction(1, fps)
+        stream.time_base = stream.codec_context.time_base = 1 / rate
         for index, image in enumerate(images):
             frame = av.VideoFrame.from_ndarray(image, format="rgb24")
-            frame.pts, frame.time_base = index, Fraction(1, fps)
+            frame.pts, frame.time_base = index, 1 / rate
             for packet in stream.encode(frame):
                 container.mux(packet)
         for packet in stream.encode(None):

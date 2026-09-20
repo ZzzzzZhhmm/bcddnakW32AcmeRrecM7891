@@ -24,9 +24,17 @@ def load_config(path: Path) -> dict:
     for key in ("dataset_id", "output"):
         required_text(cfg.get(key), key)
     profile = cfg["profile"]
-    for key in ("action_dim", "state_dim", "fps", "action_horizon", "action_video_freq_ratio"):
+    for key in ("action_dim", "state_dim", "action_horizon", "action_video_freq_ratio"):
         if type(profile.get(key)) is not int or profile[key] <= 0:
             raise PreparationError(f"profile.{key} must be a positive integer")
+    raw_fps = profile.get("fps")
+    if type(raw_fps) is int and raw_fps > 0:
+        pass
+    elif (isinstance(raw_fps, list) and len(raw_fps) == 2
+          and all(type(item) is int and item > 0 for item in raw_fps)):
+        profile["fps"] = raw_fps[0] / raw_fps[1]
+    else:
+        raise PreparationError("profile.fps must be a positive integer or [numerator, denominator]")
     horizon, ratio = profile["action_horizon"], profile["action_video_freq_ratio"]
     if horizon % ratio or (horizon // ratio) % 4:
         raise PreparationError("FastWAM horizon / action_video_freq_ratio must be divisible by 4")
