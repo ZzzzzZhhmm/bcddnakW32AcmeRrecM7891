@@ -3,22 +3,121 @@
   "deadline_hours": 72,
   "acp_max_hours": 24,
   "runner_max_hours": 23,
-  "resources": {"offered_gpu_count": [1, 4], "observed_gpu_count": 1, "gpu": "H100 80GB"},
+  "resources": {
+    "offered_gpu_count": [
+      1,
+      4
+    ],
+    "observed_gpu_count": 1,
+    "gpu": "H100 80GB"
+  },
   "tasks": [
-    {"id":"W00","priority":"P0","status":"identity_unresolved","code":"artifact inventory and templates implemented","blockers":["paper run mapping absent","only v8 smoke300 located"]},
-    {"id":"W01","priority":"P0","status":"backend_and_pilot_pending","code":"probe export, branch engine and metrics tested","blockers":["mature matching checkpoint","renderer","qualified RMBench state backend","independent label protocol"]},
-    {"id":"W02-A","priority":"P0","status":"source_graph_tested","code":"dual-path forced null implemented","blockers":["formal checkpoint full-DiT fixed-prefix test"]},
-    {"id":"W02-B-C","priority":"P0","status":"collection_pending","code":"raw/effective gate capture and clustered FA/TA implemented","blockers":["W01","eligible-negative coverage","verified all-inapplicable closed-loop cohort"]},
-    {"id":"W03","priority":"P0","status":"analysis_code_tested","blockers":["raw paired outcomes"]},
-    {"id":"W04","priority":"P0","status":"coverage_code_tested","blockers":["original donor protocol and telemetry"]},
-    {"id":"W05","priority":"P1","status":"deferred_until_P0_ready"},
-    {"id":"W06","priority":"P1","status":"local_source_controls_tested_training_deferred"},
-    {"id":"W07","priority":"P1","status":"deferred"},
-    {"id":"W08","priority":"P1","status":"deferred_runtime_blocked"}
+    {
+      "id": "W00",
+      "priority": "P0",
+      "status": "identity_unresolved",
+      "code": "artifact inventory and templates implemented",
+      "blockers": [
+        "paper run mapping absent",
+        "only v8 smoke300 located"
+      ]
+    },
+    {
+      "id": "W01",
+      "priority": "P0",
+      "status": "backend_and_pilot_pending",
+      "code": "probe export, branch engine and metrics tested",
+      "blockers": [
+        "mature matching checkpoint",
+        "renderer",
+        "qualified RMBench state backend",
+        "independent label protocol"
+      ]
+    },
+    {
+      "id": "W02-A",
+      "priority": "P0",
+      "status": "full_action_dit_dev_pilot_passed_batch_running",
+      "code": "Production inference kernel checked on one real DEV prefix with v8 smoke300; 50-prefix batch launched on one H100",
+      "blockers": [
+        "Batch completion",
+        "Repeat on a mature formal checkpoint before claiming formal-checkpoint validation"
+      ],
+      "run_directory": "/mnt/afs/task3_2/L202500276_lwz/projects/WARM_evaluations/nonreal_full_null_20260921/dev50"
+    },
+    {
+      "id": "W02-B-C",
+      "priority": "P0",
+      "status": "collection_pending",
+      "code": "raw/effective gate capture and clustered FA/TA implemented",
+      "blockers": [
+        "W01",
+        "eligible-negative coverage",
+        "verified all-inapplicable closed-loop cohort"
+      ]
+    },
+    {
+      "id": "W03",
+      "priority": "P0",
+      "status": "analysis_code_tested",
+      "blockers": [
+        "raw paired outcomes"
+      ]
+    },
+    {
+      "id": "W04",
+      "priority": "P0",
+      "status": "coverage_code_tested",
+      "blockers": [
+        "original donor protocol and telemetry"
+      ]
+    },
+    {
+      "id": "W05",
+      "priority": "P1",
+      "status": "deferred_until_P0_ready"
+    },
+    {
+      "id": "W06",
+      "priority": "P1",
+      "status": "local_source_controls_tested_training_deferred"
+    },
+    {
+      "id": "W07",
+      "priority": "P1",
+      "status": "deferred"
+    },
+    {
+      "id": "W08",
+      "priority": "P1",
+      "status": "deferred_runtime_blocked"
+    }
   ],
   "acp_jobs": [
-    {"id":"ACP-A","gpu_count":1,"max_hours":23,"work":"W01 natural candidates","readiness":"blocked"},
-    {"id":"ACP-B","gpu_count":1,"max_hours":23,"work":"W02 independent labels and boundaries; reuse W01 branches","readiness":"blocked"},
-    {"id":"ACP-C-D","gpu_count_each":1,"max_hours":23,"work":"conditional donor telemetry and paired assessment","readiness":"blocked"}
-  ]
+    {
+      "id": "ACP-A",
+      "gpu_count": 1,
+      "max_hours": 23,
+      "work": "W01 natural candidates",
+      "readiness": "blocked"
+    },
+    {
+      "id": "ACP-B",
+      "gpu_count": 1,
+      "max_hours": 23,
+      "work": "W02 independent labels and boundaries; reuse W01 branches",
+      "readiness": "blocked"
+    },
+    {
+      "id": "ACP-C-D",
+      "gpu_count_each": 1,
+      "max_hours": 23,
+      "work": "conditional donor telemetry and paired assessment",
+      "readiness": "blocked"
+    }
+  ],
+  "execution_policy": {
+    "single_gpu": "Run directly on the authorized CCI H100 with persistent logs",
+    "multi_gpu": "Provide a qualified ACP command for manual submission"
+  }
 }

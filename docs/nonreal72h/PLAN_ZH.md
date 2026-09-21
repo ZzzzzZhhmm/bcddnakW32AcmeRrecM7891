@@ -79,7 +79,7 @@
 
 正式规模以 pilot ETA 一次性冻结：`预算秒 / 每查询(K×branch秒+恢复+推理秒)`，预留至少 20% IO/恢复余量，且保留最后 12 小时统计。交接建议 40 source episodes/task、最多 3 prefixes 不是必须硬凑的数量；缩减后报告实际覆盖。K 使用 checkpoint/bank 实际值，不能默认 8。
 
-如果确无成熟 v8 checkpoint：目前不能在 72h 内承诺补齐全部 claim。已找到 smoke 末尾速度约 0.274 optimizer steps/s，但这不是新 GPU 数/新训练配方的可靠 ETA；30k 步约 30h 只是同吞吐粗估，之后还有 specialist 和评估。优先找回论文 checkpoint；不要默认从头训练六种变体。任何缩短训练的版本都须重新标预算、同预算对照，不能回填原表。
+如果确无成熟 v8 checkpoint：目前不能在 72h 内承诺补齐全部 claim。已找到 smoke 末尾速度约 0.274 optimizer steps/s。其 `step_000300.training.json` 已进一步确认这是 **4 张 H100、global batch 128** 的训练，不是单卡速度；恢复到 30k 步约 30h 只是同吞吐粗估，必须计入初始化、保存、验证和排队，且需要跨至少两次 24h ACP，之后还有 specialist 和评估。优先找回论文 checkpoint；不要默认从头训练六种变体。任何缩短训练的版本都须重新标预算、同预算对照，不能回填原表。
 
 ## ACP 命令与日志
 
