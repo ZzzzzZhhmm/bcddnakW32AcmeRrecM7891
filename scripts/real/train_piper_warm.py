@@ -262,8 +262,14 @@ def _assert_fresh_output_dir(output_dir: Path) -> None:
     file plus empty checkpoint directories, so a retry with any config change
     dies before training.  Completed or in-progress runs with metrics/weights
     are also left untouched.
+
+    Only the launch main process may run this check.  Rank 0 writes
+    config.yaml during ``run_training`` while other ranks can still be in
+    ``main()``; those ranks must not treat the in-flight file as a leftover.
     """
 
+    if not _is_launch_main_process():
+        return
     config_path = output_dir / "config.yaml"
     if not config_path.is_file():
         return

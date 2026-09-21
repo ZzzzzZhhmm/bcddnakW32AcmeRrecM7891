@@ -65,10 +65,24 @@ piper_gpu_preflight() {
   echo "NUM_GPUS=${NUM_GPUS} CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES}"
 }
 
+piper_configure_job_local_caches() {
+  local root="${TMPDIR:-/tmp}/warm-piper-${USER:-root}-${RUN_ID:-$$}"
+  mkdir -p \
+    "${root}/triton/autotune" \
+    "${root}/torchinductor" \
+    "${root}/cuda" \
+    "${root}/xdg"
+  export TRITON_CACHE_DIR="${root}/triton/autotune"
+  export TORCHINDUCTOR_CACHE_DIR="${root}/torchinductor"
+  export CUDA_CACHE_PATH="${root}/cuda"
+  export XDG_CACHE_HOME="${root}/xdg"
+}
+
 piper_acp_begin_logs() {
   local run_log="$1"
   : "${PROJECT_DIR:?PROJECT_DIR is required}"
   : "${RUN_ID:?RUN_ID is required}"
+  piper_configure_job_local_caches
   ACP_LOG_DIR="${ACP_LOG_DIR:-${PROJECT_DIR}/tmp/acp_logs}"
   mkdir -p "${ACP_LOG_DIR}" "$(dirname "${run_log}")"
   LOG="${run_log}"

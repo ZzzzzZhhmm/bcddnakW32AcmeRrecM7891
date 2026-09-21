@@ -74,3 +74,5 @@ def test_piper_stage_b_acp_writes_tmp_acp_logs() -> None:
     assert "tmp/acp_logs" in helper
     assert "logs-acp-${RUN_ID}.txt.gz" in helper
     assert "do not fall back to PATH" in helper
+    assert "TRITON_CACHE_DIR" in helper
+    assert "piper_configure_job_local_caches" in helper

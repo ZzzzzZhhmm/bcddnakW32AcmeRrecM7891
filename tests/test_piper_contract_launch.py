@@ -105,3 +105,28 @@ def test_build_contracts_main_strips_dist_env_and_drops_dead_lock(
     assert not lock.is_file()
     ready = (contract_dir / ".source_contracts.ready").read_text(encoding="utf-8").strip()
     assert ready == str(base.resolve())
+
+
+def test_assert_fresh_output_dir_skips_non_main_when_config_exists(
+    tmp_path, monkeypatch
+) -> None:
+    output = tmp_path / "run"
+    output.mkdir()
+    (output / "config.yaml").write_text("seed: 1\n", encoding="utf-8")
+    monkeypatch.setattr(piper_train, "_is_launch_main_process", lambda: False)
+    piper_train._assert_fresh_output_dir(output)
+
+
+def test_assert_fresh_output_dir_main_refuses_failed_leftover(
+    tmp_path, monkeypatch
+) -> None:
+    output = tmp_path / "run"
+    output.mkdir()
+    (output / "config.yaml").write_text("seed: 1\n", encoding="utf-8")
+    monkeypatch.setattr(piper_train, "_is_launch_main_process", lambda: True)
+    try:
+        piper_train._assert_fresh_output_dir(output)
+    except RuntimeError as error:
+        assert "leftover failed run" in str(error)
+    else:
+        raise AssertionError("expected leftover failed run")
