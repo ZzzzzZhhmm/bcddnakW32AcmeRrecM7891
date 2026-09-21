@@ -94,7 +94,28 @@ bash "$RUN_ROOT/code/scripts/acp_nonreal72h.sh" "$RUN_ROOT/dev50.job.json"
 
 只验证固定checkpoint的局部source机制，对应表22的局部诊断说明，不回填独立训练控制器的SR。若全部g=0，如实记为零覆盖/未激活，不能从输出相同推断内容先验无效；不事后强行抬高gate制造正结果。
 
-## 5. 后续记录规则
+## 5. N00：训练更新与 FP32 master 诊断
+
+**已完成的只读核验：**原 shared smoke300 的完整四卡 ZeRO-1 状态仍在，位于 `WARM/runs/rmbench_official50_shared/shared-official50-dev45-s3407-v5-smoke300/checkpoints/state/step_000300`。按该 checkpoint 附带的 DeepSpeed `zero_to_fp32.py` 分片顺序重建四个 gate 参数的小切片；四项 FP32 master 转回 BF16 后均与保存模型精确一致。
+
+| 保存状态中的量 | 实测值 | 解释边界 |
+|---|---:|---|
+| global step / data-parallel world size | 300 / 4 | 原始分布式训练状态；不是本次单卡恢复 |
+| gate 输出层 bias，FP32 master | -1.9985454082489014 | 相对初始 -2 已有累积变化 |
+| 同一 bias，BF16 模型 | -2.0 | 差值 0.0014545917510986328；舍入后仍是 -2 |
+| gate 输出层 weight，master min / max | -0.001498857862316072 / 0.0014154266100376844 | 16 个元素均非零 |
+| 历史 step300 gate 梯度日志 | 0.06348787411878672 | 旧训练日志记录，不是本次重算 |
+| 历史 step300 learning rate | 1.002666666666668e-5 | 训练配置总步数30000、warmup1500；smoke尚在warmup内 |
+
+因此，**BF16 bias 仍为 -2 不能证明 gate 没有更新，也不能据此诊断原 DeepSpeed 丢失小梯度更新。** 当前证据更支持先完成训练链路核验、再寻找或恢复成熟模型；尚不能证明后续训练会激活 gate 或提升 SR。
+
+产物：`S/nonreal_train_update_20260921/zero_gate_master.json`，本地 `L/zero_gate_master.json`；两端 SHA-256 均为 `16b04a17036602d89d97659dd1a48cb49bd13338b2ceb024ac65c416142eee31`。检查脚本 `scripts/inspect_nonreal_zero_gate.py` 只读可信本地训练状态，核验四个 gate 切片，不代表全 optimizer 完整性或分布式 resume 验收。原训练日志已备份为 `S/nonreal_train_update_20260921/historical_training_metrics.jsonl` 与 `L/smoke300_training_metrics.jsonl`，SHA-256 为 `79dbdba3913bc30b941d1024e8f34ca27a3df0a7d53ed81d383de12ec8d5108d`。
+
+**单卡真实 TRAIN 梯度诊断正在运行，结果待验收。** 2026-09-21 13:30:28 UTC 启动，运行根目录 `S/nonreal_train_update_20260921`，输出 `probe01`，日志 `job_logs/20260921T133028Z-71cd4c61`。源码快照 SHA-256 `2dcd8db10fa2cf8e197eeb6b2651a7ef43c376e3e60a2faf0736b5f51ae40f84`。单张 H100、BF16、每任务一个固定 TRAIN 前缀、batch1、真实完整 training loss/backward；使用 trainer 原有参数注册逻辑，比较隔离的 gate-only fresh AdamW 的 BF16 与 FP32 更新，不修改生产模型/checkpoint。预算15–25分钟，硬上限1小时；模型加载受共享存储影响，预算不是保证。
+
+此 probe 只检查梯度路径、数值更新和小 gate 张量保存/加载。它不恢复原四卡 optimizer，不执行生产模型 optimizer step，也不构成完整训练恢复或论文 SR。单元测试在相同服务器环境 **2 passed**，覆盖不改原参数的小更新对照、跨 rank 边界切片与越界拒绝；真实 batch 仍须等待实际结果。
+
+## 6. 后续记录规则
 
 每项实验记录：ID、claim、训练/推理干预身份、code/config/checkpoint/split/bank哈希、种子、硬件、开始/结束/exit、原始产物、k/n与失败/unknown、统计单位、复算命令、可填论文位置、限制和下一步。运行失败时先保留失败目录，再以新ID重跑。
 

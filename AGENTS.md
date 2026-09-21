@@ -13,6 +13,10 @@
   configured upstream and verify the remote contains it. Never force-push.
   If the push fails (this CCI/k8s node often has no GitHub route), keep the
   local commit and report the actual failure.
+- Before every commit, pull and inspect the latest upstream changes. The real
+  robot team works concurrently: preserve their commits and inspect any shared
+  file overlap before integration. Keep running experiments on immutable source
+  snapshots so local Git synchronization cannot change an active job.
 - Training, ACP, and eval must never fetch, pull, ls-remote, probe origin, or
   fail on a dirty worktree. Do not run `scripts/cci_bootstrap.sh` network
   checks. Jobs run from the local checkout as-is.

@@ -1,6 +1,6 @@
 # 剩余实验数据与下一步执行指令
 
-2026-09-21 12:55 UTC核验：W02-A与W06工程诊断已完成，当前没有正在运行的GPU实验。所有已获数值见[实验记录](EXPERIMENT_RECORD_ZH.md)。
+2026-09-21更新：W02-A与W06工程诊断已完成；N00单卡真实TRAIN梯度诊断已于13:30:28 UTC启动，勿重复申请ACP。原ZeRO FP32 master已确认保留gate bias小更新，不能将BF16 bias不变判断为没有训练。所有已获数值见[实验记录](EXPERIMENT_RECORD_ZH.md)。
 
 ## 尚缺什么
 
@@ -25,22 +25,18 @@
 
 步骤1的时间需要完整训练forward/backward实测；步骤3的恢复backend尚待实现和验证，不能给出已可运行的正式ACP。已有4H100训练速度粗估约30小时才能把shared从300续到30k，另需初始化/保存/验证、至少两个24小时ACP及后续评测；这个估计不是批准开跑的恢复命令。
 
-## 可直接复核的CPU命令（已验证，不申请ACP）
+## 查看已启动的单卡任务（不申请ACP，不重复启动）
 
-在CCI执行，输出使用新时间戳并保留控制台日志：
+在CCI执行；任务自带完整日志和一小时硬时限：
 
 ```bash
 set -euo pipefail
-PY=/mnt/afs/task3_2/L202500276_lwz/envs/warm-rmbench-eval/bin/python
-BASE=/mnt/afs/task3_2/L202500276_lwz/projects/WARM_evaluations
-TOOLS="$BASE/evidence_archive_20260921/diagnostics"
-OUT="$TOOLS/gate_activation_$(date -u +%Y%m%dT%H%M%SZ).json"
-"$PY" "$TOOLS/analyze_nonreal_gate_activation.py" \
-  --run-root "$BASE/nonreal_source_r2_20260921" --output "$OUT" \
-  2>&1 | tee "$OUT.console.log"
+RUN=/mnt/afs/task3_2/L202500276_lwz/projects/WARM_evaluations/nonreal_train_update_20260921
+tail -n 30 "$RUN/probe01.launcher.log"
+cat "$RUN/job_logs/20260921T133028Z-71cd4c61/run_manifest.json"
 ```
 
-该命令只复核并汇总已完成的50前缀，不产生新的任务成功率，也不修改checkpoint。预计数秒到一分钟。
+真实任务为Press Button与Put Back Block各一个TRAIN microbatch的完整loss/backward与隔离gate更新对照，预计15–25分钟，加载慢时可能更久。只有wrapper complete/exit0与输出验收通过才记为完成；不把它写成四卡resume或正式任务SR。
 
 ## 下一步可直接派发的工作指令
 
