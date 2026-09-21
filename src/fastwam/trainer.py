@@ -32,6 +32,41 @@ from .training_config import validate_training_config
 
 logger = get_logger(__name__)
 
+# Unbatched ranks copied into loss-only eval batches.  Training collation
+# stacks every sample key; eval rebuilds a whitelist and used to drop
+# retrospective phase/ordinal tensors added after this map was written.
+WARM_EVAL_TENSOR_RANKS = {
+    "action_is_pad": 1,
+    "warm_candidate_mu": 3,
+    "warm_candidate_mask": 1,
+    "warm_candidate_score": 1,
+    "warm_candidate_event_index": 1,
+    "warm_oracle_candidate_index": 0,
+    "warm_memory_enabled": 0,
+    "warm_candidate_context": 2,
+    "warm_candidate_effect_pre": 3,
+    "warm_candidate_effect_post": 3,
+    "warm_candidate_effect_delta": 3,
+    "warm_candidate_start_proprio": 2,
+    "warm_candidate_gripper": 2,
+    "warm_candidate_timing": 2,
+    "warm_candidate_support": 1,
+    "warm_candidate_normalized_phase": 1,
+    "warm_candidate_event_ordinal": 1,
+    "warm_current_context": 1,
+    "warm_current_semantic": 2,
+    "warm_future_semantic": 2,
+    "warm_target_effect": 2,
+    "warm_future_valid": 0,
+    "warm_episode_tokens": 2,
+    "warm_episode_mask": 1,
+    "warm_episode_role_ids": 1,
+    "warm_episode_relative_age": 1,
+    "warm_episode_action_summaries": 2,
+    "warm_episode_action_mask": 1,
+    "warm_episode_action_relative_age": 1,
+}
+
 
 class Wan22Trainer:
     @classmethod
@@ -1146,35 +1181,7 @@ class Wan22Trainer:
             "context_mask": context_mask,
             "action_horizon": action_horizon,
         }
-        extra_tensor_ranks = {
-            "action_is_pad": 1,
-            "warm_candidate_mu": 3,
-            "warm_candidate_mask": 1,
-            "warm_candidate_score": 1,
-            "warm_candidate_event_index": 1,
-            "warm_oracle_candidate_index": 0,
-            "warm_memory_enabled": 0,
-            "warm_candidate_context": 2,
-            "warm_candidate_effect_pre": 3,
-            "warm_candidate_effect_post": 3,
-            "warm_candidate_effect_delta": 3,
-            "warm_candidate_start_proprio": 2,
-            "warm_candidate_gripper": 2,
-            "warm_candidate_timing": 2,
-            "warm_candidate_support": 1,
-            "warm_current_context": 1,
-            "warm_current_semantic": 2,
-            "warm_future_semantic": 2,
-            "warm_target_effect": 2,
-            "warm_future_valid": 0,
-            "warm_episode_tokens": 2,
-            "warm_episode_mask": 1,
-            "warm_episode_role_ids": 1,
-            "warm_episode_relative_age": 1,
-            "warm_episode_action_summaries": 2,
-            "warm_episode_action_mask": 1,
-            "warm_episode_action_relative_age": 1,
-        }
+        extra_tensor_ranks = WARM_EVAL_TENSOR_RANKS
         for key, unbatched_rank in extra_tensor_ranks.items():
             if key not in sample:
                 continue

@@ -566,6 +566,18 @@ def _preflight_static_artifacts(cfg, processed: Path, *, verify_checkpoint_hash:
     ds_config = REPO / "scripts" / "ds_configs" / "ds_zero1_config.json"
     if not ds_config.is_file():
         raise FileNotFoundError(f"DeepSpeed ZeRO-1 json missing: {ds_config}")
+    from fastwam.datasets.warm_candidates import WARM_CANDIDATE_FIELDS, WARM_QUERY_SPLIT
+    from fastwam.datasets.warm_retrospective import WARM_RETROSPECTIVE_FIELDS
+    from fastwam.trainer import WARM_EVAL_TENSOR_RANKS
+
+    required = (set(WARM_RETROSPECTIVE_FIELDS) | set(WARM_CANDIDATE_FIELDS)) - {
+        WARM_QUERY_SPLIT
+    }
+    missing = sorted(required - set(WARM_EVAL_TENSOR_RANKS))
+    if missing:
+        raise RuntimeError(
+            "loss-only eval batching drops WARM tensors: " + ", ".join(missing)
+        )
     print(
         "preflight artifacts ok: "
         f"context_dim={expected_context} action_dim=7 "
