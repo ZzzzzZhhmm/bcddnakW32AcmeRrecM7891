@@ -85,7 +85,7 @@ def main():
     dataset = BaseLerobotDataset(
         dataset_dirs=list(cfg.data.val.dataset_dirs),
         shape_meta=OmegaConf.to_container(cfg.data.val.shape_meta, resolve=True),
-        obs_size=1, action_size=bundle_args.replan_steps, val_set_proportion=0,
+        obs_size=bundle_args.replan_steps+1, action_size=bundle_args.replan_steps, val_set_proportion=0,
         is_training_set=False, episode_catalog_path=str(cfg.data.val.episode_catalog_path),
         episode_split='dev', episode_task_allowlist=[task], strict_sample_loading=True)
     dataset._set_return_images(True)
@@ -120,8 +120,14 @@ def main():
                 raise ValueError('recorded sample identity or complete action-prefix check failed')
             for key in ('cam_high','cam_left_wrist','cam_right_wrist'):
                 image=sample['images'][key]
-                if image.dtype!=torch.uint8 or tuple(image.shape)!=(1,3,240,320):
+                if image.dtype!=torch.uint8 or tuple(image.shape)!=(bundle_args.replan_steps+1,3,240,320):
                     raise ValueError('recorded camera shape/dtype disagrees with the declared profile')
+                # The dataset couples observation and action window lengths.
+                # Discard every future observation before the policy sees it.
+                sample['images'][key]=image[:1].clone()
+            if bool(sample['state_is_pad'][0]) or bool(sample['image_is_pad'][0]):
+                raise ValueError('current recorded observation is padded')
+            sample['state']['default']=sample['state']['default'][:1].clone()
             normalizer.normalize(sample['action']['default'].numpy(),fail_on_clip=True)
             cached[(episode['dataset_index'],episode['recorded_episode'],frame)]=sample
     write_data=dict(status='qualified',recorded_prefixes=len(cached),catalog_sha256=sha256_file(cfg.data.val.episode_catalog_path))
@@ -140,7 +146,7 @@ def main():
                     task=task, gpu=torch.cuda.get_device_name(), precision='bf16', batch=1,
                     nfe=policy.num_inference_steps, horizon=policy.action_horizon,
                     replan_steps=policy.replan_steps, bank_events=len(bank), top_k=bundle_args.top_k,
-                    bank_storage='CPU numpy/mmap with exact CPU cosine search; gathered tensors transferred to model',
+                    bank_storage='CPU NumPy arrays with exact CPU cosine search; gathered tensors transferred to model',
                     scope='recorded DEV observations and recorded executed actions; model outputs never executed; no simulator or SR',
                     timing='CUDA synchronized around entire deployed _replan, including preprocessing and telemetry; excludes disk decoding')
     (output/'manifest.json').write_text(json.dumps(manifest,indent=2))

@@ -55,3 +55,48 @@ def test_profile_excludes_warmup_and_rejects_duplicate_or_missing_queries():
         module.summarize(rows,expected_count=3)
     with pytest.raises(ValueError,match='duplicate'):
         module.summarize([row(0,1),row(0,2)],expected_count=2)
+
+
+def test_profile_archive_requires_policy_coverage_and_matching_summary(tmp_path):
+    module=load_script('verify_nonreal_online_profile')
+    data=tmp_path/'profile'
+    job=tmp_path/'job_logs'/'job'
+    data.mkdir()
+    job.mkdir(parents=True)
+    def write(path,value):
+        path.write_text(json.dumps(value))
+    write(job/'run_manifest.json',dict(argv=['--output','/run/profile','--episodes','1',
+          '--queries-per-episode','2','--warmup','1'],status='complete',exit_code=0,
+          source_sha256='a'*64,source_sha256_after='a'*64,elapsed_s=8))
+    write(data/'frozen_episodes.json',[dict(dataset_index=0,recorded_episode=7,start=0)])
+    write(data/'runtime_args.json',dict(replan_steps=4,num_inference_steps=10,seed=3407))
+    write(data/'manifest.json',dict(replan_steps=4,nfe=10,scope='synthetic test fixture only',
+                                   checkpoint_sha256='b'*64,online_contract_sha256='c'*64,task='test'))
+    write(data/'data_qualification.json',dict(status='qualified',recorded_prefixes=2))
+    rows=[dict(warmup=w,dataset_index=0,recorded_episode=7,recorded_frame=f,
+               end_to_end_s=t,peak_allocated_gib=10,peak_reserved_gib=12)
+          for w,f,t in [(True,0,100),(False,0,1),(False,4,3)]]
+    (data/'timings.jsonl').write_text('\n'.join(map(json.dumps,rows)))
+    telemetry=[dict(kind='header',checkpoint_sha256='b'*64,online_run_contract_sha256='c'*64,
+                    root_seed=3407,task_name='test')]
+    for ep,frames in [(0,[0]),(1,[0,4])]:
+        telemetry.append(dict(kind='episode_begin',episode_index=ep))
+        telemetry.extend(dict(kind='replan',episode_index=ep,frame_index=f,candidate_count=32,
+                              history_before_replan=None,
+                              model=dict(source=dict(gate=0,learned_gate=.12,stagnation_score=0))) for f in frames)
+        telemetry.append(dict(kind='episode_end',episode_index=ep,
+                              reason='recorded_replay_end_no_outcome',executed_policy_actions=len(frames)*4))
+    telemetry_path=data/'policy_telemetry.jsonl'
+    telemetry_path.write_text('\n'.join(map(json.dumps,telemetry)))
+    report=load_script('profile_nonreal_online_replay').summarize(rows,expected_count=2)
+    write(data/'summary.json',report)
+    assert module.verify(tmp_path,'profile')['median_s']==2
+    report['median_s']=999
+    write(data/'summary.json',report)
+    with pytest.raises(AssertionError,match='median_s'):
+        module.verify(tmp_path,'profile')
+    report['median_s']=2
+    write(data/'summary.json',report)
+    telemetry_path.write_text('\n'.join(map(json.dumps,telemetry[:-1])))
+    with pytest.raises(AssertionError):
+        module.verify(tmp_path,'profile')

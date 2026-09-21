@@ -96,9 +96,9 @@
     {
       "id": "W08",
       "priority": "P1",
-      "status": "recorded_dev_online_profile_preparing",
+      "status": "recorded_dev_online_profile_complete_scope_limited",
       "run_directory": "/mnt/afs/task3_2/L202500276_lwz/projects/WARM_evaluations/nonreal_online_profile_20260922",
-      "scope": "200 recorded DEV prefixes after 20 warmups; no closed-loop SR"
+      "scope": "200 recorded DEV prefixes after 20 warmups verified; median 0.4999819407 s, p95 0.5537580627 s, peak allocated 23.620100 GiB; smoke300 with zero natural gate; no closed-loop SR or matched baseline"
     }
   ],
   "acp_jobs": [
