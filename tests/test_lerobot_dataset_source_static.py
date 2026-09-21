@@ -67,6 +67,8 @@ def test_piper_stage_b_acp_writes_tmp_acp_logs() -> None:
     assert "piper_acp_begin_logs" in source
     assert "piper_resolve_conda_bins" in source
     assert "piper_gpu_preflight" in source
+    assert 'NUM_GPUS=4' in source
+    assert "NUM_GPUS=1 CUDA_VISIBLE_DEVICES=0" in source
     helper = (ROOT / "scripts" / "real" / "_acp_log.sh").read_text(encoding="utf-8")
     assert "tmp/acp_logs" in helper
     assert "logs-acp-${RUN_ID}.txt.gz" in helper

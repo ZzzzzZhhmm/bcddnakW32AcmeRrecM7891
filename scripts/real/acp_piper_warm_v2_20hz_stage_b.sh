@@ -1,8 +1,14 @@
 #!/bin/bash
 # ACP: Stage B only. Full-epoch complete-WARM on 20Hz pilot_v2 using the
 # finished Stage A FastWAM weights. Does not rerun Stage A, touch pilot_v1,
-# or touch 16.67Hz. ZeRO-1. Set NUM_GPUS or CUDA_VISIBLE_DEVICES.
-# WARM heads start random (context_dim=770). This is not an attested formal experiment.
+# or touch 16.67Hz. ZeRO-1. WARM heads start random (context_dim=770).
+# This is not an attested formal experiment.
+#
+# GPU knobs (must match if both are set):
+#   NUM_GPUS=4 CUDA_VISIBLE_DEVICES=0,1,2,3   # default
+#   NUM_GPUS=1 CUDA_VISIBLE_DEVICES=0
+#   NUM_GPUS=2 CUDA_VISIBLE_DEVICES=0,1
+#   NUM_GPUS=8 CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
 set -euo pipefail
 
 PROJECT_DIR="${PROJECT_DIR:-/mnt/afs/task3_2/L202500276_lwz/projects/WARM}"
@@ -11,6 +17,9 @@ CONDA_ENV_DIR="${CONDA_ENV_DIR:-/mnt/afs/task3_2/L202500276_lwz/envs/warm}"
 source "${PROJECT_DIR}/scripts/real/_gpu_env.sh"
 # shellcheck source=scripts/real/_acp_log.sh
 source "${PROJECT_DIR}/scripts/real/_acp_log.sh"
+if [[ -z "${NUM_GPUS:-}" && -z "${CUDA_VISIBLE_DEVICES:-}" ]]; then
+  NUM_GPUS=4
+fi
 resolve_piper_gpus
 export DIFFSYNTH_MODEL_BASE_PATH="${DIFFSYNTH_MODEL_BASE_PATH:-${PROJECT_DIR}/checkpoints}"
 export PYTORCH_CUDA_ALLOC_CONF="${PYTORCH_CUDA_ALLOC_CONF:-expandable_segments:True}"
