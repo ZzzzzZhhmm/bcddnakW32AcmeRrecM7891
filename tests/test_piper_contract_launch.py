@@ -107,6 +107,55 @@ def test_build_contracts_main_strips_dist_env_and_drops_dead_lock(
     assert ready == str(base.resolve())
 
 
+def test_build_contracts_distributed_reuses_prepared_files(
+    tmp_path, monkeypatch
+) -> None:
+    base = tmp_path / "step.pt"
+    processed = _bindings(tmp_path, base)
+    contract_dir = tmp_path / "contracts"
+    contract_dir.mkdir()
+    train = contract_dir / "train_source.json"
+    dev = contract_dir / "dev_source.json"
+    train.write_text("{}", encoding="utf-8")
+    dev.write_text("{}", encoding="utf-8")
+    monkeypatch.setenv("WORLD_SIZE", "4")
+    monkeypatch.setenv("RANK", "0")
+    calls: list[object] = []
+    monkeypatch.setattr(
+        piper_train.subprocess,
+        "run",
+        lambda *args, **kwargs: calls.append((args, kwargs)),
+    )
+    out = piper_train.build_contracts(
+        processed=processed,
+        base_checkpoint=base,
+        contract_dir=contract_dir,
+        overwrite=True,
+    )
+    assert out == (train, dev)
+    assert calls == []
+
+
+def test_build_contracts_distributed_requires_prepared_files(
+    tmp_path, monkeypatch
+) -> None:
+    base = tmp_path / "step.pt"
+    processed = _bindings(tmp_path, base)
+    monkeypatch.setenv("WORLD_SIZE", "4")
+    monkeypatch.setenv("RANK", "1")
+    try:
+        piper_train.build_contracts(
+            processed=processed,
+            base_checkpoint=base,
+            contract_dir=tmp_path / "contracts",
+            overwrite=True,
+        )
+    except FileNotFoundError as error:
+        assert "single process" in str(error)
+    else:
+        raise AssertionError("expected missing prepared contracts")
+
+
 def test_assert_fresh_output_dir_skips_non_main_when_config_exists(
     tmp_path, monkeypatch
 ) -> None:

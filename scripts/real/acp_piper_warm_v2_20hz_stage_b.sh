@@ -74,6 +74,14 @@ fi
 
 piper_gpu_preflight
 
+echo "=== preparing source-run contracts (single process, like LIBERO) ==="
+"${PYTHON}" "${PROJECT_DIR}/scripts/real/train_piper_warm.py" \
+  --prepare-contracts \
+  --config "${WARM_CONFIG}" \
+  --base-checkpoint "${BASE_CHECKPOINT}" \
+  --output-dir "${WARM_DIR}" \
+  --overwrite-contracts
+
 echo "=== launching Stage B ==="
 echo "${ACCELERATE} launch --config_file ${ACCELERATE_CONFIG} --num_processes ${NUM_GPUS} --main_process_port ${MASTER_PORT} ${PROJECT_DIR}/scripts/real/train_piper_warm.py"
 
@@ -91,5 +99,4 @@ echo "${ACCELERATE} launch --config_file ${ACCELERATE_CONFIG} --num_processes ${
   --save-every "${SAVE_EVERY}" \
   --eval-every "${EVAL_EVERY}" \
   --num-workers "${NUM_WORKERS}" \
-  --output-dir "${WARM_DIR}" \
-  --overwrite-contracts
+  --output-dir "${WARM_DIR}"

@@ -70,6 +70,10 @@ def test_piper_stage_b_acp_writes_tmp_acp_logs() -> None:
     assert 'NUM_GPUS=4' in source
     assert "NUM_GPUS=1 CUDA_VISIBLE_DEVICES=0" in source
     assert '"${PROJECT_DIR}/scripts/real/train_piper_warm.py"' in source
+    assert "--prepare-contracts" in source
+    launch_block = source.split("=== launching Stage B ===", 1)[1]
+    assert "--overwrite-contracts" not in launch_block
+    assert "--prepare-contracts" not in launch_block
     helper = (ROOT / "scripts" / "real" / "_acp_log.sh").read_text(encoding="utf-8")
     assert "tmp/acp_logs" in helper
     assert "logs-acp-${RUN_ID}.txt.gz" in helper

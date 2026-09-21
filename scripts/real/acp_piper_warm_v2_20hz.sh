@@ -87,14 +87,21 @@ if [[ -z "${FASTWAM_CKPT}" || ! -f "${FASTWAM_CKPT}" ]]; then
 fi
 echo "Stage A FastWAM checkpoint: ${FASTWAM_CKPT}"
 
+echo "=== preparing source-run contracts (single process, like LIBERO) ==="
+"${PYTHON}" "${PROJECT_DIR}/scripts/real/train_piper_warm.py" \
+  --prepare-contracts \
+  --config "${WARM_CONFIG}" \
+  --base-checkpoint "${FASTWAM_CKPT}" \
+  --output-dir "${WARM_DIR}" \
+  --overwrite-contracts
+
 echo "=== Stage B: full-epoch complete WARM on the 20Hz bank ==="
 launch \
-  scripts/real/train_piper_warm.py \
+  "${PROJECT_DIR}/scripts/real/train_piper_warm.py" \
   --config "${WARM_CONFIG}" \
   --base-checkpoint "${FASTWAM_CKPT}" \
   --num-epochs "${WARM_EPOCHS}" \
   --save-every "${SAVE_EVERY}" \
   --eval-every "${EVAL_EVERY}" \
   --num-workers "${NUM_WORKERS}" \
-  --output-dir "${WARM_DIR}" \
-  --overwrite-contracts
+  --output-dir "${WARM_DIR}"

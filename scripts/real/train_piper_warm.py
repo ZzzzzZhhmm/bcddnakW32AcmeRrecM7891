@@ -122,6 +122,11 @@ def _drop_dead_artifact_claim(lock_path: Path) -> None:
         return
 
 
+def _is_distributed_launch() -> bool:
+    world = os.environ.get("WORLD_SIZE", "1").strip() or "1"
+    return world != "1"
+
+
 def _wait_for_source_contracts(
     outputs: tuple[Path, Path],
     ready: Path,
@@ -131,9 +136,12 @@ def _wait_for_source_contracts(
 ) -> None:
     deadline = time.time() + timeout_s
     while True:
-        if ready.is_file() and all(path.is_file() for path in outputs):
-            if ready.read_text(encoding="utf-8").strip() == expected:
-                return
+        try:
+            if ready.is_file() and all(path.is_file() for path in outputs):
+                if ready.read_text(encoding="utf-8").strip() == expected:
+                    return
+        except OSError:
+            pass
         if time.time() >= deadline:
             raise RuntimeError(
                 f"timed out waiting for source-run contracts {outputs[0]} "
@@ -148,31 +156,28 @@ def ensure_text_embeds(dataset_dir: Path, cache_dir: Path) -> None:
     if not missing:
         print(f"text embeds already present for {len(tasks)} tasks in {cache_dir}")
         return
-    if _is_launch_main_process():
-        cache_dir.mkdir(parents=True, exist_ok=True)
-        command = [
-            sys.executable,
-            str(REPO / "scripts/precompute_text_embeds.py"),
-            "task=libero_uncond_2cam224_1e-4",
-            f"data.train.dataset_dirs=[{dataset_dir}]",
-            f"data.train.text_embedding_cache_dir={cache_dir}",
-            f"data.train.context_len={CONTEXT_LEN}",
-            "overwrite=false",
-        ]
-        print("encoding missing text embeds:", ", ".join(missing))
-        subprocess.run(
-            command, cwd=str(REPO), check=True, env=_isolated_subprocess_env()
+    if _is_distributed_launch():
+        raise FileNotFoundError(
+            "text embeds must be prepared in a single process before "
+            f"accelerate launch: missing {missing} in {cache_dir}"
         )
-    deadline = time.time() + 1800
-    while True:
-        still_missing = [
-            task for task in tasks if not _task_cache_path(cache_dir, task).is_file()
-        ]
-        if not still_missing:
-            return
-        if time.time() >= deadline:
-            raise RuntimeError(f"text embed cache still missing: {still_missing}")
-        time.sleep(2)
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    command = [
+        sys.executable,
+        str(REPO / "scripts/precompute_text_embeds.py"),
+        "task=libero_uncond_2cam224_1e-4",
+        f"data.train.dataset_dirs=[{dataset_dir}]",
+        f"data.train.text_embedding_cache_dir={cache_dir}",
+        f"data.train.context_len={CONTEXT_LEN}",
+        "overwrite=false",
+    ]
+    print("encoding missing text embeds:", ", ".join(missing))
+    subprocess.run(command, cwd=str(REPO), check=True, env=_isolated_subprocess_env())
+    still_missing = [
+        task for task in tasks if not _task_cache_path(cache_dir, task).is_file()
+    ]
+    if still_missing:
+        raise RuntimeError(f"text embed cache still missing: {still_missing}")
 
 
 def build_contracts(
@@ -189,16 +194,21 @@ def build_contracts(
     contract_dir.mkdir(parents=True, exist_ok=True)
     train_contract = contract_dir / "train_source.json"
     dev_contract = contract_dir / "dev_source.json"
-    outputs = (train_contract, dev_contract)
     expected = str(Path(base_checkpoint).expanduser().resolve())
     ready = contract_dir / ".source_contracts.ready"
-    if not _is_launch_main_process():
-        print(
-            "waiting for rank 0 to publish source-run contracts: "
-            f"{train_contract} {dev_contract}"
+    present = train_contract.is_file() and dev_contract.is_file()
+
+    # LIBERO/RMBench prepare contracts in a single process, then every
+    # accelerate rank only reads the paths.  Piper must do the same: never
+    # unlink/rebuild under WORLD_SIZE>1.
+    if _is_distributed_launch() or not _is_launch_main_process():
+        if present:
+            return train_contract, dev_contract
+        raise FileNotFoundError(
+            "Piper source-run contracts must be built in a single process "
+            "before accelerate launch (same as LIBERO prepare_artifacts). "
+            f"missing={train_contract} {dev_contract}"
         )
-        _wait_for_source_contracts(outputs, ready, expected)
-        return train_contract, dev_contract
 
     if overwrite and ready.is_file():
         ready.unlink()
@@ -372,10 +382,22 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="rebuild train/dev source-run contracts even if they exist",
     )
+    parser.add_argument(
+        "--prepare-contracts",
+        action="store_true",
+        help=(
+            "single-process prepare of source-run contracts and text embeds, "
+            "then exit; required before multi-GPU accelerate launch"
+        ),
+    )
     args = parser.parse_args(argv)
+    if args.prepare_contracts and _is_distributed_launch():
+        raise RuntimeError(
+            "--prepare-contracts must run as a single process, not under accelerate"
+        )
     cfg, dataset_dir, cache_dir = build_cfg(
         args.config.expanduser().resolve(),
-        overwrite_contracts=bool(args.overwrite_contracts),
+        overwrite_contracts=bool(args.overwrite_contracts or args.prepare_contracts),
         base_checkpoint=args.base_checkpoint,
     )
     if args.run_steps is not None:
@@ -392,8 +414,14 @@ def main(argv: list[str] | None = None) -> int:
         cfg.num_workers = int(args.num_workers)
     output_dir = Path(str(cfg.output_dir)).expanduser().resolve()
     cfg.output_dir = str(output_dir)
-    _assert_fresh_output_dir(output_dir)
     ensure_text_embeds(dataset_dir, cache_dir)
+    if args.prepare_contracts:
+        print(
+            "prepared Piper WARM contracts and text embeds; "
+            "launch training without --overwrite-contracts"
+        )
+        return 0
+    _assert_fresh_output_dir(output_dir)
     print(f"warm output: {cfg.output_dir}")
     print(
         f"num_epochs={cfg.num_epochs} run_steps={cfg.run_steps} "
