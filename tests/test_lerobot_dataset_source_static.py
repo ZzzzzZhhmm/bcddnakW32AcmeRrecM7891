@@ -93,3 +93,32 @@ def test_piper_stage_b_acp_writes_tmp_acp_logs() -> None:
     assert "do not fall back to PATH" in helper
     assert "TRITON_CACHE_DIR" in helper
     assert "piper_configure_job_local_caches" in helper
+    assert "piper_acp_require_training_complete" in helper
+    assert "piper_acp_install_traps" in helper
+    assert "ACP_REQUIRE_TRAINING_COMPLETE" in helper
+    assert "piper_acp_require_training_complete" in source
+    assert 'SAVE_EVERY="${SAVE_EVERY:-400}"' in source
+    assert '"${RESUME_ARGS[@]}"' in source
+    assert "ACP_STATUS=0" in source
+
+
+def test_piper_20hz_stage_b_acp_fail_closed() -> None:
+    source = (
+        ROOT / "scripts" / "real" / "acp_piper_warm_20hz_stage_b.sh"
+    ).read_text(encoding="utf-8")
+    assert "source \"${PROJECT_DIR}/scripts/real/_acp_log.sh\"" in source
+    assert "piper_acp_begin_logs" in source
+    assert "piper_acp_install_traps" in source
+    assert "piper_acp_require_training_complete" in source
+    assert "ACP_REQUIRE_TRAINING_COMPLETE" in source
+    assert 'SAVE_EVERY="${SAVE_EVERY:-400}"' in source
+    assert "EVAL_EVERY" in source
+    assert '"${RESUME_ARGS[@]}"' in source
+    assert "--prepare-contracts" in source
+    assert "--preflight" in source
+    launch_block = source.split("=== launching Stage B ===", 1)[1]
+    assert "--overwrite-contracts" not in launch_block
+    assert "--prepare-contracts" not in launch_block
+    assert "--preflight" not in launch_block
+    assert "ACP_LAUNCH_RC" in launch_block
+    assert "ACP_STATUS=0" in launch_block

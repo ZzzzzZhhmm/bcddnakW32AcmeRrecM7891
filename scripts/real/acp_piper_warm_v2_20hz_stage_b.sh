@@ -32,18 +32,28 @@ BASE_CHECKPOINT="${BASE_CHECKPOINT:-${FASTWAM_DIR}/checkpoints/weights/step_0123
 WARM_EPOCHS="${WARM_EPOCHS:-20}"
 TRAIN_WINDOWS="${TRAIN_WINDOWS:-2465}"
 STEPS_PER_EPOCH="${STEPS_PER_EPOCH:-$(piper_epoch_steps "${TRAIN_WINDOWS}")}"
-SAVE_EVERY="${SAVE_EVERY:-${STEPS_PER_EPOCH}}"
+SAVE_EVERY="${SAVE_EVERY:-400}"
 EVAL_EVERY="${EVAL_EVERY:-${STEPS_PER_EPOCH}}"
 NUM_WORKERS="${NUM_WORKERS:-0}"
+WARM_PARENT="${WARM_PARENT:-${PROCESSED}/warm_from_piper_fastwam}"
 RUN_ID="${RUN_ID:-$(date +%Y%m%d_%H%M%S)}"
-WARM_DIR="${WARM_DIR:-${PROCESSED}/warm_from_piper_fastwam/run_${RUN_ID}}"
+if [[ -z "${WARM_DIR:-}" ]]; then
+  if [[ "${WARM_RESUME:-}" == "latest" ]]; then
+    if found="$(piper_find_latest_incomplete_warm_dir "${WARM_PARENT}")"; then
+      WARM_DIR="${found}"
+    fi
+  fi
+  WARM_DIR="${WARM_DIR:-${WARM_PARENT}/run_${RUN_ID}}"
+fi
 WARM_CONFIG="${WARM_CONFIG:-${PROJECT_DIR}/configs/real/piper_warm_v2_20hz.local.yaml}"
 ACCELERATE_CONFIG="${ACCELERATE_CONFIG:-${PROJECT_DIR}/scripts/accelerate_configs/accelerate_zero1_ds.yaml}"
+export ACP_REQUIRE_TRAINING_COMPLETE=1
+piper_acp_resolve_resume
 
 cd "${PROJECT_DIR}"
 mkdir -p "${WARM_DIR}"
 piper_acp_begin_logs "${WARM_DIR}/console.log"
-trap 'rc=$?; piper_acp_finish "${rc}"; exit "${rc}"' EXIT
+piper_acp_install_traps
 
 piper_resolve_conda_bins
 piper_ensure_master_port
@@ -54,8 +64,10 @@ echo "NUM_GPUS=${NUM_GPUS} CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES} MASTER_P
 echo "PYTHON=${PYTHON} ACCELERATE=${ACCELERATE}"
 echo "base_checkpoint=${BASE_CHECKPOINT}"
 echo "warm_dir=${WARM_DIR}"
+echo "resume=${RESUME:-none}"
 echo "warm_epochs=${WARM_EPOCHS} steps_per_epoch=${STEPS_PER_EPOCH} train_windows=${TRAIN_WINDOWS}"
 echo "save_every=${SAVE_EVERY} eval_every=${EVAL_EVERY} eval_num_samples=0 (full DEV) zero=1"
+piper_list_incomplete_warm_runs "${WARM_PARENT}"
 
 if [[ ! -f "${PROCESSED}/memory/COMPLETE.json" ]]; then
   echo "ERROR: 20Hz memory COMPLETE missing: ${PROCESSED}/memory/COMPLETE.json"
@@ -103,11 +115,13 @@ echo "=== preflight Stage B (no 5B load) ==="
   --save-every "${SAVE_EVERY}" \
   --eval-every "${EVAL_EVERY}" \
   --num-workers "${NUM_WORKERS}" \
-  --output-dir "${WARM_DIR}"
+  --output-dir "${WARM_DIR}" \
+  "${RESUME_ARGS[@]}"
 
 echo "=== launching Stage B ==="
 echo "${ACCELERATE} launch --config_file ${ACCELERATE_CONFIG} --num_processes ${NUM_GPUS} --main_process_port ${MASTER_PORT} ${PROJECT_DIR}/scripts/real/train_piper_warm.py"
 
+set +e
 "${ACCELERATE}" launch \
   --config_file "${ACCELERATE_CONFIG}" \
   --num_processes "${NUM_GPUS}" \
@@ -122,4 +136,9 @@ echo "${ACCELERATE} launch --config_file ${ACCELERATE_CONFIG} --num_processes ${
   --save-every "${SAVE_EVERY}" \
   --eval-every "${EVAL_EVERY}" \
   --num-workers "${NUM_WORKERS}" \
-  --output-dir "${WARM_DIR}"
+  --output-dir "${WARM_DIR}" \
+  "${RESUME_ARGS[@]}"
+ACP_LAUNCH_RC=$?
+set -e
+piper_acp_require_training_complete "${WARM_DIR}" "${ACP_LAUNCH_RC}"
+ACP_STATUS=0

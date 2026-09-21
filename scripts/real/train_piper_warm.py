@@ -13,6 +13,7 @@ from pathlib import Path
 
 from omegaconf import OmegaConf
 
+from fastwam.training_complete import latest_training_state
 from fastwam.training_config import validate_training_config
 from fastwam.utils.config_resolvers import register_default_resolvers
 
@@ -440,9 +441,29 @@ def _apply_cli_overrides(cfg, args) -> Path:
         cfg.eval_every = int(args.eval_every)
     if args.num_workers is not None:
         cfg.num_workers = int(args.num_workers)
+    if getattr(args, "resume", None) is not None:
+        cfg.resume = str(Path(args.resume).expanduser().resolve())
     output_dir = Path(str(cfg.output_dir)).expanduser().resolve()
     cfg.output_dir = str(output_dir)
     return output_dir
+
+
+def _resume_state_dir(cfg) -> Path | None:
+    resume = cfg.get("resume")
+    if resume in (None, "", False):
+        return None
+    path = Path(str(resume)).expanduser().resolve()
+    if path.name.startswith("step_") and path.is_dir():
+        cfg.resume = str(path)
+        return path
+    latest = latest_training_state(path) if path.is_dir() else None
+    if latest is not None:
+        cfg.resume = str(latest)
+        return latest
+    raise FileNotFoundError(
+        f"resume state dir missing: {path} "
+        "(pass checkpoints/state/step_XXXXXX or a run dir that contains one)"
+    )
 
 
 def _assert_feature_list(list_path: Path) -> int:
@@ -597,6 +618,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--eval-every", type=int, default=None)
     parser.add_argument("--num-workers", type=int, default=None)
     parser.add_argument(
+        "--resume",
+        type=Path,
+        default=None,
+        help="Accelerate/DeepSpeed state dir (checkpoints/state/step_XXXXXX)",
+    )
+    parser.add_argument(
         "--overwrite-contracts",
         action="store_true",
         help="rebuild train/dev source-run contracts even if they exist",
@@ -644,6 +671,11 @@ def main(argv: list[str] | None = None) -> int:
         base_checkpoint=args.base_checkpoint,
     )
     output_dir = _apply_cli_overrides(cfg, args)
+    resume_path = None
+    if not args.prepare_contracts:
+        resume_path = _resume_state_dir(cfg)
+        if resume_path is None:
+            _assert_fresh_output_dir(output_dir)
     ensure_text_embeds(dataset_dir, cache_dir)
     if args.prepare_contracts:
         print(
@@ -653,7 +685,6 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.preflight:
         validate_training_config(cfg)
-        _assert_fresh_output_dir(output_dir)
         _preflight_static_artifacts(
             cfg,
             processed,
@@ -669,10 +700,10 @@ def main(argv: list[str] | None = None) -> int:
             f"save_every={cfg.save_every} eval_every={cfg.eval_every} "
             f"batch_size={cfg.batch_size} num_workers={cfg.num_workers} "
             f"context_dim={cfg.model.retrospection.context_dim} "
-            f"base={cfg.model.base_checkpoint_path}"
+            f"base={cfg.model.base_checkpoint_path} "
+            f"resume={resume_path or 'none'}"
         )
         return 0
-    _assert_fresh_output_dir(output_dir)
     print(f"warm output: {cfg.output_dir}")
     print(
         f"num_epochs={cfg.num_epochs} run_steps={cfg.run_steps} "
@@ -681,7 +712,8 @@ def main(argv: list[str] | None = None) -> int:
         f"num_workers={cfg.num_workers} "
         f"base={cfg.model.base_checkpoint_path} "
         f"context_dim={cfg.model.retrospection.context_dim} "
-        f"mot_checkpoint_mixed_attn={cfg.model.mot_checkpoint_mixed_attn}"
+        f"mot_checkpoint_mixed_attn={cfg.model.mot_checkpoint_mixed_attn} "
+        f"resume={resume_path or 'none'}"
     )
     from fastwam.runtime import run_training
 

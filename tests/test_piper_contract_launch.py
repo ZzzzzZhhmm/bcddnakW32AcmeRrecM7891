@@ -206,6 +206,8 @@ def test_train_script_does_not_import_runtime_at_module_level() -> None:
     module_header = source.split("def _resolve_against", 1)[0]
     assert "from fastwam.runtime import run_training" not in module_header
     assert "from fastwam.datasets.lerobot.robot_video_dataset import" not in source
+    assert '"--resume"' in source
+    assert "from fastwam.training_complete import latest_training_state" in source
 
 
 def test_assert_fresh_output_dir_skips_non_main_when_config_exists(

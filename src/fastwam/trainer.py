@@ -28,6 +28,7 @@ from .utils.samplers import (
 )
 from .utils.video_io import save_mp4
 from .utils.video_metrics import pil_frames_to_video_tensor, video_psnr, video_ssim
+from .training_complete import write_training_complete_marker
 from .training_config import validate_training_config
 
 logger = get_logger(__name__)
@@ -1873,12 +1874,10 @@ class Wan22Trainer:
             # A completed full-state resume is a valid idempotent invocation.
             # Re-publishing the same formal checkpoint would correctly trip
             # the no-overwrite guard, so return without touching artifacts.
-            logger.info(
-                "[done] no optimizer steps remain: current_step=%d "
-                "run_target_step=%d scheduler_max_steps=%d",
-                self.global_step,
-                run_target_step,
-                self.max_steps,
+            self._mark_training_complete(
+                weights_path="",
+                state_path=str(self.resume or ""),
+                reason="no optimizer steps remain",
             )
             return
         data_iter = iter(self.train_loader)
@@ -2136,29 +2135,52 @@ class Wan22Trainer:
                             if checkpoint_saved_this_step is not None
                             else self.save_checkpoint()
                         )
-                        if self.accelerator.is_main_process:
-                            reason = (
-                                "max_steps reached"
-                                if self.global_step >= self.max_steps
-                                else "run_steps reached"
-                            )
-                            logger.info(
-                                "[done] %s step=%d scheduler_max_steps=%d "
-                                "weights=%s state=%s",
-                                reason,
-                                self.global_step,
-                                self.max_steps,
-                                ckpt_info["weights_path"],
-                                ckpt_info["state_path"],
-                            )
+                        reason = (
+                            "max_steps reached"
+                            if self.global_step >= self.max_steps
+                            else "run_steps reached"
+                        )
+                        self._mark_training_complete(
+                            weights_path=str(ckpt_info["weights_path"]),
+                            state_path=str(ckpt_info["state_path"]),
+                            reason=reason,
+                        )
                         return
 
         ckpt_info = self.save_checkpoint()
-        if self.accelerator.is_main_process:
-            logger.info(
-                "[done] training finished step=%d weights=%s state=%s",
-                self.global_step,
-                ckpt_info["weights_path"],
-                ckpt_info["state_path"],
-            )
-        
+        self._mark_training_complete(
+            weights_path=str(ckpt_info["weights_path"]),
+            state_path=str(ckpt_info["state_path"]),
+            reason="training finished",
+        )
+
+    def _mark_training_complete(
+        self,
+        *,
+        weights_path: str,
+        state_path: str,
+        reason: str,
+    ) -> None:
+        """Write the ACP completion marker only after every rank reached [done]."""
+
+        self.accelerator.wait_for_everyone()
+        if not self.accelerator.is_main_process:
+            return
+        marker = write_training_complete_marker(
+            self.cfg.output_dir,
+            step=int(self.global_step),
+            weights_path=weights_path,
+            state_path=state_path,
+            reason=reason,
+        )
+        logger.info(
+            "[done] %s step=%d scheduler_max_steps=%d weights=%s state=%s "
+            "complete=%s",
+            reason,
+            self.global_step,
+            self.max_steps,
+            weights_path,
+            state_path,
+            marker,
+        )
+
