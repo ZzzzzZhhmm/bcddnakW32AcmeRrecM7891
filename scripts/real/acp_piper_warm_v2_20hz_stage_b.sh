@@ -75,7 +75,7 @@ fi
 piper_gpu_preflight
 
 echo "=== launching Stage B ==="
-echo "${ACCELERATE} launch --config_file ${ACCELERATE_CONFIG} --num_processes ${NUM_GPUS} --main_process_port ${MASTER_PORT} scripts/real/train_piper_warm.py"
+echo "${ACCELERATE} launch --config_file ${ACCELERATE_CONFIG} --num_processes ${NUM_GPUS} --main_process_port ${MASTER_PORT} ${PROJECT_DIR}/scripts/real/train_piper_warm.py"
 
 "${ACCELERATE}" launch \
   --config_file "${ACCELERATE_CONFIG}" \
@@ -84,7 +84,7 @@ echo "${ACCELERATE} launch --config_file ${ACCELERATE_CONFIG} --num_processes ${
   --machine_rank 0 \
   --main_process_ip 127.0.0.1 \
   --main_process_port "${MASTER_PORT}" \
-  scripts/real/train_piper_warm.py \
+  "${PROJECT_DIR}/scripts/real/train_piper_warm.py" \
   --config "${WARM_CONFIG}" \
   --base-checkpoint "${BASE_CHECKPOINT}" \
   --num-epochs "${WARM_EPOCHS}" \
