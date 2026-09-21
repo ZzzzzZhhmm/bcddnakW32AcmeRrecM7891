@@ -82,6 +82,42 @@ def perturb_candidates(context):
     return replace(context, **values)
 
 
+def source_pair_metrics(reference, alternative):
+    """Reject a confounded source-only intervention before reporting its effect."""
+    import torch
+    fixed = ("base_gaussian", "conditioning", "g", "alpha", "selected_index", "adapted_actions", "valid")
+    for name in fixed:
+        if not torch.equal(reference["arrays"][name], alternative["arrays"][name]):
+            raise ValueError(f"source-only comparison changed fixed field: {name}")
+    arrays = alternative["arrays"]
+    return dict(mean_g=float(arrays["g"].float().mean()),
+                mean_noise_scale_squared=float(arrays["source_noise_scale"].float().square().mean()),
+                source_rms_delta=float((arrays["source"].float()-reference["arrays"]["source"].float()).square().mean().sqrt()))
+
+
+def source_query(context, infer, output, query_id, identity, prefix, mode):
+    """One immutable source mode per process; compare modes only after collection."""
+    import numpy as np
+    from fastwam.research.evidence import append_record, write_probe
+    results, probes, times = {}, {}, {}
+    tolerance = None
+    for call in (("full", "repeat") if mode == "full" else (mode,)):
+        results[call], times[call], probes[call] = infer(context)
+        if call == "repeat":
+            tolerance = max(1e-6, float((results["full"]-results["repeat"]).abs().max()))
+            append_record(output / "events.jsonl", dict(kind="tolerance_frozen", query_id=query_id, tolerance=tolerance, **prefix))
+    probe_path = write_probe(output / "probes", query_id + "-" + mode, probes[mode], identity)
+    arrays = probes[mode]['arrays']
+    row = dict(**prefix, query_id=query_id, mode=mode, mean_g=float(arrays['g'].float().mean()),
+               mean_noise_scale_squared=float(arrays['source_noise_scale'].float().square().mean()), tolerance=tolerance,
+               nonzero_gate=bool(arrays['g'].any()), inference_seconds=times[mode], probe=probe_path)
+    append_record(output / "source_results.jsonl", row)
+    with (output / f"{query_id}-source-actions.npz").open("xb") as handle:
+        np.savez_compressed(handle, **{key: value.numpy() for key,value in results.items()})
+    print(json.dumps(dict(query_id=query_id, task=prefix["task"], source_mode=mode, nonzero_gate=row["nonzero_gate"])), flush=True)
+    return [row]
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--train-config", type=Path, required=True)
@@ -93,6 +129,8 @@ def main():
     parser.add_argument("--prefixes-per-episode", type=int, default=5)
     parser.add_argument("--nfe", type=int, default=20)
     parser.add_argument("--seed", type=int, default=3407)
+    parser.add_argument("--experiment", choices=("null", "source"), default="null")
+    parser.add_argument("--source-mode", choices=("full", "scale_only", "gaussian"), default="full")
     args = parser.parse_args()
     if min(args.episodes_per_task, args.prefixes_per_episode, args.nfe) < 1 or len(set(args.tasks)) != len(args.tasks):
         raise ValueError("positive budgets and distinct tasks required")
@@ -130,7 +168,7 @@ def main():
     model.load_checkpoint(str(args.checkpoint))
     model.eval().requires_grad_(False)
     model.validate_validation_dataset(dataset)
-    model.configure_research_probe(force_null=True, capture=True)
+    model.configure_research_probe(source_mode=args.source_mode, force_null=args.experiment == "null", capture=True)
     identity = dict(evidence_type="engineering", checkpoint_sha256=model._warm_loaded_checkpoint_sha256,
                     checkpoint_path=str(args.checkpoint), train_config_sha256=sha256_file(args.train_config),
                     bank_sha256=dataset.resolver.bank_content_sha256, query_corpus_sha256=dataset.resolver.query_corpus_sha256,
@@ -139,9 +177,10 @@ def main():
                     torch_version=torch.__version__, gpu=torch.cuda.get_device_name(0), dtype="bfloat16", nfe=args.nfe,
                     source_path="FastWAM.infer_action with factual DEV context; no online binding or simulator",
                     absolute_tolerance_floor=1e-6, tolerance_rule="max(1e-6, identical-call max error), frozen before replacement",
-                    setup_seconds=time.perf_counter()-started)
+                    experiment=args.experiment, source_mode=args.source_mode, setup_seconds=time.perf_counter()-started)
     (args.output / "manifest.json").write_bytes(canonical(identity))
     rows = []
+    source_rows = []
     for number, prefix in enumerate(selected):
         begin = time.perf_counter()
         sample = dataset[prefix["dataset_sample_index"]]
@@ -166,6 +205,9 @@ def main():
             return action, time.perf_counter()-tick, model._last_research_probe
 
         torch.cuda.reset_peak_memory_stats()
+        if args.experiment == "source":
+            source_rows.extend(source_query(ctx, infer, args.output, f"prefix-{number:04d}", identity, prefix, args.source_mode))
+            continue
         base, t0, probe0 = infer(ctx)
         repeat, t1, probe1 = infer(ctx)
         tolerance = max(1e-6, float((base-repeat).abs().max()))
@@ -187,6 +229,18 @@ def main():
         append_record(args.output / "query_results.jsonl", row)
         rows.append(row)
         print(json.dumps({k: row[k] for k in ('query_id','task','passed','changed_max_error','query_seconds','peak_allocated_gib')}), flush=True)
+    if args.experiment == "source":
+        summary = dict(status="complete", evidence_type="engineering", queries=len(selected),
+                       episodes=len({(r['task'],r['episode_index']) for r in selected}),
+                       nonzero_gate_queries=sum(r['nonzero_gate'] for r in source_rows),
+                       elapsed_seconds=time.perf_counter()-started,
+                       modes={mode: {key: float(np.mean([r[key] for r in source_rows if r['mode'] == mode]))
+                                     for key in ('mean_g', 'mean_noise_scale_squared')}
+                              for mode in (args.source_mode,)},
+                       limitation="one source mode collected; cross-mode pairing still required; no task SR")
+        (args.output / "summary.json").write_bytes(canonical(summary))
+        print(json.dumps(summary), flush=True)
+        return 0
     summary = dict(status="passed" if all(r['passed'] for r in rows) else "failed", evidence_type="engineering",
                    queries=len(rows), episodes=len({(r['task'],r['episode_index']) for r in rows}),
                    max_error=max(r['changed_max_error'] for r in rows), elapsed_seconds=time.perf_counter()-started,

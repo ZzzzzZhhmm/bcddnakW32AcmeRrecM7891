@@ -37,10 +37,9 @@
     {
       "id": "W02-A",
       "priority": "P0",
-      "status": "full_action_dit_dev_pilot_passed_batch_running",
-      "code": "Production inference kernel checked on one real DEV prefix with v8 smoke300; 50-prefix batch launched on one H100",
+      "status": "full_action_dit_dev50_passed_engineering_only",
+      "code": "50 frozen DEV prefixes across 10 episodes passed; raw arrays independently recomputed and backed up",
       "blockers": [
-        "Batch completion",
         "Repeat on a mature formal checkpoint before claiming formal-checkpoint validation"
       ],
       "run_directory": "/mnt/afs/task3_2/L202500276_lwz/projects/WARM_evaluations/nonreal_full_null_20260921/dev50"
@@ -80,7 +79,8 @@
     {
       "id": "W06",
       "priority": "P1",
-      "status": "local_source_controls_tested_training_deferred"
+      "status": "immutable_source_processes_r2_running_after_logged_v1_failure",
+      "run_directory": "/mnt/afs/task3_2/L202500276_lwz/projects/WARM_evaluations/nonreal_source_r2_20260921/dev50"
     },
     {
       "id": "W07",

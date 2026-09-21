@@ -55,3 +55,35 @@ def test_factual_context_excludes_all_teacher_fields_and_keeps_history():
     assert torch.equal(result.candidate_valid_mask, changed.candidate_valid_mask)
     assert torch.equal(result.episode_action_summaries, changed.episode_action_summaries)
     assert not changed.candidate_actions[~result.candidate_valid_mask].any()
+
+
+def test_source_diagnosis_rejects_conditioning_or_gate_changes():
+    torch = pytest.importorskip("torch")
+    arrays = {key: torch.ones(2) for key in ("base_gaussian", "conditioning", "g", "alpha", "selected_index", "adapted_actions", "valid", "source", "source_noise_scale")}
+    reference = {"arrays": arrays}
+    alternative = {"arrays": {key: value.clone() for key,value in arrays.items()}}
+    alternative['arrays']['source'] *= 2
+    assert probe.source_pair_metrics(reference, alternative)['source_rms_delta'] == 1
+    alternative['arrays']['conditioning'] *= 0
+    with pytest.raises(ValueError, match='conditioning'):
+        probe.source_pair_metrics(reference, alternative)
+
+
+@pytest.mark.parametrize('mode', ['full', 'scale_only', 'gaussian'])
+def test_source_collection_respects_real_model_lifetime_lock(tmp_path, mode):
+    torch = pytest.importorskip('torch')
+    from tests.test_nonreal_probe_torch import twin, resolve
+    from tests.test_warm_retrospection_model_torch import _source_context
+    model = twin()
+    model.configure_research_probe(source_mode=mode, capture=True)
+    calls = []
+    def infer(context):
+        resolve(model, context)
+        calls.append(mode)
+        return torch.zeros(32,14), .1, model._last_research_probe
+    rows = probe.source_query(_source_context(with_teachers=False), infer, tmp_path,
+                              'prefix-0000', {}, {'task':'test'}, mode)
+    assert calls == ([mode,mode] if mode == 'full' else [mode])
+    assert model._warm_online_experiment_locked
+    assert model._warm_research_probe.source_mode == mode
+    assert len(rows) == 1 and rows[0]['mode'] == mode
