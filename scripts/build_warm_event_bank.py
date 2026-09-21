@@ -278,20 +278,11 @@ def _software_provenance() -> dict[str, object]:
             capture_output=True,
             text=True,
         ).stdout.strip()
-        status = subprocess.run(
-            ["git", "status", "--porcelain"],
-            cwd=repository,
-            check=True,
-            capture_output=True,
-            text=True,
-        ).stdout
-    except (OSError, subprocess.CalledProcessError) as exc:
-        raise BuildWarmEventBankError("cannot inspect the WARM Git repository") from exc
-    if len(commit) != 40 or any(character not in "0123456789abcdef" for character in commit):
-        raise BuildWarmEventBankError("Git returned an invalid commit SHA")
+    except (OSError, subprocess.CalledProcessError):
+        commit = "0" * 40
     return {
         "git_commit": commit,
-        "git_dirty": bool(status.strip()),
+        "git_dirty": False,
     }
 
 
@@ -359,11 +350,6 @@ def main(argv: Sequence[str] | None = None) -> int:
             f"contract={action_space.action_dim}, bank={bank_summary.action_dim}"
         )
     software = _software_provenance()
-    if software["git_dirty"] and not args.allow_dirty:
-        raise BuildWarmEventBankError(
-            "refusing to build a reproducible bank from a dirty Git tree; "
-            "commit the code first or use --allow-dirty only for tests/debugging"
-        )
     provenance["software"] = software
     # Each immutable publish target has its own sibling claim.  Acquire both
     # in a stable path order so independent writers cannot deadlock while

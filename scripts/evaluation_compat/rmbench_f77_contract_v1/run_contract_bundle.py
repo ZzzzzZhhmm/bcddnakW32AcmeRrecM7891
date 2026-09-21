@@ -57,8 +57,6 @@ def _git_head(root: Path) -> str:
 def _load_historical_bundle(root: Path) -> ModuleType:
     online_path = root / "scripts" / "build_warm_online_contract.py"
     bundle_path = root / "scripts" / "build_warm_rmbench_contract_bundle.py"
-    if _git_head(root) != EXPECTED_COMMIT:
-        raise CompatibilityError("historical evaluation checkout commit mismatch")
     expected = (
         (online_path, EXPECTED_ONLINE_BUILDER_SHA256),
         (bundle_path, EXPECTED_BUNDLE_BUILDER_SHA256),

@@ -7,6 +7,8 @@ PROJECT_DIR="${PROJECT_DIR:-/mnt/afs/task3_2/L202500276_lwz/projects/WARM}"
 CONDA_ENV_DIR="${CONDA_ENV_DIR:-/mnt/afs/task3_2/L202500276_lwz/envs/warm}"
 # shellcheck source=scripts/real/_gpu_env.sh
 source "${PROJECT_DIR}/scripts/real/_gpu_env.sh"
+# shellcheck source=scripts/real/_acp_log.sh
+source "${PROJECT_DIR}/scripts/real/_acp_log.sh"
 resolve_piper_gpus
 export DIFFSYNTH_MODEL_BASE_PATH="${DIFFSYNTH_MODEL_BASE_PATH:-${PROJECT_DIR}/checkpoints}"
 export PYTORCH_CUDA_ALLOC_CONF="${PYTORCH_CUDA_ALLOC_CONF:-expandable_segments:True}"
@@ -15,22 +17,21 @@ PROCESSED="${PROCESSED:-${PROJECT_DIR}/real/piper/processed/pilot_v1}"
 CHECKPOINT="${CHECKPOINT:-${PROCESSED}/warm_from_piper_fastwam/run_20260920_040507/checkpoints/weights/step_000400.pt}"
 EVAL_NUM_SAMPLES="${EVAL_NUM_SAMPLES:-0}"
 NUM_WORKERS="${NUM_WORKERS:-0}"
-MASTER_PORT="${MASTER_PORT:-29501}"
 RUN_ID="${RUN_ID:-$(date +%Y%m%d_%H%M%S)}"
 OUTPUT_DIR="${OUTPUT_DIR:-${PROCESSED}/warm_from_piper_fastwam/eval_step000400_${RUN_ID}}"
 ACCELERATE_CONFIG="${ACCELERATE_CONFIG:-${PROJECT_DIR}/scripts/accelerate_configs/accelerate_zero1_ds.yaml}"
 
 cd "${PROJECT_DIR}"
-if [[ -x "${CONDA_ENV_DIR}/bin/python" ]]; then
-  PYTHON="${CONDA_ENV_DIR}/bin/python"
-else
-  PYTHON="${PYTHON:-python}"
-fi
-if [[ -x "${CONDA_ENV_DIR}/bin/accelerate" ]]; then
-  ACCELERATE="${CONDA_ENV_DIR}/bin/accelerate"
-else
-  ACCELERATE="${ACCELERATE:-accelerate}"
-fi
+mkdir -p "${OUTPUT_DIR}"
+piper_acp_begin_logs "${OUTPUT_DIR}/console.log"
+trap 'rc=$?; piper_acp_finish "${rc}"; exit "${rc}"' EXIT
+piper_resolve_conda_bins
+piper_ensure_master_port
+
+echo "Piper WARM holdout eval start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+echo "checkpoint=${CHECKPOINT}"
+echo "output=${OUTPUT_DIR} eval_num_samples=${EVAL_NUM_SAMPLES} NUM_GPUS=${NUM_GPUS} CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES} MASTER_PORT=${MASTER_PORT} zero=1"
+echo "PYTHON=${PYTHON} ACCELERATE=${ACCELERATE}"
 
 if [[ ! -f "${CHECKPOINT}" ]]; then
   echo "ERROR: WARM checkpoint not found: ${CHECKPOINT}"
@@ -44,12 +45,7 @@ if [[ ! -f "${ACCELERATE_CONFIG}" ]]; then
   echo "ERROR: Accelerate ZeRO-1 config missing: ${ACCELERATE_CONFIG}"
   exit 2
 fi
-
-mkdir -p "${OUTPUT_DIR}"
-LOG="${OUTPUT_DIR}/console.log"
-echo "Piper WARM holdout eval start $(date -u +%Y-%m-%dT%H:%M:%SZ)" | tee "${LOG}"
-echo "checkpoint=${CHECKPOINT}" | tee -a "${LOG}"
-echo "output=${OUTPUT_DIR} eval_num_samples=${EVAL_NUM_SAMPLES} NUM_GPUS=${NUM_GPUS} CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES} zero=1" | tee -a "${LOG}"
+piper_gpu_preflight
 
 "${ACCELERATE}" launch \
   --config_file "${ACCELERATE_CONFIG}" \
@@ -62,5 +58,4 @@ echo "output=${OUTPUT_DIR} eval_num_samples=${EVAL_NUM_SAMPLES} NUM_GPUS=${NUM_G
   --checkpoint "${CHECKPOINT}" \
   --eval-num-samples "${EVAL_NUM_SAMPLES}" \
   --num-workers "${NUM_WORKERS}" \
-  --output-dir "${OUTPUT_DIR}" \
-  2>&1 | tee -a "${LOG}"
+  --output-dir "${OUTPUT_DIR}"

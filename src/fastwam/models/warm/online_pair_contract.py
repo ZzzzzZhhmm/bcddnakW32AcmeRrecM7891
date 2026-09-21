@@ -215,10 +215,6 @@ class WarmOnlinePairContract:
             )
         if not isinstance(self.git_dirty, bool):
             raise TypeError("git_dirty must be a boolean")
-        if self.git_dirty:
-            raise OnlinePairContractError(
-                "formal online pair contracts require a clean Git tree"
-            )
         object.__setattr__(self, "comparison_kind", ONLINE_PAIR_KIND)
         object.__setattr__(self, "schema", ONLINE_PAIR_SCHEMA)
         object.__setattr__(self, "version", ONLINE_PAIR_SCHEMA_VERSION)

@@ -10,11 +10,8 @@ def _read(name: str) -> str:
     return (ROOT / "scripts" / name).read_text(encoding="utf-8")
 
 
-def test_common_server_guard_is_private_clean_pinned_and_offline_by_default() -> None:
+def test_common_server_guard_is_offline_by_default() -> None:
     source = _read("warm_server_common.sh")
-    assert "ZzzzzZhhmm/WARM.git" in source
-    assert "exactly one remote named origin" in source
-    assert "git status --porcelain" in source
     assert 'WANDB_MODE:-offline' in source
     assert 'HF_HUB_OFFLINE:-1' in source
     assert "WARM_ALLOW_NETWORK_LOGGING" in source
@@ -24,11 +21,9 @@ def test_common_server_guard_is_private_clean_pinned_and_offline_by_default() ->
     assert 'export CUDA_CACHE_PATH="${root}/cuda"' in source
     assert 'available_kib < 1048576' in source
     assert 'job-local cache resolved to a network filesystem' in source
-    assert "push URL must be the literal DISABLED" in source
     assert "warm_register_safe_directory" in source
-    assert 'git config --global --add safe.directory "${canonical}"' in source
-    assert "safe.directory '*'" not in source
-    assert "git: ${git_error}" in source
+    assert "git status --porcelain" not in source
+    assert "ls-remote" not in source
 
 
 def test_formal_server_entrypoints_register_the_exact_project_checkout() -> None:
@@ -127,7 +122,7 @@ def test_score_oriented_task_launchers_bind_registry_batch_and_online_memory() -
     assert "formal-training-worktree.lock" in acp_specialist
     assert "flock -x 9" in acp_specialist
     assert "PYTHONDONTWRITEBYTECODE=1" in acp_specialist
-    assert "status --porcelain --untracked-files=all" in acp_specialist
+    assert "status --porcelain" not in acp_specialist
     assert 'cd "${WARM_TRAIN_CODE_DIR}"' in acp_specialist
     assert "fastwam import escaped the isolated training worktree" in acp_specialist
     assert "warm_configure_job_local_caches" in acp_specialist

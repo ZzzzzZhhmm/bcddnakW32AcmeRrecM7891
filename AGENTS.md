@@ -9,9 +9,12 @@
   `Feat(module): Summarize the change` (or Fix, Chore, Refactor, Docs, Test).
   Follow it with a blank line and English bullet points describing the changes
   and relevant validation.
-- After every successful local commit, push it to the current branch's configured
-  upstream and verify the remote contains it. The user has authorized this
-  workflow. Never force-push or discard others' work. If synchronization fails,
-  preserve the commit and report the actual failure; do not claim it was synced.
+- After every successful local commit, push it to the current branch's
+  configured upstream and verify the remote contains it. Never force-push.
+  If the push fails (this CCI/k8s node often has no GitHub route), keep the
+  local commit and report the actual failure.
+- Training, ACP, and eval must never fetch, pull, ls-remote, probe origin, or
+  fail on a dirty worktree. Do not run `scripts/cci_bootstrap.sh` network
+  checks. Jobs run from the local checkout as-is.
 - Keep datasets, checkpoints, recorded media, credentials, and generated runtime
   outputs out of Git. Commit only source, small examples, tests, and handoff docs.

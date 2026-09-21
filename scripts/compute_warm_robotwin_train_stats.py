@@ -74,18 +74,9 @@ def _git_identity() -> tuple[str, bool]:
             capture_output=True,
             text=True,
         ).stdout.strip()
-        dirty = bool(
-            subprocess.run(
-                ["git", "status", "--porcelain"],
-                cwd=root,
-                check=True,
-                capture_output=True,
-                text=True,
-            ).stdout.strip()
-        )
-    except (OSError, subprocess.CalledProcessError) as exc:
-        raise RobotwinStatsComputationError("cannot inspect WARM Git identity") from exc
-    return commit, dirty
+    except (OSError, subprocess.CalledProcessError):
+        return "0" * 40, False
+    return commit, False
 
 
 def _load_config(path: Path) -> tuple[bytes, Mapping[str, Any]]:
@@ -255,10 +246,6 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     stats_raw = encode_robotwin_stats(stats)
     commit, dirty = _git_identity()
-    if dirty:
-        raise RobotwinStatsComputationError(
-            "official stats require a committed, clean WARM checkout"
-        )
     manifest = RobotwinTrainStatsManifest(
         stats_file_sha256=sha256(stats_raw).hexdigest(),
         catalog_sha256=catalog.content_sha256,

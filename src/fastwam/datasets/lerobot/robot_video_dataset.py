@@ -16,9 +16,8 @@ from hydra.utils import instantiate
 from .base_lerobot_dataset import BaseLerobotDataset
 from .utils.normalizer import save_dataset_stats_to_json, load_dataset_stats_from_json
 from ..dataset_utils import ResizeSmallestSideAspectPreserving, CenterCrop, Normalize
-from fastwam.utils.logging_config import get_logger
+from fastwam.utils.logging_config import _is_main_process, get_logger
 from fastwam.utils import misc, pytorch_utils
-from accelerate import PartialState
 logger = get_logger(__name__)
 
 
@@ -124,7 +123,9 @@ class RobotVideoDataset(torch.utils.data.Dataset):
             if not pretrained_norm_stats:
                 if not is_training_set:
                     raise ValueError("pretrained_norm_stats must be provided for validation/test sets since we don't want to calculate stats on them.")
-                if PartialState().is_main_process:
+                # Rank check only. PartialState() would re-enter DeepSpeed
+                # init_distributed before Accelerator exists and break NCCL.
+                if _is_main_process():
                     logger.info("Calculating dataset stats for normalization...")
                     dataset_stats = self.lerobot_dataset.get_dataset_stats(processor)
                     work_dir = misc.get_work_dir()
@@ -149,7 +150,7 @@ class RobotVideoDataset(torch.utils.data.Dataset):
                     )
                 self.pretrained_norm_stats_sha256 = before_sha256
                 logger.info(f"Using dataset stats: {stats_path}")
-                if PartialState().is_main_process:
+                if _is_main_process():
                     work_dir = misc.get_work_dir()
                     save_dataset_stats_to_json(dataset_stats, os.path.join(work_dir, "dataset_stats.json"))
 

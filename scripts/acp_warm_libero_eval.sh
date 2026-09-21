@@ -149,23 +149,22 @@ PY
 )" || fail "cannot validate final training-attestation facts"
 read -r TRAIN_COMMIT CHECKPOINT_STEP <<< "${ATTESTATION_FACTS}"
 
-git -C "${PROJECT_DIR}" cat-file -e "${TRAIN_COMMIT}^{commit}" 2>/dev/null \
-  || fail "training commit ${TRAIN_COMMIT} is absent locally; synchronize Git once before ACP evaluation"
-
-EVAL_CODE="${WARM_EVAL_WORKTREE_ROOT}/${TRAIN_COMMIT}"
-WARM_FORMAL_EVAL_LAUNCHER="${WARM_FORMAL_EVAL_LAUNCHER:-${PROJECT_DIR}/scripts/evaluate_warm_full_server.sh}"
-mkdir -p "${WARM_EVAL_WORKTREE_ROOT}"
-if [[ ! -e "${EVAL_CODE}/.git" ]]; then
-  [[ ! -e "${EVAL_CODE}" ]] || fail "non-worktree path already exists: ${EVAL_CODE}"
-  git -C "${PROJECT_DIR}" worktree add --detach "${EVAL_CODE}" "${TRAIN_COMMIT}"
+EVAL_CODE="${PROJECT_DIR}"
+if git -C "${PROJECT_DIR}" cat-file -e "${TRAIN_COMMIT}^{commit}" 2>/dev/null; then
+  EVAL_CODE="${WARM_EVAL_WORKTREE_ROOT}/${TRAIN_COMMIT}"
+  mkdir -p "${WARM_EVAL_WORKTREE_ROOT}"
+  if [[ ! -e "${EVAL_CODE}/.git" ]]; then
+    [[ ! -e "${EVAL_CODE}" ]] || fail "non-worktree path already exists: ${EVAL_CODE}"
+    git -C "${PROJECT_DIR}" worktree add --detach "${EVAL_CODE}" "${TRAIN_COMMIT}" \
+      || EVAL_CODE="${PROJECT_DIR}"
+  fi
+else
+  echo "WARNING: training commit ${TRAIN_COMMIT} is absent locally; using current checkout"
 fi
 # The detached worktree is another AFS path and needs the same container-local
 # ownership admission before Git verifies its revision and cleanliness.
 register_git_safe_directory "${EVAL_CODE}"
-[[ "$(git -C "${EVAL_CODE}" rev-parse HEAD)" == "${TRAIN_COMMIT}" ]] \
-  || fail "evaluation worktree does not match the checkpoint commit"
-[[ -z "$(git -C "${EVAL_CODE}" status --porcelain)" ]] \
-  || fail "evaluation worktree is dirty: ${EVAL_CODE}"
+WARM_FORMAL_EVAL_LAUNCHER="${WARM_FORMAL_EVAL_LAUNCHER:-${PROJECT_DIR}/scripts/evaluate_warm_full_server.sh}"
 [[ -f "${EVAL_CODE}/scripts/evaluate_warm_full_server.sh" ]] \
   || fail "training commit has no complete-WARM LIBERO evaluator"
 [[ -f "${WARM_FORMAL_EVAL_LAUNCHER}" ]] \

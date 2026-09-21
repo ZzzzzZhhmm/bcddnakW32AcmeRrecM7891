@@ -340,41 +340,15 @@ def test_endpoint_probe_keeps_only_reachable_sources(
     assert usable == ("https://good.invalid",)
 
 
-def test_checkout_revision_probe_uses_isolated_global_safe_directory(
+def test_checkout_probe_does_not_invoke_git(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     checkout = tmp_path / "RMBench-official"
-    (checkout / ".git").mkdir(parents=True)
-    revision = "a" * 40
-    observed: list[str] = []
-    observed_environment: dict[str, str] = {}
-    observed_config = ""
+    checkout.mkdir()
 
-    def fake_run(
-        command: list[str],
-        **kwargs: object,
-    ) -> subprocess.CompletedProcess[str]:
-        nonlocal observed_config
-        observed.extend(command)
-        environment = kwargs["env"]
-        assert isinstance(environment, dict)
-        observed_environment.update(environment)
-        config_path = Path(environment["GIT_CONFIG_GLOBAL"])
-        observed_config = config_path.read_text(encoding="utf-8")
-        return subprocess.CompletedProcess(command, 0, revision + "\n", "")
+    def fake_run(*_args: object, **_kwargs: object) -> None:
+        raise AssertionError("git must not run on this offline server")
 
     monkeypatch.setattr(assets.subprocess, "run", fake_run)
-    assets._assert_pinned_checkout(checkout, revision)
-
-    assert observed == [
-        "git",
-        "-C",
-        str(checkout.resolve()),
-        "rev-parse",
-        "HEAD",
-    ]
-    assert observed_environment["HOME"] == str(
-        Path(observed_environment["GIT_CONFIG_GLOBAL"]).parent
-    )
-    assert f'directory = "{checkout.resolve().as_posix()}"' in observed_config
+    assets._assert_pinned_checkout(checkout, "a" * 40)

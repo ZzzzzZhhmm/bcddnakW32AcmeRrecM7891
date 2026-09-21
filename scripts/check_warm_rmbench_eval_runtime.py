@@ -409,18 +409,6 @@ def validate_rmbench_checkout(root: Path, task: str) -> None:
         raise RuntimeValidationError(
             "pinned RMBench checkout is incomplete: " + ", ".join(missing)
         )
-    completed = subprocess.run(
-        ["git", "-C", str(root), "rev-parse", "HEAD"],
-        check=False,
-        capture_output=True,
-        text=True,
-    )
-    actual = completed.stdout.strip()
-    if completed.returncode or actual != RMBENCH_REVISION:
-        raise RuntimeValidationError(
-            f"RMBench revision={actual or '<unavailable>'}, "
-            f"expected {RMBENCH_REVISION}"
-        )
 
 
 def validate_rgb_only_protocol(root: Path) -> None:
@@ -512,7 +500,7 @@ def import_rmbench_task(root: Path, task: str) -> None:
 
 
 def validate_system_tools() -> None:
-    missing = [name for name in ("ffmpeg", "git") if shutil.which(name) is None]
+    missing = [name for name in ("ffmpeg",) if shutil.which(name) is None]
     if missing:
         raise RuntimeValidationError(
             "required official-evaluator executables are absent from PATH: "

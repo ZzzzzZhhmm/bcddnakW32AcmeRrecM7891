@@ -27,6 +27,16 @@ resolve_piper_gpus() {
   fi
   export NUM_GPUS
   export CUDA_VISIBLE_DEVICES
+  # Single-node k8s usually has no IB. Reuse the official LIBERO ACP defaults
+  # so DeepSpeed/NCCL does not probe dead interfaces.
+  export NCCL_IB_DISABLE="${NCCL_IB_DISABLE:-1}"
+  export NCCL_SOCKET_IFNAME="${NCCL_SOCKET_IFNAME:-lo,eth0,bond0}"
+  export NCCL_DEBUG="${NCCL_DEBUG:-WARN}"
+  export TORCH_NCCL_ASYNC_ERROR_HANDLING="${TORCH_NCCL_ASYNC_ERROR_HANDLING:-1}"
+  if [[ -z "${MASTER_PORT:-}" ]]; then
+    MASTER_PORT="$((29500 + RANDOM % 1000))"
+  fi
+  export MASTER_PORT
 }
 
 piper_epoch_steps() {

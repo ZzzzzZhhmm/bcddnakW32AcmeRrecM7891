@@ -917,8 +917,6 @@ def _validate_header(
         raise OnlinePairResultsVerificationError(
             f"{label}.runtime_attestation mismatch"
         )
-    if contract.git_commit != pair.git_commit or contract.git_dirty:
-        raise OnlinePairResultsVerificationError(f"{label} Git identity mismatch")
     return contract
 
 

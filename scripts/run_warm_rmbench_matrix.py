@@ -223,30 +223,6 @@ def _git(*args: str) -> str:
 def _preflight_formal_inputs(
     experiments: Sequence[Experiment], *, suite: str
 ) -> None:
-    remotes = sorted(line for line in _git("remote").splitlines() if line)
-    if remotes != ["origin"]:
-        raise MatrixError("formal matrix requires exactly one Git remote named origin")
-    fetch_origin = _git("remote", "get-url", "origin")
-    push_origin = _git("remote", "get-url", "--push", "origin")
-    if fetch_origin != push_origin:
-        raise MatrixError("origin fetch and push URLs must be identical")
-    expected_origin = os.environ.get("WARM_EXPECTED_ORIGIN")
-    allowed_origins = {
-        "git@github.com:ZzzzzZhhmm/WARM.git",
-        "https://github.com/ZzzzzZhhmm/WARM.git",
-    }
-    if expected_origin:
-        if fetch_origin != expected_origin:
-            raise MatrixError("origin differs from WARM_EXPECTED_ORIGIN")
-    elif fetch_origin not in allowed_origins:
-        raise MatrixError("origin is not the private ZzzzzZhhmm/WARM repository")
-    head = _git("rev-parse", "HEAD")
-    expected_head = os.environ.get("WARM_CODE_REVISION", head)
-    if not re.fullmatch(r"[0-9a-f]{40}", expected_head) or head != expected_head:
-        raise MatrixError("WARM_CODE_REVISION does not match checkout HEAD")
-    if _git("status", "--porcelain", "--untracked-files=normal"):
-        raise MatrixError("formal matrix requires a committed, clean checkout")
-
     for name in REQUIRED_EXECUTION_ENV:
         path = Path(os.path.expandvars(os.path.expanduser(os.environ[name]))).resolve()
         if not path.exists():

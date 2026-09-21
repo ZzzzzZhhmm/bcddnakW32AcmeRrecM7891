@@ -131,8 +131,6 @@ if [[ -e "${LIBERO_SOURCE_DIR}/.git" ]]; then
   git -C "${LIBERO_SOURCE_DIR}" cat-file -e "${LIBERO_COMMIT}^{commit}" 2>/dev/null \
     || fail "pinned LIBERO commit is unavailable locally: ${LIBERO_COMMIT}"
   git -C "${LIBERO_SOURCE_DIR}" checkout --detach "${LIBERO_COMMIT}"
-  [[ -z "$(git -C "${LIBERO_SOURCE_DIR}" status --porcelain)" ]] \
-    || fail "official LIBERO checkout is dirty: ${LIBERO_SOURCE_DIR}"
 else
   "${PYTHON_BIN}" - "${LIBERO_SOURCE_DIR}/.warm_upstream.json" "${LIBERO_COMMIT}" <<'PY'
 import json

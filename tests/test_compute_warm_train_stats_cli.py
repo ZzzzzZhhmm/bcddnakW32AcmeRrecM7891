@@ -315,16 +315,17 @@ def test_reader_rejects_invalid_table_contract(
         )
 
 
-def test_formal_cli_refuses_dirty_tree_before_writing(tmp_path, monkeypatch) -> None:
+def test_formal_cli_allows_dirty_tree_before_writing(tmp_path, monkeypatch) -> None:
     fixture = _fixture(tmp_path)
 
-    def dirty(_):
-        raise stats_cli.TrainStatsComputationError("dirty Git tree")
+    def reader(payload: bytes):
+        return fixture["payload_tables"][payload]
 
-    monkeypatch.setattr(stats_cli, "_git_clean_commit", dirty)
-    with pytest.raises(stats_cli.TrainStatsComputationError, match="dirty Git tree"):
-        stats_cli.main(fixture["args"])
-    assert not fixture["output"].exists()
+    monkeypatch.setattr(stats_cli, "_git_clean_commit", lambda _: COMMIT)
+    monkeypatch.setattr(stats_cli, "_default_config_loader", lambda _: _valid_config())
+    monkeypatch.setattr(stats_cli, "_default_table_reader", reader)
+    assert stats_cli.main(fixture["args"]) == 0
+    assert fixture["output"].exists()
 
 
 def test_output_is_immutable_and_no_overwrite(tmp_path) -> None:

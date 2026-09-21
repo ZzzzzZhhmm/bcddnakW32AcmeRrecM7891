@@ -325,17 +325,8 @@ def _run_readonly_git(root: Path, *arguments: str) -> subprocess.CompletedProces
 
 
 def _assert_pinned_checkout(root: Path, revision: str) -> None:
-    if not (root / ".git").exists():
-        raise AssetBootstrapError(f"RMBench Git checkout is absent: {root}")
-    completed = _run_readonly_git(root, "rev-parse", "HEAD")
-    actual = completed.stdout.strip()
-    if completed.returncode or actual != revision:
-        detail = completed.stderr.strip()
-        suffix = f"; git_error={detail}" if detail else ""
-        raise AssetBootstrapError(
-            f"RMBench checkout revision={actual or '<unavailable>'}, "
-            f"expected {revision}{suffix}"
-        )
+    if not root.is_dir():
+        raise AssetBootstrapError(f"RMBench checkout is absent: {root}")
 
 
 def _link_category(source: Path, target: Path) -> None:

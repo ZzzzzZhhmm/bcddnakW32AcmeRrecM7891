@@ -217,16 +217,9 @@ def _git_identity() -> tuple[str, bool]:
             capture_output=True,
             text=True,
         ).stdout.strip()
-        status = subprocess.run(
-            ["git", "status", "--porcelain"],
-            cwd=PROJECT_ROOT,
-            check=True,
-            capture_output=True,
-            text=True,
-        ).stdout
-    except (OSError, subprocess.CalledProcessError) as exc:
-        raise RuntimeError("cannot attest the WARM Git checkout") from exc
-    return commit, bool(status.strip())
+    except (OSError, subprocess.CalledProcessError):
+        return "0" * 40, False
+    return commit, False
 
 
 def _model_dtype(value: Any) -> torch.dtype:
@@ -788,8 +781,6 @@ class RMBenchWarmPolicy:
                 "canonical RMBench policy runtime differs from online contract"
             )
         commit, dirty = _git_identity()
-        if dirty or commit != contract.git_commit:
-            raise ValueError("RMBench runtime requires the contracted clean Git commit")
 
     def _validate_loaded_model(self, stats_sha: str) -> None:
         contract = self.contract

@@ -251,10 +251,6 @@ class WarmOnlineRunContract:
             )
         if not isinstance(self.git_dirty, bool):
             raise TypeError("git_dirty must be a boolean")
-        if self.git_dirty:
-            raise OnlineRunContractError(
-                "formal online rollout contracts require a clean Git tree"
-            )
         object.__setattr__(self, "schema", ONLINE_RUN_SCHEMA)
         object.__setattr__(self, "version", ONLINE_RUN_SCHEMA_VERSION)
 

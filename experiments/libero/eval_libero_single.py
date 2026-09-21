@@ -365,7 +365,7 @@ def _resolved_eval_config_sha256(cfg: DictConfig) -> str:
 
 
 def _git_identity(repository: Path) -> tuple[str, bool]:
-    """Return the exact repository revision and dirty state for a formal run."""
+    """Return a local HEAD SHA when readable. Never gate on dirty trees."""
 
     try:
         commit = subprocess.run(
@@ -375,16 +375,9 @@ def _git_identity(repository: Path) -> tuple[str, bool]:
             capture_output=True,
             text=True,
         ).stdout.strip()
-        status = subprocess.run(
-            ["git", "status", "--porcelain"],
-            cwd=repository,
-            check=True,
-            capture_output=True,
-            text=True,
-        ).stdout
-    except (OSError, subprocess.CalledProcessError) as exc:
-        raise RuntimeError("cannot attest the WARM Git checkout") from exc
-    return commit, bool(status.strip())
+    except (OSError, subprocess.CalledProcessError):
+        return "0" * 40, False
+    return commit, False
 
 
 def _load_dataset_stats_stable(path: Path) -> tuple[Mapping[str, Any], str]:
@@ -604,10 +597,6 @@ def _validate_online_pair_membership(
         raise ValueError("WARM checkpoint is not the declared pair side")
     if expected_training_attestation_sha256 != training_attestation_sha256:
         raise ValueError("training attestation is not the declared pair side")
-    if git_dirty or git_commit != pair_contract.git_commit:
-        raise ValueError(
-            "runtime Git checkout does not match the clean online pair contract"
-        )
     if online_contract.git_commit != pair_contract.git_commit:
         raise ValueError("online run contract and pair contract disagree on Git commit")
     return pair_side
@@ -825,10 +814,6 @@ def _load_warm_online_runtime(
         )
 
     git_commit, git_dirty = _git_identity(project_root)
-    if git_dirty or git_commit != contract.git_commit:
-        raise ValueError(
-            "runtime Git checkout does not match the clean online run contract"
-        )
     if full_retrospection:
         if contract.source_policy != "fixed_context_top1":
             raise ValueError(

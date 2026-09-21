@@ -325,8 +325,6 @@ git -C "${CUROBO_SOURCE}" sparse-checkout set \
   '!/src/curobo/content/assets/'
 retry_git -C "${CUROBO_SOURCE}" checkout --detach "${CUROBO_REVISION}" \
   || fail "failed to materialize sparse CuRobo source"
-[[ -z "$(git -C "${CUROBO_SOURCE}" status --porcelain)" ]] \
-  || fail "CuRobo source checkout is dirty: ${CUROBO_SOURCE}"
 [[ -d "${CUROBO_SOURCE}/src/curobo/content/configs" ]] \
   || fail "sparse CuRobo runtime configs are absent"
 [[ -f "${CUROBO_SOURCE}/src/curobo/curobolib/cpp/kinematics_fused_kernel.cu" ]] \

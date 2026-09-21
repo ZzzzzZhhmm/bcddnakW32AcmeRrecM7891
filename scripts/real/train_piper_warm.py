@@ -5,8 +5,10 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 from omegaconf import OmegaConf
@@ -60,24 +62,117 @@ def _load_tasks(dataset_dir: Path) -> list[str]:
     return tasks
 
 
+_DIST_ENV_KEYS = (
+    "RANK",
+    "WORLD_SIZE",
+    "LOCAL_RANK",
+    "LOCAL_WORLD_SIZE",
+    "MASTER_ADDR",
+    "MASTER_PORT",
+    "GROUP_RANK",
+    "ROLE_RANK",
+    "ROLE_NAME",
+    "GROUP_WORLD_SIZE",
+    "ROLE_WORLD_SIZE",
+    "TORCHELASTIC_RUN_ID",
+    "ACCELERATE_USE_DEEPSPEED",
+)
+
+
+def _is_launch_main_process() -> bool:
+    for key in ("RANK", "SLURM_PROCID", "LOCAL_RANK"):
+        if key in os.environ:
+            return os.environ.get(key, "0").strip() in {"", "0"}
+    return True
+
+
+def _isolated_subprocess_env() -> dict[str, str]:
+    env = os.environ.copy()
+    for key in _DIST_ENV_KEYS:
+        env.pop(key, None)
+    return env
+
+
+def _drop_dead_artifact_claim(lock_path: Path) -> None:
+    """Remove a contract lock only when its recorded pid is gone.
+
+    Artifact claims are not stolen from a live owner.  A crashed 4-rank
+    launch can leave `.warm-artifact.lock` behind; that lock must not block
+    the next rank-0 rebuild.
+    """
+
+    if not lock_path.is_file():
+        return
+    try:
+        payload = json.loads(lock_path.read_text(encoding="utf-8"))
+        pid = int(payload.get("pid", -1))
+    except (OSError, TypeError, ValueError, json.JSONDecodeError):
+        print(f"WARNING: leaving unreadable artifact claim in place: {lock_path}")
+        return
+    if pid <= 0:
+        return
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        print(f"removing dead artifact claim pid={pid} path={lock_path}")
+        lock_path.unlink(missing_ok=True)
+    except PermissionError:
+        return
+    except OSError:
+        return
+
+
+def _wait_for_source_contracts(
+    outputs: tuple[Path, Path],
+    ready: Path,
+    expected: str,
+    *,
+    timeout_s: float = 1800,
+) -> None:
+    deadline = time.time() + timeout_s
+    while True:
+        if ready.is_file() and all(path.is_file() for path in outputs):
+            if ready.read_text(encoding="utf-8").strip() == expected:
+                return
+        if time.time() >= deadline:
+            raise RuntimeError(
+                f"timed out waiting for source-run contracts {outputs[0]} "
+                f"{outputs[1]} ready={ready}"
+            )
+        time.sleep(2)
+
+
 def ensure_text_embeds(dataset_dir: Path, cache_dir: Path) -> None:
     tasks = _load_tasks(dataset_dir)
     missing = [task for task in tasks if not _task_cache_path(cache_dir, task).is_file()]
     if not missing:
         print(f"text embeds already present for {len(tasks)} tasks in {cache_dir}")
         return
-    cache_dir.mkdir(parents=True, exist_ok=True)
-    command = [
-        sys.executable,
-        str(REPO / "scripts/precompute_text_embeds.py"),
-        "task=libero_uncond_2cam224_1e-4",
-        f"data.train.dataset_dirs=[{dataset_dir}]",
-        f"data.train.text_embedding_cache_dir={cache_dir}",
-        f"data.train.context_len={CONTEXT_LEN}",
-        "overwrite=false",
-    ]
-    print("encoding missing text embeds:", ", ".join(missing))
-    subprocess.run(command, cwd=str(REPO), check=True)
+    if _is_launch_main_process():
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        command = [
+            sys.executable,
+            str(REPO / "scripts/precompute_text_embeds.py"),
+            "task=libero_uncond_2cam224_1e-4",
+            f"data.train.dataset_dirs=[{dataset_dir}]",
+            f"data.train.text_embedding_cache_dir={cache_dir}",
+            f"data.train.context_len={CONTEXT_LEN}",
+            "overwrite=false",
+        ]
+        print("encoding missing text embeds:", ", ".join(missing))
+        subprocess.run(
+            command, cwd=str(REPO), check=True, env=_isolated_subprocess_env()
+        )
+    deadline = time.time() + 1800
+    while True:
+        still_missing = [
+            task for task in tasks if not _task_cache_path(cache_dir, task).is_file()
+        ]
+        if not still_missing:
+            return
+        if time.time() >= deadline:
+            raise RuntimeError(f"text embed cache still missing: {still_missing}")
+        time.sleep(2)
 
 
 def build_contracts(
@@ -94,10 +189,26 @@ def build_contracts(
     contract_dir.mkdir(parents=True, exist_ok=True)
     train_contract = contract_dir / "train_source.json"
     dev_contract = contract_dir / "dev_source.json"
+    outputs = (train_contract, dev_contract)
+    expected = str(Path(base_checkpoint).expanduser().resolve())
+    ready = contract_dir / ".source_contracts.ready"
+    if not _is_launch_main_process():
+        print(
+            "waiting for rank 0 to publish source-run contracts: "
+            f"{train_contract} {dev_contract}"
+        )
+        _wait_for_source_contracts(outputs, ready, expected)
+        return train_contract, dev_contract
+
+    if overwrite and ready.is_file():
+        ready.unlink()
     for split, cache, output in (
         ("train", Path(bindings["splits"]["train"]["candidates"]), train_contract),
         ("dev", Path(bindings["splits"]["dev"]["candidates"]), dev_contract),
     ):
+        _drop_dead_artifact_claim(
+            output.parent / f".{output.name}.warm-artifact.lock"
+        )
         if output.is_file() and not overwrite:
             print(f"reuse {split} contract: {output}")
             continue
@@ -109,7 +220,7 @@ def build_contracts(
             "--candidate-cache",
             str(cache),
             "--base-checkpoint",
-            str(base_checkpoint),
+            expected,
             "--output",
             str(output),
             "--query-split",
@@ -124,7 +235,10 @@ def build_contracts(
         if overwrite:
             command.append("--overwrite")
         print(f"building {split} source-run contract")
-        subprocess.run(command, cwd=str(REPO), check=True)
+        subprocess.run(
+            command, cwd=str(REPO), check=True, env=_isolated_subprocess_env()
+        )
+    ready.write_text(expected + "\n", encoding="utf-8")
     return train_contract, dev_contract
 
 

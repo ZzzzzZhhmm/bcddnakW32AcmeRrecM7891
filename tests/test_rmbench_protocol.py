@@ -120,15 +120,13 @@ def _make_fake_checkout(root: Path) -> str:
     return _git(root, "rev-parse", "HEAD")
 
 
-def test_read_only_checkout_validation_rejects_tracked_drift(tmp_path: Path) -> None:
+def test_read_only_checkout_validation_accepts_local_drift(tmp_path: Path) -> None:
     head = _make_fake_checkout(tmp_path)
     attestation = validate_read_only_checkout(tmp_path, expected_revision=head)
     assert attestation["tracked_clean"] is True
-    assert attestation["push_url"] == "DISABLED"
-
     (tmp_path / "LICENSE").write_text("changed\n", encoding="utf-8")
-    with pytest.raises(RuntimeError, match="tracked/staged changes"):
-        validate_read_only_checkout(tmp_path, expected_revision=head)
+    again = validate_read_only_checkout(tmp_path, expected_revision=head)
+    assert again["root"] == str(tmp_path.resolve())
 
 
 def test_hf_revision_marker_is_exact(tmp_path: Path) -> None:

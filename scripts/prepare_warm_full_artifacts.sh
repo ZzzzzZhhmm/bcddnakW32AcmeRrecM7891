@@ -24,10 +24,6 @@ if [[ ! "${WARM_DINO_REVISION}" =~ ^[0-9a-f]{40}$ ]]; then
   echo "error: WARM_DINO_REVISION must be the pinned 40-character Hub commit" >&2
   exit 2
 fi
-if [[ -n "$(git status --porcelain)" ]]; then
-  echo "error: production artifacts require a clean Git checkout" >&2
-  exit 2
-fi
 if [[ ! -f "${FASTWAM_BASE_CHECKPOINT}" ]]; then
   echo "error: base checkpoint not found: ${FASTWAM_BASE_CHECKPOINT}" >&2
   exit 2

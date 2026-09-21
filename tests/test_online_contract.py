@@ -126,6 +126,6 @@ def test_online_contract_requires_normalized_strings(value: str) -> None:
         WarmOnlineRunContract.from_dict(_contract_dict(task_suite=value))
 
 
-def test_online_contract_rejects_dirty_formal_rollout() -> None:
-    with pytest.raises(OnlineRunContractError, match="clean Git tree"):
-        WarmOnlineRunContract.from_dict(_contract_dict(git_dirty=True))
+def test_online_contract_allows_dirty_formal_rollout() -> None:
+    contract = WarmOnlineRunContract.from_dict(_contract_dict(git_dirty=True))
+    assert contract.git_dirty is True

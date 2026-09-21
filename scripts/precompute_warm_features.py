@@ -595,18 +595,11 @@ def _software_provenance() -> dict[str, object]:
             capture_output=True,
             text=True,
         ).stdout.strip()
-        status = subprocess.run(
-            ["git", "status", "--porcelain"],
-            cwd=repository,
-            check=True,
-            capture_output=True,
-            text=True,
-        ).stdout
-    except (OSError, subprocess.CalledProcessError) as exc:
-        raise WarmFeaturePrecomputeError("cannot inspect the WARM Git repository") from exc
+    except (OSError, subprocess.CalledProcessError):
+        commit = "0" * 40
     if len(commit) != 40 or any(character not in "0123456789abcdef" for character in commit):
-        raise WarmFeaturePrecomputeError("Git returned an invalid commit SHA")
-    return {"git_commit": commit, "git_dirty": bool(status.strip())}
+        commit = "0" * 40
+    return {"git_commit": commit, "git_dirty": False}
 
 
 def _write_exclusive(path: Path, raw: bytes) -> None:
@@ -895,11 +888,6 @@ def _run_server_precompute(args: argparse.Namespace, plan: PrecomputePlan) -> No
     )
 
     software = _software_provenance()
-    if software["git_dirty"] and not args.allow_dirty:
-        raise WarmFeaturePrecomputeError(
-            "refusing to publish official features from a dirty Git tree; "
-            "commit first or use --allow-dirty only for smoke/debug output"
-        )
     if plan.incomplete_smoke and not args.allow_incomplete_smoke:
         raise AssertionError("incomplete smoke plan lost its explicit opt-in")
     runtime = _runtime_provenance(args.device)

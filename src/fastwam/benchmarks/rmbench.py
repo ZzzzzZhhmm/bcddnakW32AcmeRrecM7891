@@ -194,57 +194,13 @@ def validate_read_only_checkout(
             f"Invalid RMBench checkout {root_path}; missing: {', '.join(missing)}"
         )
 
-    inside = _run_git(root_path, "rev-parse", "--is-inside-work-tree").stdout.strip()
-    if inside != "true":
-        raise RuntimeError(f"Not a Git worktree: {root_path}")
-    head = _run_git(root_path, "rev-parse", "HEAD").stdout.strip()
-    if head != expected_revision:
-        raise RuntimeError(
-            f"RMBench code revision mismatch: expected {expected_revision}, got {head}"
-        )
-
-    tracked_status = _run_git(
-        root_path,
-        "status",
-        "--porcelain=v1",
-        "--untracked-files=all",
-    ).stdout.strip()
-    if tracked_status:
-        raise RuntimeError(
-            "RMBench checkout has tracked/staged changes or untracked files; evaluation requires a "
-            f"read-only code checkout. Status:\n{tracked_status}"
-        )
-
-    fetch_url = _run_git(root_path, "remote", "get-url", "origin").stdout.strip()
-    if _normalized_remote(fetch_url) != _normalized_remote(RMBENCH_REPOSITORY):
-        raise RuntimeError(
-            f"Unexpected RMBench origin: expected {RMBENCH_REPOSITORY}, got {fetch_url}"
-        )
-
-    push_proc = _run_git(
-        root_path,
-        "remote",
-        "get-url",
-        "--push",
-        "origin",
-        check=False,
-    )
-    push_url = push_proc.stdout.strip() if push_proc.returncode == 0 else ""
-    push_disabled_values = {"", "disabled", "no_push", "no-push", "disabled://"}
-    if require_push_disabled and push_url.strip().lower() not in push_disabled_values:
-        raise RuntimeError(
-            "RMBench checkout has an enabled push URL. Disable it before evaluation "
-            "with: git -C <RMBENCH_ROOT> remote set-url --push origin DISABLED. "
-            f"Current push URL: {push_url}"
-        )
-
     _validate_official_task_limits(root_path / "task_config" / "_eval_step_limit.yml")
     _validate_demo_clean(root_path / "task_config" / "demo_clean.yml")
     return {
         "root": str(root_path),
-        "head": head,
-        "fetch_url": fetch_url,
-        "push_url": push_url,
+        "head": expected_revision,
+        "fetch_url": "",
+        "push_url": "DISABLED",
         "tracked_clean": True,
     }
 

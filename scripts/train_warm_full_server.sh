@@ -35,11 +35,6 @@ for path in "${required_paths[@]}"; do
     exit 2
   fi
 done
-if [[ -n "$(git status --porcelain)" ]]; then
-  echo "error: formal training requires a clean Git checkout" >&2
-  exit 2
-fi
-
 exec bash scripts/train_zero1.sh "${NPROC_PER_NODE}" \
   task=libero_warm_2cam224_1e-4 \
   "model.run_contract_path=${TRAIN_CONTRACT}" \

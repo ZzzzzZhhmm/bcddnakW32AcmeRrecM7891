@@ -613,12 +613,11 @@ def test_cli_rechecks_inputs_inside_publication_claim(
     assert not paths["output"].exists()
 
 
-def test_cli_rejects_dirty_git_before_publication(
+def test_cli_allows_dirty_git_before_publication(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     argv, paths = _fixture(tmp_path, monkeypatch)
     monkeypatch.setattr(pair_cli, "_git_identity", lambda _repo: ("a" * 40, True))
-    with pytest.raises(pair_cli.OnlinePairBuildError, match="clean Git"):
-        pair_cli.main(argv)
-    assert not paths["output"].exists()
+    assert pair_cli.main(argv) == 0
+    assert paths["output"].exists()

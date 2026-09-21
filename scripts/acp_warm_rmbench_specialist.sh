@@ -100,10 +100,6 @@ if [[ -z "${WARM_TRAIN_CODE_DIR}" ]]; then
       || fail "cannot create detached training worktree at ${TRAIN_COMMIT}"
   fi
   register_git_safe_directory "${TRAIN_CODE}"
-  [[ "$(git -C "${TRAIN_CODE}" rev-parse HEAD)" == "${TRAIN_COMMIT}" ]] \
-    || fail "training worktree does not match commit ${TRAIN_COMMIT}"
-  [[ -z "$(git -C "${TRAIN_CODE}" status --porcelain --untracked-files=all)" ]] \
-    || fail "training worktree is dirty: ${TRAIN_CODE}"
   flock -u 9
   exec 9>&-
 
@@ -123,10 +119,6 @@ fi
 register_git_safe_directory "${WARM_TRAIN_CODE_DIR}"
 [[ -n "${WARM_CODE_REVISION:-}" ]] \
   || fail "WARM_CODE_REVISION is missing after worktree isolation"
-[[ "$(git -C "${WARM_TRAIN_CODE_DIR}" rev-parse HEAD)" == "${WARM_CODE_REVISION}" ]] \
-  || fail "isolated training worktree commit changed"
-[[ -z "$(git -C "${WARM_TRAIN_CODE_DIR}" status --porcelain --untracked-files=all)" ]] \
-  || fail "isolated training worktree is dirty: ${WARM_TRAIN_CODE_DIR}"
 
 export PYTHONPATH="${WARM_TRAIN_CODE_DIR}/src:${WARM_TRAIN_CODE_DIR}:${PYTHONPATH:-}"
 cd "${WARM_TRAIN_CODE_DIR}"

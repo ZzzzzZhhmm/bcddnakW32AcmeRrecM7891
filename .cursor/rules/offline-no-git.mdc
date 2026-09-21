@@ -1,0 +1,22 @@
+---
+description: Offline CCI jobs never git-check; agent commits still push when possible
+alwaysApply: true
+---
+
+# Offline jobs vs agent git
+
+Training, ACP, and eval on this CCI/k8s GPU server must never depend on Git
+network or a clean worktree. Do not add `git status --porcelain` gates,
+`require_clean_git`, dirty-tree attestation failures, origin URL probes, or
+`scripts/cci_bootstrap.sh` connectivity tests.
+
+When the user asks to commit, or when they have asked that new git changes be
+committed automatically:
+
+1. Create a local commit on the current branch.
+2. Push to the tracked upstream (`git push -u origin HEAD` if needed).
+3. Never force-push. If GitHub is unreachable, keep the local commit and
+   report the real error.
+
+Record a commit SHA only when local `git rev-parse` succeeds; if git is
+unavailable, continue training without it.

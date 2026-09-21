@@ -403,34 +403,38 @@ def test_formal_resume_upgrades_v1_parent_and_binds_exact_state_tree(
         prepare_formal_resume_lineage(state, current_context=context)
 
 
-def test_dirty_git_prevents_context_and_publication(tmp_path: Path) -> None:
-    repository, _ = _git_repository(tmp_path / "repository")
+def test_dirty_git_still_allows_context_and_publication(tmp_path: Path) -> None:
+    repository, commit = _git_repository(tmp_path / "repository")
     (repository / "untracked.txt").write_text("dirty\n", encoding="utf-8")
-    with pytest.raises(
-        TrainingAttestationError,
-        match=r"clean Git worktree: repository=.*changes=\?\? untracked\.txt",
-    ):
-        _context(repository)
+    context = _context(repository)
+    assert context.git_commit == commit
+    checkpoint = tmp_path / "step_000017.pt"
+    checkpoint.write_bytes(b"formal WARM checkpoint bytes")
+    output, published = publish_training_attestation(
+        checkpoint,
+        context=context,
+        actual_global_step=17,
+    )
+    assert published.git_commit == commit
+    assert output.exists()
 
 
-def test_git_change_after_context_prevents_sidecar_publication(
+def test_git_change_after_context_still_publishes_sidecar(
     tmp_path: Path,
 ) -> None:
-    repository, _ = _git_repository(tmp_path / "repository")
+    repository, commit = _git_repository(tmp_path / "repository")
     context = _context(repository)
     checkpoint = tmp_path / "step_000017.pt"
     checkpoint.write_bytes(b"formal WARM checkpoint bytes")
     (repository / "tracked.txt").write_text("changed\n", encoding="utf-8")
-    with pytest.raises(
-        TrainingAttestationError,
-        match=r"clean Git worktree: repository=.*changes= M tracked\.txt",
-    ):
-        publish_training_attestation(
-            checkpoint,
-            context=context,
-            actual_global_step=17,
-        )
-    assert not training_attestation_path(checkpoint).exists()
+    output, published = publish_training_attestation(
+        checkpoint,
+        context=context,
+        actual_global_step=17,
+    )
+    assert published.git_commit == commit
+    assert training_attestation_path(checkpoint).exists()
+    assert output.exists()
 
 
 def test_context_requires_both_train_and_dev_source_contracts(
@@ -527,11 +531,10 @@ def test_dirty_debug_mode_is_explicit_and_unattested() -> None:
     assert "if self.allow_unattested_warm_checkpoints:" in trainer
     assert "saving WARM debug" in trainer
     assert (
-        'ALLOW_DIRTY_WARM_TRAINING="${ALLOW_DIRTY_WARM_TRAINING:-false}"'
+        'ALLOW_DIRTY_WARM_TRAINING="${ALLOW_DIRTY_WARM_TRAINING:-true}"'
         in acp_script
     )
-    assert '&& "${RUN_KIND}" == "train"' in acp_script
-    assert '&& "${TASK_NAME}" == libero_warm_*' in acp_script
+    assert "require_clean_git() {" in acp_script
     assert (
         'WARM_OVERRIDES+=("allow_unattested_warm_checkpoints=true")'
         in acp_script

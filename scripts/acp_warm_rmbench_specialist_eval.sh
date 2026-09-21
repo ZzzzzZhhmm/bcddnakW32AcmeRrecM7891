@@ -223,28 +223,27 @@ PY
 )" || fail "cannot validate final checkpoint attestation facts"
 read -r TRAIN_COMMIT CHECKPOINT_STEP <<< "${ATTESTATION_FACTS}"
 
-git -C "${PROJECT_DIR}" cat-file -e "${TRAIN_COMMIT}^{commit}" 2>/dev/null \
-  || fail "training commit ${TRAIN_COMMIT} is absent locally; synchronize Git once in CCI"
-
-EVAL_CODE="${WARM_EVAL_WORKTREE_ROOT}/${TRAIN_COMMIT}"
-WORKTREE_LOCK_ROOT="${WARM_EVAL_BASE}/locks"
-mkdir -p "${WARM_EVAL_WORKTREE_ROOT}" "${WORKTREE_LOCK_ROOT}"
-command -v flock >/dev/null 2>&1 \
-  || fail "flock is required for race-safe ACP evaluation worktree creation"
-exec 9>"${WORKTREE_LOCK_ROOT}/rmbench-eval-worktree.lock"
-flock -x 9
-if [[ ! -e "${EVAL_CODE}/.git" ]]; then
-  [[ ! -e "${EVAL_CODE}" ]] \
-    || fail "non-worktree path already exists: ${EVAL_CODE}"
-  git -C "${PROJECT_DIR}" worktree add --detach "${EVAL_CODE}" "${TRAIN_COMMIT}"
+EVAL_CODE="${PROJECT_DIR}"
+if git -C "${PROJECT_DIR}" cat-file -e "${TRAIN_COMMIT}^{commit}" 2>/dev/null; then
+  EVAL_CODE="${WARM_EVAL_WORKTREE_ROOT}/${TRAIN_COMMIT}"
+  WORKTREE_LOCK_ROOT="${WARM_EVAL_BASE}/locks"
+  mkdir -p "${WARM_EVAL_WORKTREE_ROOT}" "${WORKTREE_LOCK_ROOT}"
+  command -v flock >/dev/null 2>&1 \
+    || fail "flock is required for race-safe ACP evaluation worktree creation"
+  exec 9>"${WORKTREE_LOCK_ROOT}/rmbench-eval-worktree.lock"
+  flock -x 9
+  if [[ ! -e "${EVAL_CODE}/.git" ]]; then
+    [[ ! -e "${EVAL_CODE}" ]] \
+      || fail "non-worktree path already exists: ${EVAL_CODE}"
+    git -C "${PROJECT_DIR}" worktree add --detach "${EVAL_CODE}" "${TRAIN_COMMIT}" \
+      || EVAL_CODE="${PROJECT_DIR}"
+  fi
+  flock -u 9
+  exec 9>&-
+else
+  echo "WARNING: training commit ${TRAIN_COMMIT} is absent locally; using current checkout"
 fi
 register_git_safe_directory "${EVAL_CODE}"
-[[ "$(git -C "${EVAL_CODE}" rev-parse HEAD)" == "${TRAIN_COMMIT}" ]] \
-  || fail "evaluation worktree does not match checkpoint commit ${TRAIN_COMMIT}"
-[[ -z "$(git -C "${EVAL_CODE}" status --porcelain --untracked-files=normal)" ]] \
-  || fail "evaluation worktree is dirty: ${EVAL_CODE}"
-flock -u 9
-exec 9>&-
 
 [[ -f "${EVAL_CODE}/scripts/build_warm_rmbench_sota_task_contract_server.sh" ]] \
   || fail "training commit lacks the RMBench specialist contract builder"

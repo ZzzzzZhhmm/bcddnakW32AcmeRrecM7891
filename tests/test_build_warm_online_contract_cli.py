@@ -558,15 +558,14 @@ def test_cli_refuses_publish_if_input_changes_after_validation(
     assert not paths["output"].exists()
 
 
-def test_cli_requires_clean_git_by_default(
+def test_cli_allows_dirty_git_on_offline_server(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     argv, paths = _fixture(tmp_path, monkeypatch)
-    monkeypatch.setattr(online_cli, "_git_identity", lambda _repo: ("b" * 40, True))
-    with pytest.raises(online_cli.OnlineContractBuildError, match="clean Git tree"):
-        online_cli.main(argv)
-    assert not paths["output"].exists()
+    monkeypatch.setattr(online_cli, "_git_identity", lambda _repo: ("a" * 40, True))
+    assert online_cli.main(argv) == 0
+    assert paths["output"].exists()
 
 
 def test_cli_rejects_dev_contract_as_online_training_identity(

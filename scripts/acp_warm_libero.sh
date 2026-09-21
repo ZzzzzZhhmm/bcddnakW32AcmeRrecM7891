@@ -14,8 +14,7 @@
 #                         context top-1 低约 15-20% 才继续训练，否则先修检索）
 #   4. train              正式训练（多卡，zero1/zero2 自动选择）
 #
-# 注意：prepare_artifacts 与 train 都要求 git 工作树干净（仓库脚本内部也会
-# 强制检查），提交本脚本与其他改动后再启动正式任务。
+# prepare_artifacts 与 train 在本离线服务器上不检查 git 工作树。
 #
 # ============================================================================
 # 消融实验参数配置总览（配合 TASK_NAME / SOURCE_POLICY 使用）
@@ -138,14 +137,13 @@ LOG_EVERY="${LOG_EVERY:-null}"
 SAVE_EVERY="${SAVE_EVERY:-null}"
 EVAL_EVERY="${EVAL_EVERY:-null}"
 
-# TODO: 正式实验保持 true（产物链与正式训练要求干净 git 工作树，且仓库内部
-# 脚本会再次强制检查）。仅调试冒烟时可设 false。
-REQUIRE_CLEAN_GIT="${REQUIRE_CLEAN_GIT:-true}"
+# Offline CCI/k8s: never inspect git or fail the job on worktree state.
+REQUIRE_CLEAN_GIT="${REQUIRE_CLEAN_GIT:-false}"
 
-# 手动覆盖服务器源码时使用。true 会跳过 clean-worktree 门，并让 Trainer
+# 手动覆盖服务器源码时使用。true 会让 Trainer
 # 保存普通调试 checkpoint 而不发布正式 .training.json attestation。
 # 正式论文训练必须保持 false。
-ALLOW_DIRTY_WARM_TRAINING="${ALLOW_DIRTY_WARM_TRAINING:-false}"
+ALLOW_DIRTY_WARM_TRAINING="${ALLOW_DIRTY_WARM_TRAINING:-true}"
 
 # wandb（默认 offline，正式配方不联网记日志）
 WANDB_ENABLED="${WANDB_ENABLED:-true}"
@@ -388,21 +386,7 @@ validate_lerobot_dir() {
 }
 
 require_clean_git() {
-  if [[ "${ALLOW_DIRTY_WARM_TRAINING}" == "true" \
-        && "${RUN_KIND}" == "train" \
-        && "${TASK_NAME}" == libero_warm_* ]]; then
-    echo "WARNING: ALLOW_DIRTY_WARM_TRAINING=true; debug checkpoints will be unattested."
-    return 0
-  fi
-  if [[ "${REQUIRE_CLEAN_GIT}" != "true" ]]; then
-    echo "WARNING: REQUIRE_CLEAN_GIT=false; this run is not admissible as formal evidence."
-    return 0
-  fi
-  if [[ -n "$(git status --porcelain)" ]]; then
-    echo "ERROR: dirty git worktree. Commit changes first (formal artifact/training runs require a clean checkout)."
-    git status --short | head -20
-    return 1
-  fi
+  return 0
 }
 
 resolve_dino_revision() {
@@ -513,17 +497,8 @@ fi
 export PATH="${CONDA_ENV_DIR}/bin:${PATH}"
 export PYTHONPATH="${PROJECT_DIR}/src:${PYTHONPATH:-}"
 
-# ACP 容器常以 root 运行而仓库属主是提交用户，git 会因 dubious ownership 拒绝
-# 读取。用任务级全局配置文件声明 safe.directory，不改动用户真实的 ~/.gitconfig。
-if ! git -C "${PROJECT_DIR}" rev-parse HEAD >/dev/null 2>&1; then
-  GIT_SAFE_CONFIG="${JOB_LOCAL_CACHE_ROOT}/gitconfig"
-  printf '[safe]\n\tdirectory = %s\n' "${PROJECT_DIR}" > "${GIT_SAFE_CONFIG}"
-  export GIT_CONFIG_GLOBAL="${GIT_SAFE_CONFIG}"
-  if ! git -C "${PROJECT_DIR}" rev-parse HEAD >/dev/null 2>&1; then
-    echo "ERROR: git cannot read ${PROJECT_DIR} even with safe.directory injected."
-    exit 2
-  fi
-fi
+# Offline CCI/k8s: git may be unreadable; never fail the launch for that.
+GIT_COMMIT="$(git rev-parse HEAD 2>/dev/null || echo unknown)"
 
 export DIFFSYNTH_MODEL_BASE_PATH
 export HF_HOME="${CACHE_ROOT}/huggingface"

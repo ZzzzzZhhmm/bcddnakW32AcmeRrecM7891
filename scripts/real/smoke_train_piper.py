@@ -5,8 +5,10 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 from omegaconf import OmegaConf
@@ -59,27 +61,62 @@ def _load_tasks(dataset_dir: Path) -> list[str]:
     return tasks
 
 
+_DIST_ENV_KEYS = (
+    "RANK",
+    "WORLD_SIZE",
+    "LOCAL_RANK",
+    "LOCAL_WORLD_SIZE",
+    "MASTER_ADDR",
+    "MASTER_PORT",
+    "GROUP_RANK",
+    "ROLE_RANK",
+    "ROLE_NAME",
+    "GROUP_WORLD_SIZE",
+    "ROLE_WORLD_SIZE",
+    "TORCHELASTIC_RUN_ID",
+    "ACCELERATE_USE_DEEPSPEED",
+)
+
+
+def _is_launch_main_process() -> bool:
+    for key in ("RANK", "SLURM_PROCID", "LOCAL_RANK"):
+        if key in os.environ:
+            return os.environ.get(key, "0").strip() in {"", "0"}
+    return True
+
+
 def ensure_text_embeds(dataset_dir: Path, cache_dir: Path) -> None:
     tasks = _load_tasks(dataset_dir)
     missing = [task for task in tasks if not _task_cache_path(cache_dir, task).is_file()]
     if not missing:
         print(f"text embeds already present for {len(tasks)} tasks in {cache_dir}")
         return
-    cache_dir.mkdir(parents=True, exist_ok=True)
-    command = [
-        sys.executable,
-        str(REPO / "scripts/precompute_text_embeds.py"),
-        "task=libero_uncond_2cam224_1e-4",
-        f"data.train.dataset_dirs=[{dataset_dir}]",
-        f"data.train.text_embedding_cache_dir={cache_dir}",
-        f"data.train.context_len={CONTEXT_LEN}",
-        "overwrite=false",
-    ]
-    print("encoding missing text embeds:", ", ".join(missing))
-    subprocess.run(command, cwd=str(REPO), check=True)
-    still_missing = [task for task in tasks if not _task_cache_path(cache_dir, task).is_file()]
-    if still_missing:
-        raise RuntimeError(f"text embed cache still missing: {still_missing}")
+    if _is_launch_main_process():
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        command = [
+            sys.executable,
+            str(REPO / "scripts/precompute_text_embeds.py"),
+            "task=libero_uncond_2cam224_1e-4",
+            f"data.train.dataset_dirs=[{dataset_dir}]",
+            f"data.train.text_embedding_cache_dir={cache_dir}",
+            f"data.train.context_len={CONTEXT_LEN}",
+            "overwrite=false",
+        ]
+        env = os.environ.copy()
+        for key in _DIST_ENV_KEYS:
+            env.pop(key, None)
+        print("encoding missing text embeds:", ", ".join(missing))
+        subprocess.run(command, cwd=str(REPO), check=True, env=env)
+    deadline = time.time() + 1800
+    while True:
+        still_missing = [
+            task for task in tasks if not _task_cache_path(cache_dir, task).is_file()
+        ]
+        if not still_missing:
+            return
+        if time.time() >= deadline:
+            raise RuntimeError(f"text embed cache still missing: {still_missing}")
+        time.sleep(2)
 
 
 def build_cfg(config_path: Path):

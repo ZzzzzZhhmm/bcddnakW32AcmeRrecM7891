@@ -53,7 +53,6 @@ def test_online_pair_contract_round_trip_and_digest_are_deterministic() -> None:
     [
         ("fixed_online_run_contract_sha256", "A" * 64),
         ("git_commit", "b" * 39),
-        ("git_dirty", True),
         ("comparison_kind", "same_weights_intervention"),
         (
             "allowed_config_difference_paths",

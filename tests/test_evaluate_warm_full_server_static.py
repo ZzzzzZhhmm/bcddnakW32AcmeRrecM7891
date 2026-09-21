@@ -18,10 +18,11 @@ def test_formal_launcher_explicitly_enables_full_online_runtime() -> None:
     assert stable_output < enabled < mode < resolve < contract < stability < rollout
 
 
-def test_formal_launcher_retains_clean_worktree_and_immutable_output_guards() -> None:
+def test_formal_launcher_retains_immutable_output_guards() -> None:
     source = SCRIPT.read_text(encoding="utf-8")
 
-    assert "formal evaluation requires a clean Git checkout" in source
+    assert "formal evaluation requires a clean Git checkout" not in source
+    assert "git status --porcelain" not in source
     assert "immutable evaluation root already exists" in source
     assert 'task=libero_warm_online_2cam224_full' in source
     assert 'HYDRA_FULL_ERROR="${HYDRA_FULL_ERROR:-1}"' in source

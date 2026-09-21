@@ -27,11 +27,6 @@ for name in "${required_env[@]}"; do
     exit 2
   fi
 done
-if [[ -n "$(git status --porcelain)" ]]; then
-  echo "error: formal evaluation requires a clean Git checkout" >&2
-  exit 2
-fi
-
 M1="${WARM_ARTIFACT_ROOT}/m1"
 M2="${WARM_ARTIFACT_ROOT}/m2"
 ROOT_SEED="${WARM_ROOT_SEED:-17}"
