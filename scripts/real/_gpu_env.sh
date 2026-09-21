@@ -39,6 +39,49 @@ resolve_piper_gpus() {
   export MASTER_PORT
 }
 
+piper_clear_distributed_env() {
+  # Leftover accelerate/torchrun variables in the parent shell would make
+  # --prepare-contracts / --preflight think they are already a rank process.
+  unset RANK WORLD_SIZE LOCAL_RANK LOCAL_WORLD_SIZE MASTER_ADDR \
+    GROUP_RANK ROLE_RANK ROLE_NAME GROUP_WORLD_SIZE ROLE_WORLD_SIZE \
+    TORCHELASTIC_RUN_ID ACCELERATE_USE_DEEPSPEED
+}
+
+piper_export_offline_model_env() {
+  # Fail immediately if a Wan/DiffSynth file is missing instead of hanging on
+  # ModelScope/Hugging Face from this offline CCI node.
+  export DIFFSYNTH_SKIP_DOWNLOAD="${DIFFSYNTH_SKIP_DOWNLOAD:-true}"
+}
+
+piper_assert_gpu_count() {
+  local smi_count idx
+  if ! command -v nvidia-smi >/dev/null 2>&1; then
+    echo "ERROR: nvidia-smi not found; Stage B/WARM ACP requires GPUs"
+    return 2
+  fi
+  smi_count="$(nvidia-smi -L | grep -c '^GPU ' || true)"
+  if (( smi_count < NUM_GPUS )); then
+    echo "ERROR: NUM_GPUS=${NUM_GPUS} but nvidia-smi only lists ${smi_count} GPU(s)"
+    nvidia-smi -L || true
+    return 2
+  fi
+  IFS=',' read -r -a _piper_devs <<< "${CUDA_VISIBLE_DEVICES}"
+  if (( ${#_piper_devs[@]} != NUM_GPUS )); then
+    echo "ERROR: NUM_GPUS=${NUM_GPUS} but CUDA_VISIBLE_DEVICES has ${#_piper_devs[@]} entries (${CUDA_VISIBLE_DEVICES})"
+    return 2
+  fi
+  for idx in "${_piper_devs[@]}"; do
+    if ! [[ "${idx}" =~ ^[0-9]+$ ]]; then
+      echo "ERROR: invalid CUDA_VISIBLE_DEVICES entry: ${idx}"
+      return 2
+    fi
+    if (( idx < 0 || idx >= smi_count )); then
+      echo "ERROR: CUDA_VISIBLE_DEVICES id ${idx} is outside nvidia-smi range 0..$((smi_count - 1))"
+      return 2
+    fi
+  done
+}
+
 piper_epoch_steps() {
   local windows="${1}"
   local gpus="${NUM_GPUS:-1}"

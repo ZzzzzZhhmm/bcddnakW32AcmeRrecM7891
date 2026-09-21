@@ -13,8 +13,7 @@ from pathlib import Path
 
 from omegaconf import OmegaConf
 
-from fastwam.datasets.lerobot.robot_video_dataset import DEFAULT_PROMPT
-from fastwam.runtime import run_training
+from fastwam.training_config import validate_training_config
 from fastwam.utils.config_resolvers import register_default_resolvers
 
 REPO = Path(__file__).resolve().parents[2]
@@ -22,6 +21,10 @@ DEFAULT_CONFIG = REPO / "configs/real/piper_warm_smoke.local.yaml"
 CONTEXT_LEN = 128
 TEXT_CACHE_SUFFIX = f"t5_len{CONTEXT_LEN}.wan22ti2v5b.pt"
 PIPER_CONTEXT_DIM = 770
+DEFAULT_PROMPT = (
+    "A video recorded from a robot's point of view executing the following "
+    "instruction: {task}"
+)
 
 
 def _resolve_against(path: str | Path, anchor: Path) -> Path:
@@ -127,12 +130,54 @@ def _is_distributed_launch() -> bool:
     return world != "1"
 
 
+def _distributed_env_keys_present() -> list[str]:
+    found: list[str] = []
+    for key in (
+        "RANK",
+        "LOCAL_RANK",
+        "MASTER_ADDR",
+        "ACCELERATE_USE_DEEPSPEED",
+        "TORCHELASTIC_RUN_ID",
+    ):
+        if os.environ.get(key, "").strip():
+            found.append(key)
+    world = os.environ.get("WORLD_SIZE", "").strip()
+    if world and world != "1":
+        found.append("WORLD_SIZE")
+    return found
+
+
+def _clear_distributed_env() -> None:
+    for key in _DIST_ENV_KEYS:
+        os.environ.pop(key, None)
+
+
+def _require_single_process_job(flag: str) -> None:
+    leftover = _distributed_env_keys_present()
+    if leftover:
+        raise RuntimeError(
+            f"{flag} must run as a single process before accelerate; "
+            f"leftover distributed env: {leftover}"
+        )
+
+
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        while True:
+            block = handle.read(1024 * 1024)
+            if not block:
+                break
+            digest.update(block)
+    return digest.hexdigest()
+
+
 def _wait_for_source_contracts(
     outputs: tuple[Path, Path],
     ready: Path,
     expected: str,
     *,
-    timeout_s: float = 1800,
+    timeout_s: float = 120,
 ) -> None:
     deadline = time.time() + timeout_s
     while True:
@@ -147,7 +192,8 @@ def _wait_for_source_contracts(
                 f"timed out waiting for source-run contracts {outputs[0]} "
                 f"{outputs[1]} ready={ready}"
             )
-        time.sleep(2)
+        remaining = deadline - time.time()
+        time.sleep(min(2.0, max(0.01, remaining)))
 
 
 def ensure_text_embeds(dataset_dir: Path, cache_dir: Path) -> None:
@@ -186,6 +232,7 @@ def build_contracts(
     base_checkpoint: Path,
     contract_dir: Path,
     overwrite: bool,
+    wait_timeout_s: float = 120,
 ) -> tuple[Path, Path]:
     bindings = json.loads(
         (processed / "memory" / "training_bindings.json").read_text(encoding="utf-8")
@@ -196,21 +243,32 @@ def build_contracts(
     dev_contract = contract_dir / "dev_source.json"
     expected = str(Path(base_checkpoint).expanduser().resolve())
     ready = contract_dir / ".source_contracts.ready"
+    outputs = (train_contract, dev_contract)
     present = train_contract.is_file() and dev_contract.is_file()
 
     # LIBERO/RMBench prepare contracts in a single process, then every
     # accelerate rank only reads the paths.  Piper must do the same: never
     # unlink/rebuild under WORLD_SIZE>1.
     if _is_distributed_launch() or not _is_launch_main_process():
-        if present:
-            return train_contract, dev_contract
-        raise FileNotFoundError(
-            "Piper source-run contracts must be built in a single process "
-            "before accelerate launch (same as LIBERO prepare_artifacts). "
-            f"missing={train_contract} {dev_contract}"
+        if not present:
+            raise FileNotFoundError(
+                "Piper source-run contracts must be built in a single process "
+                "before accelerate launch (same as LIBERO prepare_artifacts). "
+                f"missing={train_contract} {dev_contract}"
+            )
+        _wait_for_source_contracts(
+            outputs, ready, expected, timeout_s=wait_timeout_s
         )
+        return train_contract, dev_contract
 
-    if overwrite and ready.is_file():
+    ready_matches = False
+    if ready.is_file():
+        try:
+            ready_matches = ready.read_text(encoding="utf-8").strip() == expected
+        except OSError:
+            ready_matches = False
+    rebuild = bool(overwrite or not present or (ready.is_file() and not ready_matches))
+    if rebuild and ready.is_file():
         ready.unlink()
     for split, cache, output in (
         ("train", Path(bindings["splits"]["train"]["candidates"]), train_contract),
@@ -219,7 +277,7 @@ def build_contracts(
         _drop_dead_artifact_claim(
             output.parent / f".{output.name}.warm-artifact.lock"
         )
-        if output.is_file() and not overwrite:
+        if output.is_file() and not rebuild:
             print(f"reuse {split} contract: {output}")
             continue
         command = [
@@ -242,7 +300,7 @@ def build_contracts(
             "--expected-query-corpus-sha256",
             str(bindings["splits"][split]["query_corpus_sha256"]),
         ]
-        if overwrite:
+        if rebuild:
             command.append("--overwrite")
         print(f"building {split} source-run contract")
         subprocess.run(
@@ -303,6 +361,7 @@ def build_cfg(
     *,
     overwrite_contracts: bool,
     base_checkpoint: Path | None = None,
+    wait_timeout_s: float = 120,
 ):
     register_default_resolvers()
     smoke = OmegaConf.load(config_path)
@@ -326,6 +385,7 @@ def build_cfg(
         base_checkpoint=base_checkpoint,
         contract_dir=contract_dir,
         overwrite=overwrite_contracts,
+        wait_timeout_s=wait_timeout_s,
     )
     data = OmegaConf.load(data_path)
     data.train.text_embedding_cache_dir = str(cache_dir)
@@ -364,7 +424,154 @@ def build_cfg(
     )
     cfg = OmegaConf.merge(train_base, {"model": model, "data": data}, overrides)
     OmegaConf.resolve(cfg)
-    return cfg, dataset_dir, cache_dir
+    return cfg, dataset_dir, cache_dir, processed
+
+
+def _apply_cli_overrides(cfg, args) -> Path:
+    if args.run_steps is not None:
+        cfg.run_steps = int(args.run_steps)
+    if args.num_epochs is not None:
+        cfg.num_epochs = int(args.num_epochs)
+    if args.output_dir is not None:
+        cfg.output_dir = str(args.output_dir.expanduser().resolve())
+    if args.save_every is not None:
+        cfg.save_every = int(args.save_every)
+    if args.eval_every is not None:
+        cfg.eval_every = int(args.eval_every)
+    if args.num_workers is not None:
+        cfg.num_workers = int(args.num_workers)
+    output_dir = Path(str(cfg.output_dir)).expanduser().resolve()
+    cfg.output_dir = str(output_dir)
+    return output_dir
+
+
+def _assert_feature_list(list_path: Path) -> int:
+    if not list_path.is_file():
+        raise FileNotFoundError(f"feature list missing: {list_path}")
+    count = 0
+    for line_number, raw in enumerate(list_path.read_text(encoding="utf-8").splitlines(), 1):
+        value = raw.strip()
+        if not value or value.startswith("#"):
+            continue
+        candidate = Path(value).expanduser()
+        if not candidate.is_absolute():
+            candidate = list_path.parent / candidate
+        candidate = candidate.resolve()
+        if not candidate.is_file():
+            raise FileNotFoundError(
+                f"feature list entry {line_number} missing: {candidate}"
+            )
+        sidecar = candidate.with_suffix(".manifest.json")
+        if not sidecar.is_file():
+            raise FileNotFoundError(
+                f"feature list entry {line_number} missing manifest: {sidecar}"
+            )
+        count += 1
+    if count <= 0:
+        raise RuntimeError(f"feature list is empty: {list_path}")
+    return count
+
+
+def _preflight_static_artifacts(cfg, processed: Path, *, verify_checkpoint_hash: bool) -> None:
+    complete = processed / "memory" / "COMPLETE.json"
+    if not complete.is_file():
+        raise FileNotFoundError(f"missing memory COMPLETE.json: {complete}")
+    manifest = json.loads(
+        (processed / "memory" / "event_bank" / "manifest.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    context_width = int(manifest["arrays"]["context_key"]["shape"][1])
+    expected_context = int(cfg.model.retrospection.context_dim)
+    if context_width != expected_context:
+        raise RuntimeError(
+            "event-bank context_dim does not match WARM config: "
+            f"bank={context_width} cfg={expected_context}"
+        )
+    action_dim = int(cfg.data.train.processor.action_output_dim)
+    proprio_dim = int(cfg.data.train.processor.proprio_output_dim)
+    if action_dim != 7 or proprio_dim != 7:
+        raise RuntimeError(
+            f"Piper WARM requires 7D action/proprio, got action={action_dim} "
+            f"proprio={proprio_dim}"
+        )
+    if int(cfg.model.retrospection.action_dim) != 7:
+        raise RuntimeError(
+            "resolved retrospection.action_dim must be 7 for Piper, got "
+            f"{cfg.model.retrospection.action_dim}"
+        )
+    if int(cfg.model.action_dit_config.action_dim) != 7:
+        raise RuntimeError(
+            "resolved Action DiT action_dim must be 7 for Piper, got "
+            f"{cfg.model.action_dit_config.action_dim}"
+        )
+    warm_cfg = cfg.data.warm_candidates
+    train_features = _assert_feature_list(
+        Path(str(warm_cfg.train.retrospective_feature_list)).expanduser()
+    )
+    dev_features = _assert_feature_list(
+        Path(str(warm_cfg.val.retrospective_feature_list)).expanduser()
+    )
+    for split_name, split_cfg in (("train", warm_cfg.train), ("val", warm_cfg.val)):
+        for field in (
+            "bank_directory",
+            "candidate_directory",
+            "catalog_path",
+            "normalization_stats_path",
+            "audit_report_path",
+        ):
+            path = Path(str(split_cfg[field])).expanduser()
+            if not path.exists():
+                raise FileNotFoundError(
+                    f"warm_candidates.{split_name}.{field} missing: {path}"
+                )
+    train_contract = Path(str(cfg.model.run_contract_path))
+    dev_contract = Path(str(cfg.model.validation_run_contract_path))
+    train_payload = json.loads(train_contract.read_text(encoding="utf-8"))
+    dev_payload = json.loads(dev_contract.read_text(encoding="utf-8"))
+    if train_payload.get("query_split") != "train":
+        raise RuntimeError(f"train contract query_split is {train_payload.get('query_split')}")
+    if dev_payload.get("query_split") != "dev":
+        raise RuntimeError(f"dev contract query_split is {dev_payload.get('query_split')}")
+    if int(train_payload.get("action_dim", -1)) != 7:
+        raise RuntimeError(f"train contract action_dim is {train_payload.get('action_dim')}")
+    if int(dev_payload.get("action_dim", -1)) != 7:
+        raise RuntimeError(f"dev contract action_dim is {dev_payload.get('action_dim')}")
+    checkpoint = Path(str(cfg.model.base_checkpoint_path))
+    if verify_checkpoint_hash:
+        print(f"preflight hashing base checkpoint {checkpoint}")
+        actual = _sha256_file(checkpoint)
+        expected = str(train_payload["base_checkpoint_sha256"])
+        if actual != expected:
+            raise RuntimeError(
+                "base checkpoint SHA256 does not match train source-run contract: "
+                f"{actual} != {expected}"
+            )
+        if actual != str(dev_payload["base_checkpoint_sha256"]):
+            raise RuntimeError(
+                "base checkpoint SHA256 does not match dev source-run contract"
+            )
+        print(f"preflight checkpoint sha256 ok {actual}")
+    wan_root = Path(
+        os.environ.get("DIFFSYNTH_MODEL_BASE_PATH", str(REPO / "checkpoints"))
+    )
+    vae = (
+        wan_root
+        / "DiffSynth-Studio"
+        / "Wan-Series-Converted-Safetensors"
+        / "Wan2.2_VAE.safetensors"
+    )
+    if not vae.is_file():
+        raise FileNotFoundError(f"Wan2.2 VAE missing: {vae}")
+    ds_config = REPO / "scripts" / "ds_configs" / "ds_zero1_config.json"
+    if not ds_config.is_file():
+        raise FileNotFoundError(f"DeepSpeed ZeRO-1 json missing: {ds_config}")
+    print(
+        "preflight artifacts ok: "
+        f"context_dim={expected_context} action_dim=7 "
+        f"train_feature_files={train_features} dev_feature_files={dev_features} "
+        f"vae={vae}"
+    )
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -390,35 +597,67 @@ def main(argv: list[str] | None = None) -> int:
             "then exit; required before multi-GPU accelerate launch"
         ),
     )
+    parser.add_argument(
+        "--preflight",
+        action="store_true",
+        help=(
+            "single-process launch audit: contracts, artifacts, resolved "
+            "config, and checkpoint hash; does not load the 5B model"
+        ),
+    )
+    parser.add_argument(
+        "--skip-checkpoint-hash",
+        action="store_true",
+        help="preflight without hashing the 12G FastWAM checkpoint",
+    )
     args = parser.parse_args(argv)
-    if args.prepare_contracts and _is_distributed_launch():
-        raise RuntimeError(
-            "--prepare-contracts must run as a single process, not under accelerate"
+    exclusive = [
+        name
+        for name, enabled in (
+            ("--prepare-contracts", args.prepare_contracts),
+            ("--preflight", args.preflight),
         )
-    cfg, dataset_dir, cache_dir = build_cfg(
+        if enabled
+    ]
+    if len(exclusive) > 1:
+        raise RuntimeError("use only one of --prepare-contracts and --preflight")
+    if args.prepare_contracts or args.preflight:
+        _require_single_process_job(
+            "--prepare-contracts" if args.prepare_contracts else "--preflight"
+        )
+        _clear_distributed_env()
+    cfg, dataset_dir, cache_dir, processed = build_cfg(
         args.config.expanduser().resolve(),
-        overwrite_contracts=bool(args.overwrite_contracts or args.prepare_contracts),
+        overwrite_contracts=bool(args.overwrite_contracts),
         base_checkpoint=args.base_checkpoint,
     )
-    if args.run_steps is not None:
-        cfg.run_steps = int(args.run_steps)
-    if args.num_epochs is not None:
-        cfg.num_epochs = int(args.num_epochs)
-    if args.output_dir is not None:
-        cfg.output_dir = str(args.output_dir.expanduser().resolve())
-    if args.save_every is not None:
-        cfg.save_every = int(args.save_every)
-    if args.eval_every is not None:
-        cfg.eval_every = int(args.eval_every)
-    if args.num_workers is not None:
-        cfg.num_workers = int(args.num_workers)
-    output_dir = Path(str(cfg.output_dir)).expanduser().resolve()
-    cfg.output_dir = str(output_dir)
+    output_dir = _apply_cli_overrides(cfg, args)
     ensure_text_embeds(dataset_dir, cache_dir)
     if args.prepare_contracts:
         print(
             "prepared Piper WARM contracts and text embeds; "
             "launch training without --overwrite-contracts"
+        )
+        return 0
+    if args.preflight:
+        validate_training_config(cfg)
+        _assert_fresh_output_dir(output_dir)
+        _preflight_static_artifacts(
+            cfg,
+            processed,
+            verify_checkpoint_hash=not args.skip_checkpoint_hash,
+        )
+        dump_a = OmegaConf.to_yaml(cfg, resolve=True)
+        dump_b = OmegaConf.to_yaml(cfg, resolve=True)
+        if dump_a != dump_b:
+            raise RuntimeError("resolved training config is not stable across dumps")
+        print(
+            "preflight ok: "
+            f"output={cfg.output_dir} epochs={cfg.num_epochs} "
+            f"save_every={cfg.save_every} eval_every={cfg.eval_every} "
+            f"batch_size={cfg.batch_size} num_workers={cfg.num_workers} "
+            f"context_dim={cfg.model.retrospection.context_dim} "
+            f"base={cfg.model.base_checkpoint_path}"
         )
         return 0
     _assert_fresh_output_dir(output_dir)
@@ -432,6 +671,8 @@ def main(argv: list[str] | None = None) -> int:
         f"context_dim={cfg.model.retrospection.context_dim} "
         f"mot_checkpoint_mixed_attn={cfg.model.mot_checkpoint_mixed_attn}"
     )
+    from fastwam.runtime import run_training
+
     run_training(cfg)
     return 0
 

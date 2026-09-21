@@ -112,7 +112,7 @@ def main(argv: list[str] | None = None) -> int:
     if not checkpoint.is_file():
         raise FileNotFoundError(f"WARM checkpoint not found: {checkpoint}")
 
-    cfg, dataset_dir, cache_dir = piper_train.build_cfg(
+    cfg, dataset_dir, cache_dir, _processed = piper_train.build_cfg(
         args.config.expanduser().resolve(),
         overwrite_contracts=False,
     )

@@ -59,6 +59,8 @@ def test_robot_video_dataset_does_not_construct_partial_state() -> None:
                 raise AssertionError(
                     "RobotVideoDataset must not construct PartialState before Accelerator"
                 )
+
+
 def test_piper_stage_b_acp_writes_tmp_acp_logs() -> None:
     source = (
         ROOT / "scripts" / "real" / "acp_piper_warm_v2_20hz_stage_b.sh"
@@ -71,9 +73,20 @@ def test_piper_stage_b_acp_writes_tmp_acp_logs() -> None:
     assert "NUM_GPUS=1 CUDA_VISIBLE_DEVICES=0" in source
     assert '"${PROJECT_DIR}/scripts/real/train_piper_warm.py"' in source
     assert "--prepare-contracts" in source
+    assert "--preflight" in source
+    assert "piper_clear_distributed_env" in source
+    assert "piper_export_offline_model_env" in source
+    assert "piper_assert_gpu_count" in (
+        ROOT / "scripts" / "real" / "_gpu_env.sh"
+    ).read_text(encoding="utf-8")
     launch_block = source.split("=== launching Stage B ===", 1)[1]
     assert "--overwrite-contracts" not in launch_block
     assert "--prepare-contracts" not in launch_block
+    assert "--preflight" not in launch_block
+    prepare_block = source.split("=== preparing source-run contracts", 1)[1].split(
+        "=== preflight Stage B", 1
+    )[0]
+    assert "--overwrite-contracts" not in prepare_block
     helper = (ROOT / "scripts" / "real" / "_acp_log.sh").read_text(encoding="utf-8")
     assert "tmp/acp_logs" in helper
     assert "logs-acp-${RUN_ID}.txt.gz" in helper

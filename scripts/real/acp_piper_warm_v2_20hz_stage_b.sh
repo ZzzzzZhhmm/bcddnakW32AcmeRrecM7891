@@ -21,6 +21,8 @@ if [[ -z "${NUM_GPUS:-}" && -z "${CUDA_VISIBLE_DEVICES:-}" ]]; then
   NUM_GPUS=4
 fi
 resolve_piper_gpus
+piper_clear_distributed_env
+piper_export_offline_model_env
 export DIFFSYNTH_MODEL_BASE_PATH="${DIFFSYNTH_MODEL_BASE_PATH:-${PROJECT_DIR}/checkpoints}"
 export PYTORCH_CUDA_ALLOC_CONF="${PYTORCH_CUDA_ALLOC_CONF:-expandable_segments:True}"
 
@@ -74,13 +76,34 @@ fi
 
 piper_gpu_preflight
 
+CONTRACT_DIR="${CONTRACT_DIR:-${PROCESSED}/warm_contracts}"
+
 echo "=== preparing source-run contracts (single process, like LIBERO) ==="
 "${PYTHON}" "${PROJECT_DIR}/scripts/real/train_piper_warm.py" \
   --prepare-contracts \
   --config "${WARM_CONFIG}" \
   --base-checkpoint "${BASE_CHECKPOINT}" \
-  --output-dir "${WARM_DIR}" \
-  --overwrite-contracts
+  --output-dir "${WARM_DIR}"
+
+if [[ ! -f "${CONTRACT_DIR}/.source_contracts.ready" ]]; then
+  echo "ERROR: source-run contracts ready marker missing: ${CONTRACT_DIR}/.source_contracts.ready"
+  exit 2
+fi
+if [[ ! -f "${CONTRACT_DIR}/train_source.json" || ! -f "${CONTRACT_DIR}/dev_source.json" ]]; then
+  echo "ERROR: train/dev source-run contracts missing under ${CONTRACT_DIR}"
+  exit 2
+fi
+
+echo "=== preflight Stage B (no 5B load) ==="
+"${PYTHON}" "${PROJECT_DIR}/scripts/real/train_piper_warm.py" \
+  --preflight \
+  --config "${WARM_CONFIG}" \
+  --base-checkpoint "${BASE_CHECKPOINT}" \
+  --num-epochs "${WARM_EPOCHS}" \
+  --save-every "${SAVE_EVERY}" \
+  --eval-every "${EVAL_EVERY}" \
+  --num-workers "${NUM_WORKERS}" \
+  --output-dir "${WARM_DIR}"
 
 echo "=== launching Stage B ==="
 echo "${ACCELERATE} launch --config_file ${ACCELERATE_CONFIG} --num_processes ${NUM_GPUS} --main_process_port ${MASTER_PORT} ${PROJECT_DIR}/scripts/real/train_piper_warm.py"

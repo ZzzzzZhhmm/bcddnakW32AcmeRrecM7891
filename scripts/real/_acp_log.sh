@@ -63,6 +63,7 @@ piper_gpu_preflight() {
   echo "=== nvidia-smi -L ==="
   nvidia-smi -L
   echo "NUM_GPUS=${NUM_GPUS} CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES}"
+  piper_assert_gpu_count
 }
 
 piper_configure_job_local_caches() {

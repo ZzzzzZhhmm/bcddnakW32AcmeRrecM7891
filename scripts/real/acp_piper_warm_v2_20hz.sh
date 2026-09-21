@@ -12,6 +12,8 @@ source "${PROJECT_DIR}/scripts/real/_gpu_env.sh"
 # shellcheck source=scripts/real/_acp_log.sh
 source "${PROJECT_DIR}/scripts/real/_acp_log.sh"
 resolve_piper_gpus
+piper_clear_distributed_env
+piper_export_offline_model_env
 export DIFFSYNTH_MODEL_BASE_PATH="${DIFFSYNTH_MODEL_BASE_PATH:-${PROJECT_DIR}/checkpoints}"
 export PYTORCH_CUDA_ALLOC_CONF="${PYTORCH_CUDA_ALLOC_CONF:-expandable_segments:True}"
 
@@ -87,13 +89,30 @@ if [[ -z "${FASTWAM_CKPT}" || ! -f "${FASTWAM_CKPT}" ]]; then
 fi
 echo "Stage A FastWAM checkpoint: ${FASTWAM_CKPT}"
 
+CONTRACT_DIR="${CONTRACT_DIR:-${PROCESSED}/warm_contracts}"
+
 echo "=== preparing source-run contracts (single process, like LIBERO) ==="
 "${PYTHON}" "${PROJECT_DIR}/scripts/real/train_piper_warm.py" \
   --prepare-contracts \
   --config "${WARM_CONFIG}" \
   --base-checkpoint "${FASTWAM_CKPT}" \
-  --output-dir "${WARM_DIR}" \
-  --overwrite-contracts
+  --output-dir "${WARM_DIR}"
+
+if [[ ! -f "${CONTRACT_DIR}/.source_contracts.ready" ]]; then
+  echo "ERROR: source-run contracts ready marker missing: ${CONTRACT_DIR}/.source_contracts.ready"
+  exit 2
+fi
+
+echo "=== preflight Stage B (no 5B load) ==="
+"${PYTHON}" "${PROJECT_DIR}/scripts/real/train_piper_warm.py" \
+  --preflight \
+  --config "${WARM_CONFIG}" \
+  --base-checkpoint "${FASTWAM_CKPT}" \
+  --num-epochs "${WARM_EPOCHS}" \
+  --save-every "${SAVE_EVERY}" \
+  --eval-every "${EVAL_EVERY}" \
+  --num-workers "${NUM_WORKERS}" \
+  --output-dir "${WARM_DIR}"
 
 echo "=== Stage B: full-epoch complete WARM on the 20Hz bank ==="
 launch \
