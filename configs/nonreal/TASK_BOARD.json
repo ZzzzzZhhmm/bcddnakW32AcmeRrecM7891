@@ -19,8 +19,9 @@
       "code": "artifact inventory and templates implemented",
       "blockers": [
         "paper run mapping absent",
-        "only v8 smoke300 located"
-      ]
+        "only v8 smoke300 located; four-H100 continuation prepared, user submission pending"
+      ],
+      "next_plan": "/mnt/afs/task3_2/L202500276_lwz/projects/WARM_evaluations/nonreal_resume_20260922/stage1/plan.json"
     },
     {
       "id": "W01",
@@ -82,7 +83,7 @@
       "status": "source_diagnosis_complete_zero_activation_coverage",
       "run_directory": "/mnt/afs/task3_2/L202500276_lwz/projects/WARM_evaluations/nonreal_source_r2_20260921/dev50",
       "blockers": [
-        "Mature compatible checkpoint or verified training updates",
+        "Mature compatible checkpoint; two real TRAIN gradient probes already passed",
         "Natural nonzero-g coverage",
         "Matched independent scale-control training if claimed"
       ]
@@ -95,10 +96,20 @@
     {
       "id": "W08",
       "priority": "P1",
-      "status": "deferred_runtime_blocked"
+      "status": "recorded_dev_online_profile_preparing",
+      "run_directory": "/mnt/afs/task3_2/L202500276_lwz/projects/WARM_evaluations/nonreal_online_profile_20260922",
+      "scope": "200 recorded DEV prefixes after 20 warmups; no closed-loop SR"
     }
   ],
   "acp_jobs": [
+    {
+      "id": "ACP-RESUME-1",
+      "gpu_count": 4,
+      "max_hours": 22,
+      "work": "Continue original shared training from step 300 to 15000 with unchanged 30000-step schedule",
+      "readiness": "cpu_preflight_passed_live_four_rank_resume_pending",
+      "plan": "/mnt/afs/task3_2/L202500276_lwz/projects/WARM_evaluations/nonreal_resume_20260922/stage1/plan.json"
+    },
     {
       "id": "ACP-A",
       "gpu_count": 1,

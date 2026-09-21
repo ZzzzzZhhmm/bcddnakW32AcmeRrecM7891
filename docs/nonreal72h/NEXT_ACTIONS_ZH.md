@@ -1,6 +1,6 @@
 # 剩余实验数据与下一步执行指令
 
-2026-09-21更新：W02-A与W06工程诊断已完成；N00首轮因诊断脚本的额外autocast导致dtype错误，失败已归档。修正后的R2单卡真实TRAIN梯度诊断已于13:47:25 UTC启动，勿重复申请ACP。原ZeRO FP32 master已确认保留gate bias小更新，不能将BF16 bias不变判断为没有训练。所有已获数值见[实验记录](EXPERIMENT_RECORD_ZH.md)。
+2026-09-22更新：W02-A、W06与N00梯度诊断均已完成，不重跑。N00两个真实TRAIN batch梯度有限且非零；FP32 master保留了小更新，无证据要求改模型或降低阈值。新单卡工作为W08记录DEV观测的完整在线链路profiling；四卡续训已完成CPU预检，见[ACP命令与自动汇总](ACP_RESUME_ZH.md)。所有已获数值见[实验记录](EXPERIMENT_RECORD_ZH.md)。
 
 ## 尚缺什么
 
@@ -18,26 +18,25 @@
 
 ## 推荐执行顺序
 
-1. **先做训练更新诊断与正式模型身份恢复。** CPU诊断已确认alpha=0.11914低于0.15，v_det全真且非空；gate输出权重已有变化，不能判为完全未训练。单卡检查真实训练batch上gate loss/梯度、optimizer参数注册、一步前后参数变化、BF16与FP32更新差异及保存/加载一致性。目标是识别训练或数值问题，不以降低阈值通过实验。先限定1–4个batch，不启动长训练。
+1. **训练更新诊断已通过，转向兼容checkpoint续训。** 原四卡完整状态已找回并核验，使用原recipe从300续至15000作为首段，保留总计划30000步；由用户提交四卡ACP。单卡同时补W08完整在线链路的记录前缀profiling，不再重复原50前缀source或forced-null实验。
 2. 同时继续只读寻找98.7%和83.9%所对应的正式运行产物，核对旧schema与当前机制差异。找到模型优先补评估；找不到则明确新实验范围，不能用smoke补原主表。
 3. 在具备NVIDIA graphics/Vulkan挂载的环境修复/验证renderer，完成实际RMBench状态恢复backend，再跑1 query×2 candidates的H32恢复与端点pilot。没有这个闭环不能生成W01/W02正式ACP。
 4. 根据pilot的实测每branch耗时冻结两任务样本预算，单卡先做W01并复用W02标签。多卡只拆独立episode shard，不改实验口径。W03/W04仅在有配对原始记录/协议后推进。
 
-步骤1的时间需要完整训练forward/backward实测；步骤3的恢复backend尚待实现和验证，不能给出已可运行的正式ACP。已有4H100训练速度粗估约30小时才能把shared从300续到30k，另需初始化/保存/验证、至少两个24小时ACP及后续评测；这个估计不是批准开跑的恢复命令。
+四卡首段预计16–20小时，已绑定原weights、完整state和不变recipe，现场仍需四卡runtime与恢复检查。步骤3的恢复backend尚待实现和验证，因此W01/W02正式rollout仍未放行。完整300→30k约30小时计算，另需初始化/保存/验证及后续评测，至少两个24小时ACP。
 
-## 查看已启动的单卡任务（不申请ACP，不重复启动）
+## 查看本轮单卡profiling（不申请ACP，不重复启动）
 
 在CCI执行；任务自带完整日志和一小时硬时限：
 
 ```bash
 set -euo pipefail
-RUN=/mnt/afs/task3_2/L202500276_lwz/projects/WARM_evaluations/nonreal_train_update_r2_20260921
-tail -n 30 "$RUN/probe01.launcher.log"
-cat "$RUN/job_logs/20260921T134725Z-185052cc/run_manifest.json"
+RUN=/mnt/afs/task3_2/L202500276_lwz/projects/WARM_evaluations/nonreal_online_profile_20260922
+tail -n 30 "$RUN/profile200.launcher.log"
 ```
 
-真实任务为Press Button与Put Back Block各一个TRAIN microbatch的完整loss/backward与隔离gate更新对照，预计15–25分钟，加载慢时可能更久。只有wrapper complete/exit0与输出验收通过才记为完成；不把它写成四卡resume或正式任务SR。
+预声明Press Button五个DEV episodes，每个40个连续replan，共200测量query；另20预热query排除。真实在线检索、历史和推理；观测和已执行动作来自记录轨迹，模型输出不执行，不产生任务SR。contract准备与模型加载受共享存储影响，预计30–45分钟；只有wrapper complete/exit0和200条记录验收通过才记为完成。
 
 ## 下一步可直接派发的工作指令
 
-> 优先处理P0前置阻塞：在CCI单张H100上完成真实训练batch的gate梯度、optimizer更新、BF16数值与checkpoint保存/恢复诊断，限1–4个batch；保留原checkpoint，不改推理阈值。继续核对正式模型和论文主表原始结果的身份。随后完善RMBench renderer与完整状态恢复，完成1-query×2-candidate的H32 pilot。每项数值、失败和原始产物及时写入EXPERIMENT_RECORD_ZH.md。完成上述验收后才生成正式W01/W02 ACP命令和基于实测的耗时预算；不要重新运行已经完成且全g=0的smoke source对比，也不要直接重训六种消融。
+> 完成W08记录前缀profiling并保存真实成本指标；用户执行四卡续训首段后，验收checkpoint与原始训练指标，再补新checkpoint上尚缺的自然gate/source数据。继续完善RMBench renderer和完整状态恢复，完成1-query×2-candidate的H32 pilot后再派发W01/W02。每项数值、失败和原始产物及时写入EXPERIMENT_RECORD_ZH.md。不要重跑已完成的N00/N02/N06 smoke诊断，不重训六种消融。

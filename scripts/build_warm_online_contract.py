@@ -965,7 +965,10 @@ def _build_contract(args: argparse.Namespace) -> WarmOnlineRunContract:
         memory_sigma=args.memory_sigma,
         action_horizon=args.action_horizon,
         action_dim=args.action_dim,
-        git_commit=git_commit,
+        # This field is compared to the immutable training attestation by
+        # both the publication recheck and deployed policies. Evaluation may
+        # run from a newer checkout; its source identity is logged separately.
+        git_commit=training_attestation.git_commit,
         git_dirty=False,
     )
 

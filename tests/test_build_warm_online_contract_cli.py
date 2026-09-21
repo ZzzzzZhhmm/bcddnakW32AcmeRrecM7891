@@ -568,6 +568,15 @@ def test_cli_allows_dirty_git_on_offline_server(
     assert paths["output"].exists()
 
 
+@pytest.mark.parametrize('evaluation_commit', ['b' * 40, '0' * 40])
+def test_new_evaluator_keeps_checkpoint_training_commit(tmp_path, monkeypatch, evaluation_commit):
+    argv, paths = _fixture(tmp_path, monkeypatch)
+    monkeypatch.setattr(online_cli, '_git_identity', lambda _repo: (evaluation_commit, False))
+    assert online_cli.main(argv) == 0
+    contract = WarmOnlineRunContract.from_dict(loads(paths['output'].read_text()))
+    assert contract.git_commit == 'a' * 40
+
+
 def test_cli_rejects_dev_contract_as_online_training_identity(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
