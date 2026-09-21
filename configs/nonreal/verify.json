@@ -1,0 +1,10 @@
+{
+  "schema": "warm.nonreal.job.v1",
+  "readiness": "ready",
+  "evidence_type": "engineering",
+  "claim": "Intervention semantics and statistics are correct; this is not learned rejection or task success evidence.",
+  "max_seconds": 1800,
+  "inputs": [],
+  "qualification": [],
+  "argv": ["{python}", "-m", "pytest", "-q", "--tb=short", "-p", "no:cacheprovider", "tests/test_nonreal_probe_torch.py", "tests/test_nonreal_statistics.py", "tests/test_nonreal_branches.py", "tests/test_nonreal_evidence.py", "tests/test_nonreal_assembly.py", "tests/test_nonreal_job.py", "tests/test_warm_retrospection_model_torch.py", "tests/test_consequence_torch.py", "tests/test_warm_retrospective_dataset.py", "tests/test_warm_video_cotraining_torch.py", "tests/test_rmbench_warm_policy.py", "tests/test_rmbench_experiment_matrix.py", "tests/test_runtime_candidates.py"]
+}

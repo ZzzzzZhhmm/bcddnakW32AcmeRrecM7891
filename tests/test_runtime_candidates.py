@@ -27,6 +27,8 @@ from fastwam.memory.payload_names import (
     SOURCE_EPISODE_SHA256,
     START_PROPRIO,
     TASK_INDEX,
+    NORMALIZED_PHASE,
+    EVENT_ORDINAL,
 )
 from fastwam.memory.runtime_candidates import (
     INVALID_BANK_ROW,
@@ -75,6 +77,7 @@ def _write_artifacts(
     actions: np.ndarray | None = None,
     query_frame_policy: str | None = None,
     include_terminal_query: bool = False,
+    temporal_payloads: bool = False,
 ) -> tuple[Path, Path, tuple[EventId, ...]]:
     if action_contract is None:
         action_contract = _action_contract()
@@ -102,6 +105,8 @@ def _write_artifacts(
             CONTAINS_FORCED_GRIPPER: np.zeros((count,), dtype=np.bool_),
             SOURCE_EPISODE_SHA256: _hash_rows((1, 2, 3)),
             FEATURE_EPISODE_SHA256: _hash_rows((11, 12, 13)),
+            **({NORMALIZED_PHASE: np.zeros(count, dtype=np.float32),
+                EVENT_ORDINAL: np.zeros(count, dtype=np.int64)} if temporal_payloads else {}),
         },
     )
     bank_path = tmp_path / "bank"

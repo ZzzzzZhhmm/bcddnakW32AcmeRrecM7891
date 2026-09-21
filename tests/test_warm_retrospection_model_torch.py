@@ -34,12 +34,18 @@ from fastwam.datasets.warm_retrospective import (  # noqa: E402
     WARM_CANDIDATE_START_PROPRIO,
     WARM_CANDIDATE_SUPPORT,
     WARM_CANDIDATE_TIMING,
+    WARM_CANDIDATE_NORMALIZED_PHASE,
+    WARM_CANDIDATE_EVENT_ORDINAL,
     WARM_CURRENT_CONTEXT,
     WARM_CURRENT_SEMANTIC,
     WARM_EPISODE_ACTION_MASK,
     WARM_EPISODE_ACTION_SUMMARIES,
     WARM_EPISODE_MASK,
     WARM_EPISODE_TOKENS,
+    WARM_EPISODE_ROLE_IDS,
+    WARM_EPISODE_RELATIVE_AGE,
+    WARM_EPISODE_ACTION_RELATIVE_AGE,
+    EPISODE_ROLE_EVENT,
     WARM_FUTURE_VALID,
     WARM_TARGET_EFFECT,
 )
@@ -201,7 +207,7 @@ def test_retrospection_trainer_metadata_survives_json_round_trip() -> None:
         model.validate_trainer_state_metadata(corrupted_hash)
 
     incompatible = json.loads(json.dumps(metadata))
-    incompatible["warm_retrospection"]["config"]["video_adapter_layers"] = []
+    incompatible["warm_retrospection"]["config"]["video_adapter_layers"] = [0]
     incompatible["warm_retrospection"]["config_sha256"] = (
         sha256_canonical_json(
             incompatible["warm_retrospection"]["config"]
@@ -225,7 +231,8 @@ def test_checkpoint_payload_persists_phase_aware_query_projection() -> None:
 
 
 def _source_context(*, with_teachers: bool) -> RetrospectiveSourceContext:
-    batch, candidates, event_tokens = 2, 2, 2
+    # Production consequence targets use a fixed row-major 2x2 DINO grid.
+    batch, candidates, event_tokens = 2, 2, 4
     valid = torch.tensor([[True, True], [False, False]])
     actions = torch.arange(
         batch * candidates * ACTION_HORIZON * ACTION_DIM,
@@ -337,12 +344,17 @@ def test_training_context_carries_factual_candidate_start_proprio() -> None:
         WARM_CANDIDATE_EFFECT_DELTA: source.candidate_effect_delta,
         WARM_CANDIDATE_TIMING: source.candidate_timing,
         WARM_CANDIDATE_SUPPORT: source.candidate_support,
+        WARM_CANDIDATE_NORMALIZED_PHASE: torch.zeros_like(source.candidate_support),
+        WARM_CANDIDATE_EVENT_ORDINAL: torch.zeros_like(source.candidate_support, dtype=torch.long),
         WARM_CURRENT_CONTEXT: source.query_context,
         WARM_CURRENT_SEMANTIC: source.current_semantic_teacher,
         WARM_TARGET_EFFECT: source.target_effect,
         WARM_FUTURE_VALID: source.future_valid_mask,
         WARM_EPISODE_TOKENS: source.episode_tokens,
         WARM_EPISODE_MASK: source.episode_mask,
+        WARM_EPISODE_ROLE_IDS: source.episode_mask.long() * EPISODE_ROLE_EVENT,
+        WARM_EPISODE_RELATIVE_AGE: torch.zeros_like(source.episode_mask, dtype=torch.float32),
+        WARM_EPISODE_ACTION_RELATIVE_AGE: torch.zeros_like(source.episode_action_mask, dtype=torch.float32),
         WARM_EPISODE_ACTION_SUMMARIES: source.episode_action_summaries,
         WARM_EPISODE_ACTION_MASK: source.episode_action_mask,
     }
@@ -359,6 +371,7 @@ def test_online_context_carries_factual_candidate_start_proprio() -> None:
         [[1.0, 2.0, 3.0], [0.0, 0.0, 0.0]], dtype=np.float32
     )
     online_step = SimpleNamespace(
+        candidate_valid_mask=valid,
         query_id=SimpleNamespace(episode_index=3, frame_index=10),
         event_ids=(EventId("train", 0, 7, 4), None),
         context_key=np.zeros((CONTEXT_DIM,), dtype=np.float32),
@@ -374,6 +387,8 @@ def test_online_context_carries_factual_candidate_start_proprio() -> None:
         start_proprio=starts,
         gripper_timing=np.zeros((2, 4), dtype=np.float32),
         support=valid.astype(np.float32),
+        normalized_phase=np.zeros(2, dtype=np.float32),
+        event_ordinal=np.zeros(2, dtype=np.int64),
     )
 
     context = model._context_from_online_facts(
@@ -383,6 +398,9 @@ def test_online_context_carries_factual_candidate_start_proprio() -> None:
         episode_mask=None,
         episode_action_summaries=None,
         episode_action_mask=None,
+        episode_role_ids=None,
+        episode_relative_age=None,
+        episode_action_relative_age=None,
     )
 
     assert torch.equal(
@@ -475,6 +493,10 @@ def test_full_training_source_exposes_finite_auxiliary_losses() -> None:
         "warm_learned_gate_mean",
         "warm_gate_positive_row_rate",
         "warm_gate_negative_row_rate",
+        "warm_gate_target_mean",
+        "warm_gate_positive_probability",
+        "warm_gate_negative_probability",
+        "warm_gate_brier",
         "warm_source_quality_mean",
         "warm_selected_memory_rate",
         "warm_forced_rejection_rate",
@@ -846,8 +868,9 @@ def test_forced_hard_negative_after_slot_zero_preserves_prefix_contract() -> Non
 
     gaussian, output = _resolve(model, context, phase="train")
 
-    assert output.component_indices.tolist() == [2, 0]
-    assert output.memory_mask.tolist() == [True, False]
+    assert model._last_retrospection_diagnostics["candidate_indices"].tolist() == [1, -1]
+    assert output.component_indices.tolist() == [0, 0]
+    assert output.memory_mask.tolist() == [False, False]
     assert torch.equal(output.source[0], gaussian[0])
     assert output.source_gate.tolist() == [0.0, 0.0]
     assert output.auxiliary_metrics["warm_forced_rejection_rate"].item() == 0.5

@@ -1073,6 +1073,20 @@ class RuntimeRetrospectiveDatasetAdapter(torch.utils.data.Dataset):
         candidate_actions = (
             sample[WARM_CANDIDATE_MU].detach().to(dtype=torch.float32).cpu().numpy()
         )
+        if candidate_actions.shape[-1] != start_proprio.shape[-1]:
+            # LIBERO has 7 action channels but 8 proprio channels (two finger
+            # coordinates). Never guess a mapping from those coordinates to
+            # the action's scalar gripper command. Match the online path by
+            # using the immutable observed single-gripper trajectory.
+            if len(self._feature_store.gripper_indices) != 1:
+                raise RetrospectiveFeatureStoreError(
+                    "multi-gripper timing requires aligned action/start proprio channels"
+                )
+            candidate_timing = _gripper_timing(gripper, valid)
+        else:
+            candidate_timing = _gripper_timing_from_actions(
+                candidate_actions, start_proprio, valid, self._feature_store.gripper_indices
+            )
         payloads: dict[str, np.ndarray | np.bool_] = {
             WARM_CANDIDATE_CONTEXT: self.resolver.gather_context_keys(resolved),
             WARM_CANDIDATE_EFFECT_PRE: effect_pre,
@@ -1082,12 +1096,7 @@ class RuntimeRetrospectiveDatasetAdapter(torch.utils.data.Dataset):
             ),
             WARM_CANDIDATE_START_PROPRIO: start_proprio,
             WARM_CANDIDATE_GRIPPER: gripper,
-            WARM_CANDIDATE_TIMING: _gripper_timing_from_actions(
-                candidate_actions,
-                start_proprio,
-                valid,
-                self._feature_store.gripper_indices,
-            ),
+            WARM_CANDIDATE_TIMING: candidate_timing,
             # V1 stores exemplars rather than learned clusters.  Every factual
             # exemplar therefore has support one; event_score remains factual
             # change metadata and is not mislabeled as cluster support.

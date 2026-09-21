@@ -116,6 +116,26 @@ class OnlineExperimentControls:
 
 
 @dataclass(frozen=True, slots=True)
+class ResearchProbeControls:
+    """Inference interventions, never a claim of independently trained ablation.
+
+    Separate from legacy ablation modes so their old semantics remain intact.
+    Gaussian/scale-only comparisons require the same factual prefix and RNG.
+    """
+
+    source_mode: str = "full"
+    comparison: bool = True
+    force_null: bool = False
+    capture: bool = False
+
+    def __post_init__(self) -> None:
+        if self.source_mode not in {"full", "gaussian", "scale_only"}:
+            raise WarmRetrospectionError("unknown research source_mode")
+        if any(type(v) is not bool for v in (self.comparison, self.force_null, self.capture)):
+            raise WarmRetrospectionError("research flags must be bool")
+
+
+@dataclass(frozen=True, slots=True)
 class _CorruptedCandidatePayload:
     """Inference-only candidate payload with exact padding preserved."""
 
@@ -708,6 +728,17 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             return OnlineExperimentControls("full", "clean", "default")
         return value
 
+    def configure_research_probe(self, **kwargs: Any) -> None:
+        """Bind optional W01/W02/W06 instrumentation before first inference."""
+        self._require_retrospection()
+        controls = ResearchProbeControls(**kwargs)
+        current = getattr(self, "_warm_research_probe", ResearchProbeControls())
+        if getattr(self, "_warm_online_experiment_locked", False) and controls != current:
+            raise WarmRetrospectionError("research controls are locked after first inference")
+        if self._online_experiment_controls().ablation_mode != "full":
+            raise WarmRetrospectionError("research probes require legacy ablation_mode=full")
+        self._warm_research_probe = controls
+
     def reset_warm_online_episode(self) -> None:
         """Reset runtime-only retrieval-thread state at a factual env reset."""
 
@@ -1189,6 +1220,10 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             # Evaluation controls must never alter optimization semantics.
             ablation_mode = "full"
             memory_corruption = "clean"
+        probe = (getattr(self, "_warm_research_probe", ResearchProbeControls())
+                 if phase == "infer" else ResearchProbeControls())
+        if probe != ResearchProbeControls() and ablation_mode != "full":
+            raise WarmRetrospectionError("research probes require legacy ablation_mode=full")
         if world_token_streams is None or len(world_token_streams) != 2:
             raise WarmRetrospectionError(
                 "complete WARM requires the two Video DiT tap streams"
@@ -1478,14 +1513,14 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             magnitude_weight=cfg.magnitude_weight,
         )
         selection_consistency = (
-            torch.zeros_like(consistency) if source_only else consistency
+            torch.zeros_like(consistency) if source_only or not probe.comparison else consistency
         )
         selection = select_consequence_candidate(
             reranker_scores,
             selection_consistency,
             ctx.candidate_support,
             valid,
-            consequence_weight=0.0 if source_only else cfg.consequence_weight,
+            consequence_weight=0.0 if source_only or not probe.comparison else cfg.consequence_weight,
             support_weight=cfg.support_weight,
             candidate_prior=ctx.candidate_thread_prior,
             selection_temperature=cfg.selection_temperature,
@@ -1507,7 +1542,7 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
                 ctx.candidate_support,
                 valid,
                 consequence_weight=(
-                    0.0 if source_only else cfg.consequence_weight
+                    0.0 if source_only or not probe.comparison else cfg.consequence_weight
                 ),
                 support_weight=cfg.support_weight,
                 candidate_prior=ctx.candidate_thread_prior,
@@ -1620,9 +1655,11 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
         relevance_gate = acceptance.effective_probability.to(
             dtype=base_gaussian.dtype
         )
+        if probe.force_null:
+            relevance_gate = torch.zeros_like(relevance_gate)
         gate_value = (
             torch.zeros_like(relevance_gate)
-            if ablation_mode == "context_only"
+            if ablation_mode == "context_only" or probe.source_mode == "gaussian"
             else relevance_gate
         )
         source = (
@@ -1630,6 +1667,9 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             * (selected_mean + cfg.source_sigma_min * base_gaussian)
             + (1.0 - gate_value[:, None, None]) * base_gaussian
         )
+        if probe.source_mode == "scale_only":
+            noise_scale = 1.0 - gate_value * (1.0 - cfg.source_sigma_min)
+            source = noise_scale[:, None, None] * base_gaussian
 
         selected_action_context = _gather_candidate(
             event.action_context_tokens, selection.candidate_indices
@@ -1852,7 +1892,7 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
         )
         source_memory_mask = (
             torch.zeros_like(selection.memory_mask)
-            if ablation_mode == "context_only"
+            if ablation_mode == "context_only" or probe.source_mode == "gaussian" or probe.force_null
             else acceptance.accepted_mask
         )
         source_component_indices = torch.where(
@@ -1955,6 +1995,42 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             "corruption_applied": corruption_applied.detach(),
             "corruption_fallback": corruption_fallback.detach(),
         }
+        self._last_research_probe = None
+        if phase == "infer" and probe.capture:
+            # Capture before rollout truth exists. Keep arrays off JSON telemetry.
+            arrays = {
+                "valid": valid, "stored_actions": candidate_payload.actions,
+                "warped_actions": warped_candidate_actions,
+                "adapted_actions": event.adapted_action_mean,
+                "historical_effect": observed_effect,
+                "predicted_effect": event.predicted_effect,
+                "required_effect": transition_gist,
+                "base_gaussian": base_gaussian, "source": source,
+                "conditioning": conditioning,
+                "alpha": gate.probability, "g": relevance_gate,
+                "source_gate": gate_value, "kappa": consistency,
+                "selection_kappa": selection_consistency,
+                "reranker": reranker_scores, "zeta": stagnation,
+                "candidate_start_proprio": ctx.candidate_start_proprio,
+                "candidate_v_det": valid
+                    & (torch.ones_like(valid) if ctx.candidate_thread_source_eligible is None
+                       else ctx.candidate_thread_source_eligible)
+                    & (stagnation[:, None] < cfg.stagnation_hard_threshold),
+                "source_noise_scale": 1.0 - gate_value * (1.0 - cfg.source_sigma_min),
+                "selected_index": selection.candidate_indices,
+                "v_det": selection.memory_mask & thread_source_eligible
+                         & (stagnation < cfg.stagnation_hard_threshold),
+            }
+            self._last_research_probe = {
+                "schema": "warm.nonreal.probe.v1", "evidence_type": "I",
+                "source_mode": probe.source_mode, "comparison": probe.comparison,
+                "force_null": probe.force_null,
+                "gate_threshold": cfg.inference_source_gate_threshold,
+                "magnitude_weight": cfg.magnitude_weight,
+                "source_sigma_min": cfg.source_sigma_min,
+                "arrays": {name: value.detach().cpu().clone() for name, value in arrays.items()
+                           if value is not None},
+            }
         if phase == "infer":
             if current_video_latent is None:
                 raise WarmRetrospectionError(
@@ -2025,7 +2101,10 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             "effect_pre": (expected_k, 4, cfg.semantic_dim),
             "effect_delta": (expected_k, 4, cfg.semantic_dim),
             "start_proprio": (expected_k, cfg.proprio_dim),
-            "gripper_timing": (expected_k, cfg.timing_dim),
+            # OnlineCandidateFacts stores legacy scalar-observed-gripper timing
+            # (always 4D). Canonical dual-gripper timing is derived below from
+            # action/start payloads, and only that result must be cfg.timing_dim.
+            "gripper_timing": (expected_k, 4),
             "support": (expected_k,),
             "normalized_phase": (expected_k,),
             "event_ordinal": (expected_k,),
@@ -2187,6 +2266,8 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             )
         else:
             candidate_timing = np.asarray(facts.gripper_timing, dtype=np.float32)
+        if candidate_timing.shape != (expected_k, cfg.timing_dim):
+            raise WarmRetrospectionError("derived candidate timing does not match model timing_dim")
         return RetrospectiveSourceContext(
             query_context=tensor(online_step.context_key, self.torch_dtype),
             candidate_context=tensor(facts.context_keys, self.torch_dtype),
@@ -2308,6 +2389,8 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
         )
         diagnostics = self._last_retrospection_diagnostics
         controls = self._online_experiment_controls()
+        if self._last_research_probe is not None:
+            output["warm_research_probe"] = self._last_research_probe
         output["warm_retrospection"] = {
             "selected_candidate_index": int(
                 diagnostics["candidate_indices"].reshape(-1)[0].cpu().item()

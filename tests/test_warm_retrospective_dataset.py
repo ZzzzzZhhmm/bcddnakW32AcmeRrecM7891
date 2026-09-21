@@ -173,7 +173,8 @@ def _adapter_fixture(
 ) -> RuntimeRetrospectiveDatasetAdapter:
     catalog = _catalog(split="train", length=8)
     bank, cache, _ = _write_artifacts(
-        tmp_path / "artifacts", catalog_hash=catalog.content_sha256
+        tmp_path / "artifacts", catalog_hash=catalog.content_sha256,
+        temporal_payloads=True,
     )
     resolver = RuntimeCandidateResolver.from_artifacts(
         bank,
@@ -198,6 +199,7 @@ def _adapter_fixture(
         expected_catalog_sha256=resolver.query_catalog_sha256,
         action_horizon=resolver.action_horizon,
         recent_event_capacity=2,
+        gripper_indices=resolver.action_space.gripper_dims,
     )
     candidate_dataset = RuntimeCandidateDatasetAdapter(
         _BaseDataset([_sample(frame_index)]), resolver, catalog

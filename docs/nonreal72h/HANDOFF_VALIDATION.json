@@ -1,0 +1,63 @@
+{
+  "schema": "warm.nonreal.handoff-validation.v1",
+  "created_utc": "2026-09-21T11:21:57.671206+00:00",
+  "status": "engineering_regression_passed_formal_experiments_blocked",
+  "input_pdf": {
+    "path": "C:\\Users\\admin\\Downloads\\WARM_ICLR2027.pdf",
+    "sha256": "b1f5d91da26dc5fef3a9560826f3a3329946cd0c79a7f2425dda6a2b3a8b5931",
+    "pages": 35,
+    "matches_handoff_document_hash": false
+  },
+  "input_documents": [
+    {
+      "path": "tmp\\unfinished\\README_立即派发.md",
+      "sha256": "b5f594ca202d6a1996a0ead49bc8732537700f84b8b9684013966f6020c7eeef"
+    },
+    {
+      "path": "tmp\\unfinished\\WARM_NonReal_Experiments_5Day_Handoff.md",
+      "sha256": "09967f80f368939b4883f4bef14184ee20edd039600f73c5e89e5bb2cc2528f6"
+    }
+  ],
+  "source_sha256": "c5b1e794a0f2512b3abde6d7400ffcf134c81d8011096b13d9c7a684d2270048",
+  "source_file_count": 386,
+  "source_identity_kind": "file-content manifest; not a git commit",
+  "server_release": "/mnt/afs/task3_2/L202500276_lwz/projects/WARM_evaluations/nonreal_72h_20260921/release",
+  "regression": {
+    "passed": 124,
+    "failed": 0,
+    "skipped": 0,
+    "warnings": 1,
+    "pytest_elapsed_seconds": 34.21,
+    "run_exit_code": 0,
+    "run_status": "complete",
+    "run_directory": "/mnt/afs/task3_2/L202500276_lwz/projects/WARM_evaluations/nonreal72h_jobs/20260921T111938Z-50bc29b9",
+    "cuda_required": true,
+    "torch_required": true,
+    "cuda_checks": [
+      "FP32 source/conditioning forced-null graph",
+      "BF16 source/conditioning forced-null graph"
+    ],
+    "limitation": "Tiny experts; not formal-checkpoint full Action DiT or simulator validation",
+    "warning": "Existing fixture converts read-only NumPy to Torch without writes; captured in console.log"
+  },
+  "cli_roundtrip": {
+    "status": "passed",
+    "cohort": "synthetic_test_only",
+    "queries": 4,
+    "tasks": 2,
+    "kinds": [
+      "candidates",
+      "gates"
+    ],
+    "scientific_evidence": false
+  },
+  "formal_acp_readiness": "blocked",
+  "remaining_requirements": [
+    "Mature checkpoint matching the evaluated method/configuration",
+    "Actual SAPIEN renderer qualification",
+    "Implement and qualify real RMBench snapshot/replay backend plus 1-query pilot",
+    "Freeze independent label protocol and held-out query manifest"
+  ],
+  "submitted_acp_jobs": 0,
+  "git_operations_performed": false
+}

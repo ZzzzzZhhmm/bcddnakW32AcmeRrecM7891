@@ -1,0 +1,10 @@
+{
+  "tasks": ["put_back_block", "press_button"],
+  "bootstrap": 10000,
+  "seed": 3407,
+  "contrasts": {
+    "full_minus_no_comparison": {"normal_full": 1, "normal_no_comparison": -1},
+    "gamma": {"normal_no_comparison": 1, "donor_no_comparison": -1, "normal_full": -1, "donor_full": 1}
+  },
+  "note": "Two-task subset only. Rates and contrasts are fractions, not percentage points. No inferred old episode records."
+}

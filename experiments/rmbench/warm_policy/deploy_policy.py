@@ -617,6 +617,35 @@ class RMBenchWarmPolicy:
             memory_corruption=self.memory_corruption,
             experiment_id=self.experiment_id,
         )
+        # Optional research instrumentation is explicit and logged separately
+        # from the checkpoint's training contract. It never edits that contract.
+        self.research_probe_config = None
+        self.research_probe_root = None
+        probe_path = usr_args.get("warm_research_probe_config")
+        if probe_path:
+            if not self.experiment_id.startswith("nonreal-"):
+                raise ValueError("research probes need an explicit nonreal- experiment ID")
+            from fastwam.research.evidence import canonical
+            probe_config_path = Path(str(probe_path)).expanduser().resolve()
+            probe_config = json.loads(probe_config_path.read_text(encoding="utf-8"))
+            if not isinstance(probe_config, dict) or probe_config.get("capture") is not True:
+                raise ValueError("research probe config must explicitly enable capture")
+            self.model.configure_research_probe(**probe_config)
+            self.research_probe_config = {
+                "controls": probe_config,
+                "sha256": hashlib.sha256(canonical(probe_config)).hexdigest(),
+                "evidence_type": "I",
+            }
+            self.research_probe_root = _output_path(
+                usr_args.get("warm_research_probe_output"), field="warm_research_probe_output"
+            )
+            try:
+                self.research_probe_root.relative_to(PROJECT_ROOT)
+            except ValueError:
+                pass
+            else:
+                raise ValueError("research probe outputs must be outside the source checkout")
+            self.research_probe_root.mkdir(parents=True, exist_ok=False)
 
         self.processor: FastWAMProcessor = instantiate(
             self.cfg.data.train.processor
@@ -859,9 +888,12 @@ class RMBenchWarmPolicy:
                     "ablation_mode": self.ablation_mode,
                     "memory_corruption": self.memory_corruption,
                     "num_inference_steps": self.num_inference_steps,
+                    **({"research_probe": self.research_probe_config}
+                       if getattr(self, "research_probe_config", None) else {}),
                 }
             ),
             "policy_runtime_projection_sha256": self.runtime_projection_sha256,
+            "research_probe": getattr(self, "research_probe_config", None),
         }
 
     def reset(self) -> None:
@@ -948,6 +980,27 @@ class RMBenchWarmPolicy:
         }
         with torch.no_grad():
             output = self.model.infer_action(**infer_kwargs)
+        probe_reference = None
+        if getattr(self, "research_probe_root", None) is not None:
+            from fastwam.research.evidence import write_probe, probe_query_id
+            probe_reference = write_probe(
+                self.research_probe_root,
+                probe_query_id(experiment_id=self.experiment_id, task=self.task_name,
+                               bound_step_sha256=online_step.step_sha256),
+                output["warm_research_probe"],
+                {"experiment_id": self.experiment_id,
+                 "episode_index": int(query_id.episode_index), "frame_index": int(frame_index),
+                 "event_ids": [_event_dict(event) for event in online_step.event_ids],
+                 "checkpoint_sha256": self.contract.warm_checkpoint_sha256,
+                 "normalizer_sha256": self.contract.normalization_stats_sha256,
+                 "bank_content_sha256": self.contract.bank_content_sha256,
+                 "action_array_space": "normalized_model",
+                 "bound_step_sha256": online_step.step_sha256,
+                 "candidate_payload_sha256": online_step.candidate_payload_sha256,
+                 "model_input_sha256": online_step.model_input_sha256,
+                 "derived_seed": int(online_step.derived_seed),
+                 "task": self.task_name, "history": history_evidence},
+            )
         # Reuse the exact factual 2x2 DINO tokens computed by retrieval.  The
         # retriever revalidates ownership/content after model capability use;
         # no second DINO forward and no predicted future enter working memory.
@@ -1032,6 +1085,7 @@ class RMBenchWarmPolicy:
             "candidate_count": int(sum(online_step.candidate_valid_mask)),
             "candidates": candidates,
             "history_before_replan": history_evidence,
+            "research_probe": probe_reference,
             "factual_update_after_replan": factual_update,
             "model_action_chunk_sha256": sha256_array(model_chunk),
             "environment_action_chunk_sha256": sha256_array(environment_chunk),

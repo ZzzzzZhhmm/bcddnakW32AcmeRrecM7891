@@ -1,0 +1,151 @@
+{
+  "schema": "warm.nonreal.artifact-audit.v1",
+  "checked_utc": "2026-09-21T11:21:57.671206+00:00",
+  "checkpoint_metadata_examined": [
+    {
+      "path": "/mnt/afs/task3_2/L202500276_lwz/projects/WARM/runs/rmbench_official50_shared/shared-official50-dev45-s3407-v5-smoke300/checkpoints/weights/step_000300.pt",
+      "step": 300,
+      "model_schema_version": 8,
+      "embedded_config_sha256": "4cc3fdc713ebdca65dd947b13be683c109c3d782d076d1de59ec5369afaf3e89",
+      "checkpoint_file_sha256": null,
+      "paper_run_mapping": null,
+      "missing_reason": "Metadata read only. Full file hash deferred until model selection; no paper result attribution found."
+    },
+    {
+      "path": "/mnt/afs/task3_2/L202500276_lwz/projects/WARM/runs/rmbench_official50_shared_smoke10_20260724_094845/checkpoints/weights/step_000010.pt",
+      "step": 10,
+      "model_schema_version": 3,
+      "embedded_config_sha256": "4c1cdf8ebf5eb0264436d09770cf5c2db4c5f03efbb6f74b2502815cc6b9d592",
+      "checkpoint_file_sha256": null,
+      "paper_run_mapping": null,
+      "missing_reason": "Metadata read only. Full file hash deferred until model selection; no paper result attribution found."
+    },
+    {
+      "path": "/mnt/afs/task3_2/L202500276_lwz/projects/WARM/runs/rmbench_official50_specialists/battery_try-s3407-v1/checkpoints/weights/step_012000.pt",
+      "step": 12000,
+      "model_schema_version": 3,
+      "embedded_config_sha256": "1dab27c4e098c522fccfe8eb0969df360af615cce0670ee3830e1a0b671ba712",
+      "checkpoint_file_sha256": null,
+      "paper_run_mapping": null,
+      "missing_reason": "Metadata read only. Full file hash deferred until model selection; no paper result attribution found."
+    },
+    {
+      "path": "/mnt/afs/task3_2/L202500276_lwz/projects/WARM/runs/rmbench_official50_specialists/blocks_ranking_try-s3407-v1/checkpoints/weights/step_014000.pt",
+      "step": 14000,
+      "model_schema_version": 3,
+      "embedded_config_sha256": "1dab27c4e098c522fccfe8eb0969df360af615cce0670ee3830e1a0b671ba712",
+      "checkpoint_file_sha256": null,
+      "paper_run_mapping": null,
+      "missing_reason": "Metadata read only. Full file hash deferred until model selection; no paper result attribution found."
+    },
+    {
+      "path": "/mnt/afs/task3_2/L202500276_lwz/projects/WARM/runs/rmbench_official50_specialists/blocks_ranking_try-s3407-v2/checkpoints/weights/step_014000.pt",
+      "step": 14000,
+      "model_schema_version": 4,
+      "embedded_config_sha256": "2c842421fd8d9c2994dfdbb230c9245c540a275503ffea30aa53fc58bce503c4",
+      "checkpoint_file_sha256": null,
+      "paper_run_mapping": null,
+      "missing_reason": "Metadata read only. Full file hash deferred until model selection; no paper result attribution found."
+    },
+    {
+      "path": "/mnt/afs/task3_2/L202500276_lwz/projects/WARM/runs/rmbench_official50_specialists/blocks_ranking_try-s3407-v3/checkpoints/weights/step_014000.pt",
+      "step": 14000,
+      "model_schema_version": 5,
+      "embedded_config_sha256": "a16ee1b9834cbe95eda8b2e5291d76e0367e4388b8e533fcc1f147fc2d83a7f4",
+      "checkpoint_file_sha256": null,
+      "paper_run_mapping": null,
+      "missing_reason": "Metadata read only. Full file hash deferred until model selection; no paper result attribution found."
+    },
+    {
+      "path": "/mnt/afs/task3_2/L202500276_lwz/projects/WARM/runs/rmbench_official50_specialists/blocks_ranking_try-s3407-v3-smoke10-r2/checkpoints/weights/step_000010.pt",
+      "step": 10,
+      "model_schema_version": 5,
+      "embedded_config_sha256": "a16ee1b9834cbe95eda8b2e5291d76e0367e4388b8e533fcc1f147fc2d83a7f4",
+      "checkpoint_file_sha256": null,
+      "paper_run_mapping": null,
+      "missing_reason": "Metadata read only. Full file hash deferred until model selection; no paper result attribution found."
+    },
+    {
+      "path": "/mnt/afs/task3_2/L202500276_lwz/projects/WARM/runs/rmbench_official50_specialists/blocks_ranking_try-s3407-v4/checkpoints/weights/step_001000.pt",
+      "step": 1000,
+      "model_schema_version": 6,
+      "embedded_config_sha256": "7acb4a42f38d6931f016d5ffa756eae08a1f747103243bcb3c305b996cd33c40",
+      "checkpoint_file_sha256": null,
+      "paper_run_mapping": null,
+      "missing_reason": "Metadata read only. Full file hash deferred until model selection; no paper result attribution found."
+    },
+    {
+      "path": "/mnt/afs/task3_2/L202500276_lwz/projects/WARM/runs/rmbench_official50_specialists/blocks_ranking_try-s3407-v4-smoke10/checkpoints/weights/step_000010.pt",
+      "step": 10,
+      "model_schema_version": 6,
+      "embedded_config_sha256": "7acb4a42f38d6931f016d5ffa756eae08a1f747103243bcb3c305b996cd33c40",
+      "checkpoint_file_sha256": null,
+      "paper_run_mapping": null,
+      "missing_reason": "Metadata read only. Full file hash deferred until model selection; no paper result attribution found."
+    },
+    {
+      "path": "/mnt/afs/task3_2/L202500276_lwz/projects/WARM/runs/rmbench_official50_specialists/cover_blocks-s3407-v1/checkpoints/weights/step_012000.pt",
+      "step": 12000,
+      "model_schema_version": 3,
+      "embedded_config_sha256": "1dab27c4e098c522fccfe8eb0969df360af615cce0670ee3830e1a0b671ba712",
+      "checkpoint_file_sha256": null,
+      "paper_run_mapping": null,
+      "missing_reason": "Metadata read only. Full file hash deferred until model selection; no paper result attribution found."
+    },
+    {
+      "path": "/mnt/afs/task3_2/L202500276_lwz/projects/WARM/runs/rmbench_official50_specialists/press_button-s3407-v2/checkpoints/weights/step_012000.pt",
+      "step": 12000,
+      "model_schema_version": 3,
+      "embedded_config_sha256": "1dab27c4e098c522fccfe8eb0969df360af615cce0670ee3830e1a0b671ba712",
+      "checkpoint_file_sha256": null,
+      "paper_run_mapping": null,
+      "missing_reason": "Metadata read only. Full file hash deferred until model selection; no paper result attribution found."
+    }
+  ],
+  "ablation_attribution": [
+    {
+      "paper_row": "Neither event store",
+      "evidence_type": "U",
+      "checkpoint_sha256": null,
+      "raw_episode_records": null,
+      "missing_reason": "Paper aggregate only; no matched training or intervention provenance recovered."
+    },
+    {
+      "paper_row": "Recollection only",
+      "evidence_type": "U",
+      "checkpoint_sha256": null,
+      "raw_episode_records": null,
+      "missing_reason": "Paper aggregate only; no matched training or intervention provenance recovered."
+    },
+    {
+      "paper_row": "Repertoire only",
+      "evidence_type": "U",
+      "checkpoint_sha256": null,
+      "raw_episode_records": null,
+      "missing_reason": "Paper aggregate only; no matched training or intervention provenance recovered."
+    },
+    {
+      "paper_row": "Full WARM",
+      "evidence_type": "U",
+      "checkpoint_sha256": null,
+      "raw_episode_records": null,
+      "missing_reason": "Paper aggregate only; no matched training or intervention provenance recovered."
+    },
+    {
+      "paper_row": "Gaussian source",
+      "evidence_type": "U",
+      "checkpoint_sha256": null,
+      "raw_episode_records": null,
+      "missing_reason": "Paper aggregate only; no matched training or intervention provenance recovered."
+    },
+    {
+      "paper_row": "Without explicit comparison",
+      "evidence_type": "U",
+      "checkpoint_sha256": null,
+      "raw_episode_records": null,
+      "missing_reason": "Paper aggregate only; no matched training or intervention provenance recovered."
+    }
+  ],
+  "raw_discovery_artifacts": "/mnt/afs/task3_2/L202500276_lwz/projects/WARM_evaluations/nonreal_72h_20260921",
+  "scope_limitation": "Targeted server directories only; not a claim that artifacts do not exist elsewhere."
+}

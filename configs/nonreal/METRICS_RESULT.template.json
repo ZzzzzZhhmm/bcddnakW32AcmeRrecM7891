@@ -1,0 +1,15 @@
+{
+  "schema":"warm.nonreal.metrics-template.v1",
+  "experiment_id":null,
+  "input_sha256":null,
+  "metric_config_sha256":null,
+  "source_sha256":null,
+  "sample_count":null,
+  "eligible_count":null,
+  "coverage":null,
+  "mean":null,
+  "std":null,
+  "ci95":null,
+  "supports_claim":null,
+  "missing_reason":"No verified experiment result has been entered."
+}

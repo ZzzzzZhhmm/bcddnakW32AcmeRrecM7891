@@ -271,7 +271,7 @@ def test_all_null_gate_loss_is_differentiable_zero() -> None:
     loss.backward()
 
 
-def test_candidate_confidence_is_shift_invariant_and_ambiguous_rows_fall_back() -> None:
+def test_candidate_confidence_is_shift_invariant_and_entropy_is_not_a_veto() -> None:
     scores = torch.tensor([[0.001, 0.0, -0.001], [2.0, -1.0, -2.0]])
     kwargs = {
         "consistency_scores": torch.zeros_like(scores),
@@ -301,8 +301,8 @@ def test_candidate_confidence_is_shift_invariant_and_ambiguous_rows_fall_back() 
         inference_gate_threshold=0.01,
         hard_reject=True,
     )
-    assert acceptance.accepted_mask.tolist() == [False, True]
-    assert acceptance.effective_probability[0].item() == 0.0
+    assert acceptance.accepted_mask.tolist() == [True, True]
+    torch.testing.assert_close(acceptance.effective_probability, gate_output.probability)
 
 
 def test_factual_stagnation_forces_explicit_gaussian_null() -> None:
@@ -331,7 +331,7 @@ def test_factual_stagnation_forces_explicit_gaussian_null() -> None:
     assert acceptance.effective_probability.tolist() == [0.0]
 
 
-def test_training_source_exposure_is_not_multiplied_by_deployment_heuristics() -> None:
+def test_train_and_infer_share_progress_attenuation_but_not_alpha_threshold() -> None:
     selection = select_consequence_candidate(
         torch.zeros(1, 3),
         torch.zeros(1, 3),
@@ -340,10 +340,8 @@ def test_training_source_exposure_is_not_multiplied_by_deployment_heuristics() -
         automatic_null=False,
         selection_temperature=0.25,
     )
-    # This deliberately ambiguous row fails the deployment entropy check, but
-    # its learned gate must still expose Action DiT to a differentiable source
-    # during training.  Otherwise the gate/source path starves before it can
-    # learn to disambiguate equivalent demonstrations.
+    # Entropy is an observed feature, not a hard veto. Training and inference
+    # share progress attenuation; only inference applies the alpha threshold.
     probability = torch.tensor([0.4])
     gate = GateOutput(
         logits=torch.logit(probability),
@@ -354,7 +352,7 @@ def test_training_source_exposure_is_not_multiplied_by_deployment_heuristics() -
     training = calibrate_source_acceptance(
         gate,
         selection,
-        torch.tensor([1.0]),
+        torch.tensor([0.05]),
         minimum_candidate_probability=0.9,
         maximum_candidate_entropy=0.1,
         stagnation_decay=3.0,
@@ -363,13 +361,14 @@ def test_training_source_exposure_is_not_multiplied_by_deployment_heuristics() -
         hard_reject=False,
     )
     assert training.accepted_mask.tolist() == [True]
-    torch.testing.assert_close(training.effective_probability, probability)
-    assert training.quality.tolist() == [1.0]
+    expected_quality = torch.exp(torch.tensor([-3.0 * 0.05]))
+    torch.testing.assert_close(training.effective_probability, probability * expected_quality)
+    torch.testing.assert_close(training.quality, expected_quality)
 
     inference = calibrate_source_acceptance(
         gate,
         selection,
-        torch.tensor([1.0]),
+        torch.tensor([0.05]),
         minimum_candidate_probability=0.9,
         maximum_candidate_entropy=0.1,
         stagnation_decay=3.0,

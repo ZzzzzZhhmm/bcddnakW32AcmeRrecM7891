@@ -1,0 +1,8 @@
+{
+  "tasks": ["put_back_block", "press_button"],
+  "bootstrap": 10000,
+  "seed": 3407,
+  "candidate_metrics": {"delta_obs": 0.001, "delta_pred": 0.001, "magnitude_weight": 0.25, "top_tolerance": 0.001},
+  "status": "proposed_freeze_before_collection",
+  "note": "Thresholds are a proposed new protocol, not recovered paper settings. Keep natural and donor cohorts separate."
+}
