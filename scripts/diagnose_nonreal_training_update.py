@@ -17,6 +17,13 @@ ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'src'))
 
 
+def native_bf16_training_loss(model, sample):
+    """Match Accelerate+DeepSpeed BF16, which disables native AMP autocast."""
+    import torch
+    with torch.autocast(device_type=torch.device(model.device).type, enabled=False):
+        return model.training_loss(sample)
+
+
 def compare_updates(state, gradients, *, learning_rate, weight_decay):
     import torch
     output={}
@@ -76,7 +83,9 @@ def main():
     torch.manual_seed(int(cfg.seed))
     print('stage=load_model',flush=True)
     model=instantiate(cfg.model,model_dtype=torch.bfloat16,device='cuda:0')
+    print('stage=load_checkpoint',flush=True)
     model.load_checkpoint(str(args.checkpoint))
+    print('stage=validate_dataset',flush=True)
     model.validate_training_dataset(dataset)
     parameters=Wan22Trainer._apply_dit_only_train_mode(model,training_stage='shared')
     parameter_ids={id(value) for value in parameters}
@@ -91,7 +100,7 @@ def main():
                   historical_learning_rate=learning_rate,historical_gate_gradient=last['metrics'].get('warm_grad_source_gate'),
                   bank_sha256=dataset.resolver.bank_content_sha256,query_corpus_sha256=dataset.resolver.query_corpus_sha256,
                   registered_gate_parameters=registered,trainable_parameters=sum(p.numel() for p in parameters),
-                  batch_size=1,gradient_accumulation=1,precision='bf16',seed=int(cfg.seed),gpu=torch.cuda.get_device_name(0),
+                  batch_size=1,gradient_accumulation=1,precision='bf16',native_autocast=False,seed=int(cfg.seed),gpu=torch.cuda.get_device_name(0),
                   scope='engineering gradient-path and fresh gate-only optimizer probe; no model update or distributed resume')
     (args.output/'manifest.json').write_text(json.dumps(manifest,indent=2))
     rows=[]
@@ -103,8 +112,7 @@ def main():
         torch.cuda.reset_peak_memory_stats()
         tick=time.perf_counter()
         print(f'stage=forward task={prefix["task"]}',flush=True)
-        with torch.autocast(device_type='cuda',dtype=torch.bfloat16):
-            loss,metrics=model.training_loss(sample)
+        loss,metrics=native_bf16_training_loss(model,sample)
         if not bool(torch.isfinite(loss)):
             raise RuntimeError('nonfinite training loss')
         print(f'stage=backward task={prefix["task"]}',flush=True)

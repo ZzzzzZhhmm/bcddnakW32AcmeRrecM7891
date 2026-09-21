@@ -1,6 +1,6 @@
 # 剩余实验数据与下一步执行指令
 
-2026-09-21更新：W02-A与W06工程诊断已完成；N00单卡真实TRAIN梯度诊断已于13:30:28 UTC启动，勿重复申请ACP。原ZeRO FP32 master已确认保留gate bias小更新，不能将BF16 bias不变判断为没有训练。所有已获数值见[实验记录](EXPERIMENT_RECORD_ZH.md)。
+2026-09-21更新：W02-A与W06工程诊断已完成；N00首轮因诊断脚本的额外autocast导致dtype错误，失败已归档。修正后的R2单卡真实TRAIN梯度诊断已于13:47:25 UTC启动，勿重复申请ACP。原ZeRO FP32 master已确认保留gate bias小更新，不能将BF16 bias不变判断为没有训练。所有已获数值见[实验记录](EXPERIMENT_RECORD_ZH.md)。
 
 ## 尚缺什么
 
@@ -31,9 +31,9 @@
 
 ```bash
 set -euo pipefail
-RUN=/mnt/afs/task3_2/L202500276_lwz/projects/WARM_evaluations/nonreal_train_update_20260921
+RUN=/mnt/afs/task3_2/L202500276_lwz/projects/WARM_evaluations/nonreal_train_update_r2_20260921
 tail -n 30 "$RUN/probe01.launcher.log"
-cat "$RUN/job_logs/20260921T133028Z-71cd4c61/run_manifest.json"
+cat "$RUN/job_logs/20260921T134725Z-185052cc/run_manifest.json"
 ```
 
 真实任务为Press Button与Put Back Block各一个TRAIN microbatch的完整loss/backward与隔离gate更新对照，预计15–25分钟，加载慢时可能更久。只有wrapper complete/exit0与输出验收通过才记为完成；不把它写成四卡resume或正式任务SR。

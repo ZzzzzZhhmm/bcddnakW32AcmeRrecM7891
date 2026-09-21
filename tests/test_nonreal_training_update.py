@@ -28,3 +28,19 @@ def test_saved_master_slice_crosses_rank_boundary_without_full_concat():
     assert torch.equal(other.slice_partitions(partitions,3,3),torch.tensor([3,4,5]))
     with pytest.raises(ValueError,match='exceeds'):
         other.slice_partitions(partitions,7,2)
+
+
+def test_training_probe_disables_native_autocast_like_deepspeed():
+    torch=pytest.importorskip('torch')
+
+    class Model:
+        device='cpu'
+
+        def training_loss(self, sample):
+            assert not torch.is_autocast_enabled('cpu')
+            return sample
+
+    with torch.autocast('cpu',dtype=torch.bfloat16):
+        assert torch.is_autocast_enabled('cpu')
+        assert module.native_bf16_training_loss(Model(),42)==42
+        assert torch.is_autocast_enabled('cpu')
