@@ -1,9 +1,9 @@
 # 一条ACP命令：续训、验收、新模型门控与条件source诊断
 
-2026-09-23。申请 **4×H100 80GB、24小时**，仅提交下面这一条，不再同时提交旧续训命令：
+2026-09-24 R2修复。旧任务因训练Shell依赖的CRLF换行在Python启动前退出127；不要重提旧命令。申请 **4×H100 80GB、24小时**，仅提交下面这一条：
 
 ```bash
-bash /mnt/afs/task3_2/L202500276_lwz/projects/WARM_evaluations/nonreal_bundle_20260923/code/scripts/acp_nonreal_bundle.sh
+bash /mnt/afs/task3_2/L202500276_lwz/projects/WARM_evaluations/nonreal_bundle_20260924_r2/code/scripts/acp_nonreal_bundle.sh
 ```
 
 预计 **17–21小时**：原续训16–20小时，新的checkpoint验收和DEV诊断约0.5–1小时，另留初始化余量。新入口设23小时运行预算，训练阶段外层最多22小时；剩余时间不足会保留结果并报告不完整，不超时硬塞下一步。总ACP仍申请24小时。训练需要4卡，随后诊断仅使用分配中可见的第1张卡，不能把其余卡当成新的4卡配额。
@@ -11,7 +11,7 @@ bash /mnt/afs/task3_2/L202500276_lwz/projects/WARM_evaluations/nonreal_bundle_20
 ## 自动执行内容
 
 1. 核验已冻结源码、原续训plan/config及DEV身份；做一次有日志的renderer检查。renderer失败不阻塞CUDA训练，但绝不放行仿真分支。
-2. 调用原不可变四卡入口，从完整step300状态续至预声明step15000。保持30000总schedule及global batch128；不修改旧源码或旧plan。
+2. 直接调用原不可变`nonreal_resume.py run`，绕过旧Shell依赖；启动环境由已通过实际执行预检的bundle Shell提供。从完整step300状态续至预声明step15000，保持30000总schedule及global batch128；不修改旧源码或旧plan。
 3. 验证作业状态、最后训练步、metrics哈希、目标weights/attestation、四rank状态文件与scheduler、parent lineage和解析配置身份。CPU读取gate权重，但不把权重变化当成真实接受能力。
 4. 在**新15k checkpoint**上运行一次Full自然门控诊断：Press Button/Put Back Block各5个DEV episodes、每episode5个冻结前缀，共50个；NFE20、seed3407，与旧诊断同一bank/query/normalizer/prefix身份。
 5. 从保存的数组复算自然g。若50个全为0，停止这批前缀的source对照，不重复三个已知退化分支；若非零，则用两个独立进程追加scale-only与Gaussian，与已保存Full配对。Full不再重跑，固定噪声、候选、选择、conditioning和g的一致性逐项检查。
@@ -30,7 +30,7 @@ bash /mnt/afs/task3_2/L202500276_lwz/projects/WARM_evaluations/nonreal_bundle_20
 
 ## 日志、记录与重启
 
-根目录：`/mnt/afs/task3_2/L202500276_lwz/projects/WARM_evaluations/nonreal_bundle_20260923`。
+根目录：`/mnt/afs/task3_2/L202500276_lwz/projects/WARM_evaluations/nonreal_bundle_20260924_r2`。旧失败目录`nonreal_bundle_20260923`原样保留，R2使用独立输出。
 
 - `bundle.launcher.log`：总控制台。
 - `run/bundle_summary.json`：阶段状态、验证过的checkpoint、新数值与论文阻塞。
@@ -43,10 +43,10 @@ bash /mnt/afs/task3_2/L202500276_lwz/projects/WARM_evaluations/nonreal_bundle_20
 
 ## 已验证与限制
 
-本地和CCI均通过19项相关测试，覆盖完整性拒绝、阶段证据改动、失败日志、零/非零gate分支、Full只运行一次、旧训练不重复启动及原resume/source逻辑；shell语法与CCI CPU预检通过。未执行真实四卡恢复，也没有新15k模型可进行完整推理验收；这些检查在任务现场严格执行，不能保证计算任务绝不失败。
+R2本地21项通过、1项Linux专用测试跳过；CCI全部22项通过（10.90秒）。新增回归覆盖旧依赖CRLF不再执行、活动Shell含CR被拒绝、真实Bash依赖链执行及离线/模型路径环境。已在CCI实际运行本页命令加`--preflight`，完成Shell初始化和原Python CLI调用；不再只依赖`bash -n`。未执行真实四卡恢复或新15k模型推理，现场检查仍保留。
 
-新汇总器也读取并核验了已有N06-R2的全部50条原始Full数组，复算得到既有的10 episodes、g非零0/50、alpha均值0.119140625、mean c²=1。记录为`reader_compatibility.json`，只证明读取兼容性；没有重新运行推理，不新增或重复计入实验样本。
+汇总器此前读取并核验了已有N06-R2的全部50条原始Full数组，复算得到既有的10 episodes、g非零0/50、alpha均值0.119140625、mean c²=1。记录仍在旧目录`reader_compatibility.json`；R2没有修改该汇总逻辑，也没有重新运行推理或增加样本量。
 
-新流水线精确源码SHA-256：`70f316e0e2e46718ba33b2dea2d0bb5836ce0fcb446ecf895fb98aa127757265`；旧训练源码仍为`665d0620a2a8a15e1d3daaa2ddad38e6ca7c383f8af5aa407ef0784aff797bda`。部署包SHA-256：`348643a15b022e57c6760230b4bd093ff90e687ab4bc726e041b0832a7f68451`。原始plan、CPU日志和测试日志已下载至仓库外`L/bundle_20260923`，L见主实验记录第3节。
+R2源码SHA-256：`976b74014e46451a84ca311fb374d3dcbc5468c9eb1f969940ce5a641450319f`；旧训练源码仍为`665d0620a2a8a15e1d3daaa2ddad38e6ca7c383f8af5aa407ef0784aff797bda`。最终部署包`code_final.tar.gz` SHA-256：`a4408a97f4c663d8c0d49daee3fa0a28e054713aeb9eb093992538b9cd4123ba`；R2 plan SHA-256：`d6e3ef2b07e4b673948c5f3f8b7e8ba8957e948bdf7533e7edf072b02e0d74e9`。原始plan、预检、测试、失败审计和旧失败完整归档保存在本目录及仓库外`L/bundle_fix_20260924_r2`，L见主实验记录第3节。
 
-准备阶段共享AFS不允许tar恢复属主，首次解包返回非零，尚未启动任何实验；随后以`--no-same-owner`重新完成相同包的解压并通过身份核验。该部署问题不占用ACP GPU试验，也未触及原训练快照。
+原训练`started.json`不存在，stage1没有训练输出，因此本次重提不会重复已完成的optimizer steps。R2通过直接Python调用保留原快照字节，不要对原训练目录就地执行换行转换，否则会破坏已绑定的source哈希。仓库新增Shell的LF属性，部署预检另核验实际使用的Shell字节。准备过程中Linux测试夹具曾将临时plan放错层级，已修正并保留首次测试日志；真正部署目录的Shell预检始终通过。

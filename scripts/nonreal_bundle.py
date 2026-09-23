@@ -11,6 +11,7 @@ from datetime import datetime, timezone
 import json
 import os
 from pathlib import Path
+import subprocess
 import sys
 import time
 import uuid
@@ -46,6 +47,32 @@ def tree_files(root):
             for p in sorted(root.rglob('*')) if p.is_file()}
 
 
+def training_command(plan):
+    """The bundle already sets caches/offline/thread env; never source legacy shells.
+
+    Calling the frozen Python entrypoint preserves its original ROOT, full-state
+    validation, four-rank launcher and source identity, including legacy CRLF files.
+    """
+    port = int(os.environ.get('MASTER_PORT', '29622'))
+    if not 1 <= port <= 65535:
+        raise ValueError('MASTER_PORT must be 1..65535')
+    return [sys.executable, str(Path(plan['resume_code']) / 'scripts/nonreal_resume.py'),
+            'run', '--plan', plan['resume_plan'], '--port', str(port)]
+
+
+def check_training_entrypoint(plan):
+    for name in ('acp_nonreal_bundle.sh', 'warm_server_common.sh'):
+        if b'\r' in (ROOT / 'scripts' / name).read_bytes():
+            raise ValueError('active shell dependency requires LF line endings: ' + name)
+    command = training_command(plan)
+    result = subprocess.run([*command, '--help'], cwd=plan['resume_code'],
+                            capture_output=True, text=True, timeout=60)
+    if result.returncode or '--plan' not in result.stdout:
+        raise ValueError('frozen Python training entrypoint failed: ' + result.stderr[-2000:])
+    return dict(status='passed', training_argv=command,
+                scope='Executed the real frozen Python CLI with --help; no optimizer restore or training.')
+
+
 def validate_plan(path):
     plan = read(path)
     if plan.get('schema') != 'warm.nonreal.bundle.v1':
@@ -75,6 +102,7 @@ def validate_plan(path):
     cfg = OmegaConf.load(resume['config'])
     if cfg.data.val.episode_split != 'dev' or cfg.data.val.is_training_set:
         raise ValueError('post-training probes require the declared DEV split')
+    check_training_entrypoint(plan)
     return plan, resume
 
 
@@ -262,7 +290,7 @@ class Bundle:
             self.save()
             code = run_logged(dict(max_seconds=min(22 * 3600, int(self.deadline - time.monotonic()) - 600),
                                    evidence_type='training', claim='Original 300-to-15000 full-state continuation'),
-                              ['bash', str(Path(self.plan['resume_code']) / 'scripts/acp_nonreal_resume.sh'), self.plan['resume_plan']],
+                              training_command(self.plan),
                               job, source=source_identity(ROOT))
             if code:
                 self.report['stages']['training'] = dict(status='failed', path=str(job), exit_code=code)

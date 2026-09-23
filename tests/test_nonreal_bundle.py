@@ -1,6 +1,8 @@
 import importlib.util
 import json
 from pathlib import Path
+import subprocess
+import sys
 
 import numpy as np
 import pytest
@@ -162,3 +164,60 @@ def test_new_checkpoint_pipeline_collects_full_once_and_controls_conditionally(t
     assert ('paired_source' in stages) == controls
     assert b.report['status'] == 'completed_available_stages'
     assert b.report['paper_evidence_complete'] is False
+
+
+def test_legacy_crlf_shell_is_never_executed(tmp_path, monkeypatch):
+    m = module()
+    scripts = tmp_path / 'scripts'
+    scripts.mkdir()
+    # This reproduces the real failure: a valid entrypoint sources a CRLF helper.
+    (scripts / 'warm_server_common.sh').write_bytes(b'#!/bin/bash\r\n\r\nfalse\r\n')
+    (scripts / 'acp_nonreal_resume.sh').write_text('exit 127\n')
+    (scripts / 'nonreal_resume.py').write_bytes(
+        b'import argparse\r\np=argparse.ArgumentParser()\r\n'
+        b'p.add_argument("command")\r\np.add_argument("--plan")\r\n'
+        b'p.add_argument("--port")\r\np.parse_args()\r\n')
+    plan = dict(resume_code=str(tmp_path), resume_plan=str(tmp_path / 'plan.json'))
+    monkeypatch.setenv('MASTER_PORT', '29577')
+    command = m.training_command(plan)
+    assert command[0] == sys.executable and command[-1] == '29577'
+    assert all(not token.endswith('.sh') for token in command)
+    result = subprocess.run(command, capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+
+
+def test_preflight_executes_frozen_python_and_rejects_crlf_active_shell(tmp_path, monkeypatch):
+    m = module()
+    scripts = tmp_path / 'scripts'
+    scripts.mkdir()
+    for name in ('acp_nonreal_bundle.sh', 'warm_server_common.sh'):
+        (scripts / name).write_bytes(b'#!/bin/bash\ntrue\n')
+    (scripts / 'nonreal_resume.py').write_text('import argparse\np=argparse.ArgumentParser()\np.add_argument("--plan")\np.parse_args()\n')
+    monkeypatch.setattr(m, 'ROOT', tmp_path)
+    plan = dict(resume_code=str(tmp_path), resume_plan='plan.json')
+    assert m.check_training_entrypoint(plan)['status'] == 'passed'
+    (scripts / 'warm_server_common.sh').write_bytes(b'#!/bin/bash\r\n')
+    with pytest.raises(ValueError, match='LF line endings'):
+        m.check_training_entrypoint(plan)
+
+
+def test_bundle_preflight_runs_actual_shell_dependency_chain(tmp_path):
+    if sys.platform == 'win32':
+        pytest.skip('Run actual Bash dependency-chain integration on CCI/Linux')
+    m = module()
+    scripts = tmp_path / 'code/scripts'
+    scripts.mkdir(parents=True)
+    original = Path(__file__).resolve().parents[1] / 'scripts'
+    for name in ('acp_nonreal_bundle.sh', 'warm_server_common.sh'):
+        (scripts / name).write_bytes((original / name).read_bytes())
+    write(tmp_path / 'bundle_plan.json', {})
+    (scripts / 'nonreal_bundle.py').write_text(
+        'import os,sys\nassert "--validate" in sys.argv\n'
+        'assert os.environ["HF_HUB_OFFLINE"] == "1"\n'
+        'assert os.environ["DIFFSYNTH_MODEL_BASE_PATH"]\n'
+        'assert os.environ["OMP_NUM_THREADS"] == "4"\nprint("shell_chain_passed")\n')
+    env = dict(m.os.environ, WARM_PYTHON=sys.executable)
+    result = subprocess.run(['bash', str(scripts / 'acp_nonreal_bundle.sh'), '--preflight'],
+                            env=env, text=True, capture_output=True, timeout=30)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert 'shell_chain_passed' in result.stdout

@@ -2,6 +2,8 @@
 
 **2026-09-23：推荐改用 [一条ACP合并入口](ACP_BUNDLE_ZH.md)。** 新入口内部调用本文原续训，再自动验收并执行新checkpoint诊断。不要同时提交两者；本文保留原训练细节与身份，不作废原plan。
 
+**2026-09-24修复：旧Shell调用链已确认含CRLF，使用下方R2入口直接调用原Python恢复程序。** 原plan、checkpoint、源码身份保留；不要直接运行旧`acp_nonreal_resume.sh`快照。
+
 2026-09-22。目的：解除当前只有v8 smoke300、自然gate全零覆盖的前置阻塞，为尚缺的W01/W02/W06提供兼容checkpoint。不是重跑已完成的零门控、source或梯度诊断，也不重训六种消融。
 
 ## 第一段：300 → 15000
@@ -9,8 +11,7 @@
 在同一共享盘、同一训练软件环境的 **4×H100 80GB** ACP上提交一次：
 
 ```bash
-bash /mnt/afs/task3_2/L202500276_lwz/projects/WARM_evaluations/nonreal_resume_20260922/code/scripts/acp_nonreal_resume.sh \
-  /mnt/afs/task3_2/L202500276_lwz/projects/WARM_evaluations/nonreal_resume_20260922/stage1/plan.json
+bash /mnt/afs/task3_2/L202500276_lwz/projects/WARM_evaluations/nonreal_bundle_20260924_r2/code/scripts/acp_nonreal_bundle.sh
 ```
 
 保持ACP分配的GPU可见性，脚本不覆盖为其他GPU。不要在CCI单卡上运行此命令。已部署的源码快照独立于同学正在修改的主仓库，任务不执行fetch、pull或远端探测。

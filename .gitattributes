@@ -1,0 +1,2 @@
+# Shell entrypoints are executed on Linux, including when packaged on Windows.
+*.sh text eol=lf

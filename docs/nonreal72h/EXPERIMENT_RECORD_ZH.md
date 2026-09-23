@@ -200,3 +200,15 @@ bash "$RUN_ROOT/code/scripts/acp_nonreal72h.sh" "$RUN_ROOT/dev50.job.json"
 新汇总器对已有N06-R2的50条Full原始数组完成读取兼容性核验，复算10 episodes、g非零0/50、alpha均值0.119140625及mean c²=1，与第1/4节一致。`reader_compatibility.json`明确标记`new_experiment=false`；没有重新采样/推理，不新增样本量或替换已有表格结果。
 
 新源码集合SHA-256：`70f316e0e2e46718ba33b2dea2d0bb5836ce0fcb446ecf895fb98aa127757265`；部署包SHA-256：`348643a15b022e57c6760230b4bd093ff90e687ab4bc726e041b0832a7f68451`；`bundle_plan.json` SHA-256：`10f6c1bd390dc15a782a4f1644337c9f79b54595a8ec827af646557d3695e37a`；服务器`tests.log` SHA-256：`f7afd6f4c680496df60bdb5421565c866fecc2342ab5b83a09bee1bca504c83a`。仍调用已验证的旧训练源码`665d0620a2a8a15e1d3daaa2ddad38e6ca7c383f8af5aa407ef0784aff797bda`，不让Git同步改变运行中的源码。
+
+## 13. 2026-09-24 ACP启动失败修复与R2交付（未开始训练，无新性能结果）
+
+作者上传`logs-acp-20260924T010802.txt.gz`，SHA-256 `a3a996c4c88b7df86781f255d818494238a3ed27e24973c39f3fbcf6b5c9e5fe`。服务器原任务的renderer阶段exit1（仍缺图形环境）；训练子阶段`training-e4a44aaf`于2026-09-23 16:18:59.824–16:19:00.835 UTC运行1.01075秒后exit127，原`warm_server_common.sh`第2行报`$'\r': command not found`。该旧helper含194个CRLF换行，SHA-256 `f8546127e29f3044a665a6b9cecae14f94d98f082c4e8787ff9d81ee2e31c3c5`。这是Shell启动错误，Vulkan警告不是训练退出原因。
+
+现场确认原stage1只有plan、config、Hydra解析及lock，没有`started.json`、job或训练输出；原Python恢复程序尚未执行，新增optimizer steps为0。本次不是训练性能失败，不报告loss、SR或gate新数值，也不重跑已完成诊断。原失败根`S/nonreal_bundle_20260923`保持原样，完整失败归档`previous_failure.tar.gz` SHA-256 `1051a8772ee60593a2284bc7177adfb4c5ad9e61d71093efc9f7f2b88d3dd390`，已下载至本地。
+
+修复：新入口在已配置好离线模型路径、线程和本地缓存的bundle环境中直接调用原不可变`nonreal_resume.py run`，不再source旧Shell；原源码SHA-256仍为`665d0620a2a8a15e1d3daaa2ddad38e6ca7c383f8af5aa407ef0784aff797bda`，原resume plan SHA-256仍为`dd4a8332becec36d2b64cacc4bf3ea6ef723fb0b9f85e9959e1874c603a0fdb9`。训练配置、父weights/state、总schedule、随机种子及target15000未改变。新增真实Shell `--preflight`、原Python CLI启动检查、活动Shell字节检查和Git的Shell LF属性；禁止就地转换旧快照破坏其身份。
+
+R2已部署在`S/nonreal_bundle_20260924_r2`，输出独立。实际在CCI执行最终Shell命令加`--preflight`通过；Linux全部22项测试通过（10.90秒），Windows本地21项通过、1项Linux专用集成测试跳过。新增用例覆盖旧CRLF依赖被绕过、真实Shell初始化和环境变量。准备时新增Linux测试夹具的临时plan层级有误，修正后全通过，第一次测试与plan保存在`preparation_r1`；生产R2 Shell预检在修正夹具前后都通过。真实四rank恢复及15k推理仍待ACP现场，不声称已完成。
+
+R2精确源码SHA-256 `976b74014e46451a84ca311fb374d3dcbc5468c9eb1f969940ce5a641450319f`；R2 plan SHA-256 `d6e3ef2b07e4b673948c5f3f8b7e8ba8957e948bdf7533e7edf072b02e0d74e9`；最终部署包`code_final.tar.gz` SHA-256 `a4408a97f4c663d8c0d49daee3fa0a28e054713aeb9eb093992538b9cd4123ba`。原始失败日志、失败目录归档、`failure_audit.json`、plan、实际Shell预检与测试日志双端保存于R2根和`L/bundle_fix_20260924_r2`。最新重提命令见 [ACP_BUNDLE_ZH.md](ACP_BUNDLE_ZH.md)；申请4×H100 80GB、24小时，仅提交R2一次，不再运行旧Shell入口。
