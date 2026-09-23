@@ -1,6 +1,10 @@
 {
   "schema": "warm.nonreal.task-board.v1",
-  "deadline_hours": 72,
+  "deadline_hours": 36,
+  "updated_date": "2026-09-23",
+  "current_paper_plan": "docs/nonreal72h/PLAN_36H_20260923_ZH.md",
+  "paper_gap_inventory": "docs/nonreal72h/PAPER_GAPS_20260923.json",
+  "priority_note": "Reuse one qualified candidate-branch cohort for new tables 4/17/18/23; do not rerun completed tables 19/21/24. Checkpoint training, rendering and full-state restore remain prerequisites. Older W identifiers below are retained for traceability.",
   "acp_max_hours": 24,
   "runner_max_hours": 23,
   "resources": {
@@ -90,8 +94,9 @@
     },
     {
       "id": "W07",
-      "priority": "P1",
-      "status": "deferred"
+      "priority": "P0",
+      "status": "requirement_only_mask_implementation_pending",
+      "scope": "New table 23: three history reads share fixed S1 candidates and independent branch labels; forecast-only fallback cannot fill applicable choice."
     },
     {
       "id": "W08",

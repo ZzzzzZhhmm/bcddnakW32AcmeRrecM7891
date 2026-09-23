@@ -1,0 +1,481 @@
+{
+  "schema": "warm.paper-gap-audit.v1",
+  "entrypoint": "iclr2027_conference.tex",
+  "active_sources": [
+    {
+      "path": "iclr2027_conference.tex",
+      "sha256": "289182441c7d65c49d735b1532452ea989b0e0ab742242a5d33e33c3e7630481"
+    },
+    {
+      "path": "math_commands.tex",
+      "sha256": "ee13aa457a2736ce81e06b11e4908c840896140ce9f130656949b668d4666e27"
+    },
+    {
+      "path": "sec/0_abstract.tex",
+      "sha256": "34376e18bda8679ed0ffcf2980f146bed20a39c42a87c932cb631c2071c998c7"
+    },
+    {
+      "path": "sec/1_instruction.tex",
+      "sha256": "d5dd2b1ccad719ceaef4b58abc1901254c8ac5284798d3990365f72707028bc3"
+    },
+    {
+      "path": "sec/2_related_works.tex",
+      "sha256": "512599731a1e2eee08b19abe9b4b17223894989f0f63b9e86f4d397a9fd64fa1"
+    },
+    {
+      "path": "sec/3_method.tex",
+      "sha256": "93887d447d86f4bc665ff07d3b365177c6cb2ae68b0c34e0170673cea41e5410"
+    },
+    {
+      "path": "sec/4_experiment.tex",
+      "sha256": "11ea5e9840313fdab7bd7bd6e4b61543baf495d74666f6e49315657ce5535cf4"
+    },
+    {
+      "path": "sec/5_conlcusion.tex",
+      "sha256": "fdd1ad74595b67c1ef579225d60ac95c97f9248b2ac9b42dfec1f37d6b5ef6f6"
+    },
+    {
+      "path": "sec/888_statements.tex",
+      "sha256": "1ad1d6f9f921335dea9d296f2444927e8bd34cc949f825ddfb6b832863e30dd1"
+    },
+    {
+      "path": "sec/999_appendix.tex",
+      "sha256": "72ea86ad62de32b934d762cf961254a51051906a944af40a330661aa1a689246"
+    },
+    {
+      "path": "sec/appendices/a_method_details.tex",
+      "sha256": "71525fda00afebcf6ecc8d2560821b3da101e239f6f30dca96ef0a2ac635579c"
+    },
+    {
+      "path": "sec/appendices/b_experimental_details.tex",
+      "sha256": "a6e92fda55cb87b8455a481b2bb34dba03d2f4994e4b62f8fa3fd6340b9b109c"
+    },
+    {
+      "path": "sec/appendices/c_additional_results.tex",
+      "sha256": "ae5979610df18c88da5fe7f7539a9b3a629386934c18acb8d945105fcf8f5692"
+    }
+  ],
+  "tables": [
+    {
+      "number": 1,
+      "file": "sec/4_experiment.tex",
+      "line": 33,
+      "labels": [
+        "tab:libero",
+        "tab:main"
+      ],
+      "caption_tex": "\\textbf{LIBERO success rates (\\%).} Across comparative tables, bold/underlining indicate the best/second-best values for each metric and setting, including ties. References retain published protocols; WLA-0 uses standard inference. Sources and status appear in Appendix~\\ref{app:protocols}.",
+      "tbd_markers": 0,
+      "red_numeric_placeholders": 0,
+      "red_text_fields": 0
+    },
+    {
+      "number": 2,
+      "file": "sec/4_experiment.tex",
+      "line": 76,
+      "labels": [
+        "tab:rmbench"
+      ],
+      "caption_tex": "\\textbf{RMBench success rates (\\%).} TMC: task memory complexity; VA: visual anchors. Dashes indicate unavailable results. Reference protocols and reporting status are specified in Appendix~\\ref{app:protocols}.",
+      "tbd_markers": 0,
+      "red_numeric_placeholders": 0,
+      "red_text_fields": 0
+    },
+    {
+      "number": 3,
+      "file": "sec/4_experiment.tex",
+      "line": 172,
+      "labels": [
+        "tab:ablation"
+      ],
+      "caption_tex": "\\textbf{Component comparisons (\\%).} The upper block varies store access; the lower block tests source initialization and explicit comparison. Rankings span both blocks. Appendix~\\ref{app:ablation_defs} provides definitions and run-attribution status for all six evaluated variants.",
+      "tbd_markers": 0,
+      "red_numeric_placeholders": 0,
+      "red_text_fields": 0
+    },
+    {
+      "number": 4,
+      "file": "sec/4_experiment.tex",
+      "line": 256,
+      "labels": [
+        "tab:effect_probes"
+      ],
+      "caption_tex": "\\textbf{Candidate-effect assessment.} Rows share states, proposals, and independent applicability labels. Bold/underlining mark best/second-best values; tie rate is diagnostic. Query-only ordering and ties are analytical; Appendix~\\ref{app:effect_probes} details the metrics and coverage.",
+      "tbd_markers": 0,
+      "red_numeric_placeholders": 10,
+      "red_text_fields": 0,
+      "placeholder_rows_tex": [
+        "Historical $E_i$ & \\resultpending{0.084} & \\resultpending{\\underline{0.63}} & \\resultpending{1.5\\%} & \\resultpending{\\underline{64.0\\%}}",
+        "Query-only $r_t$ & \\resultpending{\\underline{0.071}} & $1/2$ (ties) & $100\\%$ (ties) & \\resultpending{52.0\\%}",
+        "Predicted $\\widehat E_i$ & \\resultpending{\\textbf{0.052}} & \\resultpending{\\textbf{0.76}} & \\resultpending{1.0\\%} & \\resultpending{\\textbf{78.0\\%}}"
+      ]
+    },
+    {
+      "number": 5,
+      "file": "sec/appendices/a_method_details.tex",
+      "line": 141,
+      "labels": [
+        "tab:app_visibility"
+      ],
+      "caption_tex": "\\textbf{From module inputs to control outputs.} Each row names the computation, its direct inputs, and its output's role. Demonstrated actions and futures supply training targets and corruption controls; the reads below use their stated context.",
+      "tbd_markers": 0,
+      "red_numeric_placeholders": 0,
+      "red_text_fields": 0
+    },
+    {
+      "number": 6,
+      "file": "sec/appendices/a_method_details.tex",
+      "line": 601,
+      "labels": [
+        "tab:notation_index"
+      ],
+      "caption_tex": "\\textbf{Notation and module index.} Meanings, computational roles, and definition references for all seven groups.",
+      "tbd_markers": 0,
+      "red_numeric_placeholders": 0,
+      "red_text_fields": 0
+    },
+    {
+      "number": 7,
+      "file": "sec/appendices/b_experimental_details.tex",
+      "line": 21,
+      "labels": [
+        "tab:contracts"
+      ],
+      "caption_tex": "\\textbf{Simulation interfaces for \\method{}.} Horizons and execution prefixes count model action steps. Baseline-specific observation and execution interfaces are described below.",
+      "tbd_markers": 0,
+      "red_numeric_placeholders": 0,
+      "red_text_fields": 0
+    },
+    {
+      "number": 8,
+      "file": "sec/appendices/b_experimental_details.tex",
+      "line": 54,
+      "labels": [
+        "tab:app_baseline_sources"
+      ],
+      "caption_tex": "\\textbf{Sources of the published reference results.} Values retain source versions and protocols.",
+      "tbd_markers": 0,
+      "red_numeric_placeholders": 0,
+      "red_text_fields": 0
+    },
+    {
+      "number": 9,
+      "file": "sec/appendices/b_experimental_details.tex",
+      "line": 86,
+      "labels": [
+        "tab:app_run_settings"
+      ],
+      "caption_tex": "\\textbf{Evaluated training and inference configuration.} \\textsf{TBD} fields require the actual checkpoint and launch records; development-probe settings are reported separately.",
+      "tbd_markers": 0,
+      "red_numeric_placeholders": 0,
+      "red_text_fields": 8,
+      "placeholder_rows_tex": [
+        "Data / selection & \\res{episode-level train/dev counts, split hash, checkpoint selection rule}",
+        "Training & \\res{stages, modules, steps, optimizer, LR/schedule, batch size, precision}",
+        "Randomness & \\res{independent training seeds; evaluation-run IDs; reset and sampler seeds}",
+        "Recollection / repertoire & \\res{record/action capacities, bank size, $K$, retention and continuation rules}",
+        "Generation & \\res{solver, NFE, processed views, command rate, any task overrides}",
+        "Objectives / gate & \\res{loss weights, corruption fractions, $\\rho$, $\\sigma_{\\min}$, active thresholds}",
+        "Resources & \\res{training/deployment GPUs, model and trainable sizes, software versions}",
+        "Run attribution & \\res{checkpoint hash and train/infer configuration for each reported row}"
+      ]
+    },
+    {
+      "number": 10,
+      "file": "sec/appendices/b_experimental_details.tex",
+      "line": 116,
+      "labels": [
+        "tab:app_ablation_defs"
+      ],
+      "caption_tex": "\\textbf{Definitions of the six component comparisons.} The upper four entries vary information access; the last two vary explicit assessment and the source used for action generation.",
+      "tbd_markers": 0,
+      "red_numeric_placeholders": 0,
+      "red_text_fields": 0
+    },
+    {
+      "number": 11,
+      "file": "sec/appendices/b_experimental_details.tex",
+      "line": 134,
+      "labels": [
+        "tab:component_identity"
+      ],
+      "caption_tex": "\\textbf{Component-run attribution (pending).} T denotes separate training, I denotes a fixed-checkpoint intervention, and U denotes unresolved provenance. Architecture comparisons require matched T runs; I runs measure dependence of the fixed policy.",
+      "tbd_markers": 19,
+      "red_numeric_placeholders": 0,
+      "red_text_fields": 0,
+      "placeholder_rows_tex": [
+        "Neither event store & U & \\expTBD & \\expTBD & \\expTBD",
+        "Recollection only & U & \\expTBD & \\expTBD & \\expTBD",
+        "Repertoire only & U & \\expTBD & \\expTBD & \\expTBD",
+        "Full \\method{} & \\expTBD & \\expTBD & \\expTBD & \\expTBD",
+        "Gaussian source & U & \\expTBD & \\expTBD & \\expTBD",
+        "No explicit comparison & U & \\expTBD & \\expTBD & \\expTBD"
+      ]
+    },
+    {
+      "number": 12,
+      "file": "sec/appendices/b_experimental_details.tex",
+      "line": 160,
+      "labels": [
+        "tab:distraction_audit"
+      ],
+      "caption_tex": "\\textbf{Event-replacement coverage and execution settings.} Report each condition separately for both tasks; eligibility is measured before the learned gate.",
+      "tbd_markers": 8,
+      "red_numeric_placeholders": 0,
+      "red_text_fields": 0,
+      "placeholder_rows_tex": [
+        "Intended / realized replacement & 50\\% / \\expTBD & 50\\% / \\expTBD",
+        "Eligible / all replaced slots & \\expTBD & \\expTBD",
+        "Retained-slot ranking / donor rule & \\expTBD & \\expTBD",
+        "Checkpoint / run / reset IDs & \\expTBD & \\expTBD"
+      ]
+    },
+    {
+      "number": 13,
+      "file": "sec/appendices/b_experimental_details.tex",
+      "line": 211,
+      "labels": [
+        "tab:rmbench_count_intervals"
+      ],
+      "caption_tex": "\\textbf{Descriptive task-level uncertainty from reported counts.} Pointwise 95\\% Wilson intervals assume the stated 100 independent reset trials per task and a fixed checkpoint. The counts follow the reporting convention and await linkage to their underlying episode records.",
+      "tbd_markers": 0,
+      "red_numeric_placeholders": 0,
+      "red_text_fields": 0
+    },
+    {
+      "number": 14,
+      "file": "sec/appendices/b_experimental_details.tex",
+      "line": 246,
+      "labels": [
+        "tab:exp_uncertainty"
+      ],
+      "caption_tex": "\\textbf{Uncertainty for the principal contrasts.} Point estimates come from the retained summaries; intervals and training-run counts require their corresponding records.",
+      "tbd_markers": 6,
+      "red_numeric_placeholders": 0,
+      "red_text_fields": 0,
+      "placeholder_rows_tex": [
+        "Full versus no explicit comparison, $M(n)$ & 7.3 pp (draft) & \\expTBD & \\expTBD",
+        "Full versus Gaussian source, $M(n)$ & 7.8 pp (draft) & \\expTBD & \\expTBD",
+        "Difference in degradation, similar donors & 19.8 pp & \\expTBD & \\expTBD"
+      ]
+    },
+    {
+      "number": 15,
+      "file": "sec/appendices/c_additional_results.tex",
+      "line": 16,
+      "labels": [
+        "tab:app_distraction_tasks"
+      ],
+      "caption_tex": "\\textbf{Task-level experience-distraction results (\\%).} Mean $\\pm$ sample SD across five evaluation runs, with 100 rollouts per task/run. The recollection-only row is the normal-condition reference. Bold/underlined means are best/second-best within each retrieval condition.",
+      "tbd_markers": 0,
+      "red_numeric_placeholders": 0,
+      "red_text_fields": 0
+    },
+    {
+      "number": 16,
+      "file": "sec/appendices/c_additional_results.tex",
+      "line": 58,
+      "labels": [
+        "tab:realworld_hardware"
+      ],
+      "caption_tex": "\\textbf{Physical deployment and data configuration.} Fields bind each reported result to its actual hardware, calibration, task-specific training data, and physical controller.",
+      "tbd_markers": 0,
+      "red_numeric_placeholders": 0,
+      "red_text_fields": 6,
+      "placeholder_rows_tex": [
+        "Platform & PiPER series / parallel-jaw gripper; \\res{model and calibration record}",
+        "Observation & \\res{camera views/models, resolution, timestamps, state dimensions}",
+        "Actions / execution & \\res{joint or EEF convention, units, frame, command rate, $H$, executed prefix}",
+        "Training / repertoire & \\res{demonstrations per task, train/dev split, held-out layouts, bank size/hash}",
+        "Adaptation / inference & \\res{checkpoint hashes, trained modules, steps, solver/NFE, deployment GPU}",
+        "Trial control & \\res{layout/order schedule, episode time limits, grasp/release and abort rules}"
+      ]
+    },
+    {
+      "number": 17,
+      "file": "sec/appendices/c_additional_results.tex",
+      "line": 187,
+      "labels": [
+        "tab:branch_coverage"
+      ],
+      "caption_tex": "\\textbf{Shared candidate measurement scope (pending).} All attempts enter coverage accounting; the same independent outcome labels support effect selection and gate evaluation.",
+      "tbd_markers": 5,
+      "red_numeric_placeholders": 0,
+      "red_text_fields": 0,
+      "placeholder_rows_tex": [
+        "Checkpoint / tasks / episodes / queries & \\expTBD{}; predeclared state and stage sampling",
+        "Valid candidates / execution span & \\expTBD{} candidates per query; $H=32$",
+        "Complete endpoints / all branches & \\expTBD{}; termination categories retained",
+        "Outcome-label class counts & \\expTBD{}; applicable / inapplicable / unknown",
+        "Comparable / all queries & \\expTBD{}; fixed ordering tolerances"
+      ]
+    },
+    {
+      "number": 18,
+      "file": "sec/appendices/c_additional_results.tex",
+      "line": 230,
+      "labels": [
+        "tab:gate_attribution"
+      ],
+      "caption_tex": "\\textbf{Admission on independently labelled proposals (pending).} Labels come from the shared branches. Rates use deterministically eligible proposals and episode-clustered intervals.",
+      "tbd_markers": 11,
+      "red_numeric_placeholders": 0,
+      "red_text_fields": 0,
+      "placeholder_rows_tex": [
+        "Applicable & \\expTBD & \\expTBD & \\expTBD & \\expTBD",
+        "Inapplicable & \\expTBD & \\expTBD & \\expTBD & \\expTBD",
+        "Unknown & \\expTBD & \\expTBD & -- & \\expTBD"
+      ]
+    },
+    {
+      "number": 19,
+      "file": "sec/appendices/c_additional_results.tex",
+      "line": 255,
+      "labels": [
+        "tab:gate_probes"
+      ],
+      "caption_tex": "\\textbf{Measured candidate-withdrawal consistency.} Development checkpoint \\texttt{v8-step300}; ten source episodes. The measurement concerns numerical output invariance at forced $g=0$.",
+      "tbd_markers": 0,
+      "red_numeric_placeholders": 0,
+      "red_text_fields": 0
+    },
+    {
+      "number": 20,
+      "file": "sec/appendices/c_additional_results.tex",
+      "line": 284,
+      "labels": [
+        "tab:matched_reuse"
+      ],
+      "caption_tex": "\\textbf{Same-information reuse comparison (pending).} One comparator, three predefined tasks. The last column is the matched three-task average, distinct from the full RMBench average.",
+      "tbd_markers": 8,
+      "red_numeric_placeholders": 0,
+      "red_text_fields": 0,
+      "placeholder_rows_tex": [
+        "History-aware retrieval--residual & \\expTBD & \\expTBD & \\expTBD & \\expTBD",
+        "\\method{}, same protocol & \\expTBD & \\expTBD & \\expTBD & \\expTBD"
+      ]
+    },
+    {
+      "number": 21,
+      "file": "sec/appendices/c_additional_results.tex",
+      "line": 313,
+      "labels": [
+        "tab:source_dev"
+      ],
+      "caption_tex": "\\textbf{Measured source diagnostic at \\texttt{v8-step300}.} Three independent source processes share 50 fixed prefixes. Zero active-gate coverage explains the identical outputs; a mature-checkpoint run is required to assess the contribution of recalled-action content under natural admission.",
+      "tbd_markers": 0,
+      "red_numeric_placeholders": 0,
+      "red_text_fields": 0
+    },
+    {
+      "number": 22,
+      "file": "sec/appendices/c_additional_results.tex",
+      "line": 333,
+      "labels": [
+        "tab:source_probes"
+      ],
+      "caption_tex": "\\textbf{Source-content control (pending).} Matched training/evaluation on two specified tasks. Report SR and realized gate/noise statistics; local probes hold gates fixed.",
+      "tbd_markers": 11,
+      "red_numeric_placeholders": 0,
+      "red_text_fields": 0,
+      "placeholder_rows_tex": [
+        "Gaussian $\\varepsilon$ & \\expTBD & \\expTBD & \\expTBD & 1",
+        "Scale-only $c(g)\\varepsilon$ & \\expTBD & \\expTBD & \\expTBD & \\expTBD",
+        "Full $g\\mu+c(g)\\varepsilon$ & \\expTBD & \\expTBD & \\expTBD & \\expTBD"
+      ]
+    },
+    {
+      "number": 23,
+      "file": "sec/appendices/c_additional_results.tex",
+      "line": 365,
+      "labels": [
+        "tab:history_probes"
+      ],
+      "caption_tex": "\\textbf{Requirement-evidence control (pending).} One checkpoint and a fixed candidate branch set. Matched masks test whether critical history improves present assessment.",
+      "tbd_markers": 6,
+      "red_numeric_placeholders": 0,
+      "red_text_fields": 0,
+      "placeholder_rows_tex": [
+        "Factual record & \\expTBD & \\expTBD",
+        "Critical record masked & \\expTBD & \\expTBD",
+        "Matched noncritical record masked & \\expTBD & \\expTBD"
+      ]
+    },
+    {
+      "number": 24,
+      "file": "sec/appendices/c_additional_results.tex",
+      "line": 388,
+      "labels": [
+        "tab:exp_efficiency"
+      ],
+      "caption_tex": "\\textbf{Measured deployment-path cost on recorded development prefixes.} One H100 80GB, BF16, batch one; checkpoint \\texttt{v8-step300}. Times are descriptive over 200 calls. Memory is the CUDA allocator's peak, including resident models and the online retrieval encoder.",
+      "tbd_markers": 0,
+      "red_numeric_placeholders": 0,
+      "red_text_fields": 0
+    }
+  ],
+  "figures": [
+    {
+      "number": 1,
+      "file": "sec/1_instruction.tex",
+      "line": 30,
+      "labels": [
+        "fig:leadin"
+      ],
+      "caption_tex": "\\textbf{From interaction evidence to selective action reuse.}\n(a,b) Illustrative WAM interfaces use local observations or retained history.\n(c) Recollection grounds the task requirement; the repertoire supplies action--effect proposals.\nPredicted consequence compatibility informs selection and a shared gate over source and conditioning.\nK/V denotes visual keys and values; dashed arrows indicate training-only prediction.\n\\textbf{Right:} Benchmark results with published references (Tables~\\ref{tab:libero}--\\ref{tab:rmbench}) and distraction on Put Back Block and Press Button, averaged equally within each of five evaluation runs.",
+      "tbd_markers": 0,
+      "red_numeric_placeholders": 0,
+      "red_text_fields": 0
+    },
+    {
+      "number": 2,
+      "file": "sec/3_method.tex",
+      "line": 8,
+      "labels": [
+        "fig:architecture"
+      ],
+      "caption_tex": "\\textbf{From interaction evidence to generative action reuse.}\n  Recollection $\\mathcal M_t$ grounds a transition requirement $r_t$; repertoire actions are adapted into proposals $\\mu_i$ and assessed through predicted effects $\\widehat E_i$.\n  A shared gate $g_t$ regulates the selected proposal in both initialization and conditioning, while executed actions and observations update recollection.\n  The lower panels detail event construction, transition inference, and consequence-aligned recall; dashed arrows denote future-video prediction used only during training to retain predictive supervision.",
+      "tbd_markers": 0,
+      "red_numeric_placeholders": 0,
+      "red_text_fields": 0
+    },
+    {
+      "number": 3,
+      "file": "sec/4_experiment.tex",
+      "line": 118,
+      "labels": [
+        "fig:realworld",
+        "tab:realworld_results"
+      ],
+      "caption_tex": "\\textbf{Physical tasks for reusable actions and retained evidence.}\n(a) B2B and D2B vary scene layout and object pose; R2P returns a banana to its original plate among three identical plates; SOR retrieves objects in their actual placement order.\n(b) Full-task successes out of 20 trials in each setting.",
+      "tbd_markers": 0,
+      "red_numeric_placeholders": 12,
+      "red_text_fields": 0,
+      "placeholder_rows_tex": [
+        "Fast-WAM & \\resultpending{13} & \\resultpending{12} & \\resultpending{7} & \\resultpending{8}",
+        "$\\pi_{0.5}$ & \\resultpending{\\underline{14}} & \\resultpending{\\underline{13}} & \\resultpending{\\underline{8}} & \\resultpending{\\underline{9}}",
+        "\\rowcolor{blue!7}\n\\method{} & \\resultpending{\\textbf{17}} & \\resultpending{\\textbf{16}} & \\resultpending{\\textbf{15}} & \\resultpending{\\textbf{15}}"
+      ]
+    },
+    {
+      "number": 4,
+      "file": "sec/4_experiment.tex",
+      "line": 213,
+      "labels": [
+        "fig:experience_distraction",
+        "fig:retrospection_analysis"
+      ],
+      "caption_tex": "\\textbf{Robustness to inapplicable experience.} (a) Full \\method{} and the no-comparison variant under three retrieval conditions on Put Back Block and Press Button. Curves average the two tasks across five evaluation runs (100 resets per task/run); bars show run-level SD. The dotted line is the recollection-only reference. (b) Drops from the same means. Appendix~\\ref{app:distraction_protocol} specifies the intervention.",
+      "tbd_markers": 0,
+      "red_numeric_placeholders": 0,
+      "red_text_fields": 0
+    }
+  ],
+  "tbd_table_count": 8,
+  "tbd_field_markers": 74,
+  "red_numeric_table_cells": 10,
+  "red_numeric_figure_cells": 12,
+  "red_text_table_fields": 14,
+  "scope": "Marker counts, not scalar measurement counts; no experimental values inferred.",
+  "pdf_sha256": "e6d5bd7293a16072c8512572be82015f91bdfaba5f911a583a77c06620b9c2e8"
+}
