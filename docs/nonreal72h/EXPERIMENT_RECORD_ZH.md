@@ -1,6 +1,8 @@
 # WARM 实验记录与论文回填索引
 
-更新日期：2026-09-22。本文是持续维护的回填入口；原始记录、数组、运行输出保存在仓库外，并在服务器与本地各留一份。每次取得数值，先保存，再核验，再更新本文。失败与不支持假设的结果同样保留。
+更新日期：2026-09-24。本文是持续维护的回填入口；原始记录、数组、运行输出保存在仓库外，并在服务器与本地各留一份。每次取得数值，先保存，再核验，再更新本文。失败与不支持假设的结果同样保留。
+
+**2026-09-24 12:56 UTC现场快照：R2四卡续训已实际恢复并记录到step3680；新增338条训练指标及1000/2000/3000三个checkpoint。训练日志最后更新于02:03 UTC，尚无最终退出/完成收据；新模型DEV50及source诊断没有产物。** 这是部分训练结果，结束状态待ACP平台确认，不能把旧`running`字段当作实时存活证明。详细数值、原始证据及适用范围见第14节；此前各节的“未启动”是相应历史时点记录。
 
 **目前没有新增可直接回填为当前论文正式主实验SR的结果。** 已完成实现与梯度诊断、新增记录前缀在线成本测量，并核验了一批与稿件数值不一致的历史 LIBERO 结果。下表的“可用范围”是回填限制，不得省略。
 
@@ -21,6 +23,10 @@
 | W08-DEV200 / bank与历史规模 | 89680 events；每query32个候选；历史token 0–64 | 实际历史event 0–14、action summaries 0–8 | 这是历史读入token数，不是完整DiT序列总token数 |
 | W08-DEV200 / 自然gate激活 | 0 / 200；alpha恒为0.119140625 | stagnation范围0–0.6328125；原阈值0.15 | 描述本次工作负载，不补独立标签FA/TA；不与N06重叠前缀合并样本量 |
 | W08-DEV200 / 作业时间 | 943.15秒（15.72分钟） | complete / exit0，源码前后相同；含初始化，未含单独contract准备 | 模型脚本内部elapsed为911.99秒；预检与失败尝试另记 |
+| R2-stage1 / 已记录续训进度 | parent300 → last logged3680；338条，步距10 | 原四卡shared recipe，目标15000，总schedule30000 | 已有真实优化记录；非目标训练完成，终止状态待确认；见第14节 |
+| R2-stage1 / action loss | 首20条0.049257 → 末20条0.009741 | step310–500与3490–3680的记录点算术均值 | 训练轨迹描述，不是DEV泛化或闭环成功率 |
+| R2-stage1 / raw learned gate | 首20条0.096301 → 末20条0.177411 | 同上；训练期`warm_learned_gate_mean` | 不等于新模型DEV自然g、TA/FA或接受能力 |
+| R2-stage1 / 数值与强制拒绝泄漏 | 338/338条全部数值有限；记录的forced-source-leak均为0 | 每10 optimizer steps记录一次；不声称检查了每一步张量 | 支持这段已记录训练的数值/诊断检查，不替代forced-null推理测试 |
 | L19-Spatial / SR | 488 / 500 = 97.6%；失败 12 | 历史 step019100，10 tasks，root seed 3407 | 历史结果，稿件归属待核实 |
 | L19-Object / SR | 496 / 500 = 99.2%；失败 4 | 同上 | 同上 |
 | L19-Goal / SR | 483 / 500 = 96.6%；失败 17 | 同上 | 同上 |
@@ -212,3 +218,63 @@ bash "$RUN_ROOT/code/scripts/acp_nonreal72h.sh" "$RUN_ROOT/dev50.job.json"
 R2已部署在`S/nonreal_bundle_20260924_r2`，输出独立。实际在CCI执行最终Shell命令加`--preflight`通过；Linux全部22项测试通过（10.90秒），Windows本地21项通过、1项Linux专用集成测试跳过。新增用例覆盖旧CRLF依赖被绕过、真实Shell初始化和环境变量。准备时新增Linux测试夹具的临时plan层级有误，修正后全通过，第一次测试与plan保存在`preparation_r1`；生产R2 Shell预检在修正夹具前后都通过。真实四rank恢复及15k推理仍待ACP现场，不声称已完成。
 
 R2精确源码SHA-256 `976b74014e46451a84ca311fb374d3dcbc5468c9eb1f969940ce5a641450319f`；R2 plan SHA-256 `d6e3ef2b07e4b673948c5f3f8b7e8ba8957e948bdf7533e7edf072b02e0d74e9`；最终部署包`code_final.tar.gz` SHA-256 `a4408a97f4c663d8c0d49daee3fa0a28e054713aeb9eb093992538b9cd4123ba`。原始失败日志、失败目录归档、`failure_audit.json`、plan、实际Shell预检与测试日志双端保存于R2根和`L/bundle_fix_20260924_r2`。最新重提命令见 [ACP_BUNDLE_ZH.md](ACP_BUNDLE_ZH.md)；申请4×H100 80GB、24小时，仅提交R2一次，不再运行旧Shell入口。
+
+## 14. 2026-09-24 R2实际续训的部分结果（完成状态未确认）
+
+本节来自通过CCI SSH读取共享AFS产物的独立快照，审计完成时间为**2026-09-24 12:56:06 UTC / 北京时间20:56:06**。没有修改活动训练目录、源码、plan或checkpoint，没有启动续训或推理。本文中的运行阶段是`shared`；不是blocks specialist或新15k模型的评测。
+
+### 14.1 已启动、已恢复，但没有完成收据
+
+- R2实际命令为`bash S/nonreal_bundle_20260924_r2/code/scripts/acp_nonreal_bundle.sh`。外层训练job为`run/jobs/training-dc2b6885`，开始于09-23 21:47:48 UTC；内层`S/nonreal_resume_20260922/stage1/job`开始于21:52:03 UTC。
+- 已通过实际四卡runtime前检。训练日志显示加载optimizer/random states、恢复dataloader progress，并于09-23 22:17:31 UTC记录`Verified formal WARM resume after ...`。后续真实optimizer-step指标和checkpoint证明此次越过了旧CRLF启动故障；不是此前只有CPU预检的状态。
+- `training_metrics.jsonl`共338条，global step严格递增且无重复，范围310–3680、步距10。相对parent300，至少已有3380个新增optimizer steps进入已记录进度。全部已记录数值有限，没有据此声称每个未记录step都已检查。
+- 最后一条训练日志/metrics修改时间为09-24 **02:03:32 UTC / 北京时间10:03:32**；内层heartbeat最后写入02:03:23 UTC。快照时已约10小时53分钟无更新。bundle与两层manifest仍为`running`、exit_code为null，但均缺终态收据，不能据此认定ACP仍存活。
+- 没有stage1 `summary.json`或`summary_error.json`，没有step015000权重、`natural_gate.json`、新checkpoint inspection或source输出。训练console中未发现Python traceback、CUDA OOM、ChildFailedError、FloatingPointError、SIGTERM/SIGKILL或`[done]`。因此记录为**部分训练、结束状态未确认**；现有文件不能确定平台回收、外部终止、挂起或其他原因。CCI进程列表不能证明另一个ACP worker的状态。
+- renderer子任务有明确终态：6.498秒、exit1，`RuntimeError: failed to find a rendering device`。它发生在训练前且未阻止后续训练，不能用来解释数小时后的日志停止。
+
+### 14.2 可以回填的训练数值
+
+以下首/末窗口各取20个记录点，分别为step310–500、3490–3680，均为**记录点的简单算术均值**。这是同一次续训的描述性轨迹，不是固定验证集评测、所有optimizer steps的加权平均或独立样本置信区间；未筛选有利记录。
+
+| 原始指标 | 首20条均值 | 末20条均值 | step3680单条值 |
+|---|---:|---:|---:|
+| `loss` | 0.434301 | 0.275376 | 0.311095 |
+| `loss_action` | 0.049257 | 0.009741 | 0.011242 |
+| `loss_video` | 0.249260 | 0.186167 | 0.219631 |
+| `loss_warm_effect` | 0.828948 | 0.443242 | 0.434192 |
+| `loss_warm_gate` | 0.489502 | 0.677344 | 0.743164 |
+| `warm_gate_brier` | 0.057871 | 0.116354 | 0.124023 |
+| `warm_learned_gate_mean`（raw alpha） | 0.096301 | 0.177411 | 0.160889 |
+| `warm_gate_mean`（训练source gate） | 0.069142 | 0.132458 | 0.153687 |
+| `warm_normal_source_exposure_mean` | 0.119666 | 0.227197 | 0.234131 |
+| `warm_grad_source_gate` | 0.067948 | 0.120777 | 0.125555 |
+| `warm_forced_source_leak_mean` | 0 | 0 | 0 |
+| `steps_per_second` | 0.269730 | 0.248895 | 0.249250 |
+
+step3680的learning rate为`4.928882364186164e-05`、grad norm为`1.0966973304748535`。338条记录的source-gate梯度范数范围为`0.0614487877–0.1474911482`，记录的forced-source-leak全部为0。
+
+这些结果支持“已恢复训练，记录的action/video/effect loss下降，gate分支有非零梯度、训练输出不再固定在smoke300附近”。同时gate loss和Brier的窗口均值上升，不能只报告有利趋势；训练batch、corruption及动态soft target不固定，不能由此单独断言校准变好或变坏。训练期alpha/source exposure也不能与此前DEV推理g=0直接比较，更不能当成新模型自然接受率。
+
+**论文回填边界：**本节可用于训练进度和优化诊断说明；没有新增可填主表SR、表18 TA/FA、表22匹配训练SR或表23历史收益的数值。既有表19/21/24的smoke300证据保持原范围，没有被本节替换。
+
+### 14.3 Checkpoint与运行身份
+
+已找到step1000、2000、3000三个发布权重及各自`.training.json`、`trainer_state.json`、scheduler、四rank optimizer shards和四份random states。元数据中的step、resume300、parent weights/state、shared recipe、world4、GBS128及seed3407一致；每个列出的state文件均存在且非空。
+
+最新发布权重为`S/nonreal_resume_20260922/stage1/training/checkpoints/weights/step_003000.pt`，大小**12,148,647,926 bytes**；本轮实际完整读取权重计算SHA-256为`68c7f3840921241df45a5b6997b772db3a69a31584644aa0e66929b841b845bf`，与attestation相同。step1000/2000仅核对元数据及文件存在性，没有重算其大文件哈希；没有重新哈希或反序列化约25GiB的step3000完整optimizer state，也未执行新一次四rank恢复。故step3000是最新已找到并验过权重字节的发布点，不把step3680当作已保存checkpoint。
+
+运行身份：4×H100 80GB、BF16、ZeRO-1、per-device8、gradient accumulation4、GBS128、seed3407；目标15000、总scheduler30000、AdamW LR上限`5e-5`、warmup1500。父weights SHA-256为`ab4042b1a761f53ec5f5379ce461f5a2f6f3decf89e3f3a16322b66894918a1d`；parent-state为`48be391eb0c223f862e5197e1fc77455b67225ce1df98b7773b3478ecd5af0cf`；shared-recipe为`0461b9fac327974d5dd4fa11c810a07aafe4785f8949d0d8c0d13916cea69f6b`。本轮复算续训YAML字节哈希`34f5dc0a6f4cc354da61c0ba7bdc394b6c9652c7ef7706e72e8cbb683ec9a00c`与plan一致；attestation中的resolved config哈希采用另一种序列化，不能与YAML文件哈希混同。
+
+本轮重新计算冻结源码集合：R2的414个文件为`976b74014e46451a84ca311fb374d3dcbc5468c9eb1f969940ce5a641450319f`，训练的407个文件为`665d0620a2a8a15e1d3daaa2ddad38e6ca7c383f8af5aa407ef0784aff797bda`，均匹配预声明plan。step3000 attestation的Git commit为40个零；精确源码身份由这些冻结文件哈希和已保存配置/manifest提供，不把零值或当前main commit当成训练commit。
+
+### 14.4 双端原始证据与后续条件
+
+本次使用新的本地目录，**不是第3节另一台机器的L路径**：
+
+- 服务器归档：`S/evidence_archive_20260924/r2_partial_20260924T1255Z.tar.gz`。
+- 本地归档：`F:/WARM/result/nonreal_bundle_20260924_r2_audit_20260924T1255Z/r2_partial_20260924T1255Z.tar.gz`；同目录保留`audit_partial.py`、receipt及解包文件夹。
+- 压缩包大小2,512,489 bytes，双端SHA-256均为`9e3cae437e97a704b7217c08a70aa78c3f2d561b2ebec9dde0b0420c200db7a9`；含858个按文件清单登记的原始文件及独立审计报告。两份冻结源码、原始metrics/console/heartbeat/manifest、renderer失败、checkpoint sidecar/trainer-state/scheduler均保留；大型权重与optimizer shards留在服务器原路径，没有声称已本地备份。
+- 原始`training_metrics.jsonl` SHA-256：`66b6609e93a5ba7bb8430f67c2168e70c4634d49697ae445d5ee332a3ef2b06a`；`audit.json` SHA-256：`efa4f97e0db83fcfa1deaedf373aafe70ccdddff477bf9f6ce4154f7a09c3f01`。
+- 本地解包后逐一重算858个文件的字节数/哈希全部匹配；通过独立PowerShell读取338条JSONL，复算首尾窗口均值，与服务器Python报告一致。归档为现场切片，不冒充最终完整run归档。
+
+下一步先取得ACP平台终止状态/事件，确认worker是否仍在运行，再决定恢复。原stage1已存在`started.json`，**不得直接重复提交旧命令、删除锁/started标记或覆盖原目录**。如果确认中断，需先验收最后完整state，再为剩余3000→15000准备新的续训输出与plan；step3000之后未保存的更新不能当作已恢复。新15k模型验收后才执行预声明DEV50自然gate及条件source比较，不因当前训练alpha上升就跳过该测量。
