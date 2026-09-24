@@ -1,0 +1,24 @@
+% Replace the corresponding rows of tab:realworld_hardware.
+% Change column heading from Evaluated setting to Recorded setting / remaining verification.
+% Change caption to: Recorded real-robot data and adaptation configuration.
+% Unverified deployment details remain explicit; this is not a finished results table.
+Platform & The dataset identifies a single-active-arm, six-DoF PiPER embodiment;
+calibration identifier \texttt{piper\_table\_20260919}.
+\res{exact hardware model and measured calibration record} \\
+Observation & External and wrist RGB; configured input $640\times480$,
+resized to $224\times224$ per view, horizontal $224\times448$ mosaic.
+Seven-dimensional TCP-pose/gripper state.
+\res{camera models and measured timestamp/synchronization accuracy} \\
+Actions / execution & Six absolute joint targets (rad) and gripper width (m);
+nominal data rate 20\,Hz; $H=32$.
+\res{measured command rate, executed prefix, and deployment action decoder} \\
+Training / repertoire & B2B 4/1, D2B 4/1, R2P 8/2, SOR 4/1 train/dev episodes;
+9,976/2,357 processed frames; 1,356 training-only events; $K=32$.
+\res{independently recorded evaluation layouts} \\
+Adaptation / inference & Audited joint-action adaptation configurations specify
+BF16, per-device batch 1, accumulation 1, peak learning rate $10^{-4}$,
+cosine schedule, weight decay 0.01, gradient clipping 1.0, and seed 42;
+eight epochs are configured, not established here as completed.
+\res{evaluated checkpoint, completed training budget, solver/NFE, and deployment GPU} \\
+Trial control & \res{actual trial logs, layout/order schedule, episode limits,
+grasp/release criteria, interventions, and abort rules} \\

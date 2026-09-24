@@ -1,0 +1,25 @@
+% Insert in sec/appendices/c_additional_results.tex, under
+% app:realworld_hardware, before the physical deployment table.
+% Dataset/preprocessing evidence, not a completed robot evaluation.
+\paragraph{Recorded demonstrations and preprocessing.}
+The current real-robot dataset contains 25 teleoperated demonstrations across
+four tasks, partitioned into 20 training and 5 development episodes.
+The train/development counts are 4/1 for Banana-to-Box, 4/1 for Duck-to-Box,
+8/2 for Return-to-Plate, and 4/1 for Same-Order Retrieval.
+The processed catalog contains 12,333 command-bearing frames:
+9,976 in training and 2,357 in development.
+These are episode-level partitions; they do not by themselves establish
+held-out collection sessions or held-out physical layouts.
+
+The joint-action data version stores six absolute joint targets in radians
+and an absolute gripper width in meters.
+Its seven-dimensional proprioceptive state remains TCP position,
+rotation-vector orientation, and gripper width; it is not a joint-state vector.
+The preprocessing configuration specifies external and wrist RGB views,
+each resized to $224\times224$ and concatenated horizontally, a nominal
+20\,Hz data rate, and an action horizon of 32.
+These data settings do not establish the achieved deployment command rate
+or the number of actions executed between replans.
+The repertoire contains 1,356 events from the 20 training episodes only;
+retrieval uses $K=32$ and a $768+4$-dimensional visual--task key.
+Demonstration outcomes are not counted as autonomous policy trials.

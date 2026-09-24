@@ -280,3 +280,33 @@ step3680的learning rate为`4.928882364186164e-05`、grad norm为`1.096697330474
 - 本地解包后逐一重算858个文件的字节数/哈希全部匹配；通过独立PowerShell读取338条JSONL，复算首尾窗口均值，与服务器Python报告一致。归档为现场切片，不冒充最终完整run归档。
 
 下一步先取得ACP平台终止状态/事件，确认worker是否仍在运行，再决定恢复。原stage1已存在`started.json`，**不得直接重复提交旧命令、删除锁/started标记或覆盖原目录**。如果确认中断，需先验收最后完整state，再为剩余3000→15000准备新的续训输出与plan；step3000之后未保存的更新不能当作已恢复。新15k模型验收后才执行预声明DEV50自然gate及条件source比较，不因当前训练alpha上升就跳过该测量。
+
+## 15. 2026-09-25 回填前的服务器寻证与真机数据审计（非新增SR）
+
+按作者提供的范围，经CCI检查`/mnt/afs/task3_2/L202500276_lwz/projects`及实际存在的`datasets`（单数`dataset`不存在），并重点核对WARM real/piper、历次评测与训练根。定向清单有3,361个匹配元数据/日志文件、9个symlink，扫描错误0；跳过大权重、媒体、依赖缓存和重复源码快照。未将“未找到”写成全服务器绝对不存在，也未将计划文档中的数字当原始结果。
+
+扩展关键词搜索于9月24日16:09:29 UTC完成，遍历76,118目录、读取112,926文本文件、跳过2,409个超过2MB文件、访问错误0，记录168个归档路径。最大深度15且有媒体/依赖/重复源码等排除；2,230份命中含其他项目与计划配置，不构成2,230次WARM实验。仓库外`F:/WARM/result/paper_fill_20260924/claim_search.json`保存路径/行号/片段；没有由此找到支持目标主表和消融/干扰的完整结果链。
+
+- 找回的历史LIBERO汇总仍为spatial488/500、object496/500、goal483/500、long469/500，共1936/2000。主结果根为`S/batches/step_019100/{spatial,object,goal,libero10}-formal-s3407-v2/summary.json`，逐任务在`S/results/step_019100/`。仍不能支持稿中1974/2000，也不能未经模型身份核验换成当前Full WARM成绩。
+- 本轮已检查路径未定位到RMBench755/900、六行组件消融及五轮干扰的完整原始run/episode/donor链。作者提供4×H10080GB可用、RMBench仍不能渲染；本轮没有重跑任何GPU实验或修渲染环境。
+- 2026-09-24 **16:00:27 UTC / 北京时间9月25日00:00:27**再次读取R2 bundle：summary仍`running`，最后更新时间9月23日21:47:47 UTC；训练metrics仍最后修改于9月24日02:03:32 UTC、step3680。该标记不是ACP平台状态，不能据此安全重提。未发现新的15k完成证据。
+
+### 15.1 真机数据与memory：可填数据设置，不可填trial成功率
+
+绑定版本：`/mnt/afs/task3_2/L202500276_lwz/projects/WARM/real/piper/processed/pilot_20hz_joint`。25条遥操作示范，20train/5dev；B2B4/1、D2B4/1、R2P8/2、SOR4/1。处理后12,333个command-bearing frames，train9,976、dev2,357。原始25条在`WARM/tmp/WARM_real/pilot_20hz`，`WARM/real/piper/raw/pilot_20hz`为同一目录symlink，不重复计数。
+
+事件manifest记录1,356事件；本轮实际读取bank的dataset/episode索引，20个不同source episodes全部在catalog的train split。bank manifest文件SHA-256为`1b4fc6087b98863056a055711139c0a2ee1a123921c9468cb40a4a93f6e4a4e0`；manifest记录content hash `a5cf005dd30627efdb2edd7bdc3110708944e4f48e64a1e688e721e8bb3c4de3`。本轮没有重算整个事件payload或原始视频哈希，不把读取metadata扩大为全量内容重新验收。
+
+数据配置：external/wrist两视角，声明raw640×480、各自224×224、水平224×448，nominal20Hz、H32、K32、context772。关节版本的动作是6个absolute joint targets(rad)+absolute gripper width(m)；**proprio仍为TCP xyz+rotation vector+gripper width(7维)**。依据服务器`build_piper_joint_action_cache.py`、conversion与prepared配置，不能把同为7维误写为joint proprio；该版本delta mask只处理padding。camera型号、实际标定误差、部署command rate、执行prefix及decoder未由这些文件验证。
+
+`success` outcome的notes标记JointCtrl teleop/sidecar，不是自主policy trial；本轮未找到三方法×四任务的真实k/n日志，因此图3仍不能填。episode-level dev划分不证明独立采集session/未见布局；holdout命名不等于物理采集独立。
+
+### 15.2 真机训练：配置与时点记录，而非已完成实机评测
+
+该版本三个`warm_from_stage_a/run_20260924_*`配置均为BF16、batch1/accum1、LR1e-4/cosine、weight decay0.01、clip1、8epochs、training seed42（corruption seed3407）。归档时100346目录记录至13340、state13200；122118记录至6260、state6000；150003仅配置未归档到metrics。不能相加为最终训练量、声称全部8epochs完成或擅选最终部署checkpoint。训练配置中eval_num_samples=0；内部eval NFE字段不构成实机推理设置证据。
+
+### 15.3 原件与回填交付
+
+双端原始622文件归档：服务器`S/evidence_archive_20260924/paper_fill_20260924T1545Z.tar.gz`；本地`F:/WARM/result/paper_fill_20260924/paper_fill_20260924T1545Z.tar.gz`。2,468,470bytes，SHA-256 `ddba6c7a277714635ebe9cf44539cad621afc27e5d96f763428f372c26229f59`，逐文件字节/哈希核验622/622通过。`files.json`保存原服务器路径；同级`real_analysis.json`和`real_bank_check.json`保存复算。额外小文件在本地`supplement/`保留joint转换源码、conversion及stats；没有大权重下载或原始数据入Git。
+
+[PAPER_FILL_AND_RUNS_20260925_ZH.md](PAPER_FILL_AND_RUNS_20260925_ZH.md)给出新版精确文件/label位置、四个可粘贴LaTeX片段、哪些值不可回填，以及按4H100/无renderer的24小时优先队列。真机数据说明可新增到C.4.1，表11仅部分配置可填；W08成本可新增到C.2但保持smoke300/g全零/记录回放限制；R2训练动态只属附加诊断，不替代主结果或表4。没有直接改作者LaTeX/PDF，没有把旧数字自动改成新主表成绩。

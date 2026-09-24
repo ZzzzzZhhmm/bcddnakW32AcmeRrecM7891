@@ -1,0 +1,19 @@
+% Optional supplementary optimization diagnostic. Not the configuration
+% of the unresolved main tables. Do not use this to claim completed 15k training.
+\paragraph{Additional shared-model optimization diagnostic.}
+An additional shared-model run resumed from step 300 using four H100
+80\,GB GPUs, BF16, ZeRO-1, a per-device batch size of eight, and four
+gradient-accumulation steps, giving a global batch size of 128.
+It used seed 3407 and AdamW with a peak learning rate of $5\times10^{-5}$,
+1,500 warm-up steps, and a 30,000-step learning-rate schedule.
+The planned stage endpoint was step 15,000, but the audited partial run
+contains 338 logged updates spanning steps 310--3,680 and a latest
+verified published weight checkpoint at step 3,000.
+
+Averaged over the first and last 20 logged updates, action loss changed
+from 0.049257 to 0.009741 and effect loss from 0.828948 to 0.443242.
+Over the same windows, gate loss changed from 0.489502 to 0.677344 and
+the logged gate Brier metric from 0.057871 to 0.116354.
+These are descriptive training trajectories with changing batches and
+targets, not fixed-development-set calibration, candidate-endpoint errors,
+or task-success measurements.

@@ -1,0 +1,21 @@
+% Add after the selective-admission diagnostic in
+% sec/appendices/c_additional_results.tex, before app:reuse_controls.
+% This is an extra engineering measurement, not main-model closed-loop SR.
+\paragraph{Recorded-prefix runtime measurement.}
+We measured the complete policy replanning path on one NVIDIA H100 80\,GB
+using BF16, batch size one, 10 denoising evaluations, $H=32$, and $K=32$.
+The workload comprised 200 replans from five held-out Press Button
+demonstrations, with 40 predeclared prefixes per episode and 20 additional
+warm-up replans excluded from measurement.
+Median and 95th-percentile latency were 500.0 and 553.8\,ms, respectively;
+peak PyTorch-allocated GPU memory was 23.62\,GiB.
+CUDA-synchronized timing included preprocessing, visual encoding,
+retrieval, history reading, policy inference, action conversion, and
+standard telemetry, but excluded model loading, disk decoding, and simulation.
+The repertoire contained 89,680 events.
+This measurement used the 300-step development checkpoint, whose natural
+source gate was zero at all measured prefixes.
+Recorded observations and action histories were replayed without executing
+the generated commands; these measurements therefore characterize this
+workload, not closed-loop success, the mature policy's active-source runtime,
+or a speedup over another method.
