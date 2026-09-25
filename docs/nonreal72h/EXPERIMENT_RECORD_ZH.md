@@ -310,3 +310,141 @@ step3680的learning rate为`4.928882364186164e-05`、grad norm为`1.096697330474
 双端原始622文件归档：服务器`S/evidence_archive_20260924/paper_fill_20260924T1545Z.tar.gz`；本地`F:/WARM/result/paper_fill_20260924/paper_fill_20260924T1545Z.tar.gz`。2,468,470bytes，SHA-256 `ddba6c7a277714635ebe9cf44539cad621afc27e5d96f763428f372c26229f59`，逐文件字节/哈希核验622/622通过。`files.json`保存原服务器路径；同级`real_analysis.json`和`real_bank_check.json`保存复算。额外小文件在本地`supplement/`保留joint转换源码、conversion及stats；没有大权重下载或原始数据入Git。
 
 [PAPER_FILL_AND_RUNS_20260925_ZH.md](PAPER_FILL_AND_RUNS_20260925_ZH.md)给出新版精确文件/label位置、四个可粘贴LaTeX片段、哪些值不可回填，以及按4H100/无renderer的24小时优先队列。真机数据说明可新增到C.4.1，表11仅部分配置可填；W08成本可新增到C.2但保持smoke300/g全零/记录回放限制；R2训练动态只属附加诊断，不替代主结果或表4。没有直接改作者LaTeX/PDF，没有把旧数字自动改成新主表成绩。
+
+## 16. 2026-09-25 最新表4现场复核与统计收尾修复（未产生新测量）
+
+核对 `WARM_ICLR2027_new (1).pdf` 第9页和ZIP中的表4/附录C.2.1，要求固定query的adapted
+H32候选分支实际执行、独立效果和适用性标签。当前CCI主机
+`app-5e8f0e533ef54feeb96451ac86bb4108-6fbfcff76d-m5gxp` 的H100 80GB空闲；重新执行
+runtime check（press_button，未跳过renderer）仍报 `failed to find a rendering device`。
+标准Vulkan ICD/图形驱动库目录未找到所需挂载。没有更改系统驱动、安装包、提交ACP或启动新训练。
+
+R2 summary仍是旧running标记；weight目录仍仅1000/2000/3000，最后metrics仍step3680。
+本轮只核对文件清单与末尾记录，没有重新哈希大权重，也没有将step3000认定为论文最终模型。
+通用BranchBackend尚无真实RMBench实现及验收，不能以toy tests或renderer通过代替恢复合格。
+
+本轮新增专用表4汇总：三行相同的query标签支持集、逐任务coverage和配对episode bootstrap，
+缺失/未知不补零，缺少输入时不导出LaTeX数值；修复初始读图异常的父状态恢复与事件可变引用。
+本地CPU测试33 passed，0 failed。这是工程检查，不是新效能结果。
+详细设计、3840分支预算敏感性、仅环境验收的ACP命令及待确认模型见
+[TABLE4_EXECUTION_20260925_ZH.md](TABLE4_EXECUTION_20260925_ZH.md)。
+
+### 16.1 作者改用LIBERO权重；环境恢复验收通过（非表4效能结果）
+
+作者随后明确取消R2，采用LIBERO权重step019100。固定旧模型配套代码，不混入新RMBench head。
+CCI H100 + MuJoCo3.3.2 + Mesa EGL软件渲染已生成两路有效256×256RGB；
+环境层32步A–A–B–A重复/顺序检查通过，物理atol1e-10，两路图像逐像素相同。
+四分支实测3.5063/3.4851/3.4757/3.4688秒；这不是模型性能或表4指标。
+
+原件在`S/table4_libero_20260925/branches-egl-v2/`，本地
+`F:/WARM/result/table4_libero_20260925/environment.json` SHA256
+`a4993bd43702ff296a641260bbf6cf5851d223865eae8e7e8dbc0ee90a8d1684`；
+主相机PNG SHA256 `2935c1e3265e333203312ee25267e3cc6452d3e4768c15ef3d1fd845fa5cf1ee`。
+
+预声明正式采样：LIBERO-10所有10任务、initial states0–9、factual frames80/160，seed3407，
+最多200query/6400候选H32分支。独立标签定义为端点新增BDDL子目标且保留此前已完成目标，
+严格称32步goal-progress，不将其夸大为通用适用性或整任务SR。
+任务0/init49/frame80保留作采集器资格验收，不进入正式统计。
+
+首次模型资格验收保留于`S/table4_libero_20260925/qualification-v1*`：
+真实模型加载成功（约559.6秒），进入factual rollout后发现缺少历史评测兼容层，
+动作签名21/15维不匹配。新增显式legacy兼容适配复用原eval-v2语义，不改权重或学习模块。
+修复版资格验收另存v2；未得到完整结果前不宣称表4已完成。
+当前相关CPU测试44 passed；既有job/bundle/resume/archive回归30 passed、1项Linux-only skipped。
+
+### 16.2 LIBERO真实模型采集器验收完成，4卡正式实验待作者提交
+
+第二版保留`qualification-v2*`：模型加载553秒，进入frame80并封存32个真实proposal，
+随后state fingerprint对slots dataclass使用`vars()`报错。`plain_fields`已支持dataclass
+fields，并补充pending动作deep-copy测试。第三版固定在`S/table4_libero_20260925/release-v3/`，
+未修改任何运行中源码快照、旧checkpoint或旧模型worktree。
+
+第三版`qualification-v3`退出码0，`execution.completed=true`。任务0/init49/frame80，
+1query、32候选均执行32步、32个complete_horizon、32/32父状态恢复、768维observed effect。
+实际模型下A–A–B–A通过（physics atol1e-10、RGB exact），DINO重复编码最大绝对差0。
+封存proposal→attempt/result→独立标签→assemble的真实数据读取全部通过。
+该验收query的goal-progress标签为0/32正例；属于窄子目标定义下的工程验收记录，
+不纳入正式结果，不据此重选query/initial state或修改标签。表4正式效能仍未测得。
+
+实测：model_ready561.5秒；32候选执行107.71655秒；总798.41003秒；观察显存约24,969MiB。
+正式预声明200query时仅候选分支约5.98 worker小时，单卡不满足作者<=4h条件；
+交付4卡ACP（各worker10任务、reset互斥），预计3–5小时但CPU/AFS可能延长，
+每worker设6小时安全上限。未提交正式ACP，未启动r2或新训练。
+
+双端证据包：服务器`S/table4_libero_20260925/qualification-v3-evidence.tar.gz`；
+本地`F:/WARM/result/table4_libero_20260925/qualification-v3-evidence.tar.gz`，SHA256
+`eaba59476cd895396ea8b52ef68683b44cf4a636fb2b3f9b55a453eaed13d68e`。
+包内有完整console、plan、compatibility、proposal、index、qualification、branch/label及assembled记录。
+权重SHA256仍为`de324de810df74bd7ff16114c4cf22e90c470bcdadcc7995fdbac9b494e1bb64`。
+最终本地相关测试45 passed；之前既有回归30 passed、1 skip，合计75 passed/1 skip。
+远端ACP脚本bash语法检查通过。源码及说明已在本地修改，尚未提交Git；冻结运行包已上传CCI。
+
+论文适用边界：此旧LIBERO head使用warped action/context预测effect，执行的是含adaptation的proposal，
+与最新稿`stats(mu_i)`输入式并不完全一致。附录需说明实现版本、suite和goal-progress标签，
+不能把表格直接称作新RMBench head或主表最终模型的机制验收。
+
+### 16.3 2026-09-25 ACP返回：仅1/4分片完成，实测部分结果与草稿结论不一致
+
+作者提供`logs-acp-20260925T164510.txt`和最新LaTeX包`WARM_ICLR2027_new (2).zip`。
+ACP输出根`S/table4_libero_20260925/formal-20260925-041226`；平台日志最后一行为
+`ERROR: at least one shard failed`，不是完整成功。
+启动脚本全局固定`MUJOCO_EGL_DEVICE_ID=0`，而worker1/2/3分别仅可见CUDA1/2/3；
+robosuite在导入时因EGL编号不在CUDA_VISIBLE_DEVICES中断言失败。
+这是上一版启动器的设备映射缺陷，单GPU0资格验收未覆盖多GPU可见性情况。
+worker1/2/3都没有进入采集，仅留下compatibility.json。原件均保留，不覆盖失败目录。
+
+worker0的execution.completed=true，耗时8545.255秒（约2.37小时）。
+覆盖全部10任务、每任务initial states0/4/8和frame80/160：30个episode、60个query、
+1920个候选分支。1920/1920父状态恢复通过；1852个完整H32端点、68个提前成功端点。
+终止标记success共70个，其中2个恰好执行满H32，因此不能把70与68混淆。
+10任务的A-A-B-A和DINO重复性检查全部通过。与预声明100episodes/200queries相比，
+还缺70episodes/140queries；未将merge完整性门槛下调，未把部分报告伪装成完整表格。
+
+对全部已完成样本使用原来冻结的统计口径复算：三参考共享支持集、candidate→query→episode→task等权，
+task内episode-cluster bootstrap10000次、seed3407。MSE/ordering/ties使用59个有完整端点且
+有可比较候选对的query（28,441对）；选择率使用60query。标签已知1920个，正例275、负例1645，
+定义仍是H32端点新增BDDL子目标且保留已成立目标，不能称为整任务成功率。
+
+| Effect reference | MSE | Ordering | Tie rate (%) | Goal-progress choice (%) |
+|---|---:|---:|---:|---:|
+| Historical | 0.0551252164 | 0.6344244688 | 0.0033602151 | 18.33333333 |
+| Query-only | 0.0426805201 | 0.5 | 100 | 14.32291667 |
+| Predicted | 0.0551812770 | 0.6351804493 | 0 | 18.33333333 |
+
+predicted-minus-historical：MSE +0.0000560606，95%CI[0.0000437719,0.0000690308]；
+ordering +0.0007559805，95%CI[0.0003694879,0.0011591384]；choice差0，区间[0,0]。
+预测效果的MSE略差，ordering提升很小，choice相同；不能保留草稿中的
+0.084→0.052、0.63→0.76、64%→78%的有利联合提升结论。
+旧checkpoint/head版本和窄标签的适用边界依然成立，且每task只有3episode的CI需谨慎解释。
+
+双端原始证据包22MB：`S/table4_libero_20260925/formal-20260925-041226-evidence.tar.gz`及
+`F:/WARM/result/table4_backfill_20260925/formal-20260925-041226-evidence.tar.gz`，SHA256
+`081d355b18283dada70cea8242dc2e474c5773a94ed58b561df386b5dd02cff8`，本地复核一致。
+本地复算脚本`analyze_partial.py`验证实际query矩阵、probe元数据/数组SHA、branch身份与恢复，
+报告`analysis_partial/table4_partial.json`明确`collection_status=partial_1_of_4_shards`。
+没有运行新GPU实验，没有变更服务器或启动器；等待作者选择明确以30episode报告还是补齐原100episode。
+最新独立`4_experiment.tex`与ZIP中的同名文件SHA256一致，尚未改动作者原稿。
+
+### 16.4 作者要求继续ACP：设备选择修复及只补缺失分片
+
+作者要求提供继续运行命令。已建立独立`S/table4_libero_20260925/release-v4/`，
+保留release-v3、旧失败分片和成功shard-0，未覆盖任何旧数据。
+进一步读取当前robosuite1.4实现后确认：其EGL索引选择直接耦合CUDA_VISIBLE_DEVICES，
+仅改MUJOCO_EGL_DEVICE_ID=1/2/3仍会在只有一个Mesa EGL设备时失败。
+修复为显式进程内software EGL selector，使用MuJoCo的独立EGL选择函数；
+CUDA_VISIBLE_DEVICES从不被改写，只有导入时暂移除robosuite的EGL/CUDA成员断言输入。
+不改任何site-packages、权重、动作、seed或统计参数。
+
+CCI实际验收两种环境：CUDA_VISIBLE_DEVICES=3（该单卡CCI无CUDA3，仅检查非零可见性下的CPU渲染）
+与CUDA_VISIBLE_DEVICES=0（require-cuda检查实际H100）。两者均渲染成功、H32 A-A-B-A通过，
+两路RGB与旧`branches-egl-v2`逐像素一致。不能将该检查称为CCI四卡硬件验收；
+ACP启动器会逐worker在真实可见GPU下检验CUDA分配、渲染和恢复，全部通过后才加载模型。
+原件在`S/table4_libero_20260925/egl-v4-cuda{0,3}/environment.json`及相邻console。
+
+新增resume planner，在旧结果上实际通过proposal SHA/branch身份与状态恢复/标签/逐任务资格记录验收，
+确认旧states0/4/8，缺失1/2/3/5/6/7/9；四worker分成[1,6]/[2,7]/[3,9]/[5]。
+旧shard仅只读复用；新worker加载权重SHA必须等于旧shard；最终merge仍要求完整采样矩阵，
+不接受重叠或漏采。汇总protocol.episodes修正为0..9，另保留各shard原始plans以免误标样本范围。
+新数据输出`resume-<timestamp>`，预计2–3小时但取决于CPU/AFS，6小时为每worker安全上限。
+本轮未提交ACP、未运行新效能实验；由作者使用已上传release-v4命令提交。
+本地相关单测53 passed，bash语法检查通过。源码仍为本地未提交修改，冻结运行包已同步服务器。

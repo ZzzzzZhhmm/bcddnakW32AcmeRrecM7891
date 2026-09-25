@@ -58,3 +58,32 @@ def test_failures_are_durable_and_stop_contaminating_next_candidate(backend):
     assert len(rows) == 2
     assert rows[-1]["kind"] == "branch_result"
     assert rows[-1]["error"] is not None
+
+
+def test_attempt_records_are_immutable_after_execution():
+    rows = []
+    run(Toy(), rows)
+    assert rows[0]["actual_commands"] == []
+    assert rows[0]["clipped_steps"] == []
+    assert len(rows[1]["actual_commands"]) == 32
+
+
+def test_mutating_initial_feature_read_restores_parent_before_failure():
+    class MutatingRead(Toy):
+        def effect_tokens(self):
+            self.n += 1
+            return super().effect_tokens()
+    backend = MutatingRead()
+    with pytest.raises(RuntimeError, match="mutated parent"):
+        run(backend, [])
+    assert backend.n == 0
+
+
+def test_independent_outcome_read_before_parent_restoration():
+    backend, rows = Toy(stop=7), []
+    result = execute_branches(backend, query_id="q1", candidates={"a": np.zeros((32, 2))},
+        proposal_sha256="b"*64, project_effect=lambda pre, delta: delta, emit=rows.append,
+        observe_outcome=lambda: {"task_progress": backend.n})
+    assert result[0]["independent_outcome"] == {"task_progress": 7}
+    assert result[0]["observed_effect"] is None
+    assert backend.n == 0

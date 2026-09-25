@@ -9,6 +9,7 @@ scientific use; the protocol and toy tests alone are not such qualification.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from copy import deepcopy
 from typing import Callable, Mapping, Protocol
 
 import numpy as np
@@ -44,7 +45,8 @@ def execute_branches(backend: BranchBackend, *, query_id: str,
                      candidates: Mapping[str, np.ndarray],
                      proposal_sha256: str,
                      project_effect: Callable[[np.ndarray, np.ndarray], np.ndarray],
-                     emit: Callable[[dict], None], horizon: int = 32) -> list[dict]:
+                     emit: Callable[[dict], None], horizon: int = 32,
+                     observe_outcome: Callable[[], dict] | None = None) -> list[dict]:
     """Record every attempt, run H commands without replanning, always restore.
 
     `candidates` are denormalized adapted means, not stored actions or new policy
@@ -63,17 +65,21 @@ def execute_branches(backend: BranchBackend, *, query_id: str,
         validated[candidate_id] = array.copy()
     snapshot = backend.snapshot()
     parent = _fingerprint(backend)
-    before = np.array(backend.effect_tokens(), copy=True)
-    if not np.isfinite(before).all():
-        raise ValueError("nonfinite initial effect tokens")
-    # Observation/feature reads must not advance simulator/task state.
-    if _fingerprint(backend) != parent:
-        raise RuntimeError("effect token read mutated parent state")
-
     def restore():
         backend.restore(snapshot)
         if _fingerprint(backend) != parent:
             raise RuntimeError("branch restoration fingerprint mismatch")
+
+    try:
+        before = np.array(backend.effect_tokens(), copy=True)
+        if not np.isfinite(before).all():
+            raise ValueError("nonfinite initial effect tokens")
+        # Observation/feature reads must not advance simulator/task state.
+        if _fingerprint(backend) != parent:
+            raise RuntimeError("effect token read mutated parent state")
+    except Exception:
+        restore()
+        raise
 
     results = []
     for candidate_id, actions in validated.items():
@@ -82,7 +88,7 @@ def execute_branches(backend: BranchBackend, *, query_id: str,
                "executed_steps": 0, "endpoint_status": "attempted", "termination": None,
                "observed_effect": None, "planned_commands": actions.tolist(),
                "actual_commands": [], "clipped_steps": [], "error": None}
-        emit({**row, "kind": "branch_attempt"})
+        emit(deepcopy({**row, "kind": "branch_attempt"}))
         failure = None
         try:
             restore()
@@ -110,6 +116,10 @@ def execute_branches(backend: BranchBackend, *, query_id: str,
                 row["endpoint_status"] = "complete_horizon"
             else:
                 row["endpoint_status"] = "incomplete_horizon"
+            if observe_outcome is not None:
+                # Independent task outcome, read before restoring the parent.
+                # This callback never receives predictions or ranking scores.
+                row["independent_outcome"] = deepcopy(observe_outcome())
         except Exception as e:
             row["endpoint_status"] = "invalid_branch"
             row["error"] = f"{type(e).__name__}: {e}"
@@ -122,7 +132,7 @@ def execute_branches(backend: BranchBackend, *, query_id: str,
                 row["parent_restored"] = False
                 row["restoration_error"] = f"{type(e).__name__}: {e}"
                 failure = e
-            emit({**row, "kind": "branch_result"})
+            emit(deepcopy({**row, "kind": "branch_result"}))
         results.append(row)
         if failure is not None:
             raise RuntimeError("branch failed; attempt/result were recorded") from failure
