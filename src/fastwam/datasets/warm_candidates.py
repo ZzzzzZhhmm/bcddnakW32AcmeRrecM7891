@@ -30,6 +30,7 @@ from fastwam.memory.oracle_metrics import ActionDistanceConfig, action_distance
 from fastwam.memory.runtime_candidates import RuntimeCandidateResolver
 from fastwam.real.preprocessing.contract import (
     PIPER_CONTROL_MODE, PIPER_EMBODIMENT, PIPER_IMAGE_SIGNATURE,
+    PIPER_JOINT_CONTROL_MODE,
 )
 
 
@@ -254,6 +255,7 @@ class RuntimeCandidateDatasetAdapter(torch.utils.data.Dataset):
                     "robotwin",
                 ),
                 PIPER_CONTROL_MODE: ((224, 448), "horizontal"),
+                PIPER_JOINT_CONTROL_MODE: ((224, 448), "horizontal"),
             }.get(control_mode)
             if expected_video is None:
                 raise RuntimeCandidateDatasetContractError(
@@ -374,7 +376,10 @@ class RuntimeCandidateDatasetAdapter(torch.utils.data.Dataset):
         is_robotwin = contract.control_mode == (
             "robotwin_bimanual_qpos_plus_grippers"
         )
-        is_piper = contract.control_mode == PIPER_CONTROL_MODE
+        is_piper = contract.control_mode in {
+            PIPER_CONTROL_MODE,
+            PIPER_JOINT_CONTROL_MODE,
+        }
         if not (is_libero or is_robotwin or is_piper):
             raise RuntimeCandidateDatasetContractError(
                 f"unsupported WARM processor control mode {contract.control_mode!r}"
