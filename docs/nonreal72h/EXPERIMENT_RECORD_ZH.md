@@ -567,3 +567,20 @@ ACP启动器会逐worker在真实可见GPU下检验CUDA分配、渲染和恢复�
 - 原日志和失败summary原样保留在`task_qualification_rearrange_blocks/`及相邻job目录；双端证据包`archives/task_qualification_failed_evidence.tar.gz`，SHA-256 `e1ca1cb30f28e449362f68d82a0034bcc3bba1527db5d296329d5c64bcb4751b`；本地副本位于`tmp/rebuttal/execution/20261108/evidence/`。未以另一个seed重试掩盖错误，未绕过官方规划器，`battery_try`尚未启动。
 - 环境排查定位现有系统nvcc12.4，以及包含sm_90的已安装cuRobo扩展；尚不能仅凭此证明根因。参考[cuRobo维护者的H100兼容性讨论](https://github.com/NVlabs/curobo/issues/481)，正在保留原site-packages的条件下，以官方CUDA12.8编译器、相同固定cuRobo源码和相同编译选项建立私有扩展。此诊断不关闭正式实验的模型、全状态恢复或标签缺口。
 - CUDA编译器包来自NVIDIA官方Ubuntu2204仓，七个deb逐文件按官方Packages SHA-256核验，只解包到本次输出根，不通过apt/dpkg安装、不修改系统CUDA。包清单及哈希见`runtime_verified_client/package_manifest.json`。首次`dpkg-deb --extract`因AFS禁止chown而失败，保留`cuda128_private/`和原日志；r2改为fsys-tarfile加no-same-owner解包到新目录，未覆盖第一次失败。
+
+### 19.7 私有CUDA12.8扩展编译完成，原seed任务复验（工程资格）
+
+- 以私有CUDA12.8.93编译器、Torch2.7.1+cu128、sm_90、原cuRobo源码及编译选项构建五个扩展；原site-packages、系统CUDA和官方模拟器源文件不修改。213份原源码/构建文件逐文件核对全部未改变，包括算法实现；结果见`curobo_source_build_verification.json`。无Git元数据的复制工程先因setuptools-scm版本解析失败，保留r2日志；r3仅设固定版本元数据0.7.8后构建成功，没有更改优化算法或关闭CUDA graph。
+- 构建证据包`S/rebuttal_20261108/archives/curobo_cuda128_build_evidence.tar.gz`，SHA-256 `32f4c83781c564d4183e133e93a299b6cef72c15918ce454fad1968ff1306778`；本地同名副本在`tmp/rebuttal/execution/20261108/evidence/`，哈希一致。包内含所有构建尝试日志、七包官方来源/哈希、构建脚本、未改动的源码及五个新扩展和逐文件哈希。编译器二进制及deb另存私有cache和运行目录，不入Git。
+- 验证进程只增加私有cuRobo源码路径和可写Torch kernel cache，沿用19.5的进程专用图形环境。首次单独import扩展的preflight遗漏先import Torch、报libc10缺失；该次未启动任务，日志保留。修正import顺序后实际import路径指向私有源码和新LBFGS扩展。
+- `rearrange_blocks`复用同一seed3407、同一冻结官方任务源码和配置。job `task_qualification_job_logs/20261108T084851Z-c17d620a/` **complete / exit0**，elapsed `82.05043125152588`秒；任务重置、4路240×320 uint8 RGB、32条当前qpos保持命令及末端观测通过。官方任务源码与runner源码运行前后均一致。此复验将环境缺陷与seed差异区分，但不单独证明所有cuRobo CUDA路径均已合格。
+- `battery_try`随后使用同一seed3407、同一冻结源码和私有扩展。job `task_qualification_job_logs/20261108T085123Z-f71f135b/` **complete / exit0**，elapsed `78.30343174934387`秒，同样完成重置、4路相机及H32关节保持。合计为两个任务各1次工程资格、64条保持命令；不计作WARM评测episode。
+- 修复后任务证据包`S/rebuttal_20261108/archives/task_qualification_cuda128_evidence.tar.gz`，SHA-256 `39e1964069d0e39e9ccb72c8df3d34c15c4e15bba932510eabba72a29ec14313`；本地同名副本在`tmp/rebuttal/execution/20261108/evidence/`。本地独立验证两份runner exit0/源码前后身份、官方源码逐文件哈希、entry及五个扩展输入哈希、64步计数、16份相机原数组、PNG逐像素一致和summary标准差；结果见`TASK_QUALIFICATION_VERIFICATION.json`，两个head-camera初始图已人工查看。原环境1次失败与私有扩展2次通过分开保留。
+- SAPIEN当前公开API包含scene `pack_poses/unpack_poses`及PhysX `pack/unpack`；只记录API可用，不把这些API等同于完整快照。任务具有stage_id、press_cnt/flag、eval_success等状态，控制器、规划子进程、任务反馈、RNG及事实历史的恢复仍须另行实现并通过A-A-B-A。
+- **论文边界：** 这些是初始化/图形/关节命令工程资格；没有调用WARM策略或独立动作标签，保持命令的`eval_success=false`不构成策略失败率。恢复率、自然无技能退让和配对闭环SR仍未采集，DEV50诊断仍不替代它们。
+
+### 19.8 本批提交、验证与后续入口
+
+提交`23d86dd`已推送并同步CCI；随后`20fd522`同样推送并验证GitHub/CCI HEAD一致。两端定向28项测试通过；DEV50与两任务资格均另做真实归档/数组复核，不以单测代替实测资格。论文源差异通过对归档底稿的git apply检查，最终PDF/源ZIP哈希同19.3。原有本地文档删除未暂存，未触碰真机主路径、数据或checkpoint。
+
+首批工作稿是三位审稿人20项意见的回应及正文10页/全34页修订v1；仍未在OpenReview发评论或上传PDF，也未改写Inscrive。下一批先实现并验收完整状态恢复、冻结独立标签与正式模型/cohort，再采raw/refined/null、非空缺技能配对闭环和可控成本。所有工程资格作业已退出，不将排队、构建成功或GPU占用宣称为正式实验在跑。

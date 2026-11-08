@@ -8,8 +8,8 @@
 - 原LaTeX工程编译为33页；72 dpi下，第2–33页与投稿PDF逐像素一致，第1页仅差OpenReview附加提示。原工程保存在 `tmp/rebuttal/revision/baseline_source_20261108/`。
 - 修订v1位于 `tmp/rebuttal/revision/WARM_ICLR2027/`；交付件为 `WARM_ICLR2027_revision_v1.pdf` 和同名 `_source.zip`。正文结束第10页，总长34页，已渲染检查全部页。只加入既有证据、监督和范围澄清；未插入新效能实验数值。
 - step3000/v8共同噪声Full / scale-only / Gaussian诊断已完成并从原数组独立复核：10个来源episode、50个query、自然门控50/50非零。固定方差移除source均值后输出RMS差非零；只支持生成敏感性，不证明生成质量或闭环收益。DEV4 pilot与DEV50重叠，不能相加。
-- SAPIEN渲染缺失组件已用精确版本提取库和进程专用环境修复；原runtime checker及实际128×128相机读回通过。未修改系统驱动或重启共享容器；完整任务与状态恢复资格仍待验证。
-- 完整任务首轮在cuRobo规划warmup出现CUDA illegal instruction，尚未完成任务重置。失败原件已归档；私有CUDA12.8扩展重编译正在排查，原运行环境保留。不能把渲染通过等同于任务资格通过。
+- SAPIEN渲染缺失组件已用精确版本提取库和进程专用环境修复；原runtime checker及实际128×128相机读回通过。未修改系统驱动或重启共享容器。
+- 完整任务首轮在cuRobo规划warmup出现CUDA illegal instruction，失败原件已归档。以相同固定源码、相同编译选项构建私有CUDA12.8扩展后，Rearrange Blocks和Battery Try均在seed3407通过官方任务重置、4路相机和H32关节保持。原运行环境保留，未关闭CUDA graph或绕过规划器。两任务合计64条保持命令，没有调用WARM策略；完整状态恢复仍待验收。
 - 新增恢复率统计代码，区分修复、损害、null增量和自然零门分层；独立标签及模拟器恢复仍须由采集器验证。
 
 ## 回复和论文修订
@@ -34,8 +34,12 @@ CCI同卡存在其他项目作业时，不终止其进程；耗时记录标记�
 
 当前容器可在每个独立评测进程启动前source `WARM_evaluations/rebuttal_20261108/graphics_5809505/graphics_env.sh`。容器重建或驱动版本变化后必须重新核对版本及运行资格，不能默认旧配置仍有效。
 
-`setup_rebuttal_graphics_env.py`只生成配置；其单测使用假库文件，仅验证配置保护逻辑，不能代表真实GPU资格。真实资格由独立日志和相机数组证明。完整任务重置、状态恢复、controller与计数器以及独立标签均需另验。
+`setup_rebuttal_graphics_env.py`只生成配置；其单测使用假库文件，仅验证配置保护逻辑，不能代表真实GPU资格。真实资格由独立日志和相机数组证明。两个拟用任务已单独完成重置/相机/保持命令检查；状态恢复、controller与计数器以及独立标签仍需另验。
+
+当前任务复验额外使用进程内 `PYTHONPATH=WARM_evaluations/rebuttal_20261108/curobo_cuda128_source/src`，不覆盖原cuRobo安装。重编译的五个扩展、未改动源码及官方编译器包身份已归档于账本19.7；实际评测启动器必须同时记录该overlay与图形环境。完整状态恢复需要覆盖物理量以外的控制器、阶段/反馈、规划子进程、RNG和事实历史，不能只调用PhysX pack/unpack后即开始正式采集。
 
 ## 提交与同步
 
 每次提交前拉取并检查upstream，只暂存本轮明确修改的源文件和小型说明；英文subject与bullet正文。提交后立即推送当前upstream并核对远端包含该commit，再同步CCI主checkout。保护并行修改，禁止force-push、reset或clean。
+
+本地与CCI的28项相关测试均通过，真实DEV50和两任务资格另做独立原数组/输入身份复核。执行状态与证据入口为`tmp/rebuttal/execution/20261108/EXECUTION_STATE.json`，原始数据、失败日志和聚合复核继续保留在Git之外。本批全部作业已退出；正式恢复/退让/成功率实验尚未开始。
