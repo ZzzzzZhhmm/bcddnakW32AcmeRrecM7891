@@ -891,3 +891,15 @@ Rearrange Blocks v2已对原32个valid候选全部尝试：27个完整H32、5个
 旧step5两包的全部400个CAS文件已在本机逐项验证后，仅将其19个独占压缩blob、26,306,412,792 bytes从AFS重复存储分层到本机持久CAS（并额外保留/tmp逐字节副本），AFS约释放24.5GiB。每次移除AFS重复blob前核对本机完整receipt、原SHA/长度和/tmp副本SHA，且确认不被任何当前step100 manifest引用。`archives/AFS_UPDATE5_PAYLOAD_TIERING.json`记录19项及本机receipt SHA `136b0f8a7af5195e934d7d231e45dfefd1b4c98cd2e02ff2c65856fe33d083bf`，已传回本机。旧step5完整重建现在使用本机自包含CAS；不再称旧AFS目录仍自包含。当前conditioned-step100的AFS CAS仍完整自包含，本机step100下载仍在途。原author checkpoint、datasets、原/tmp TAR及训练state没有改动。后续训练单独要求空闲GPU及至少20GiB AFS空间。
 
 原方法核对还发现：当前action-conditioned prior没有ReCAP的检索视觉序列条件；跨回合检索先验也不是WarmPrior的同回合历史/preview先验。因此BB-W2的具名方法head-to-head仍有实质缺口，不能用当前100更新或简化对照替代。区别与可核实来源见`docs/rebuttal/MATCHED_BASELINE_METHOD_AUDIT_ZH.md`；没有为此擅自改动正在运行的策略或把新对照写成已完成实验。
+
+### 23.20 排除状态的CPU探索探针与step100本机保全完成
+
+为判断简单后果校准是否值得继续，另做只用两个排除query8状态的CPU ridge诊断，不训练或替换策略。按(task, source episode)整组留出，三个事前固定输入为完整adapted H32动作、historical effect、原预测effect；固定相对ridge系数0.1，标准化和拟合只用训练组，六种结果全部保留，未调参挑优。原始v8 head和正式TEST完全没有更新；不能把候选数当成独立source数或把该诊断写成正式后果预测结果。
+
+留出Battery Try（32完整候选）的centered explained variance依次为`-1.6653862512428264`、`0.05057185892009841`、`-0.4330099708019961`；留出Rearrange Blocks（27完整候选）依次为`-1.2127499501628254`、`-0.06639334534053498`、`-0.3686764859904066`。**仅historical输入在一个方向略为正，两个方向没有一致改善；目前不能把问题归结为可由简单线性校准稳定消除。** 只有两个来源状态，不能据此认定物理后果不可学习，也不支持推广到其他阶段。继续以固定正式source/query的数据检验为准。
+
+诊断源码集合`6af17287a9756648b950e0bff78bdc3aa34ce3ed99ee96de7138a9bb5bc2a5ca`，3项CPU数值/输入不变/退化方差检查在Windows和原生均通过（原生0.66秒）；双端包`archives/excluded_effect_probe_v1_complete.tar.gz`，1,138,450 bytes，SHA-256 `e1a946732cec563e77a3a0324592456fcc2abcb2df622a4af33b2cbe5bd08951`，本机13文件及六个互斥训练/测试来源绑定通过，报告`P0_EXCLUDED_EFFECT_PROBE_ARCHIVE_VERIFICATION.json`。没有占用额外GPU，没有将任何探索结果提升为原模型改进。
+
+conditioned-prior step100的390个压缩blob及1份manifest已全部在本机核验，总22,373,314,771 bytes，完成耗时2392.42秒；本机完整transport receipt SHA-256 `c256f054592a30e783a00339742372b3abb9a12cf94bc768a35f35e381da4728`，对应inventory SHA-256 `456e141e620a9a2445fa1fa6436ae5f32b1e3aca96984d83a6a00b000ee72faa`。receipt已回传AFS，和先前原生完整raw TAR重建证明共同构成双端保全链；本机并未重新解压TAR，不能混称已做本机全tensor扫描。23.16/23.19关于本机step100下载在途的状态现由本节完成记录替代；训练仍为100/3000，非性能结果。
+
+18:48 UTC读取时，正在运行的正式Full/null均已生成到frame140，越过先前124步审计停止点；官方上限仍1000，尚无完成pair。正式机制source0与Full5→100链仍等待该角色试验结束，不能把后续排队项计为运行中。
