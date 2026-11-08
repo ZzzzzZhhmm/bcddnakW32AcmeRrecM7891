@@ -34,7 +34,7 @@ def summarize(rows, *, expected_count):
                 median_s=float(np.median(times)), p95_s=float(np.quantile(times, .95)),
                 peak_allocated_gib=max(r['peak_allocated_gib'] for r in measured),
                 peak_reserved_gib=max(r['peak_reserved_gib'] for r in measured),
-                scope='recorded DEV prefix online-pipeline timing; smoke checkpoint; no task SR')
+                scope='recorded DEV prefix online-pipeline timing; checkpoint identity in manifest; no task SR')
 
 
 def main():
@@ -137,13 +137,19 @@ def main():
         return
     print('stage=load_online_policy', flush=True)
     os.chdir(bundle_args.rmbench_root)
+    policy_load_started = time.perf_counter()
     policy = RMBenchWarmPolicy(runtime)
+    torch.cuda.synchronize()
+    policy_load_seconds = time.perf_counter()-policy_load_started
     bank = policy.retriever._bank
     manifest = dict(checkpoint_sha256=policy.checkpoint_sha256,
                     online_contract_sha256=policy.contract.sha256,
                     bank_content_sha256=policy.contract.bank_content_sha256,
                     train_config_sha256=sha256_file(args.train_config),
                     task=task, gpu=torch.cuda.get_device_name(), precision='bf16', batch=1,
+                    policy_construction_seconds=policy_load_seconds,
+                    recent_event_capacity=bundle_args.recent_event_capacity,
+                    action_summary_capacity=bundle_args.action_summary_capacity,
                     nfe=policy.num_inference_steps, horizon=policy.action_horizon,
                     replan_steps=policy.replan_steps, bank_events=len(bank), top_k=bundle_args.top_k,
                     bank_storage='CPU NumPy arrays with exact CPU cosine search; gathered tensors transferred to model',
@@ -207,7 +213,8 @@ def main():
     (output/'summary.json').write_text(json.dumps(report,indent=2,allow_nan=False))
     (output/'RESULTS.md').write_text(
         '# Recorded DEV online-pipeline profile\n\n'+json.dumps(report,indent=2)+
-        '\n\nNo task SR. Recorded action history, smoke300 checkpoint; excludes simulator and disk decoding.\n')
+        '\n\nNo task SR. Recorded action history; checkpoint SHA256 '+manifest['checkpoint_sha256']+
+        '; excludes simulator and disk decoding.\n')
     print(json.dumps(report),flush=True)
 
 

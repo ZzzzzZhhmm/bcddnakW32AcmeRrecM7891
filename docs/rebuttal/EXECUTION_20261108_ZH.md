@@ -20,7 +20,7 @@
 
 ## 实验下一步
 
-已完成step3000固定模型的共同噪声诊断。下一步依据可用任务模型、完整状态恢复和独立标签冻结正式恢复cohort，并区分最终投稿模型与当前可用checkpoint。当前诊断不代替近邻方法的匹配训练控制，也不用于填充raw/refined/null修复率。
+作者现已明确选择v8-step3000作为本轮RMBench补实验模型；权重、训练配置和attestation身份见实验账本20.4及`tmp/rebuttal/execution/20261108/MODEL_SELECTION.json`。下一步在该固定模型下接入真实策略记忆、完成阶段资格与独立标签定义，再冻结正式恢复cohort。当前共同噪声诊断不代替近邻方法的匹配训练控制，也不用于填充raw/refined/null修复率。
 
 `configs/nonreal/rebuttal_recovery_protocol.json` 的状态明确为采集未就绪；`scripts/summarize_rebuttal_recovery.py` 只汇总已采集的独立分支标签，不能从回合成功推导修复率。
 
@@ -43,3 +43,13 @@ CCI同卡存在其他项目作业时，不终止其进程；耗时记录标记�
 每次提交前拉取并检查upstream，只暂存本轮明确修改的源文件和小型说明；英文subject与bullet正文。提交后立即推送当前upstream并核对远端包含该commit，再同步CCI主checkout。保护并行修改，禁止force-push、reset或clean。
 
 本地与CCI的28项相关测试均通过，真实DEV50和两任务资格另做独立原数组/输入身份复核。执行状态与证据入口为`tmp/rebuttal/execution/20261108/EXECUTION_STATE.json`，原始数据、失败日志和聚合复核继续保留在Git之外。本批全部作业已退出；正式恢复/退让/成功率实验尚未开始。
+
+## 后续批次更新
+
+- 实验性`RMBenchQposBackend`已实现task/controller/cache/RNG及调用者策略指纹检查，分支内规划RPC立即拒绝。原恢复顺序与Battery抓取状态的native编码失败均保留；没有通过改seed或放宽容差掩盖失败。
+- 显式`prepare_native_query`在观测/动作封存之前构造可幂等恢复的原生checkpoint。无物理step，最多5轮；要求task/controller/RNG不变并记录原live编码是否改变。两个任务各自reset与首个专家grasp状态共4项通过，均seed3407、H32 A-A-B-A，合计512条分支命令。Battery grasp原live CPU编码改变已明确记录，因此这些结果只资格化准备后的checkpoint协议。
+- 四状态原始包、六类端点和RGB经独立核对，见`evidence/RESTORATION_V3_VERIFICATION.json`；双端归档SHA-256为`70165ee8d1a093bbfb25900ea97192721b2b773974674a0d1c8784ee030c9d8d`。实际WARM记忆、其他阶段和独立标签仍未取得科学采集资格，没有新增策略成功率。
+- 当前本地54项定向测试通过；此前两端28项测试是首批快照验证，不将其写成当前源码的CCI54项验证。
+- 固定模型成本评测已完成严格合同和100个DEV前缀输入预检，开始100个计时query加20次预热；完整`_replan`含预处理、检索、生成及telemetry，磁盘解码排除，初始化另计。独立guard记录其他GPU进程。作业状态、计数与统计须在退出后从原件验收，目前不报告尚未取得的延迟。
+
+首批`EXECUTION_STATE.json`保留其历史时点，最新后续状态写入独立快照。上述工程资格和模型指定不覆盖原论文结果，也不自动补齐raw/refined/null恢复率、自然缺技能退让或配对闭环收益。

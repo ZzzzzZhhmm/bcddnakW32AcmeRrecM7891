@@ -5,6 +5,23 @@
   "planned_tasks": ["rearrange_blocks", "battery_try"],
   "tasks_frozen_by": "availability and prespecified task mechanisms, before outcome inspection",
   "branches": ["raw", "refined", "candidate_null"],
+  "model_selection": {
+    "status": "author_selected_20261108",
+    "name": "v8-step3000",
+    "checkpoint_sha256": "68c7f3840921241df45a5b6997b772db3a69a31584644aa0e66929b841b845bf",
+    "training_config_sha256": "34f5dc0a6f4cc354da61c0ba7bdc394b6c9652c7ef7706e72e8cbb683ec9a00c",
+    "scope": "RMBench supplementary experiments; new cohorts retain their own provenance."
+  },
+  "experimental_backend": "fastwam.research.rmbench_branches.RMBenchQposBackend",
+  "query_preparation": {
+    "status": "engineering_protocol_not_frozen_for_scientific_collection",
+    "native_checkpoint_max_rounds": 5,
+    "before_observation_and_action_sealing": true,
+    "report_original_native_encoding_changes": true,
+    "zero_physics_steps_during_preparation": true,
+    "qualify_every_planned_stage_cell": true,
+    "actual_policy_history_integration_still_required": true
+  },
   "branch_contract": {
     "same_parent_simulator_controller_rng_and_history": true,
     "same_execution_prefix": true,
@@ -25,7 +42,6 @@
     "sparse_denominator_policy": "retain missing CI; never select only defined resamples"
   },
   "blocking_requirements": [
-    "Freeze an explicitly identified evaluation checkpoint and compatible configuration.",
     "Qualify a full-state simulator backend on the chosen tasks.",
     "Freeze task-progress label definitions and held-out query schedule.",
     "Collect independently labelled sealed raw/refined/null branches."

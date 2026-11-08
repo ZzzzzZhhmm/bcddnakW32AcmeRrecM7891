@@ -64,6 +64,8 @@ def main():
                         choices=("press_button", "put_back_block", "rearrange_blocks", "battery_try"))
     parser.add_argument("--seed", type=int, default=3407)
     parser.add_argument("--commands", type=int, default=32)
+    parser.add_argument("--restore-probe", action="store_true",
+                        help="Run the experimental exact reset-only A-A-B-A check; never a formal collection qualification")
     args = parser.parse_args()
     if not 1 <= args.commands <= 32:
         raise ValueError("qualification requires 1..32 bounded hold commands")
@@ -138,6 +140,34 @@ def main():
         report.update(status="qualified_reset_camera_hold",
                       commands_executed=int(env.take_action_cnt),
                       final_eval_success=bool(env.eval_success))
+        if args.restore_probe:
+            from fastwam.research.rmbench_branches import RMBenchQposBackend, qualify_reset_probe, prepare_native_query
+            import pickle
+
+            preparation_directory = out / "query_preparation"; preparation_directory.mkdir()
+            preparation_count = 0
+            def save_preparation(record):
+                nonlocal preparation_count
+                (preparation_directory/f"{preparation_count:03d}.pickle").write_bytes(pickle.dumps(record,protocol=4))
+                preparation_count += 1
+            query_observation, canonicalization = prepare_native_query(env,emit=save_preparation)
+            report["query_preparation"] = canonicalization
+            backend = RMBenchQposBackend(env, query_observation,
+                encode=lambda observation: np.zeros(1),
+                policy_fingerprint=lambda: "no policy in engineering reset probe", canonicalization=canonicalization)
+            trace_directory = out / "restore_trace"
+            trace_directory.mkdir()
+            trace_count = 0
+            def emit(record):
+                nonlocal trace_count
+                path = trace_directory / f"{trace_count:03d}-{record['kind']}.pickle"
+                path.write_bytes(pickle.dumps(record, protocol=4))
+                trace_count += 1
+            try:
+                report["restoration"] = qualify_reset_probe(backend, horizon=args.commands, emit=emit)
+                report["status"] = "passed_reset_restoration_probe_only"
+            finally:
+                backend.close()
     except BaseException as exc:
         report.update(status="failed", error=f"{type(exc).__name__}: {exc}",
                       traceback=traceback.format_exc())
@@ -150,7 +180,7 @@ def main():
         (out / "summary.json").write_text(json.dumps(report, indent=2) + "\n")
         if env is not None and hasattr(env, "scene"):
             env.close_env(clear_cache=True)
-    if report["status"] != "qualified_reset_camera_hold":
+    if report["status"] not in ("qualified_reset_camera_hold", "passed_reset_restoration_probe_only"):
         raise RuntimeError(report.get("error", "qualification failed"))
     print(json.dumps(report), flush=True)
 

@@ -584,3 +584,59 @@ ACP启动器会逐worker在真实可见GPU下检验CUDA分配、渲染和恢复�
 提交`23d86dd`已推送并同步CCI；随后`20fd522`同样推送并验证GitHub/CCI HEAD一致。两端定向28项测试通过；DEV50与两任务资格均另做真实归档/数组复核，不以单测代替实测资格。论文源差异通过对归档底稿的git apply检查，最终PDF/源ZIP哈希同19.3。原有本地文档删除未暂存，未触碰真机主路径、数据或checkpoint。
 
 首批工作稿是三位审稿人20项意见的回应及正文10页/全34页修订v1；仍未在OpenReview发评论或上传PDF，也未改写Inscrive。下一批先实现并验收完整状态恢复、冻结独立标签与正式模型/cohort，再采raw/refined/null、非空缺技能配对闭环和可控成本。所有工程资格作业已退出，不将排队、构建成功或GPU占用宣称为正式实验在跑。
+
+## 20. 2026-11-08 后续完整状态恢复工程探测（未取得科学采集资格）
+
+### 20.1 新后端、隔离范围与首次恢复失败
+
+在第19节首批完成后，继续实现实验性`RMBenchQposBackend`。只允许已静态检查的Rearrange Blocks / Battery Try、CPU PhysX和绝对关节命令；显式保存原生物理包、scene pose cache、关节drive targets/velocity targets、qf、机器人/TOPP值状态、任务变量、相机/观测缓存、Python/NumPy/Torch/CUDA RNG和调用者提供的策略指纹。任何分支内cuRobo RPC均立即报错，不将未捕获的规划子进程状态默认为已恢复；官方TOPP异常或空轨迹也会使探测失败。该后端没有改写官方任务、训练或真机路径。
+
+本地相关测试38 passed，其中3个新状态/guard夹具仅验证字段恢复、opaque拓扑变化拒绝及RPC拒绝，不能代替真实SAPIEN资格。真实探测从`93a827f`基线加三份明确overlay文件构建不可变源码：r1 archive SHA-256 `500a52da50b8910bc364efbbfcca197fe216c03ddb427500db296c17ccbe7d4a`，实际双端一致；文件清单见`restore_probe_round1_manifest.json`。
+
+r1 job `restore_probe_job_logs/20261108T090814Z-8c6c0b8b/`在seed3407重置及32条保持命令后，**首次parent restore即失败**，没有开始A-A-B-A分支；控制器、任务、RNG、观测缓存及无策略占位指纹匹配，physics指纹不匹配。密封原件为`S/rebuttal_20261108/archives/restore_probe_r1_failed_sealed_evidence.tar.gz`，SHA-256 `b1208e903164a3b249ed2b62e533023b6eb4fe63bf7781631cda8f2a8afd8668`，本地同名副本在`tmp/rebuttal/execution/20261108/evidence/`。
+
+r2只增加恢复前原始state落盘，保持同一seed、动作和严格标准；再次在parent restore失败。原始包逐字节比较：**PhysX CPU包832 bytes完全一致；scene pose包2044 bytes有26 bytes不同**，两次restore的差异一致。该发现只定位到scene pose cache，不把它解释为策略误差或放宽容差后的合格结果。r3正在检查两个原生恢复API的执行顺序；所有失败目录和源码快照保留，正式恢复率和闭环采集仍未启动。
+
+### 20.2 恢复顺序修复、重置状态通过及抓取状态的任务差异
+
+r3调整为先原生PhysX unpack、再scene pose unpack后，parent及最终恢复均精确匹配；测试随后在零位移保持命令的官方TOPP空轨迹处停止。r4将资格动作改为双臂±0.005rad交替小幅轨迹，B在左臂另加0.01rad，使验证实际经过TOPP且B物理端点不同；没有放宽恢复或端点容差。完全相同的hold path允许官方零时长轨迹，非零路径空轨迹及异常仍失败退出。
+
+- Rearrange Blocks r4：job `20261108T091827Z-3a26fb6d`，exit0、130.65657329559326秒；Battery Try r4：job `20261108T092254Z-830bc879`，exit0、131.114102602005秒。runner源码集合均为`dc421016f5c20e536c856d7225b41d9d59a6ac17f9263971b04c734c3474bdc4`，运行前后一致。两任务在重置后保持状态完成H32 A-A-B-A，报告物理/controller/task端点及RGB精确一致。每任务一个seed/一个状态，不代表接触、插入或任务反馈阶段已合格。
+- 新脚本`probe_rmbench_grasp_restoration.py`在官方专家的首个grasp macro后检测机器人—目标物的正接触冲量，再运行同一严格探测。Rearrange Blocks job `20261108T092713Z-13eeb1fd` exit0、135.77174854278564秒；检测到fr_link7/8与box接触，并通过该单一抓取状态的H32 A-A-B-A。没有运行学习策略。
+- Battery Try同一抓取探测job `20261108T093136Z-8165cafc`失败：抓取接触存在，但首次parent restore时CPU包832 bytes的4 bytes变化（offset728/732/736/740），scene pose包2100 bytes完全一致。其他五类指纹匹配；没有开始A-A-B-A分支。因此不能将前述reset或Rearrange通过扩展成Battery接触阶段合格。
+- 两次grasp源码集合均为`1f720ee9c93d76e1a8e403a2e99e5eb5adf32a08b436c3fb815ffea66fb73585`。更严格的、要求原native bytes不变的v2 query canonicalization也在Battery抓取状态失败（job `20261108T093926Z-1844328d`，exit1、77.20895624160767秒），原件保留。
+- r1–r3封存包`archives/restore_rounds1_3_evidence.tar.gz`，SHA-256 `15d10227524546105f4189c21cb7ac018dcbddcb453a99fc48825b2764960fc5`，服务器与本地`tmp/rebuttal/execution/20261108/evidence/`均保留；后续各次独立输出继续保留，不覆盖失败。
+
+### 20.3 显式原生checkpoint查询协议（工程开发，不替换既有结果）
+
+为区分“原始live pose编码保持不变”和“所有分支从同一可幂等恢复的native checkpoint出发”，新增`prepare_native_query`，**在任何查询观测/动作封存之前**最多进行5次无物理step的native roundtrip，保留每次CPU/scene pose前后原包。要求task/controller/RNG全程不变，最后两次CPU与pose包精确相同；不收敛即停止。若原live CPU编码改变，proof必须明确记录`original_cpu_encoding_changed=true`，**不能声称恢复了原live编码**。这是另一个明确标识的采样协议，不是放宽bitwise检查，也不据模型分数、标签或收益选择状态。
+
+v3完成两个任务各自的reset和首个官方专家grasp状态，共4个工程状态，seed均为3407。每状态执行H32 A-A-B-A、5次parent恢复；合计512条分支命令。六类端点状态与RGB精确一致，B物理端点不同。两个grasp状态均检测到机器人—目标物正接触冲量；没有运行学习策略、没有独立动作标签，也没有任务成功率。
+
+- v3固定runner源码集合SHA-256 `04d0eaf9d3c62872ab4dc147ee64f3aba68e010cd539a4e2863ddb7d160391f7`，四次作业运行前后一致。Battery grasp job `20261108T094526Z-5d8f3d83`、Rearrange grasp `20261108T095016Z-31dd5fc7`、Rearrange reset `20261108T095235Z-7214672e`、Battery reset `20261108T095445Z-0b625621`均exit0，runner分别耗时142.5017、137.1166、128.5012、127.9041秒。这些耗时不是策略成本。
+- 四状态均在2次native roundtrip后达到固定点。Battery grasp明确记录原live CPU编码改变，另三状态未改变；所有分支均从准备完成后封存的checkpoint出发。task/controller/RNG不变由实际运行代码断言；准备阶段未完整输出这些状态，因此不声称已对该断言作独立原件重算。
+- 双端证据包`S/rebuttal_20261108/archives/restoration_native_v3_evidence.tar.gz`，SHA-256 `70165ee8d1a093bbfb25900ea97192721b2b773974674a0d1c8784ee030c9d8d`。本地`tmp/rebuttal/execution/20261108/evidence/RESTORATION_V3_VERIFICATION.json`独立核对原生固定点包、五次parent恢复、六类A端点、RGB和B差异。未使用重新pickle后的跨NumPy版本哈希代替原数组比较。
+- 原v1三通过/一失败的封存包`restoration_v1_evidence.tar.gz` SHA-256 `b9efda92e446c0979acc14f05d0979d5e09d1f32663319afd1192d6886016edc`与v2失败继续保留，不用v3通过覆盖失败身份。
+
+当前本地54项定向测试通过；状态夹具、固定点与预算拒绝测试只验证软件逻辑。四状态的真实工程探测不能代替其他seed/任务阶段、实际WARM记忆与独立标签集成。`full_scientific_qualification=false`保持不变，正式恢复/退让/闭环成功率尚未采集。
+
+### 20.4 作者固定本轮补实验模型
+
+作者在本对话明确说明最新训练模型就是论文模型，并指定在当前只有v8-step3000的情况下使用该模型。本轮接受此指定；第19节关于尚未确认模型的表述为此前时点，已由本节更新，不再向作者重复索要同一信息。
+
+- 本轮RMBench补实验固定checkpoint SHA-256 `68c7f3840921241df45a5b6997b772db3a69a31584644aa0e66929b841b845bf`，训练配置SHA-256 `34f5dc0a6f4cc354da61c0ba7bdc394b6c9652c7ef7706e72e8cbb683ec9a00c`；路径同19.2。选择记录为`tmp/rebuttal/execution/20261108/MODEL_SELECTION.json`。
+- 对应训练attestation SHA-256 `4254bf00d70872d959a8cb62f0e14771a0ca183f6184ae7c4e653dfe243e5b4b`；其resolved-config摘要`35691ae9c35f5959d2d6a94c9fb72505c4dd21117de414911ed212338551ee83`与保存的YAML文件哈希承担不同角色，不混用。attestation中git_commit为全零快照标记，原件不修改；实际推理源码身份单独记录。
+- 实际训练元数据为version8、shared stage、step3000/configured max30000、训练4卡/effective batch128、BF16。单卡推理沿用recent-event容量20、action-summary容量8、summary chunk4、H32、prefix4和NFE10。这些事实不单独证明训练收敛，也不重建历史900回合的逐trial链，不将RMBench14维模型当LIBERO7维模型。
+
+## 21. 2026-11-08 固定模型成本评测（进行中，尚无正式成本结果）
+
+### 21.1 输入、合同与计时边界
+
+采用作者指定的v8-step3000，预声明Press Button DEV来源5个episode，每episode20个固定前缀，共100个计时query，另20次预热。当前图像与状态来自记录前缀，未来观测在输入策略前移除；事实动作仅用于重放已执行历史。模型生成动作不在模拟器执行，不能计算或推断成功率。H32/prefix4/NFE10、BF16、K32，CPU精确cosine检索与已配置的近期记忆均保留。计时以CUDA synchronize包围完整部署`_replan`，包含预处理、检索、模型生成、队列与telemetry，排除磁盘解码；初始化单独记录。
+
+- 严格online bundle构建job `cost_job_logs/20261108T100307Z-94e9e390`，exit0；bundle manifest SHA-256 `11a2d9b6a80caebae65acbcf82c04db169036c46d1cb76759550e100afc08c96`。Press Button合同canonical SHA-256 `d85addd002492d4b1d654639ad458ca6a4956898c116845d0d4e8f1f9c8505f5`，runtime projection SHA-256 `1d0a900e42ced039c726bd7810fc253a74376f2226256fda0e0bb904f5e33da2`。构建遵守原训练attestation，不修改或绕过合同检查。
+- data-only preflight job `20261108T102110Z-fb140d7c` exit0，100个记录前缀全部通过身份、无padding、相机尺寸及动作归一化检查；catalog SHA-256 `d4a13afc421d27846925450e41ff316c26a1db781168556a8a5b3bab9d22392f`。
+- GPU评测job `20261108T102525Z-1bb6fa74`，10:25:25 UTC启动，max_seconds1200；输出`S/rebuttal_20261108/step3000_cost_warm_dev100/`。新增独立GPU进程guard，在起始无compute PID的条件下每5秒记录，若观察到其他进程则不作为可控成本。该抽样不等于硬件独占保证。
+- 核心policy/builder固定来自`dev50_23d86dd/code`；计时脚本是另一个不可变overlay。import harness先核对核心模块实际路径，再运行overlay；`step3000_cost_profile_source_binding.json`保存双方身份。这样保持原sim-config相对根目录和严格合同projection，无全局变量替换、合同伪造或活动源码改写。
+
+当前尚未验收100条计时、20次预热、策略telemetry覆盖及原始数组；不把数据预检、GPU占用或模型加载写成已取得成本结果。先前smoke/共享GPU时间不替代本次测量。FastWAM成本参照仍需相同输入、预算与清晰checkpoint身份；成本比较不等同于匹配训练性能比较。
