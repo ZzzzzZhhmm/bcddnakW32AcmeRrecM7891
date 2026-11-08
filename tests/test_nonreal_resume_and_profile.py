@@ -91,6 +91,7 @@ def test_profile_archive_requires_policy_coverage_and_matching_summary(tmp_path)
     report=load_script('profile_nonreal_online_replay').summarize(rows,expected_count=2)
     write(data/'summary.json',report)
     assert module.verify(tmp_path,'profile')['median_s']==2
+    assert module.verify(tmp_path,'profile',job_directory=Path('job_logs'))['median_s']==2
     report['median_s']=999
     write(data/'summary.json',report)
     with pytest.raises(AssertionError,match='median_s'):
@@ -100,3 +101,32 @@ def test_profile_archive_requires_policy_coverage_and_matching_summary(tmp_path)
     telemetry_path.write_text('\n'.join(map(json.dumps,telemetry[:-1])))
     with pytest.raises(AssertionError):
         module.verify(tmp_path,'profile')
+
+
+def test_baseline_cost_reference_preserves_the_full_schedule(tmp_path):
+    module=load_script('profile_nonreal_fastwam_replay')
+    def write(name,value):
+        (tmp_path/name).write_text(json.dumps(value))
+    write('manifest.json',dict(precision='bf16',batch=1,replan_steps=4,nfe=10))
+    write('summary.json',dict(status='complete',queries=4,warmup_queries=1))
+    write('runtime_args.json',dict(replan_steps=4,num_inference_steps=10))
+    episodes=[dict(dataset_index=0,recorded_episode=7,start=0),
+              dict(dataset_index=0,recorded_episode=9,start=40)]
+    write('frozen_episodes.json',episodes)
+    rows=[dict(warmup=w,dataset_index=0,recorded_episode=e,recorded_frame=f)
+          for w,e,f in [(True,7,0),(False,7,0),(False,7,4),(False,9,0),(False,9,4)]]
+    timings=tmp_path/'timings.jsonl'
+    timings.write_text('\n'.join(map(json.dumps,rows)))
+    _manifest,_runtime,observed,schedule=module.reference_schedule(tmp_path)
+    assert observed==episodes
+    assert [(w,e['recorded_episode'],n) for w,e,n in schedule]==[(True,7,1),(False,7,2),(False,9,2)]
+    timings.write_text('\n'.join(map(json.dumps,rows[:-1])))
+    with pytest.raises(ValueError,match='incomplete reference'):
+        module.reference_schedule(tmp_path)
+    rows[-1]['recorded_frame']=0
+    timings.write_text('\n'.join(map(json.dumps,rows)))
+    with pytest.raises(ValueError,match='incomplete or duplicated'):
+        module.reference_schedule(tmp_path)
+    write('manifest.json',dict(precision='bf16',batch=1,replan_steps=4,nfe=5))
+    with pytest.raises(ValueError,match='budget disagrees'):
+        module.reference_schedule(tmp_path)

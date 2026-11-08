@@ -15,11 +15,12 @@ def read_rows(path):
     return [json.loads(line) for line in path.read_text(encoding='utf-8').splitlines() if line.strip()]
 
 
-def verify(root, profile):
+def verify(root, profile, *, job_directory=None):
     if not __debug__:
         raise RuntimeError('verification requires assertions; do not run with -O')
     data=root/profile
-    runs=[read_json(p) for p in root.glob('job_logs*/**/run_manifest.json')]
+    paths = (root/job_directory).glob('*/run_manifest.json') if job_directory is not None else root.glob('job_logs*/**/run_manifest.json')
+    runs=[read_json(p) for p in paths]
     runs=[r for r in runs if any(str(a).endswith('/'+profile) for a in r['argv'])]
     assert len(runs)==1, 'ambiguous or missing job identity'
     run=runs[0]
@@ -97,5 +98,6 @@ if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('root',type=Path)
     parser.add_argument('--profile',default='profile200_r2')
+    parser.add_argument('--job-directory',type=Path,help='Explicit relative or absolute directory of job manifests')
     args=parser.parse_args()
-    print(json.dumps(verify(args.root,args.profile),indent=2))
+    print(json.dumps(verify(args.root,args.profile,job_directory=args.job_directory),indent=2))

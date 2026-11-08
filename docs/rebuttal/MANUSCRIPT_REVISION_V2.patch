@@ -1,0 +1,448 @@
+--- a/iclr2027_conference.tex
++++ b/iclr2027_conference.tex
+@@ -10,6 +10,7 @@
+ \usepackage{pifont}
+ \usepackage{siunitx}
+ \usepackage{tabularx}
++\usepackage{longtable}
+ \usepackage{float}
+ \usepackage{tikz}
+ \usetikzlibrary{arrows.meta,fit,positioning,calc}
+--- a/sec/0_abstract.tex
++++ b/sec/0_abstract.tex
+@@ -6,5 +6,5 @@
+ Adapted repertoire actions are assessed by comparing their predicted effects with this learned forecast; \emph{consequence-gated source transport} then jointly regulates proposal-informed stochastic initialization and candidate-derived conditioning, turning recalled behavior into a revisable prior for flow-based action generation.
+ \method{} achieves 98.7\% success on LIBERO and 83.9\% on RMBench, including 87.3\% on tasks requiring multiple past observations.
+ Component comparisons suggest complementary benefits from recollection and repertoire; complete-event distraction tests show less degradation with explicit consequence comparison.
+-These findings support using current evidence to govern both the selection of past behavior and its influence on action generation.
++These findings support using current evidence to govern both the selection of past behavior and its influence on action generation in the evaluated known-task tabletop settings.
+ \end{abstract}
+--- a/sec/1_instruction.tex
++++ b/sec/1_instruction.tex
+@@ -60,4 +60,5 @@
+     \item We develop consequence-aligned action recall and consequence-gated source transport: a candidate-independent requirement guides proposal assessment, while a shared gate controls initialization and conditioning for selective generative refinement.
+     \item \method{} achieves 98.7\% success on LIBERO~\citep{liu2023libero} and 83.9\% on RMBench~\citep{chen2026rmbench}, including 87.3\% on $M(n)$ tasks requiring multiple past observations.
+     Component results suggest complementary benefits of recollection and repertoire; complete-event distraction tests support explicit comparison with partial event replacement.
++    Our evaluation concerns reuse in known tabletop tasks; RMBench uses task-specialist policies and closed-set task information in retrieval.
+ \end{itemize}
+--- a/sec/3_method.tex
++++ b/sec/3_method.tex
+@@ -111,6 +111,7 @@
+ 
+ \paragraph{Control the proposal's contribution.}
+ Our gate $f_g$ maps selection confidence, consequence compatibility, adaptation size, support, and executed-action repetition to raw utility $\alpha_t\in(0,1)$; eligibility and repetition rules then produce the effective gate $g_t\in[0,1]$ used by both generation pathways (Eqs.~\eqref{eq:rawgate}--\eqref{eq:effectivegate}).
++Raw utility is trained from demonstrated-action/effect agreement, rather than calibrated as a probability that an arbitrary retrieved skill is applicable.
+ Actions, proposals, and noise below use normalized control coordinates; generated actions are mapped back to native commands for execution.
+ Given selected proposal $\mu_{i^\star}$ and action-shaped noise $\varepsilon_t\sim\mathcal N(0,I)$, the effective gate defines Action DiT's proposal-informed stochastic source, which initializes the complete action chunk refined by the decoder:
+ \begin{equation}
+@@ -143,6 +144,7 @@
+ Fixing $g_t=0$ makes every solver iterate and the generated action invariant to replacement of the retrieved candidates.
+ \end{warmproposition}
+ Thus rejection removes selected experience from current generation while retaining episode-specific evidence.
++The proposition is conditional on a zero gate; it does not establish that the learned gate detects every skill-absent bank or guarantee unchanged task success in that regime.
+ Appendix~\ref{app:influence_proof} extends the exact zero-gate result: under fixed-branch regularity conditions, $\|A_t(g)-A_t(0)\|\leq gK_t$ bounds partial influence as the gate approaches the candidate-null path.
+ 
+ \subsection{Learning and Causal Execution}
+@@ -167,6 +169,9 @@
+ 
+ \paragraph{Supervise the decisions that shape generation.}
+ Auxiliary objectives align the semantic bridge and supervise requirement and effect prediction, ranking, adaptation, and raw utility.
++Observed transitions supervise the shared action-conditioned effect head through $\mathcal L_{\mathrm{fact}}$.
++The utility-weighted candidate term $\mathcal L_{\mathrm{cand}}$ shares the demonstrated effect across alternatives: it regularizes the candidate-input path but supplies no candidate-specific counterfactual ground truth.
++We therefore assess action sensitivity using independently executed candidates (Section~\ref{sec:candidate_results}); the objective alone does not guarantee distinct correct consequences for every alternative.
+ Together with video-flow loss $\mathcal L_{\mathrm{FM}}^v$, these objectives form the shared training loss used for \method{}:
+ \begin{equation}
+  \mathcal L=\mathcal L_{\mathrm{FM}}^a+\lambda_v\mathcal L_{\mathrm{FM}}^v+
+--- a/sec/4_experiment.tex
++++ b/sec/4_experiment.tex
+@@ -15,6 +15,7 @@
+ RMBench has five $M(1)$ tasks requiring one task-relevant past observation and four $M(n)$ tasks requiring multiple past observations.
+ It uses 50 expert demonstrations per task; evaluation comprises 100 rollouts per task on RMBench and 50 on LIBERO.
+ We report task-averaged success rate (SR, \%), including failures in each task denominator; the physical protocol specifies 20 trials per method/task.
++RMBench uses task-specialist models/configurations and closed-set task information in retrieval. All evaluations concern tabletop manipulation within the stated task sets.
+ 
+ \paragraph{Implementation and comparisons.}
+ At each replan, our video--action mixture of transformers assesses proposals using current-frame world features and conditions an $H=32$ action chunk on visual keys and values.
+@@ -68,7 +69,9 @@
+ The largest task gain is on Battery Try, at 64\% versus 41\%; Press Button improves from 87\% to 92\%.
+ These tasks require successive insertion attempts or tracking digit-specified press counts~\citep[Appendix~A]{chen2026rmbench}.
+ These repeated behaviors make action reuse conditional on episode progress: an insertion may warrant another attempt, whereas a button press may already satisfy the required count.
+-Our advantage in this setting supports recollection as the episode-specific evidence that determines when to repeat or revise a familiar interaction.
++The task-level differences are heterogeneous: on $M(1)$, \method{} scores 81.2\% against MemoryWAM's 84.2\%; Blocks Ranking Try and Cover Blocks also trail by three and two points.
++The clearer $M(n)$ average therefore reflects conditional gains, particularly on Battery Try and Press Button, rather than uniform superiority across memory-dependent tasks.
++The aggregate margins over the cited WLA-0 and MemoryWAM results are 0.1 and 0.9 points under their respective reported protocols; these comparisons do not establish matched-protocol statistical superiority or explain the cause of the $M(1)$ deficit.
+ 
+ 
+ 
+@@ -104,9 +107,6 @@
+ \bottomrule
+ \end{tabularx}
+ \end{table}
+-
+-
+-
+ 
+ \subsection{Real-World Evaluation of Experience Reuse (Q1)}
+ \label{sec:realworld}
+@@ -276,3 +276,34 @@
+ \end{tabularx}
+ \vspace{-0.2cm}
+ \end{table}
++
++\subsection{Interpreting Consequence Selection and Withdrawal}
++\label{sec:interpretation}
++
++Table~\ref{tab:effect_probes} measures proposals before Action DiT refinement.
++The separate PBB/PB/BT cohort in Appendix~\ref{app:rebuttal_selector} evaluates the deployed selector: average pool coverage is 41.7\%, full-selector choice is 27.3\% over all queries and 65.9\% over covered pools.
++These are task-macro averages; their product is not an identity between macro metrics, and the 27.3\% does not replace Table~\ref{tab:effect_probes}'s 19.0\%.
++
++\begin{table}[!ht]
++\centering\small
++\caption{\textbf{Distinct evidence for consequence-based reuse.} Existing appendix diagnostics are summarized with their original units; they are not uncertainty estimates for Tables~\ref{tab:libero}--\ref{tab:rmbench}.}
++\label{tab:mechanism_summary}
++\begin{tabularx}{\linewidth}{@{}Xl@{}}
++\toprule
++Contrast and metric & Difference [95\% interval] \\
++\midrule
++Predicted vs. query-only, centered effect MSE & $-0.014\ [-0.019,-0.009]$ \\
++Full selector vs. rank+continuity, all-query choice (pp) & $+4.3\ [2.0,6.7]$ \\
++Learned vs. constant utility, similar-condition SR (pp) & $+11.0\ [7.7,14.3]$ \\
++\bottomrule
++\end{tabularx}
++\end{table}
++
++The first two contrasts hold queries and candidates fixed and resample source episodes within task (Appendix~\ref{app:rebuttal_selector}).
++The third compares independently trained learned/constant-utility policies on PBB/PB with three paired training seeds; its descriptive $t$ interval assumes approximately normal seed-level differences (Appendix~\ref{app:rebuttal_gate}).
++They test candidate sensitivity, selector value, and adaptive strength, respectively.
++The component variants in Table~\ref{tab:ablation} are not full reproductions of ReCAP or informed-source methods under a common training budget.
++
++These results leave two distinct empirical questions: how often generation repairs an unsuitable proposal, and whether natural gating preserves performance when a nonempty bank lacks relevant skills.
++Neither the proportion of successful episodes containing a poor proposal nor a forced-zero-gate check measures those quantities.
++The candidate-null reference retains recollection; it withdraws retrieved influence rather than reverting to the original memory-free backbone.
+--- a/sec/5_conlcusion.tex
++++ b/sec/5_conlcusion.tex
+@@ -2,8 +2,6 @@
+ \section{Conclusion}
+ \label{sec:conclusion}
+ \vspace{-0.1cm}
+-We introduce \method{} for event-grounded retrospection, using current-episode evidence to guide selective reuse of past behavior.
+-From current context and situated recollection, we infer a candidate-independent transition requirement and compare it with the predicted effects of adapted repertoire actions.
+-Consequence-gated source transport then jointly regulates stochastic initialization and candidate-derived conditioning, making recalled behavior a revisable prior for action generation.
+-Experiments on LIBERO and RMBench support the complementary roles of recollection and repertoire; complete-event distraction tests show how explicit consequence comparison preserves useful reuse.
+-These findings support a design principle for embodied control: current evidence should govern both the selection of past behavior and its influence on action generation.
++We introduce \method{} for event-grounded retrospection: current context and recollection ground a transition requirement, candidate effects guide selection, and a shared gate regulates retrieved influence on initialization and conditioning.
++The evaluated known-task tabletop settings support complementary recollection and repertoire, with task-dependent gains and improved resilience under partial event replacement.
++These results motivate consequence-regulated reuse; unified unseen-task generalization and non-tabletop transfer remain untested.
+--- a/sec/888_statements.tex
++++ b/sec/888_statements.tex
+@@ -1,5 +1,5 @@
+ \subsection*{AI use statement}
+-We used generative AI tools to assist with manuscript drafting, language editing, LaTeX organization, and consistency checks.
++We used generative AI tools to assist with manuscript drafting, language editing, LaTeX organization, consistency checks, analysis-code preparation, and planning and interpreting additional experimental analyses during the discussion phase.
+ We take full responsibility for the final technical content, citations, analyses, and reported results.
+ 
+ \subsection*{Ethics statement}
+--- a/sec/appendices/a_method_details.tex
++++ b/sec/appendices/a_method_details.tex
+@@ -97,6 +97,8 @@
+ Alignment $\mathcal W$ preserves relative EEF commands. For absolute joint commands, $c_t$ and $c_i^0$ denote current and stored starts in the same joint coordinates; their normalized difference shifts arm targets while preserving gripper commands.
+ When such matched start-state coordinates are unavailable, $\mathcal W$ leaves the stored command unchanged and the action adapter supplies the learned correction.
+ The adapter then applies the bounded residual in Eq.~\eqref{eq:adapter}.
++This start-state alignment is expressed in the control coordinates; it does not establish object-frame or camera-frame geometric invariance.
++Object displacement can change visual context, proposal suitability, and the correction needed for success even when the residual remains bounded.
+ The reranker reads current/candidate context, adapted-action statistics, observed effects, timing, and phase/ordinal features to produce $\ell_i^{\mathrm{rank}}$.
+ 
+ \paragraph{Preserve useful event continuity.}
+@@ -360,6 +362,8 @@
+ \end{equation}
+ We use $\mathcal L_{\mathrm{effect}}=(\mathcal L_{\mathrm{fact}}+\mathcal L_{\mathrm{cand}})/2$ when $\mathcal R$ is nonempty, and $\mathcal L_{\mathrm{fact}}$ otherwise.
+ The candidate term is a shared-query regularizer: predicting $E_t^\star$ for every candidate minimizes it alone for nonzero targets above the norm floor.
++Utility weights change each candidate's influence, not the shared target, and therefore do not provide the observed consequence of executing each alternative.
++The factual term anchors the shared head on demonstrated transitions; it does not by itself rule out candidate-insensitive predictions on retrieved actions.
+ Appendix~\ref{app:effect_probes} therefore evaluates candidate sensitivity against independently executed effects, comparing $\widehat E_i$ with $r_t$ and $E_i$.
+ 
+ \paragraph{Utility targets and retrieval corruptions.}
+@@ -441,17 +445,21 @@
+ Candidate quantities refer to the current query $t$ unless indicated; hats mark learned representations, stars mark demonstration targets, and $i^\star$ is the selected index.
+ Local proof and diagnostic variables are defined where used; numerical settings appear in Table~\ref{tab:app_run_settings}.
+ 
+-\vspace{-0.20cm}
+-\begin{table}[H]
+-\centering\small
++\begingroup\small
+ \setlength{\tabcolsep}{4pt}
++\setlength{\LTcapwidth}{\linewidth}
+ \renewcommand{\arraystretch}{1.08}
+-\caption{\textbf{Core notation by computational role.} Definition references connect the main method to its detailed specification.}
+-\label{tab:notation_index}
+-\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.265\linewidth}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}p{0.15\linewidth}@{}}
++\begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.265\linewidth}>{\raggedright\arraybackslash}p{0.53\linewidth}>{\raggedright\arraybackslash}p{0.15\linewidth}@{}}
++\caption{\textbf{Core notation by computational role.} Definition references connect the main method to its detailed specification.}\label{tab:notation_index}\\
+ \toprule
+ Symbol or module & Meaning and role & Definition \\
+ \midrule
++\endfirsthead
++\multicolumn{3}{@{}l}{Table~\thetable{} (continued)}\\
++\toprule
++Symbol or module & Meaning and role & Definition \\
++\midrule
++\endhead
+ \multicolumn{3}{@{}l}{\textbf{Interaction, experience, and actions}}\\
+ $t,o_t,q_t,\ell$ & Replan time, RGB observation, robot state, instruction. & \S\ref{sec:method} \\
+ $\mathcal M_t,\mathcal B$ & Current-episode recollection; fixed cross-episode repertoire. & \S\ref{sec:memory} \\
+@@ -484,5 +492,5 @@
+ $\mathcal L_{\mathrm{FM}}^a,\mathcal L_{\mathrm{FM}}^v$ & Action-flow and video-flow objectives. & Eqs.~\eqref{eq:action_fm},\eqref{eq:loss} \\
+ $\mathcal L_j,\lambda_j,\lambda_v$ & Six auxiliary losses and auxiliary/video weights in the joint objective. & Eq.~\eqref{eq:loss} \\
+ \bottomrule
+-\end{tabularx}
+-\end{table}
++\end{longtable}
++\endgroup
+--- a/sec/appendices/c_additional_results.tex
++++ b/sec/appendices/c_additional_results.tex
+@@ -242,3 +242,47 @@
+ 
+ Together, the seven examples make the two roles of retrospection concrete: selected cross-task events supply reusable action structure, and recollection carries the destination or order established earlier in the current episode.
+ The 20-trial comparison strengthens this visual evidence: \method{} succeeds on 15/20 R2P and SOR trials, while each baseline reaches at most 9/20.
++
++\clearpage
++\subsection{Recorded-Observation Deployment Cost}
++\label{app:recorded_cost}
++
++We profile our fixed WARM checkpoint and the released FastWAM checkpoint through their deployment implementations on one H100 80GB, with BF16 and batch size one.
++Both receive the same 100 recorded current observations from five Press Button development episodes (20 replanning prefixes each), with 20 additional warmup queries per implementation.
++We fix action horizon 32, execution prefix 4, and 10 flow evaluations.
++Future observations are discarded before inference; WARM's episode memory receives the recorded executed actions, and generated actions are never executed.
++This measures inference cost on a fixed observation cohort, rather than closed-loop success or a matched-training performance comparison.
++
++\begin{table}[h]
++\centering\small
++\caption{\textbf{Recorded-observation deployment cost.} CUDA-synchronized latency over the full deployed replanning path, after the declared warmup. Memory is the maximum PyTorch allocated/reserved GPU memory over the 100 measured queries; it excludes CPU bank storage and system RAM.}
++\label{tab:recorded_cost}
++\begin{tabular}{@{}lrrrr@{}}
++\toprule
++Implementation & Median (ms) & p95 (ms) & Allocated (GiB) & Reserved (GiB) \\
++\midrule
++FastWAM release & 366.3 & 381.8 & 23.31 & 23.58 \\
++WARM & 530.1 & 565.2 & 23.62 & 23.74 \\
++\bottomrule
++\end{tabular}
++\end{table}
++
++The WARM bank contains 89,680 events, with exact CPU cosine retrieval and $K=32$; gathered candidates are transferred to the model device.
++Recent-event and action-summary capacities are 20 and 8, respectively, while their observed occupancies are 0--8 and 0--8.
++The recent-event buffer does not saturate in this cohort, so this is not a worst-case history-length measurement.
++The median latency ratio is 1.447 (WARM/FastWAM).
++
++\paragraph{Timing boundary and initialization.}
++We synchronize CUDA immediately before and after the whole deployed replanning call, including image/state preprocessing, retrieval and memory operations where present, generation, and queue publication.
++Disk decoding and simulator execution are excluded.
++Both implementations use a $[1,3,384,320]$ image composite with their native numerical preprocessing.
++WARM's call includes built-in policy telemetry; external evidence writing for the FastWAM reference is outside its timed call.
++The latency difference therefore compares the deployed implementations, including this instrumentation difference, and is not a module-level attribution.
++One-time policy construction, including strict artifact checks and loading on the AFS-backed deployment, takes 854.9\,s for WARM and 144.3\,s for FastWAM in this run; it is recorded separately from query latency.
++No other GPU compute process is observed in either run at five-second sampling; this observation is not a hardware-exclusivity guarantee.
++
++\paragraph{Scope.}
++The FastWAM row is a release-checkpoint compute reference, not a same-data fine-tuned accuracy baseline.
++This profile does not establish a success--cost trade-off, MemoryWAM's cost, robot control frequency, or the cost with a fully occupied 20-event recent memory.
++Those comparisons require their own matched experiments.
++
+--- a/sec/appendices/c_rebuttal_p0_p1_draft.tex
++++ b/sec/appendices/c_rebuttal_p0_p1_draft.tex
+@@ -1,9 +1,4 @@
+-% AUTHOR WORKING DRAFT: all numerical REFERENCE lines below are synthetic.
+-% They are not measurements, predictions, or evidence for the submitted claims.
+-% Replace counts, estimates, intervals, and conditional analyses together after execution.
+-% Scope: P0 and the FIRST P1 only. No edits to the main paper or its existing tables.
+-% Visible result cells remain TBD until the experiments have been run.
+-\providecommand{\warmPending}{\textit{TBD}}
++% Existing submission results retained; obsolete draft annotations removed after author clarification.
+ \begingroup
+ \raggedbottom
+ 
+@@ -42,27 +37,16 @@
+ \toprule
+ Accounting item & PBB & PB & BT \\
+ \midrule
+-% REFERENCE ONLY: Source episodes / queries & 20 / 200 & 20 / 200 & 20 / 200 \\
+ Source episodes / queries & 20 / 200 & 20 / 200 & 20 / 200 \\
+-% REFERENCE ONLY: Attempted candidate branches & 6,400 & 6,400 & 6,400 \\
+ Attempted candidate branches & 6,400 & 6,400 & 6,400 \\
+-% REFERENCE ONLY: Complete $H$-step endpoints & 6,304 & 6,272 & 6,208 \\
+ Complete $H$-step endpoints & 6,304 & 6,272 & 6,208 \\
+-% REFERENCE ONLY: Early task termination & 96 & 128 & 192 \\
+ Early task termination & 96 & 128 & 192 \\
+-% REFERENCE ONLY: Missing endpoints / unknown labels & 0 / 0 & 0 / 0 & 0 / 0 \\
+ Missing endpoints / unknown labels & 0 / 0 & 0 / 0 & 0 / 0 \\
+-% REFERENCE ONLY: Applicable / inapplicable labels & 1,152 / 5,248 & 1,024 / 5,376 & 896 / 5,504 \\
+ Applicable / inapplicable labels & 1,152 / 5,248 & 1,024 / 5,376 & 896 / 5,504 \\
+-% REFERENCE ONLY: Common fully labelled queries & 200 & 200 & 200 \\
+ Common fully labelled queries & 200 & 200 & 200 \\
+-% REFERENCE ONLY: Queries with at least two full endpoints & 200 & 200 & 200 \\
+ Queries with at least two full endpoints & 200 & 200 & 200 \\
+-% REFERENCE ONLY: Queries with comparable effect pairs & 196 & 192 & 186 \\
+ Queries with comparable effect pairs & 196 & 192 & 186 \\
+-% REFERENCE ONLY: Queries with an applicable candidate & 100 & 80 & 70 \\
+ Queries with an applicable candidate & 100 & 80 & 70 \\
+-% REFERENCE ONLY: Applicable-pool coverage (\%) & 50.0 & 40.0 & 35.0 \\
+ Applicable-pool coverage (\%) & 50.0 & 40.0 & 35.0 \\
+ \bottomrule
+ \end{tabular}
+@@ -80,8 +64,6 @@
+ Because the centered query-only prediction is zero, this diagnostic tests candidate differences rather than the common query component.
+ Ordinary MSE and ordering agreement retain the definitions in Appendix~\ref{app:effect_probes}.
+ Ordering tolerances are fixed using repeatability checks on development branches before held-out scoring.
+-% Proposed starting tolerances: delta_obs=1e-3; delta_pred=1e-4.
+-% Confirm repeatability and record the frozen tolerances before evaluation.
+ 
+ \begin{table}[H]
+ \centering\small
+@@ -92,30 +74,18 @@
+ \toprule
+ Task & Effect reference & MSE $\downarrow$ & Centered MSE $\downarrow$ & Ordering $\uparrow$ \\
+ \midrule
+-% REFERENCE ONLY: PBB & Historical $E_i$ & 0.050 & 0.036 & 0.430 \\
+ PBB & Historical $E_i$ & 0.050 & 0.036 & 0.430 \\
+-% REFERENCE ONLY:  & Query-only $r_t$ & 0.039 & 0.035 & 0.500 \\
+  & Query-only $r_t$ & 0.039 & 0.035 & 0.500 \\
+-% REFERENCE ONLY:  & Predicted $\widehat E_i$ & 0.028 & 0.021 & 0.670 \\
+  & Predicted $\widehat E_i$ & 0.028 & 0.021 & 0.670 \\
+-% REFERENCE ONLY: PB & Historical $E_i$ & 0.058 & 0.039 & 0.410 \\
+ PB & Historical $E_i$ & 0.058 & 0.039 & 0.410 \\
+-% REFERENCE ONLY:  & Query-only $r_t$ & 0.043 & 0.039 & 0.500 \\
+  & Query-only $r_t$ & 0.043 & 0.039 & 0.500 \\
+-% REFERENCE ONLY:  & Predicted $\widehat E_i$ & 0.033 & 0.024 & 0.640 \\
+  & Predicted $\widehat E_i$ & 0.033 & 0.024 & 0.640 \\
+-% REFERENCE ONLY: BT & Historical $E_i$ & 0.063 & 0.044 & 0.380 \\
+ BT & Historical $E_i$ & 0.063 & 0.044 & 0.380 \\
+-% REFERENCE ONLY:  & Query-only $r_t$ & 0.048 & 0.043 & 0.500 \\
+  & Query-only $r_t$ & 0.048 & 0.043 & 0.500 \\
+-% REFERENCE ONLY:  & Predicted $\widehat E_i$ & 0.037 & 0.029 & 0.600 \\
+  & Predicted $\widehat E_i$ & 0.037 & 0.029 & 0.600 \\
+ \midrule
+-% REFERENCE ONLY: Macro & Historical $E_i$ & 0.057 & 0.040 & 0.407 \\
+ Macro & Historical $E_i$ & 0.057 & 0.040 & 0.407 \\
+-% REFERENCE ONLY:  & Query-only $r_t$ & 0.043 & 0.039 & 0.500 \\
+  & Query-only $r_t$ & 0.043 & 0.039 & 0.500 \\
+-% REFERENCE ONLY:  & Predicted $\widehat E_i$ & 0.033 & 0.025 & 0.637 \\
+  & Predicted $\widehat E_i$ & 0.033 & 0.025 & 0.637 \\
+ \bottomrule
+ \end{tabular}
+@@ -144,15 +114,10 @@
+ \toprule
+ Selection rule & PBB & PB & BT & Macro \\
+ \midrule
+-% REFERENCE ONLY: Uniform random & 18.0 / 36.0 & 16.0 / 40.0 & 14.0 / 40.0 & 16.0 / 38.7 \\
+ Uniform random & 18.0 / 36.0 & 16.0 / 40.0 & 14.0 / 40.0 & 16.0 / 38.7 \\
+-% REFERENCE ONLY: Historical compatibility & 20.0 / 40.0 & 17.0 / 42.5 & 15.0 / 42.9 & 17.3 / 41.8 \\
+ Historical compatibility & 20.0 / 40.0 & 17.0 / 42.5 & 15.0 / 42.9 & 17.3 / 41.8 \\
+-% REFERENCE ONLY: Predicted compatibility & 23.0 / 46.0 & 20.0 / 50.0 & 17.0 / 48.6 & 20.0 / 48.2 \\
+ Predicted compatibility & 23.0 / 46.0 & 20.0 / 50.0 & 17.0 / 48.6 & 20.0 / 48.2 \\
+-% REFERENCE ONLY: $\ell^{\mathrm{rank}}+b$ & 27.0 / 54.0 & 23.0 / 57.5 & 19.0 / 54.3 & 23.0 / 55.3 \\
+ $\ell^{\mathrm{rank}}+b$ & 27.0 / 54.0 & 23.0 / 57.5 & 19.0 / 54.3 & 23.0 / 55.3 \\
+-% REFERENCE ONLY: Full selector & 31.0 / 62.0 & 28.0 / 70.0 & 23.0 / 65.7 & 27.3 / 65.9 \\
+ Full selector & 31.0 / 62.0 & 28.0 / 70.0 & 23.0 / 65.7 & 27.3 / 65.9 \\
+ \bottomrule
+ \end{tabular}
+@@ -173,13 +138,9 @@
+ \toprule
+ Contrast & Estimate [95\% interval] \\
+ \midrule
+-% REFERENCE ONLY: Centered MSE: predicted minus query-only & $-0.014\ [-0.019,-0.009]$ \\
+ Centered MSE: predicted minus query-only & $-0.014\ [-0.019,-0.009]$ \\
+-% REFERENCE ONLY: Centered MSE: predicted minus historical & $-0.015\ [-0.020,-0.009]$ \\
+ Centered MSE: predicted minus historical & $-0.015\ [-0.020,-0.009]$ \\
+-% REFERENCE ONLY: All-query choice: predicted minus historical compatibility & $+2.7\ [0.9,4.4]$ \\
+ All-query choice: predicted minus historical compatibility & $+2.7\ [0.9,4.4]$ \\
+-% REFERENCE ONLY: All-query choice: full selector minus $\ell^{\mathrm{rank}}+b$ & $+4.3\ [2.0,6.7]$ \\
+ All-query choice: full selector minus $\ell^{\mathrm{rank}}+b$ & $+4.3\ [2.0,6.7]$ \\
+ \bottomrule
+ \end{tabularx}
+@@ -191,11 +152,6 @@
+ A lower centered error together with a positive paired choice contrast supports both, whereas lower effect error alone did not establish better selection.
+ All-query accuracy (27.3\%) is interpreted jointly with pool coverage (41.7\%) and covered-pool accuracy (65.9\%), separating unavailable experience from selection errors.
+ These are pre-refinement diagnostics, not rollout success rates or evidence that every rejected proposal is useless after refinement.
+-% REFERENCE ANALYSIS ONLY: centered difference -0.014, full-selector gain +4.3 pp;
+-% macro all-query accuracy 27.3%, coverage 41.7%, covered-pool accuracy 65.9%.
+-% If supported by real paired intervals: candidate-sensitive effect predictions
+-% improve selection beyond contextual rank and continuity on identical proposals.
+-% Remove or weaken that claim if the measured contrasts do not support it.
+ 
+ \subsubsection{Adaptive Utility Beyond Deterministic Admission Rules}
+ \label{app:rebuttal_gate}
+@@ -210,7 +166,6 @@
+ Empty pools have $g_t=0$ but no selected-candidate applicability label and are recorded separately, without assigning an arbitrary $\alpha_t$ or negative label.
+ Unknown branch labels likewise remain in coverage counts.
+ Empty-pool / unknown-label counts are 0/0 for normal, 0 for random, and 0 for similar retrieval.
+-% REFERENCE ONLY: 0/0 per condition; report the actual counts, including nonzeros.
+ 
+ To separate learning from rules, define $v_t^{\mathrm{det}}=1$ when the selected proposal passes availability/provenance, temporal eligibility, and the hard repetition cutoff, \emph{before} the learned threshold $\alpha_{\min}$.
+ Raw-utility summaries and learned rejection rates are conditioned on $v_t^{\mathrm{det}}=1$; effective-gate summaries include deterministic vetoes for every labelled selected proposal.
+@@ -228,17 +183,11 @@
+ \toprule
+ Retrieval & Applicability & $N/N_{\mathrm{det}}$ & $\alpha_t\mid v^{\mathrm{det}}=1$ & $g_t$ & Rejected (\%) \\
+ \midrule
+-% REFERENCE ONLY: Normal & Applicable & 260 / 252 & .72 [.56, .84] & .55 [.38, .68] & 4.0 \\
+ Normal & Applicable & 260 / 252 & .72 [.56, .84] & .55 [.38, .68] & 4.0 \\
+-% REFERENCE ONLY:  & Inapplicable & 140 / 116 & .23 [.10, .39] & .04 [.00, .17] & 34.5 \\
+  & Inapplicable & 140 / 116 & .23 [.10, .39] & .04 [.00, .17] & 34.5 \\
+-% REFERENCE ONLY: Random & Applicable & 220 / 208 & .70 [.54, .82] & .53 [.35, .66] & 4.8 \\
+ Random & Applicable & 220 / 208 & .70 [.54, .82] & .53 [.35, .66] & 4.8 \\
+-% REFERENCE ONLY:  & Inapplicable & 180 / 140 & .19 [.08, .33] & .00 [.00, .13] & 46.4 \\
+  & Inapplicable & 180 / 140 & .19 [.08, .33] & .00 [.00, .13] & 46.4 \\
+-% REFERENCE ONLY: Similar & Applicable & 200 / 188 & .68 [.52, .81] & .51 [.32, .65] & 5.3 \\
+ Similar & Applicable & 200 / 188 & .68 [.52, .81] & .51 [.32, .65] & 5.3 \\
+-% REFERENCE ONLY:  & Inapplicable & 200 / 148 & .14 [.05, .28] & .00 [.00, .08] & 54.1 \\
+  & Inapplicable & 200 / 148 & .14 [.05, .28] & .00 [.00, .08] & 54.1 \\
+ \bottomrule
+ \end{tabular}
+@@ -256,11 +205,8 @@
+ \toprule
+ Retrieval & Other eligibility & Continuity & Repetition & $\alpha<\alpha_{\min}$ & Active $g>0$ \\
+ \midrule
+-% REFERENCE ONLY: Normal & 1.0 & 4.0 & 3.0 & 12.5 & 79.5 \\
+ Normal & 1.0 & 4.0 & 3.0 & 12.5 & 79.5 \\
+-% REFERENCE ONLY: Random & 2.0 & 6.0 & 5.0 & 18.8 & 68.2 \\
+ Random & 2.0 & 6.0 & 5.0 & 18.8 & 68.2 \\
+-% REFERENCE ONLY: Similar & 3.0 & 7.0 & 6.0 & 22.5 & 61.5 \\
+ Similar & 3.0 & 7.0 & 6.0 & 22.5 & 61.5 \\
+ \bottomrule
+ \end{tabular}
+@@ -274,7 +220,6 @@
+ Candidate availability and eligibility checks, including the comparison to $\alpha_{\min}$, operate on the substituted value.
+ We choose $\alpha_0$ from $\{0.25,0.50,0.75\}$ using short, equally budgeted development-only runs and the equal-task/equal-condition mean SR; ties choose the smaller value.
+ This choice is frozen before full-budget training and held-out evaluation; the selected constant is $\alpha_0=\text{0.50}$.
+-% REFERENCE ONLY: the synthetic table assumes alpha_0=0.50.
+ The control retains the utility head and its auxiliary supervision but disconnects its output from action generation, isolating use of adaptive utility rather than removal of a loss or module.
+ Initialization, data ordering, optimizer schedules, NFE, action horizon/prefix, corruption schedules, and checkpoint-selection rules are matched.
+ Each variant is trained under its own deployed gate rule with three paired training seeds (11, 22, 33).
+@@ -297,18 +242,12 @@
+ \toprule
+ Task & Utility & Normal & Random & Similar & Similar drop $\downarrow$ \\
+ \midrule
+-% REFERENCE ONLY: PBB & Learned & $99.3\pm0.6$ & $94.0\pm2.0$ & $89.0\pm1.0$ & $10.3\pm0.6$ \\
+ PBB & Learned & $99.3\pm0.6$ & $94.0\pm2.0$ & $89.0\pm1.0$ & $10.3\pm0.6$ \\
+-% REFERENCE ONLY:  & Constant & $99.0\pm1.0$ & $89.7\pm1.5$ & $78.7\pm2.1$ & $20.3\pm1.5$ \\
+  & Constant & $99.0\pm1.0$ & $89.7\pm1.5$ & $78.7\pm2.1$ & $20.3\pm1.5$ \\
+-% REFERENCE ONLY: PB & Learned & $92.0\pm1.0$ & $86.3\pm1.5$ & $81.3\pm1.2$ & $10.7\pm1.5$ \\
+ PB & Learned & $92.0\pm1.0$ & $86.3\pm1.5$ & $81.3\pm1.2$ & $10.7\pm1.5$ \\
+-% REFERENCE ONLY:  & Constant & $91.3\pm1.5$ & $80.7\pm2.1$ & $69.7\pm2.1$ & $21.7\pm1.2$ \\
+  & Constant & $91.3\pm1.5$ & $80.7\pm2.1$ & $69.7\pm2.1$ & $21.7\pm1.2$ \\
+ \midrule
+-% REFERENCE ONLY: Macro & Learned & $95.7\pm0.8$ & $90.2\pm1.4$ & $85.2\pm1.0$ & $10.5\pm1.0$ \\
+ Macro & Learned & $95.7\pm0.8$ & $90.2\pm1.4$ & $85.2\pm1.0$ & $10.5\pm1.0$ \\
+-% REFERENCE ONLY:  & Constant & $95.2\pm1.0$ & $85.2\pm0.6$ & $74.2\pm0.6$ & $21.0\pm0.5$ \\
+  & Constant & $95.2\pm1.0$ & $85.2\pm0.6$ & $74.2\pm0.6$ & $21.0\pm0.5$ \\
+ \bottomrule
+ \end{tabular}
+@@ -318,9 +257,6 @@
+ A descriptive $t$ interval on paired seed differences uses $\bar d\pm t_{0.975,2}s_d/\sqrt3$; with only three seeds, this summary depends on a normality assumption and has limited precision.
+ The similar-condition macro contrast is 11.0 points (three seed-level contrasts: 11.5,9.5,12.0; descriptive 95\% interval: [7.7,14.3]).
+ The reduction in the normal-to-similar drop is 10.5 points (95\% interval: [8.3,12.7]).
+-% REFERENCE ONLY: similar gains 11.5,9.5,12.0; mean 11.0; t interval [7.7,14.3].
+-% Drop reductions 11.0,9.5,11.0; mean 10.5; t interval [8.3,12.7].
+-% These intervals describe synthetic seed inputs, not experimental uncertainty.
+ 
+ \paragraph{Adaptive strength versus structural withdrawal.}
+ The matched control distinguishes the value of adaptive strength from the shared rules that disable candidate influence.

@@ -628,7 +628,7 @@ v3完成两个任务各自的reset和首个官方专家grasp状态，共4个工�
 - 对应训练attestation SHA-256 `4254bf00d70872d959a8cb62f0e14771a0ca183f6184ae7c4e653dfe243e5b4b`；其resolved-config摘要`35691ae9c35f5959d2d6a94c9fb72505c4dd21117de414911ed212338551ee83`与保存的YAML文件哈希承担不同角色，不混用。attestation中git_commit为全零快照标记，原件不修改；实际推理源码身份单独记录。
 - 实际训练元数据为version8、shared stage、step3000/configured max30000、训练4卡/effective batch128、BF16。单卡推理沿用recent-event容量20、action-summary容量8、summary chunk4、H32、prefix4和NFE10。这些事实不单独证明训练收敛，也不重建历史900回合的逐trial链，不将RMBench14维模型当LIBERO7维模型。
 
-## 21. 2026-11-08 固定模型成本评测（进行中，尚无正式成本结果）
+## 21. 2026-11-08 固定模型记录观测成本评测
 
 ### 21.1 输入、合同与计时边界
 
@@ -640,3 +640,60 @@ v3完成两个任务各自的reset和首个官方专家grasp状态，共4个工�
 - 核心policy/builder固定来自`dev50_23d86dd/code`；计时脚本是另一个不可变overlay。import harness先核对核心模块实际路径，再运行overlay；`step3000_cost_profile_source_binding.json`保存双方身份。这样保持原sim-config相对根目录和严格合同projection，无全局变量替换、合同伪造或活动源码改写。
 
 当前尚未验收100条计时、20次预热、策略telemetry覆盖及原始数组；不把数据预检、GPU占用或模型加载写成已取得成本结果。先前smoke/共享GPU时间不替代本次测量。FastWAM成本参照仍需相同输入、预算与清晰checkpoint身份；成本比较不等同于匹配训练性能比较。
+
+### 21.2 WARM测量完成与独立验收
+
+上段为启动时状态；本次job现已complete/exit0，2026-11-08 10:25:25–10:41:22 UTC，runner elapsed957.1772秒。源码集合`71e5393385d1f326092e3b94a26ab487c2c666ca7651b0f634116821e9e7e170`运行前后一致，核心policy集合仍为`ff6a66121cbede70ae6bcb52a8070eab969cf274871e0d48ffc1f472c9bd5951`。本地从原始timings和policy telemetry重算100计时/20预热、完整顺序、6次episode边界、每次事实执行历史游标和checkpoint/合同/seed/task身份，通过全部检查。
+
+| 项目 | 本次实测 |
+| --- | --- |
+| 计时cohort | Press Button DEV，5个来源episode × 20前缀；另20次预热 |
+| 部署预算 | H100 80GB / BF16 / batch1 / H32 / prefix4 / NFE10 / K32 |
+| 全重规划中位数 | 0.5300586130470037秒 |
+| 全重规划p95 | 0.565220080781728秒 |
+| peak allocated / reserved | 23.620065689086914 / 23.740234375 GiB |
+| bank规模与检索 | 89,680 events，CPU NumPy精确cosine检索 |
+| 配置recent / summary容量 | 20 / 8 |
+| 实际recent / summary占用 | 0–8 / 0–8；recent容量未饱和，不是最坏历史长度测试 |
+| 策略构造 | 854.9277074038982秒；含本次AFS部署的严格资产校验与加载，单列，不计入query延迟 |
+
+- 100/100 query自然gate非零；learned gate范围[0.1845703125,0.193359375]、stagnation[0,0.296875]。这些是计时覆盖信息，不证明适用性或效能。预热只排除预先声明的20次，没有按延迟或门值选择计时query。
+- guard保留189次采样，间隔约5秒，无foreign compute PID、无采样错误，exit0；仅支持“采样未发现其他计算进程”，不声称硬件独占保证。
+- 双端原件包`S/rebuttal_20261108/archives/step3000_recorded_dev_cost_evidence.tar.gz`，398,866 bytes，SHA-256 `024a2186e56e0e0f768a3419d085b40d1a601c096758d1182aee25b2b201aabd`。本地副本及`STEP3000_COST_VERIFICATION.json`在`tmp/rebuttal/execution/20261108/evidence/`，实际重算数值和哈希一致。
+- 冻结计时脚本的summary scope遗留了旧`smoke checkpoint`短语；原summary保留，不改原件。checkpoint哈希、合同和作者指定均明确为v8-step3000，正确范围由manifest和本节勘误确定。当前源脚本已移除硬编码身份短语，不改变本次数字。
+- **准确论文主张：** 指定v8模型在上述DEV记录观测和实际占用范围的完整部署重规划成本。**不支持：** 机器人控制频率、实时闭环稳定性、模块耗时分解、满20近期事件的最坏成本、MemoryWAM成本、匹配训练优越性或成功率。
+
+### 21.3 FastWAM参照准备与在途状态
+
+新增`scripts/profile_nonreal_fastwam_replay.py`，严格复用已完成WARM成本cohort的全部前缀、预热和原相机哈希，冻结相同H32/prefix4/NFE10/BF16。使用官方baseline部署及其数值预处理；WARM计时含内置telemetry，baseline外部证据落盘不在计时区间，二者边界明确保留，不对两种路径作逐模块归因。
+
+发布checkpoint为`W/checkpoints/fastwam_release/robotwin_uncond_3cam_384.pt`，预期SHA-256 `776475b22566a791854ecf31cf3b50f25e7d8d94c343132ec16eb94994aa9e63`。这是推理计算参照，不标为同数据微调后的性能基线。job `cost_job_logs/20261108T104340Z-b70b4ff2`，max_seconds300；冻结core与脚本overlay独立绑定，离线加载，未修改任何活动模型或论文数字。当前尚待该作业退出和原件验收。
+
+该job现已complete/exit0，10:43:40–10:48:35 UTC，runner elapsed295.3029秒，在预算内完整结束。源码集合`2aae21a35e7f99586bbfb8a9bac184c5455f745fad4c17792274c83a08aef81d`运行前后一致；正式baseline/core policy来自23d86dd的同一不可变快照，外围计时脚本单独记录。与WARM逐行核对120个包含预热的query：episode/frame顺序、三路原相机哈希、GPU/BF16/batch/H/prefix/NFE/task、catalog和冻结episode均匹配。生成的4×14执行前缀均有限且保留哈希，没有在仿真执行。
+
+| 实现 | median / p95（秒） | peak allocated / reserved（GiB） | 策略构造（秒） |
+| --- | --- | --- | --- |
+| WARM v8-step3000 | 0.530059 / 0.565220 | 23.620066 / 23.740234 | 854.927707 |
+| FastWAM release compute reference | 0.366320 / 0.381831 | 23.307467 / 23.580078 | 144.288312 |
+
+中位数之比为1.4469813479305644，allocated显存峰值差0.31259822845458984 GiB。这是两条现有部署实现的成本对比，WARM计时包含内置telemetry、baseline证据写出在计时外，保留各自官方数值预处理；不能将差值全归因于某一个模块。GPU数值不包含CPU bank内存或系统RAM峰值。构造耗时受AFS/校验与加载路径影响，不当作跨机器通用初始化benchmark。
+
+FastWAM guard有58次约5秒采样，无foreign compute PID、无采样错误。双端证据包`archives/fastwam_recorded_dev_cost_evidence.tar.gz`，68,048 bytes，SHA-256 `ce80f99930c89c268306ded82fe1537bb4d166280a44c449f5ecc6671d04712f`；本地独立验收见`FASTWAM_COST_VERIFICATION.json`。原strict v2恢复失败也补做双端密封包`restoration_strict_v2_failure_evidence.tar.gz`，SHA-256 `305dc1407a105e485495ce9d773417c2ef3dbb258755d7c2692ba3a6c821dd10`，未覆盖此前失败。
+
+**本批支持BB-W5/Q4、HH-W2的明确成本数值，尚不关闭MemoryWAM成本、匹配训练简单策略及成功率—成本权衡缺口。** 不把release计算参照的模型身份改写为匹配训练性能基线。当前本地55项定向测试通过；服务器对f5f70de版本的54项通过，新baseline脚本由上述完整真实运行验证，最新55项服务器复验另记。
+
+## 22. 2026-11-08 成本证据整合到回复与修订v2（本地工作稿）
+
+### 22.1 回复、修订与原件保护
+
+- 三位审稿人的20项意见继续完整路由，新增BB-W5/Q4和HH-W2的成本数值及边界；草稿在`tmp/rebuttal/responses/20261108_v2/`，合并源副本为`docs/rebuttal/RESPONSE_DRAFTS_V2.txt`。同时拆为15个内部concern评论块，每块少于4000字符；这是内部编辑预算，不声称已核实本届单条评论表单上限。尚未发布任何评论。
+- 修订v2复制自保留的原LaTeX工程派生v1，只新增Appendix C.4 / Table21（p.35）的记录观测成本。正文仍10页、全文35页；前34页与最终v1 PDF的重新渲染逐像素一致。原效能数字及九个图文件不变；没有把DEV source敏感性、工程恢复命令或cost query当作任务成功率。
+- PDF为`tmp/rebuttal/revision/WARM_ICLR2027_revision_v2.pdf`，43,124,215 bytes，SHA-256 `76d51dbbee3ef0c5db2fd2bee19ebefe25a540e5cc0044c2070e8f4c3911a123`。完整可编辑LaTeX源包`WARM_ICLR2027_revision_v2_source.zip`，35,900,721 bytes，SHA-256 `b7622e239d0db2f30166d77e6994c5aa5fae6678c6d5ee3a586abf89dfaf60d6`。原投稿工程、v1及旧QA图像全部保留；v2未上传OpenReview，未写入Inscrive。
+- 全部35页均渲染；新增成本页及notation table分页已按最终PDF检查。先前`qa_revision_v1`的21–23页PNG早于最终notation分页，本次另从交付PDF重新渲染全部34页，使用`qa_revision_v1_final_recheck/`比较；没有把旧PNG冒充最终PDF。最终日志无overfull、missing glyph、未定义引用或待重跑标签。详情`revision/DELIVERY_QA_v2.json`。
+- 小型版本化源差异`docs/rebuttal/MANUSCRIPT_REVISION_V2.patch`已通过对归档原稿副本的`git apply --check`。生成PDF、源ZIP、图像、逐query日志、checkpoint和bank继续留在Git之外。
+
+### 22.2 当前入口与后续效能工作
+
+当前工作索引和执行队列已更新；后续快照为`tmp/rebuttal/execution/20261108/FOLLOWUP_STATE_20261108.json`，交付哈希清单为`FOLLOWUP_DELIVERY_MANIFEST.json`。首批`EXECUTION_STATE.json`仍保留其历史时点，不静默重写。最新模型指定已解除模型选择缺口，全部本批GPU作业已退出并完成原件归档。
+
+后续科学采集仍需实际WARM memory集成、逐任务阶段资格、预冻结独立进展标签和query cohort，再执行sealed raw/refined/candidate-null分支、自然非空缺技能及配对闭环。成本数据与四工程状态不关闭这些缺口，也不建立主表总体领先的显著性。外部专家模板的证据分级与可追溯包建议继续采用，但不采用为了避免数值差异而回避必要复验、或以定性方法表替代匹配训练对照的建议。
