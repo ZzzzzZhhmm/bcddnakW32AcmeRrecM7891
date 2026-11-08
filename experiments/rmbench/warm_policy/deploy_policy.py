@@ -1087,6 +1087,8 @@ class RMBenchWarmPolicy:
             "research_probe": probe_reference,
             "factual_update_after_replan": factual_update,
             "model_action_chunk_sha256": sha256_array(model_chunk),
+            "executed_prefix_raw_prediction_sha256": sha256_array(model_chunk[:self.replan_steps]),
+            "executed_prefix_history_features_sha256": sha256_array(round_trip[:self.replan_steps]),
             "environment_action_chunk_sha256": sha256_array(environment_chunk),
             "model_action_chunk_stats": _array_summary(model_chunk),
             "environment_action_chunk_stats": _array_summary(environment_chunk),
@@ -1140,6 +1142,7 @@ class RMBenchWarmPolicy:
                     queued.environment_space
                 ),
                 "model_action_sha256": sha256_array(queued.model_space),
+                "model_action_space": "original_processor_forward_of_native_command",
                 "factual_qpos_before_sha256": sha256_array(
                     factual_qpos_before
                 ),

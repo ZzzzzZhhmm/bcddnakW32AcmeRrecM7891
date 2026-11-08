@@ -534,11 +534,11 @@ class QueuedAction:
 def audit_generated_execution_prefix(model_chunk,environment_chunk,normalizer,*,execution_prefix):
     """Audit only commands the receding-horizon policy will actually enqueue.
 
-    Generated H-step tails are never executed after the declared prefix. A
-    data-normalization clamp violation in that discarded tail must not reject
-    an otherwise valid prefix. Native commands and model predictions are never
-    clipped here; the actual prefix retains the original strict range and
-    canonical-history round-trip checks.
+    The processor's backward map decodes finite generated values without a
+    clamp. Its forward map clips factual/history features to the training
+    range. These maps are deliberately not global inverses. Audit exact native
+    command fidelity to backward(), then obtain history with forward(); never
+    impose the feature clamp as an invented motor-command constraint.
     """
     model=np.asarray(model_chunk,dtype=np.float32)
     environment=np.asarray(environment_chunk,dtype=np.float32)
@@ -548,16 +548,21 @@ def audit_generated_execution_prefix(model_chunk,environment_chunk,normalizer,*,
         raise RMBenchPolicyBoundaryError('full generated model/native chunks must be finite')
     if type(execution_prefix) is not int or not 1<=execution_prefix<=len(model):
         raise RMBenchPolicyBoundaryError('valid execution prefix required')
-    returned=normalizer.normalize(environment[:execution_prefix],fail_on_clip=True)
-    if not np.allclose(returned,model[:execution_prefix],rtol=1e-5,atol=2e-6):
-        raise RMBenchPolicyBoundaryError('RMBench executed-prefix action normalization round trip drifted')
+    expected_native=normalizer.denormalize(model[:execution_prefix])
+    if not np.array_equal(expected_native,environment[:execution_prefix]):
+        raise RMBenchPolicyBoundaryError('RMBench executed prefix differs from the original affine backward map')
+    returned=normalizer.normalize(environment[:execution_prefix])
     canonical=np.array(model,copy=True)
     canonical[:execution_prefix]=returned
     evidence=dict(execution_prefix=execution_prefix,strictly_checked_values=execution_prefix*14,
         discarded_tail_commands=len(model)-execution_prefix,
         discarded_tail_values_outside_normalization_clip=int(np.count_nonzero(np.abs(model[execution_prefix:])>normalizer.clip)),
+        executed_prefix_values_outside_feature_clip=int(np.count_nonzero(np.abs(model[:execution_prefix])>normalizer.clip)),
+        canonical_history_feature_clamp=float(normalizer.clip),
+        canonical_history_max_abs_projection_change=float(np.max(np.abs(returned-model[:execution_prefix]))),
+        exact_original_backward_command_match=True,
         native_commands_clipped=False,model_predictions_clipped=False,
-        history_action_space='canonical_normalization_of_actual_execution_prefix')
+        history_action_space='original_processor_forward_of_actual_native_commands')
     return canonical,evidence
 
 

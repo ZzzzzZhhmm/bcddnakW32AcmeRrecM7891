@@ -197,18 +197,36 @@ def test_prefix_audit_keeps_discarded_out_of_clip_tail_out_of_the_queue() -> Non
     assert evidence['native_commands_clipped'] is False and evidence['model_predictions_clipped'] is False
 
 
-def test_prefix_audit_still_rejects_actual_prefix_range_and_inverse_failures() -> None:
-    from fastwam.memory.robotwin_artifacts import RobotwinQposZScore,RobotwinArtifactContractError
+def test_prefix_audit_preserves_unbounded_commands_and_canonical_history_features() -> None:
+    from fastwam.memory.robotwin_artifacts import RobotwinQposZScore
     normalizer=RobotwinQposZScore(np.zeros(14,dtype=np.float32),np.ones(14,dtype=np.float32))
     model=np.zeros((32,14),dtype=np.float32);model[0,4]=5.25
-    with pytest.raises(RobotwinArtifactContractError):
-        audit_generated_execution_prefix(model,normalizer.denormalize(model),normalizer,execution_prefix=4)
+    native=normalizer.denormalize(model)
+    canonical,evidence=audit_generated_execution_prefix(model,native,normalizer,execution_prefix=4)
+    assert native[0,4]==5.25 and model[0,4]==5.25 and canonical[0,4]==5
+    assert evidence['executed_prefix_values_outside_feature_clip']==1
+    assert evidence['canonical_history_max_abs_projection_change']==.25
+    assert evidence['native_commands_clipped'] is False
+
+
+def test_prefix_audit_rejects_changed_native_commands_and_nonfinite_tails() -> None:
+    from fastwam.memory.robotwin_artifacts import RobotwinQposZScore
+    normalizer=RobotwinQposZScore(np.zeros(14,dtype=np.float32),np.ones(14,dtype=np.float32))
+    model=np.zeros((32,14),dtype=np.float32)
     model[0,4]=.25;native=np.array(normalizer.denormalize(model),copy=True);native[0,4]+=.5
-    with pytest.raises(RMBenchPolicyBoundaryError,match='round trip'):
+    with pytest.raises(RMBenchPolicyBoundaryError,match='backward map'):
         audit_generated_execution_prefix(model,native,normalizer,execution_prefix=4)
     native[23,4]=np.nan
     with pytest.raises(RMBenchPolicyBoundaryError,match='finite'):
         audit_generated_execution_prefix(model,native,normalizer,execution_prefix=4)
+
+
+def test_prefix_history_does_not_assume_float32_feature_invertibility_at_zero_std() -> None:
+    from fastwam.memory.robotwin_artifacts import RobotwinQposZScore
+    normalizer=RobotwinQposZScore(np.ones(14,dtype=np.float32),np.zeros(14,dtype=np.float32))
+    model=np.full((32,14),5.25,dtype=np.float32);native=normalizer.denormalize(model)
+    canonical,_=audit_generated_execution_prefix(model,native,normalizer,execution_prefix=4)
+    assert np.array_equal(canonical[:4],normalizer.normalize(native[:4]))
 
 
 def test_jsonl_evidence_is_exclusive_canonical_and_durable(tmp_path: Path) -> None:

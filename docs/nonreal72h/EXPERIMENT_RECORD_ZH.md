@@ -837,3 +837,15 @@ Full step5权重SHA-256 `c4bf3244f4e343a0d5938bfb14f8ffa9b7c5b08c604794bf38fb1fd
 `SingleFieldLinearNormalizer.forward`将输入特征截断到±5，而其`backward`为未裁剪仿射逆变换；±5不能直接当作物理关节限制。此次已确认的工程问题更具体：`RecedingHorizonQueue`只发布前4步，原guard却要求未进入执行队列的28步尾部也满足可逆检查，从而拒绝了严格有效的实际前缀。修正只对即将入队的前缀保留原范围/逆变换要求，仍检查整个H32 shape及有限性；队列native命令、原生成数组、checkpoint、NFE、H32、prefix4及历史前缀的canonical归一化均不裁剪或重定义。真实执行前缀若越界/逆变换不符仍须失败，不能以本次修正放行。
 
 该修正在precommit集合`6ab037a228e67e7e3ba8654c9c4465c77724752598e4dbe4aac565c9c5f67ca0`上36项原生policy/queue/witness/entrypoint回归通过（10.07秒），覆盖discarded-tail越界、执行prefix仍拒绝、逆变换错误及非有限尾部。Windows完整policy测试因缺PyYAML未收集，不计作通过。另用实际封存的5.25输出及原stats重现旧guard、核对严格prefix通过和原生入队命令逐元素不变，报告`S/rebuttal_20261108_p0/ACTUAL_PREFIX_BOUNDARY_VERIFICATION.json`。**仅有数值/队列证明，修正后完整物理回合仍须重跑**；原两次停止不改写为成功或正常官方失败，也不计成两条独立样本。新core将重新绑定严格bundle，保留相同evaluation namespace及共同Gaussian协议。
+
+### 23.15 区分输入特征截断与生成动作解码
+
+23.14是第一轮仅修正discarded tail的审计范围。其Git归档实际源码集合为`a7bcb231081047d9c3ae9fd9c632f55f37fc08a6130b30f46b95a7890e33c907`，与precommit差别只有4文件行尾，已逐文件检查并在Git字节上再跑36项native检查。首次bundle重建误传了通用M1 YAML，合同检查在策略运行前以`M1 data config does not match the feature-encoder contract`拒绝，原failed job保留；v2恢复encoder原先封存的`data_config.source.yaml`（SHA-256 `c8fcae013a1b1903b4c66b7dc27c5bd9a5c6eb858e3b7103e7ffb2e66115ff53`），不改encoder/数据或旧合同。v2 bundle manifest SHA-256 `0960bb27ef88c5d34826346a1d55bb4d05a4174edb8eede1994a3fad7cafca7c`，两任务保留同一evaluation namespace `2d57f5d0ca3dae0891de402f16ee91f8fda2a0b3d60eac273fade8ea585b4b8a`和指定checkpoint。
+
+随后独立Full/null使用官方1000步上限重跑同一Battery Try case0/seed340800000，均执行到124步，**尚无完整正式pair**。此次Full的实际prefix最大5.28125、null最大5.125，原始失败仍为`invalid_runtime/success=null`，不能按完整SR处理。只修正尾部尚未解决更根本的审计假设；真实prefix也可超出训练特征的±5。
+
+原FastWAM `SingleFieldLinearNormalizer` 明确采用 `forward(q)=clip(s*q+b,-5,5)` 和 `backward(z)=(z-b)/s`。两者在截断区外不是全局逆映射。原审计把 `forward(backward(z))==z` 错用于任意有限生成值，因而会拒绝原处理器本来允许解码的命令。正确边界是：native命令必须**逐元素等于原backward映射**，入模的事实动作历史必须**逐元素等于原forward映射**；保留完整shape、finite与实际executor运动检查。既不裁剪采样值，也不裁剪native命令，不把统计feature clamp伪装成物理关节限制。
+
+利用两角色frame124的实际封存数组和原stats，已验证完整H32的NumPy解码与原Torch处理器backward逐元素相等；即将执行的4步canonical历史与其forward逐元素相等。Full的joint4 native目标约`[0.12742905,0.12893276,0.12968461,0.12968461]`，历史特征按原规则为`[5,5,5,5]`，不以特征5.28推断物理越界；null同样通过。前80条Full命令及native状态也与更早原attempt逐元素相同。报告`ACTUAL_FORWARD_BACKWARD_SEMANTICS_VERIFICATION.json`。新审计保存raw生成prefix和canonical history各自哈希、feature截断计数及精确命令一致性。
+
+修正precommit集合`7b3b4551b80d6e48cde12c6d4e752bc500aec48d6cbd1dd122c1ec93432ba1a5`，38项原生policy/queue/witness/entrypoint检查通过（10.66秒），包含真实生成域、篡改命令拒绝、非有限尾部和zero-std下不强求错误的浮点可逆性。**这是原前后处理一致性修复，不是训练、采样、阈值或动作约束的改法；修正后完整物理回合仍待运行。** 23.14关于实际prefix必须继续落在±5内的临时解释由本节公式与原处理器核验取代；全部旧失败和对应源码仍保留，不重写旧结果。
