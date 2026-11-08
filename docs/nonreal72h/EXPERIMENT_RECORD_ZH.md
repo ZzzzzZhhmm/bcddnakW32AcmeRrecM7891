@@ -879,3 +879,15 @@ v2仅给K32全候选执行开放具类型的官方executor拒绝续采：保留i
 源回合的初始RGB/native qpos/逻辑任务状态/指令必须逐项相同。重新运行原策略，每条已生成的native命令与before/after qpos均核对原Full trace；参考动作只用于生成后校验，禁止teacher forcing。每个分支仍须六类精确恢复和重复endpoint检查；任何事实轨迹偏离保留失败，不能靠放松容差声称同轨迹。计划、source trial和trace哈希另行封存。新入口来源集合`7e79031a69fccce72efc5104b179ff8e13dbc4b86ae79b59c93ec9c8eef8f3a4`，65项原生协议/采集/分支/后果/静态入口检查通过（23.47秒），并已逐字节核对三个改动文件与本机一致。**尚未在正式source上完成整条物理轨迹的资格验证，不把单元检查当成正式机制结果。**
 
 修正原前后处理后的固定core集合`5d7748e77a648511c5ddcfc0c65c3fac9933bbeb0e2bff20c61a7fd7e6356638`另在Git字节上重跑38项检查通过（9.69秒）；新bundle manifest SHA-256 `ec2afcad56fc8ddb044ebae0b5d5c29cae02140d4ca2494129679bd963215599`，原数据recipe/checkpoint/共同Gaussian namespace保持。Battery Try case0的Full attempt04和null attempt02已登记在`AFFINE_CORRECTED_FORMAL_PAIR_QUEUE.json`，等待排除K32任务结束及至少75GiB空闲，随后按官方1000步运行两角色；排队不算GPU运行或完整pair。
+
+### 23.19 第二个K32排除pilot、存储分层及后续实际队列
+
+Rearrange Blocks v2已对原32个valid候选全部尝试：27个完整H32、5个官方TOPP拒绝；五项均保留invalid_branch和未知effect/适用标签，六类parent恢复仍精确。候选分支完成901条命令（含拒绝前已完成前缀），另外raw/refined/null/refined-repeat完成128条；selected-raw和refined-repeat的endpoint精确复现。27个完整候选的已知独立标签均0，另5项保持unknown，不能据此称32个候选均不适用。raw/refined/null标签均0，natural gate `0.1923828125`，仅排除的seed3407/query8。
+
+在相同27/32完整支持上，预测头绝对MSE `0.14846232741985319`、centered MSE `0.059648675310451954`、centered explained variance `-0.25370330893034`；constant-query分别为`0.20244148885062974`、`0.0475779834714995`、0；historical分别为`0.15734909237719055`、`0.09466533929069586`、`-0.989687926715157`。**绝对误差较小并未转化为候选间区分优势，不能只报有利的绝对误差。两个排除状态均尚未支持该项主张；正式固定cohort和较晚查询仍需检验。** 本机完整69文件及指标重算通过，报告`P0_K32_REARRANGE_QUALIFICATION_VERIFICATION.json`；双端包23,418,630 bytes，SHA-256 `9113cd320bd4346d6b6c111df8fc13a8b679fad69161bc17e4d7fab7cc28514c`，`archives/K32_rearrange_complete_with_native_rejections_qualification_v2.tar.gz`。
+
+18:27:18 UTC，排除K32任务结束后，修正core下的Battery Try正式两角色实际启动，case0/seed340800000、官方1000步。此时不写完成pair/SR；两worker仍独立加载模型和bank。后续链`PRIMARY_FOLLOWING_CHAIN.json`依次等待该两角色退出、从固定完整Full source0采集六个query及q8/q48的K32，再尝试将匹配Full由step5通过原完整state校验续到100。正式collector的Git归档集合`91f7f1f22f6f06812447347328b4e01a9c949d76c98a4bd7c3ac6491faeedc2c`，三个改动文件与65项已测试precommit在统一行尾后相等；Full续训配置SHA-256 `ad428616cb581e4c3d21473763b3479f7a30b98ab619718b6510ecc778b990ff`。**后两项仅已准备、未运行，不计入当前完成工作。** 若Full源未完整则保留不准入，不按成功值另选；GPU不足时等待，不停止其他项目。
+
+旧step5两包的全部400个CAS文件已在本机逐项验证后，仅将其19个独占压缩blob、26,306,412,792 bytes从AFS重复存储分层到本机持久CAS（并额外保留/tmp逐字节副本），AFS约释放24.5GiB。每次移除AFS重复blob前核对本机完整receipt、原SHA/长度和/tmp副本SHA，且确认不被任何当前step100 manifest引用。`archives/AFS_UPDATE5_PAYLOAD_TIERING.json`记录19项及本机receipt SHA `136b0f8a7af5195e934d7d231e45dfefd1b4c98cd2e02ff2c65856fe33d083bf`，已传回本机。旧step5完整重建现在使用本机自包含CAS；不再称旧AFS目录仍自包含。当前conditioned-step100的AFS CAS仍完整自包含，本机step100下载仍在途。原author checkpoint、datasets、原/tmp TAR及训练state没有改动。后续训练单独要求空闲GPU及至少20GiB AFS空间。
+
+原方法核对还发现：当前action-conditioned prior没有ReCAP的检索视觉序列条件；跨回合检索先验也不是WarmPrior的同回合历史/preview先验。因此BB-W2的具名方法head-to-head仍有实质缺口，不能用当前100更新或简化对照替代。区别与可核实来源见`docs/rebuttal/MATCHED_BASELINE_METHOD_AUDIT_ZH.md`；没有为此擅自改动正在运行的策略或把新对照写成已完成实验。
