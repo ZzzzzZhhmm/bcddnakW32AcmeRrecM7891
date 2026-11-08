@@ -779,3 +779,37 @@ TRAIN/DEV实际构建完成，样本数249,966/26,934；两个重点任务各自
 - source-only简化控制：job `training_job_logs/20261108T135011Z-7759fc16`，14:04:39 UTC前complete/exit0；actual step5/max30000、microbatch8/accum16/effective128、BF16、seed3407，共5条实际更新记录，权重SHA-256 `1503d79ffaf9ac65d370ae7fc2d700d5dc3adce3e8fa1ff014f1fa9a0588c1c4`。此为旧source-only工程prototype，不是完成3000次的性能基线。
 - Full同配方预检：job `20261108T140953Z-b06c248b`，现已complete/exit0并在step5保存；核心b823b3a只改变重复资产摘要读取，Full训练数学及预算未改。checkpoint/optimizer及吞吐的独立核验接续进行，不能只根据`training_complete`文件称科学对照完成。
 - 两者临时checkpoint工作区各约36GB，位于`/tmp/warm_rebuttal_p0_20261108/training_pilot_5799e7e/`。归档/本机转存尚在进行；只有传输后哈希相符才标为双端持久化。尚未开展3000-update匹配性能比较，未更新论文效能数字。
+
+### 23.9 真实历史H32分支通过，局部结果仍无优势
+
+修正collector job `live_history_job_logs/20261108T142716Z-ce1945ff` 于14:40:41 UTC complete/exit0，runner804.9833秒、collector696.0373秒。实际collector集合`0e20e34dfd7b746bb82824348b5b02500128ccf684526d3df5ff8afa32bf530e`前后一致；core仍为b823b3a集合`55f40ddc07437bd0b47c3a31019a720bb05555ee53512f6cb0fe297a262e21f5`。指定v8-step3000、Rearrange Blocks seed3407，Full真实执行4条命令后的query1，history observation_updates1。
+
+- raw/refined/candidate-null/refined-repeat各实际执行32条命令，共128条；四分支均为complete_horizon，六类父状态恢复一致，refined-repeat的完整endpoint及RGB完全一致。Full事实轨迹总共执行8条命令。DINO读取必须与真实retriever token逐元素相等，null生成的Python/NumPy/Torch随机流隔离已通过。
+- 独立physical-next-interaction标签为raw0/refined0/null0，均未完成新里程碑。**只支持采集链在这一真实历史状态通过，不支持生成修复率、candidate-specific后果预测优势、正式SR或提分。** 原summary的`scientific_collection_qualified=false`保留，其他阶段尚未取得资格。
+- 双端原件包`S/rebuttal_20261108_p0/archives/actual_history_corrected_qualification_v1.tar.gz`，4,331,908 bytes，SHA-256 `758e1181a14a598b9769a8f46aeadfb8ea3684c42a65853797e2e8a9b3e3eecd`。本机独立验收29个文件、封存receipt、128条实际动作、四次六分量restore、重复endpoint及RGB，见`tmp/rebuttal/execution/20261108_p0/evidence/P0_INSTRUMENT_PILOTS_VERIFICATION.json`。没有将排除pilot提升为正式cohort。
+
+### 23.10 5更新的FP32检查与无损持久化
+
+Full step5权重SHA-256 `c4bf3244f4e343a0d5938bfb14f8ffa9b7c5b08c604794bf38fb1fdfeac39403`；simple-prior权重身份见23.8。两者均保留完整optimizer、scheduler、RNG、trainer state、配置、五条metrics和训练attestation。Adam实际step均为5，FP32 master分别含1,074,264,859和1,061,785,196个元素。
+
+固定检查共同ActionDiT的`action_expert.action_encoder.weight`（14,336元素，optimizer partition起点0），与同一release中`mot.mixtures.action.action_encoder.weight`的FP32转换比较：Full14,263元素变化、simple-prior14,256元素变化；二者最大绝对变化均为`5.029141902923584e-07`，所查master及Adam一、二阶矩有限且非零。原始检查报告`UPDATE5_FP32_MASTER_VERIFICATION.json`已传回本机。**这是指定共同参数的实际更新证明，不是全参数扫描、3000步训练完成或策略性能。** 前一版layout打印器对LossScaler JSON序列化失败，原失败保留；更改的仅为诊断输出，未改checkpoint或训练。
+
+两个原始TAR分别为38,412,615,680 bytes/SHA-256 `5d37f17546c00ccb0ce229a7f4de4e0aee3d35688067c406030c39338ca9a720`（simple-prior）和38,599,106,560 bytes/`711c61369cbccf80e5944529084ef919332e325853d7c4114530d2e73f0cd611`（Full）。因公开SSH下载约5MB/s且AFS原余约60GB，先以lossless Torch-ZIP payload去重和zstd保存到持久`S/rebuttal_20261108_p0/lossless_training_update5_store_v1`。存储自包含，不依赖外部base引用或有损tensor转换；15:17 UTC两个原TAR均经完整解压逐字节重建、长度及全包SHA-256核对，receipt为`archives/LOSSLESS_UPDATE5_COMPLETE.json`。原始临时文件仍保留。
+
+本机完整metadata/日志/codec/manifest包`training_update5_preservation_receipts_v1.tar.gz`，17,440,563 bytes，SHA-256 `042869e8c3aefa50f07d9d06b8b5dea2dca4b1e65fe161545bcd16ed882046c5`，21文件逐项核验。**持久AFS raw已验证，本机仅完整接收此receipt包，未宣称所有CAS权重payload均已双端。** 原直接SCP在约1.1GB时主动停止，文件保留为`evidence/training_updates/simple_prior_update5_evidence.tar.partial`，不计作完整原件。
+
+### 23.11 非空holdout前缀：自然gate非零，尚无零覆盖或不劣证据
+
+`missing_skill_prefix16_b823b3a_full`完成seed3407、Full单角色16条实际命令、4次重规划。bank原字节/全局ID不变，target-family holdout含19,540条，目标Rearrange Blocks条目0；四个query均有32个有效检索候选。自然gate依次为`[0.193359375,0.1884765625,0.20703125,0.1923828125]`，并未自然降为0。保留的通用抓取/运输原语仍可能适用，**不能据此直接判为false activation，也不能称模型已学会missing-skill fallback**；尚需候选真实执行覆盖和官方完整配对回合。
+
+此试验为预先排除的qualification，`success=null`、`unpaired_role_trial`、正式完整pair0，16步不冒充700步成功率。启动时同节点WAMO独立进程占约14GB；没有停止或修改其任务。WARM仅在至少45GiB可用时获准启动，Torch每进程上限0.4，admission及PID保留。后续观察GPU已清空，不将共享节点耗时作为成本benchmark。
+
+双端包`nonempty_holdout_prefix16_qualification_v1.tar.gz`，1,169,330 bytes，SHA-256 `f0ecbca2e5167225aaba99530aa86ffac4c68f83f6937f63937b80134e8729a7`；本机独立核验30文件、全部16条动作及原生qpos前后哈希、4个自然gate和真实搜索域，见同一instrument verification报告。
+
+### 23.12 单H100执行与在途任务
+
+作者确认目前只有一个节点。优先完成机制修复、候选独立后果真值、自然退让及同预算简化基线，三训练seed按顺序执行；首个匹配seed完成前不把多seed计划当成果。正式100/250对的目标和2pp不劣准入保持原计划，未完成时不报告不劣结论。两独立单角色worker允许在约80GB内并行CPU物理轨迹；保持官方H32/prefix4/NFE10/K32和完整任务步数，不靠截短换取速度。
+
+首个Battery Try正式Full单角色shard于15:43 UTC前启动，输出`S/rebuttal_20261108_p0/formal_battery_full_bank_full_shard0000_attempt01`，candidate seed340800000起、case index0、官方上限1000步、固定v8-step3000。source/core均为b823b3a不可变集合55f40d；max4200秒，Torch上限0.4、与其他作业的GPU admission单独记录。此时仍在初始化，**还没有正式完整pair或SR结果**。后续null需同一准入seed、初始图像/qpos/物体目标/指令和协议核对后才能merge。
+
+另增默认关闭的串行只读权重replica，用于同一封存context的null诊断，模块与状态独立、参数/buffer只读共享、原始Full状态及tensor version检查；不改变null定义、候选、NFE或正式闭环策略。原生v1软件14项通过，但真实部署复制遇到bound retriever内的mappingproxy，于分支真值前失败，原failed记录保留。v2将诊断replica明确保持online-unbound，不复制/共享任何retriever capability，仍只经production FastWAM kernel消费原先已验证的factual tensor；增加真实能力对象不可复制fixture后15项原生通过（20.49秒）。v2源码集合`bb0c92453ed9e92aa0b9ec30d799902f4f182f0a426732119721ca215eca147f`，15:50 UTC启动独立资格重跑。**真实作者模型的逐动作等价尚待核验，不能用于正式提效声明。** 活动job均不读取canonical checkout变更。

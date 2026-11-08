@@ -18,6 +18,7 @@ import random
 import sys
 import time
 import traceback
+from types import SimpleNamespace
 
 ROOT=Path(__file__).resolve().parents[1]
 
@@ -31,6 +32,7 @@ def main():
     p.add_argument('--seed',type=int,default=3407)
     p.add_argument('--trajectory-commands',type=int,default=8)
     p.add_argument('--query-ordinals',type=int,nargs='+',default=[1])
+    p.add_argument('--null-execution',choices=('independent','shared_weights'),default='independent')
     args=p.parse_args()
     if args.trajectory_commands<8 or any(q<1 for q in args.query_ordinals):
         raise ValueError('actual factual history and a later query are required')
@@ -53,6 +55,8 @@ def main():
     from fastwam.research.branches import execute_branches
     from fastwam.research.rmbench_branches import RMBenchQposBackend,prepare_native_query
     from fastwam.research.policy_state import deployed_policy_fingerprint,digest_state
+    from fastwam.research.inference_replica import shared_weight_inference_replica,assert_shared_weights_unchanged
+    from fastwam.research.policy_state import THREAD_FIELDS
     from fastwam.research.query_capture import capture_online_replan,generate_captured_null
     from fastwam.research.rmbench_outcomes import observe_task_progress,label_next_interaction
     from fastwam.models.warm.retrospection_model import _spatial_effect_summary
@@ -74,7 +78,7 @@ def main():
     identity=dict(core_source_sha256=source['sha256'],collector_source_sha256=source_identity(ROOT)['sha256'],
         simulator_source=simulator_identity(runtime_root),checkpoint_sha256=sha256_file(artifacts['warm_checkpoint']),
         task=task,seed=args.seed,phase='excluded_actual-history_restoration_pilot',horizon=32,execution_prefix=4,
-        planned_query_ordinals=args.query_ordinals,trajectory_commands=args.trajectory_commands)
+        planned_query_ordinals=args.query_ordinals,trajectory_commands=args.trajectory_commands,null_execution=args.null_execution)
     (out/'identity.json').write_bytes(canonical(identity))
     os.chdir(runtime_root);sys.path[:0]=[str(runtime_root),str(runtime_root/'description/utils')]
     from generate_episode_instructions import generate_episode_descriptions
@@ -87,12 +91,32 @@ def main():
         random.seed(args.seed);env.setup_demo(**config)
         instruction=str(np.random.choice(generate_episode_descriptions(task,[info['info']],100)[0]['unseen']))
         env.set_instruction(instruction=instruction)
-        for role in ('full','candidate_null'):
+        roles=('full','candidate_null') if args.null_execution=='independent' else ('full',)
+        for role in roles:
             print('stage=load_policy role='+role,flush=True)
             policy=RMBenchWarmPolicy(dict(runtime,warm_telemetry_path=str(out/f'{role}-telemetry.jsonl')))
             policy.model.configure_research_probe(capture=True,force_null=role=='candidate_null')
             policies[role]=policy
-        full,null=policies['full'],policies['candidate_null'];full.reset()
+        full=policies['full'];shared_receipt=None
+        if args.null_execution=='shared_weights':
+            allocated_before=torch.cuda.memory_allocated()
+            null_model,shared_receipt=shared_weight_inference_replica(full.model)
+            null_model.configure_research_probe(capture=True,force_null=True)
+            null=SimpleNamespace(model=null_model,checkpoint_sha256=full.checkpoint_sha256)
+            (out/'shared_weights_receipt.json').write_bytes(canonical(dict(
+                mode='serial_readonly_shared_weights_independent_module_state',
+                shared_tensor_references=len(shared_receipt),
+                allocated_before=allocated_before,allocated_after=torch.cuda.memory_allocated(),
+                native_independent_model_equivalence_requires_separate_qualification=True)))
+        else:null=policies['candidate_null']
+        full.reset()
+
+        def policy_fingerprint():
+            if shared_receipt is None:return digest_state([deployed_policy_fingerprint(full),deployed_policy_fingerprint(null)])
+            assert_shared_weights_unchanged(shared_receipt)
+            return digest_state([deployed_policy_fingerprint(full),
+                {name:getattr(null.model,name) for name in THREAD_FIELDS},
+                null.model._warm_online_experiment_locked,null.model._warm_research_probe])
         ordinal=0
         while env.take_action_cnt<args.trajectory_commands and not env.eval_success:
             obs=env.get_obs();capture=None
@@ -109,6 +133,7 @@ def main():
                     if history.counters.observation_updates<1:raise RuntimeError('live factual history was not populated')
                     (qdir/'actual_policy_state.json').write_text(history.to_json())
                     alternative=generate_captured_null(full,null,capture)
+                    if shared_receipt is not None:assert_shared_weights_unchanged(shared_receipt)
                     probe=capture['probe'];idx=int(probe['arrays']['selected_index'].reshape(-1)[0])
                     if idx<0:raise RuntimeError('pilot has no raw selected proposal; do not substitute another query')
                     raw=probe['arrays']['adapted_actions'][0,idx].float().cpu().numpy()
@@ -148,8 +173,7 @@ def main():
                         prepared=retriever._image_adapter.prepare(raw_batch)
                         features=retriever._dino.encode(prepared.camera_frames[retriever._semantic_processor_camera],batch_size=retriever._dino_batch_size)
                         return np.asarray(features.spatial[0],dtype=np.float32)
-                    fingerprint=lambda:digest_state([deployed_policy_fingerprint(full),deployed_policy_fingerprint(null)])
-                    with closing(RMBenchQposBackend(env,obs,encode=encode,policy_fingerprint=fingerprint,canonicalization=proof)) as backend:
+                    with closing(RMBenchQposBackend(env,obs,encode=encode,policy_fingerprint=policy_fingerprint,canonicalization=proof)) as backend:
                         (qdir/'parent_state.pickle').write_bytes(pickle.dumps(backend.snapshot(),protocol=4))
                         before_read=dict(backend.fingerprint());parent_features=encode(obs)
                         if dict(backend.fingerprint())!=before_read or not np.array_equal(parent_features,step.factual_world_tokens):
