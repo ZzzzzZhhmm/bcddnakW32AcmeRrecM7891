@@ -730,3 +730,28 @@ FastWAM guard有58次约5秒采样，无foreign compute PID、无采样错误。
 - `simple_prior.py`是独立训练控制：同一候选池/事实history与gist、粗排top1动作、固定0.25先验、确定性起点warp，无学习式动作适配/后果预测/重排/门控。单独checkpoint schema；Full的默认训练与推理语义由原有Torch回归测试覆盖。配置生成器强制作者原配置SHA-256，两分支共同从release以新optimizer起训，batch8×accum16=effective128、原max30000 scheduler、固定3000更新，不把新单卡cohort冒充原4卡续训的逐bit复现。
 - native precommit v1为96 pass/2 fail：两失败已在未修改的69ff6b4源码重复复现，分别为旧trainer stub遗漏attestation context、旧静态断言仍匹配已替换的完成日志。修复测试fixture/断言，未绕过真实resume检查或修改生产trainer。precommit v2包含Full/source/config/entrypoint与新control/统计/merge测试，100项原生通过（20.74秒）；本地非Torch相关78项通过。Windows无Torch，新控制的数值/梯度检查仅计原生CCI结果。
 - 已核实AFS余约60GB、节点临时盘约6.9TB、本机C盘约1.45TB。新增训练的state在有界分段后同步本机并验hash；原始checkpoint、数据与运行成果不清理。当前新simple-prior尚未训练，单卡吞吐与正式成功率仍待执行，不以软件通过替代公平训练比较。
+
+### 23.4 首个完整真实配对pilot：保留负结果，不支持效能优势
+
+`paired_job_logs/20261108T121650Z-51572500`于12:16:50–13:19:50 UTC结束，complete/exit0，runner elapsed3780.1005秒、collector elapsed3694.7732秒（包括两套模型的初始化/校验）。AE固定源码集合运行前后均为`37d11caa89b3fb63f93a0d8a316ffb62e02fde1b4cc465d8f77039441ad864e9`，官方任务源码前后均为`a97e308ca053c3aeb1bfec8e3c4c4f550aac7f6ae753e36bbce82e9522292379`。
+
+| 排除pilot，Rearrange Blocks seed3407 | Full | candidate-null |
+| --- | --- | --- |
+| 官方完整回合 | 1 | 1 |
+| 实际执行命令 / 重规划 | 700 / 175 | 700 / 175 |
+| 官方任务成功 | 0/1 | 0/1 |
+| 非零检索gate的query | 175/175 | 0/175 |
+
+配对差为0，只有一个预先排除的资格pair，**不能用于正式SR区间、不劣结论或提分证据**。Full gate范围[0.1484375,0.2158203125]，方块1由x约0.14移动到约0.31，但stage始终0、press_cnt0、max_reward0；可视化原件显示物体确实移动而未完成第一阶段，不把这条轨迹解释为生成修复。两角色初始RGB、qpos、物体目标和官方unseen指令完全相同；六个预定frame0/32/96/192/320/480的base Gaussian逐元素相同。闭环后续状态自然分歧，不把这些query冒充同一当前状态的局部分支。
+
+完整双端包`S/rebuttal_20261108_p0/archives/p0_rearrange_blocks_complete_pair_pilot_v1.tar.gz`，7,447,914 bytes，SHA-256 `f32e181be3a7d83ae32c0b686ec7f9be88329b40ee8582a03409ba6a921ae589`。本地`P0_COMPLETE_PAIR_VERIFICATION.json`核对70个归档成员哈希、所有1400条动作及before/after原生qpos哈希、350个replan、null零门值、初始身份和共同Gaussian，通过；原始失败不删除。此前单Full角色及search预检独立包3,984,144 bytes，SHA-256 `e51f8064f77b53e44307e594e7beaa756f6cb59f328f508edd6a380f8c58c7a9`，39成员亦独立验收。本地均在`tmp/rebuttal/execution/20261108_p0/evidence/`。
+
+### 23.5 真实非空搜索域与下一阶段状态
+
+实际bank89,680条已通过EventBank完整校验，restricted search在完整域的top32 ID/score与原reference相等。家族holdout/clean各自大小：Rearrange Blocks为19,540（holdout保留Battery Try、Observe And Pickup及Press Button，可能仍含通用抓取/运输原语），Battery Try为78,772；目标任务条目在holdout均为0。此为真实bank上的搜索域工程资格，不是候选零适用覆盖或自然退让效能。预检v1读取manifest封装层级错误的KeyError原日志保留，v2按已有contract结构读取后通过，未修改bank/manifest。
+
+新控制/统计版本`5799e7e62b884071662964b294af0aa9b3670e46`已commit、push、GitHub分支核验且CCI fast-forward；归档tar SHA-256 `45da96aef6f715768a8e7d6b54f27c9034cd9f798f5261cd8cea34760b0fff8e`，固定代码集合`9f37135ce0e983f9509f422dd41bb6986a6b0270feecd95baff73b1ed6ee254a`。活动pair仍来自AE旧冻结源，未被Git同步改写。
+
+真实历史分支pilot在前一作业退出且GPU清空后，于13:20:04 UTC启动`live_history_job_logs/20261108T132004Z-eb70dd4c`，max5400秒。collector来自69ff6b4不可变代码（集合`4a6762f26fcdf6e9256fe305c84c3dcd7423ff4791296a10be22dae8deb31c37`），合同/core仍来自AE；seed3407、实际Full前4个命令后的query1、raw/refined/null/refined-repeat各H32。当前仍在模型加载，尚无真实分支效能结果。
+
+匹配训练两配置已按作者YAML哈希生成：Full SHA-256 `710b74b4a94036a1712c081f3d95aee18eb3e9bc5b91b2a836f6bc3d9fc5c0f8`，simple-prior SHA-256 `a00bcc14b6a7bed50ec7242aa982dfccc57cad8d3951b3cad3bfe593cd8936e3`。单卡5更新预检只在CPU真实TRAIN/DEV输入通过、前一GPU作业结束、显存清空且14:30 UTC前可启动时接续；max3600秒并保留重启/归档余量。此时训练尚未实际启动。正式100/250对及候选特异性结论均未产生。
