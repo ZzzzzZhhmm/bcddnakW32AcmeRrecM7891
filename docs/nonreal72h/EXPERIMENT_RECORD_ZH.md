@@ -813,3 +813,17 @@ Full step5权重SHA-256 `c4bf3244f4e343a0d5938bfb14f8ffa9b7c5b08c604794bf38fb1fd
 首个Battery Try正式Full单角色shard于15:43 UTC前启动，输出`S/rebuttal_20261108_p0/formal_battery_full_bank_full_shard0000_attempt01`，candidate seed340800000起、case index0、官方上限1000步、固定v8-step3000。source/core均为b823b3a不可变集合55f40d；max4200秒，Torch上限0.4、与其他作业的GPU admission单独记录。此时仍在初始化，**还没有正式完整pair或SR结果**。后续null需同一准入seed、初始图像/qpos/物体目标/指令和协议核对后才能merge。
 
 另增默认关闭的串行只读权重replica，用于同一封存context的null诊断，模块与状态独立、参数/buffer只读共享、原始Full状态及tensor version检查；不改变null定义、候选、NFE或正式闭环策略。原生v1软件14项通过，但真实部署复制遇到bound retriever内的mappingproxy，于分支真值前失败，原failed记录保留。v2将诊断replica明确保持online-unbound，不复制/共享任何retriever capability，仍只经production FastWAM kernel消费原先已验证的factual tensor；增加真实能力对象不可复制fixture后15项原生通过（20.49秒）。v2源码集合`bb0c92453ed9e92aa0b9ec30d799902f4f182f0a426732119721ca215eca147f`，15:50 UTC启动独立资格重跑。**真实作者模型的逐动作等价尚待核验，不能用于正式提效声明。** 活动job均不读取canonical checkout变更。
+
+### 23.13 更强的匹配简化对照及共享权重原生核验
+
+对照进一步保留Full的八个事实history gist槽及四个检索动作conditioning槽：粗排top1的同一H32×14确定性warp动作，逐值无损分成四个112维token并补零到现有512维，再经可训练线性projection进入ActionDiT。初始化该projection为零，不压缩丢弃动作值。固定0.25先验沿用先前事前计划；仍无学习式动作适配、后果预测、效用重排或置信gate，common bridge/gist、历史信息、候选池、ActionDiT、数据及优化预算保留。这是显式common-backbone control，不称官方ReCAP复现。旧source-only5更新prototype及其原件保留，不把其结果算作新对照。
+
+新独立schema为`warm.research.coarse-conditioned-prior-with-recollection.v1`；事前计划`configs/nonreal/rebuttal_matched_conditioned_control_plan.json`规定固定3000更新、同一release、fresh optimizer、effective128、原30k scheduler，seed依次3407/3408/3409，未完成seed计划须明示。Full旧5更新只有通过原full-state lineage验证才可计作其连续起始段，不允许重置optimizer或数据游标后仍沿用累计步数。
+
+代码precommit集合`4efb8094729ba8771c7ec0d472c30ad8b585ef319e897edb566b12d3d5a81a14`，Full/source回归、动作信息无损性、projection梯度、checkpoint schema互拒及配方几何等58项原生通过（21.37秒），本机两项纯配置检查通过。首个100更新段配置SHA-256 `dd0ddb5ce07dbecb2cc8628479c755a2769a7aa932722a0e7fb60fb23803ce7a`。原配置生成器manifest中的`preflight_updates`为旧字段名，本次段的用途在运行前已由独立plan及job明确为固定3000的初始优化段，**100更新本身不进入TEST效能对比**。
+
+该段于16:21:47 UTC启动`matched_training_job_logs/20261108T162147Z-e10800ad`，仅在前一自有诊断job退出、GPU清空后启动；此时处于模型/数据初始化，尚未验收实际100更新。输出`/tmp/warm_rebuttal_p0_20261108/matched_conditioned_seed3407_v1/conditioned_prior-s3407`，原始optimizer/scheduler/RNG和metrics的持久化接续同一无损CAS流程，不触碰原checkpoint。Full5→100配置只准备，未运行，不能称两臂3000更新比较已完成。
+
+共享权重v2的真实作者模型核验已通过：同一seed3407/query1，raw/refined/null/refined-repeat四套原生命令、Full与null所有probe数组、21个factual context tensor、非tensor字段及parent DINO token与先前独立模型逐元素相同；5,549个tensor引用共享，clone新增allocated CUDA bytes为0。仍仅是一处排除pilot的实测等价和软件只读保护，不宣称所有query经验覆盖或计时加速倍数。双端包`shared_weight_native_equivalence_qualification_v1.tar.gz`，4,363,358 bytes，SHA-256 `8369bdf397435b7d2cfb291f0c9fadc64fe7f0952047df0ed1ba410186f00263`；本机核对42文件，包含v1复制失败原件和v2完整分支，旧失败未删除。
+
+首个Battery Try正式Full尝试在80条命令后于重规划校验处停止，`success=null`、原始`invalid_runtime`记录保留，未组成pair。双端原件包`battery_first_formal_boundary_failure_v1.tar.gz`，1,578,925 bytes，SHA-256 `5b0f2f9331595189a5f08cdf7141d3d31ff03d56aa29cf2037f2a2d01eed13a3`，32文件本机核对。不得把生成/策略相关失败静默排除来抬高SR；必须先分清基础设施、审计范围和实际部署失败，再以显式口径报告全部尝试。

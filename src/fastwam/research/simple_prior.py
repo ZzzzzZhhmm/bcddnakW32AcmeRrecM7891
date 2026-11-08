@@ -7,6 +7,7 @@ new outcomes. Its checkpoint schema prevents loading it as the submitted model.
 from __future__ import annotations
 
 from collections.abc import Mapping
+from dataclasses import replace
 import math
 import torch
 from torch import nn
@@ -18,6 +19,7 @@ from fastwam.models.warm.retrospection_model import (
 
 SCHEMA='warm.research.coarse-prior-with-recollection.v1'
 SOURCE_WEIGHT=.25
+CONDITIONED_SCHEMA='warm.research.coarse-conditioned-prior-with-recollection.v1'
 
 
 class CoarseRank(nn.Module):
@@ -101,7 +103,51 @@ class SimplePriorFastWAM(WarmRetrospectionFastWAM):
         super()._validate_retrospection_state(translated)
 
 
-def create_simple_prior(*,retrospection,**kwargs):
+class DirectActionEvent(DeterministicEvent):
+    """Lossless fixed tokenization of the same normalized, warped HxD action."""
+    def forward(self,*,warped_actions,candidate_valid_mask,**unused):
+        result=super().forward(warped_actions=warped_actions,candidate_valid_mask=candidate_valid_mask)
+        b,k,h,d=warped_actions.shape;count=self.config.context_query_count
+        width=(h*d+count-1)//count
+        if width>self.config.model_dim:raise ValueError('direct action tokenization must retain every action value')
+        flat=torch.nn.functional.pad(result.adapted_action_mean.flatten(-2),(0,count*width-h*d))
+        tokens=flat.reshape(b,k,count,width)
+        tokens=torch.nn.functional.pad(tokens,(0,self.config.model_dim-width))
+        return replace(result,action_context_tokens=tokens)
+
+
+class ConditionedPriorFastWAM(SimplePriorFastWAM):
+    """A stronger simple control: coarse prior plus direct retrieved-action tokens.
+
+    Keeps the same four retrieved-action token slots and eight history gist
+    slots as Full. It still has no learned action adaptation, consequence model,
+    reranker or confidence gate. This is a declared common-backbone control,
+    not a reproduction of a named prior method.
+    """
+    def configure_warm_retrospection(self,config):
+        super().configure_warm_retrospection(config)
+        self.retrospective_event_adapter=DirectActionEvent(self.retrospective_event_adapter.config)
+        nn.init.zeros_(self.action_context_to_text.weight)
+
+    def _source_only_conditioning(self,required_gist,selected_action_context):
+        return torch.cat((self.gist_to_text(required_gist.gist_tokens),
+                          self.action_context_to_text(selected_action_context)),dim=1)
+
+    def configure_trainable_modules(self):
+        super().configure_trainable_modules()
+        self.action_context_to_text.requires_grad_(True)
+        return tuple(p for p in self.parameters() if p.requires_grad)
+
+    def _retrospection_state(self):
+        return dict(super()._retrospection_state(),schema=CONDITIONED_SCHEMA)
+
+    def _validate_retrospection_state(self,value):
+        if not isinstance(value,Mapping) or value.get('schema')!=CONDITIONED_SCHEMA or value.get('version')!=1:
+            raise ValueError('not a separately trained coarse-conditioned-prior checkpoint')
+        super()._validate_retrospection_state(dict(value,schema=SCHEMA))
+
+
+def _create_prior(model_class,*,retrospection,**kwargs):
     from omegaconf import OmegaConf,DictConfig
     from fastwam.runtime import create_warm_source
     from fastwam.models.warm.retrospection_config import WarmRetrospectionConfig
@@ -109,5 +155,13 @@ def create_simple_prior(*,retrospection,**kwargs):
     cfg=retrospection if isinstance(retrospection,WarmRetrospectionConfig) else WarmRetrospectionConfig.from_dict(retrospection)
     policy=kwargs.pop('source_policy','fixed_context_top1')
     if policy!='fixed_context_top1':raise ValueError('simple prior requires the same coarse retrieval family')
-    return create_warm_source(source_policy=policy,_warm_model_class=SimplePriorFastWAM,
+    return create_warm_source(source_policy=policy,_warm_model_class=model_class,
         _warm_pretrained_extra={'warm_retrospection_config':cfg},**kwargs)
+
+
+def create_simple_prior(**kwargs):
+    return _create_prior(SimplePriorFastWAM,**kwargs)
+
+
+def create_conditioned_prior(**kwargs):
+    return _create_prior(ConditionedPriorFastWAM,**kwargs)

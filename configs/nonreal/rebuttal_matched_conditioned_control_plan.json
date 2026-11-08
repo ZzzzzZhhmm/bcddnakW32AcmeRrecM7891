@@ -1,0 +1,33 @@
+{
+  "schema": "warm.rebuttal.matched-conditioned-control.v1",
+  "frozen_on_utc": "2026-11-08",
+  "purpose": "Common-backbone comparison addressing BB-W2 and HH-W3 with a simple control that receives both retrieved action priors and direct retrieved-action conditioning.",
+  "reference": "New Full run from the same immutable release. The existing Full5 numerical segment may continue only through validated full-state lineage, without resetting its optimizer or dataloader progress.",
+  "control": {
+    "factory": "fastwam.research.simple_prior.create_conditioned_prior",
+    "checkpoint_schema": "warm.research.coarse-conditioned-prior-with-recollection.v1",
+    "retrieval": "Same factual current observations, episode history, original candidate bank, exact coarse top32 pool; coarse top1 chosen without consequence reranking.",
+    "source": "Fixed0.25 prior weight declared in the earlier source-only protocol; common deterministic start-state warp; existing validity/thread guards retained.",
+    "conditioning": "Same eight factual-history gist slots plus four direct retrieved-action slots. Flatten all32x14 normalized warped action values, split into four112-value tokens and pad each to the existing512-wide input. A zero-initialized trainable512-to-text projection adds no lossy pooling or future labels.",
+    "removed": ["learned action adaptation", "candidate consequence prediction", "utility reranker", "learned confidence gate"],
+    "auxiliary_losses": "Removed-module retrieval, effect, gate and adaptation losses are zero; common factual bridge/gist and ActionDiT training remain.",
+    "attribution": "Declared common-backbone control. Not an official ReCAP or informed-source-flow reproduction."
+  },
+  "budget": {
+    "author_config_sha256": "34f5dc0a6f4cc354da61c0ba7bdc394b6c9652c7ef7706e72e8cbb683ec9a00c",
+    "base_checkpoint_sha256": "776475b22566a791854ecf31cf3b50f25e7d8d94c343132ec16eb94994aa9e63",
+    "world_size":1,
+    "micro_batch":8,
+    "gradient_accumulation":16,
+    "effective_batch":128,
+    "mixed_precision":"bf16",
+    "scheduler_max_updates":30000,
+    "selected_checkpoint_updates":3000,
+    "training_seeds_in_order":[3407,3408,3409],
+    "checkpoint_selection":"Fixed3000 total updates; DEV reporting only, no TEST selection. Report an incomplete seed plan explicitly.",
+    "first_segment_updates":100,
+    "segment_status":"Initial optimization segment toward the fixed3000 checkpoint; not a100-step efficacy baseline."
+  },
+  "historical_boundary":"The earlier source-only5-update prototype remains engineering evidence. Neither new model replaces the author-designated paper checkpoint or historical paper numbers silently.",
+  "resource_policy":"One H100. Run memory-intensive training exclusively; use immutable source snapshots and preserve optimizer, scheduler, RNG, data cursor, failures and raw metrics at bounded checkpoints."
+}

@@ -3,16 +3,16 @@ from dataclasses import replace
 import pytest
 torch=pytest.importorskip('torch')
 
-from fastwam.research.simple_prior import SimplePriorFastWAM,SCHEMA
+from fastwam.research.simple_prior import SimplePriorFastWAM,SCHEMA,ConditionedPriorFastWAM,CONDITIONED_SCHEMA,DirectActionEvent
 from fastwam.models.warm.retrospection_model import WarmRetrospectionFastWAM
 from tests import test_warm_retrospection_model_torch as fixture
 from tests.test_warm_source_model_torch import (
     _TinyVideoExpert,_TinyActionExpert,_TinyMoT,_TinyVAE,_run_contract,TEXT_DIM)
 
 
-def control():
+def control(model_class=SimplePriorFastWAM):
     video=_TinyVideoExpert();action=_TinyActionExpert()
-    model=SimplePriorFastWAM(video_expert=video,action_expert=action,mot=_TinyMoT(video,action),
+    model=model_class(video_expert=video,action_expert=action,mot=_TinyMoT(video,action),
         vae=_TinyVAE(),text_dim=TEXT_DIM,proprio_dim=fixture.PROPRIO_DIM,device='cpu',torch_dtype=torch.float32,
         video_train_shift=1.,video_infer_shift=1.,action_train_shift=1.,action_infer_shift=1.)
     model.configure_warm_source(policy='fixed_context_top1',memory_sigma=.2,run_contract=_run_contract())
@@ -46,3 +46,38 @@ def test_control_cannot_be_loaded_as_full_or_accept_a_full_checkpoint():
     with pytest.raises(ValueError,match='schema'):full._validate_retrospection_state(simple._retrospection_state())
     with pytest.raises(ValueError,match='coarse-prior'):simple._validate_retrospection_state(full._retrospection_state())
     simple._validate_retrospection_state(simple._retrospection_state())
+
+
+def test_conditioned_control_direct_tokens_retain_every_action_value_and_mask_invalid_rows():
+    simple=control(ConditionedPriorFastWAM)
+    adapter=simple.retrospective_event_adapter
+    ctx=fixture._source_context(with_teachers=False)
+    result=adapter(warped_actions=ctx.candidate_actions,candidate_valid_mask=ctx.candidate_valid_mask)
+    b,k,h,d=ctx.candidate_actions.shape
+    width=(h*d+adapter.config.context_query_count-1)//adapter.config.context_query_count
+    reconstructed=result.action_context_tokens[...,:width].flatten(-2)[...,:h*d].reshape(b,k,h,d)
+    assert torch.equal(reconstructed,result.adapted_action_mean)
+    assert torch.count_nonzero(result.action_context_tokens[1])==0
+    assert not tuple(adapter.parameters())
+
+
+def test_conditioned_control_trains_direct_projection_without_effect_or_ranking_modules():
+    simple=control(ConditionedPriorFastWAM);simple.configure_trainable_modules()
+    assert torch.count_nonzero(simple.action_context_to_text.weight)==0
+    _,output=fixture._resolve(simple,fixture._source_context(with_teachers=True),phase='train')
+    output.conditioning_tokens.sum().backward()
+    assert simple.action_context_to_text.weight.grad is not None
+    assert bool(simple.action_context_to_text.weight.grad.abs().sum()>0)
+    assert output.conditioning_tokens.shape==(2,12,TEXT_DIM)
+    assert output.source_gate.tolist()==[.25,0.]
+    assert all(not tuple(getattr(simple,name).parameters()) for name in
+        ('retrospective_event_adapter','utility_reranker','source_confidence_gate'))
+
+
+def test_conditioned_control_schema_is_distinct_from_both_other_models():
+    simple=control();conditioned=control(ConditionedPriorFastWAM);full=fixture._model()
+    state=conditioned._retrospection_state();assert state['schema']==CONDITIONED_SCHEMA
+    conditioned._validate_retrospection_state(state)
+    for other in (simple,full):
+        with pytest.raises(ValueError):other._validate_retrospection_state(state)
+        with pytest.raises(ValueError):conditioned._validate_retrospection_state(other._retrospection_state())
