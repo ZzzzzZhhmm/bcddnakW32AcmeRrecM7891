@@ -7,6 +7,7 @@ The original bound core/config root and the collector extension are recorded.
 """
 from __future__ import annotations
 import argparse
+from contextlib import closing
 from dataclasses import asdict,fields
 import importlib
 import json
@@ -38,7 +39,7 @@ def main():
     out.mkdir(parents=True,exist_ok=False)
     sys.path[:0]=[str(core/'src'),str(core)]
     import fastwam.research
-    fastwam.research.__path__.append(str(ROOT/'src/fastwam/research'))
+    fastwam.research.__path__.insert(0,str(ROOT/'src/fastwam/research'))
     import numpy as np
     import torch
     from scripts import build_warm_rmbench_contract_bundle as builder
@@ -58,6 +59,8 @@ def main():
 
     if Path(builder.__file__).resolve()!=core/'scripts/build_warm_rmbench_contract_bundle.py':
         raise RuntimeError('wrong bound core/config root imported')
+    if Path(sys.modules['fastwam.research.query_capture'].__file__).resolve()!=ROOT/'src/fastwam/research/query_capture.py':
+        raise RuntimeError('wrong explicitly recorded research extension imported')
     a=builder.build_parser().parse_args(json.loads(args.bundle_args.read_text()))
     if len(a.task)!=1 or a.experiment!=['full_warm']:raise ValueError('one Full task contract required')
     task=a.task[0];matrix=load_matrix(a.matrix);experiment,=select_experiments(matrix,a.experiment)
@@ -132,6 +135,8 @@ def main():
                     proposal=write_probe(qdir/'probes','full',probe,query_identity)
                     write_probe(qdir/'probes','candidate-null',alternative['probe'],query_identity)
                     sealed=dict(identity,query_id=query_id,gate=float(probe['arrays']['g'].reshape(-1)[0]),
+                        raw_definition='Selected current-state adapted proposal immediately before source mixing/flow; not unwarped stored qpos.',
+                        factual_rng_isolated=alternative['factual_rng_isolated'],
                         native_actions_sha256=sha256_file(qdir/'sealed_actions.npz'),
                         factual_context_sha256=sha256_file(qdir/'sealed_factual_context.pt'),
                         source_probe=proposal,history_sha256=history.sha256,history_observation_updates=history.counters.observation_updates,
@@ -139,26 +144,34 @@ def main():
                     (qdir/'sealed_query.json').write_bytes(canonical(sealed));seal_sha=sha256_file(qdir/'sealed_query.json')
                     def encode(observation):
                         retriever=full.retriever
-                        prepared=retriever._image_adapter.prepare(factual_cameras(observation))
+                        raw_batch,_=retriever._prepare_raw_cameras(factual_cameras(observation))
+                        prepared=retriever._image_adapter.prepare(raw_batch)
                         features=retriever._dino.encode(prepared.camera_frames[retriever._semantic_processor_camera],batch_size=retriever._dino_batch_size)
                         return np.asarray(features.spatial[0],dtype=np.float32)
                     fingerprint=lambda:digest_state([deployed_policy_fingerprint(full),deployed_policy_fingerprint(null)])
-                    backend=RMBenchQposBackend(env,obs,encode=encode,policy_fingerprint=fingerprint,canonicalization=proof)
-                    parent_outcome=observe_task_progress(env);endpoints=[]
-                    def observe_outcome():
-                        outcome=observe_task_progress(env)
-                        observed={'task_progress':outcome,'endpoint_fingerprint':dict(backend.fingerprint()),
-                            'rgb_sha256':{k:sha256_array(v['rgb']) for k,v in backend.obs['observation'].items() if 'rgb' in v}}
-                        (qdir/f'endpoint-{len(endpoints):02d}.pickle').write_bytes(pickle.dumps(backend.snapshot(),protocol=4))
-                        endpoints.append(observed)
-                        return observed
-                    try:
+                    with closing(RMBenchQposBackend(env,obs,encode=encode,policy_fingerprint=fingerprint,canonicalization=proof)) as backend:
+                        (qdir/'parent_state.pickle').write_bytes(pickle.dumps(backend.snapshot(),protocol=4))
+                        before_read=dict(backend.fingerprint());parent_features=encode(obs)
+                        if dict(backend.fingerprint())!=before_read or not np.array_equal(parent_features,step.factual_world_tokens):
+                            raise RuntimeError('independent effect reader differs from actual retrieval tokens or mutated parent')
+                        np.save(qdir/'parent_dino_spatial.npy',parent_features,allow_pickle=False)
+                        (qdir/'parent_receipt.json').write_bytes(canonical(dict(sealed_query_sha256=seal_sha,
+                            parent_state_sha256=sha256_file(qdir/'parent_state.pickle'),
+                            parent_dino_spatial_sha256=sha256_file(qdir/'parent_dino_spatial.npy'),
+                            exact_retrieval_spatial_tokens=True,before_any_branch_truth=True)))
+                        parent_outcome=observe_task_progress(env);endpoints=[]
+                        def observe_outcome():
+                            outcome=observe_task_progress(env)
+                            observed={'task_progress':outcome,'endpoint_fingerprint':dict(backend.fingerprint()),
+                                'rgb_sha256':{k:sha256_array(v['rgb']) for k,v in backend.obs['observation'].items() if 'rgb' in v}}
+                            (qdir/f'endpoint-{len(endpoints):02d}.pickle').write_bytes(pickle.dumps(backend.snapshot(),protocol=4))
+                            endpoints.append(observed)
+                            return observed
                         print('stage=sealed_branch_execution query_id='+query_id,flush=True)
                         results=execute_branches(backend,query_id=query_id,candidates=commands,proposal_sha256=seal_sha,
                             horizon=32,emit=lambda row:append_record(qdir/'branches.jsonl',row),
                             project_effect=lambda before,delta:_spatial_effect_summary(torch.from_numpy(delta)[None],torch.from_numpy(before)[None])[0].numpy(),
                             observe_outcome=observe_outcome)
-                    finally:backend.close()
                     # Repeated refined actions must reproduce all saved endpoint
                     # components and RGB; do not derive tolerances from outcomes.
                     if endpoints[1]['endpoint_fingerprint']!=endpoints[3]['endpoint_fingerprint'] or endpoints[1]['rgb_sha256']!=endpoints[3]['rgb_sha256']:

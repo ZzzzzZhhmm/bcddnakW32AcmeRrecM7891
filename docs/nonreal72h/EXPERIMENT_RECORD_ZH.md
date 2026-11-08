@@ -763,3 +763,19 @@ TRAIN/DEV实际构建完成，样本数249,966/26,934；两个重点任务各自
 针对反复读取同一大checkpoint的启动成本，新增默认关闭的Linux进程内摘要复用。首次完整字节SHA-256，后续仅对metadata完全相同且已打开的同一大文件复用；key包含PID/realpath/device/inode/size/mtime_ns/ctime_ns/mode，变更即重读、fork清空、无持久或外部提供摘要。测试覆盖恢复mtime/同大小写入、保留时间的原子替换，并连同EventBank、online retrieval和training attestation共49项原生通过（10.99秒），Windows只计默认路径1 pass，Linux专用2项skip。
 
 真实指定checkpoint12,148,647,926 bytes的首次完整哈希与`68c7f384...`相符，74.9567秒；同一进程二次打开/metadata核对后命中，0.8708秒，统计为miss1/hit1、实际累计哈希字节仅一个完整文件。原报告`asset_hash_cache_real_probe.json`，工程源码集合`cc55ceb21f5ce220c51b02fdfa38262a0ca6d6895ee0f8e6c495d84e42c37ba6`。此为当时AFS与并行负载下的单次文件级检查，不声称完整模型初始化加速倍数，不覆盖旧初始化或重规划成本数值。AE/69/579正在/排队的冻结作业不改用新实现；后续需要从新不可变版本显式启用并重新绑定core/config合同。
+
+### 23.7 真实历史分支的接口失败、修正与重跑
+
+首轮69ff6b4 collector完成4条实际Full命令，在query1封存了真实history（observation_updates1）、原始当前态adapted proposal、Full/refined与同上下文/同Gaussian的null，Full gate0.1923828125。但独立效应读取错误地将uint8 HWC直接传入要求float32 batch的image adapter，于首个H32分支执行前抛出`ServerFeatureEncodingError`；**branch truth0、repair/harm0条、科学采集未通过**，不能当作raw不适用或策略失败。原件包`p0_history_preexecution_interface_failure_v1.tar.gz`，999,168 bytes，SHA-256 `4907565620688300fa2110d0eaf4562797577d45279da2a36dc160186db83b48`，在`S/rebuttal_20261108_p0/archives/`，原job保持failed/exit1。
+
+修正后复用正式retriever的`_prepare_raw_cameras`和image adapter/DINO路径，要求parent effect token与该真实BoundOnlineStep的factual DINO spatial token逐元素相同；读取前后六类fingerprint必须不变。增加完整parent snapshot及哈希receipt，在任何branch truth前封存；null诊断生成显式隔离Python/NumPy/Torch RNG，异常时亦恢复，不推进Full事实轨迹的随机流。研究扩展的实际import路径单独核验和记source hash，核心policy/config合同仍独立绑定。14项相关原生检查通过（9.51秒），Windows13 pass、Torch专用1 skip；真实H32恢复仍需重跑验收。
+
+新core `b823b3a`的实际Git归档字节集合为`55f40ddc07437bd0b47c3a31019a720bb05555ee53512f6cb0fe297a262e21f5`。与原cache预检集合cc55的差别仅为`manifest.py`经Git归一化行尾，已逐文件核验；所有正式receipt仍使用实际字节哈希，不替换为归一化哈希。两任务cached strict bundle已exit0，manifest SHA-256 `b9d39c83c90b60a30338295f6b709f42ccdfdf7c10eae83cd193ae6099b70ccb`，35次guarded hit、131次完整miss、完整读取40,353,657,484 bytes。预备脚本v1将precommit字节哈希直接等同Git归档而中止，未生成合同或启动评测；原失败保留，v2显式核对行尾差异并按实际core绑定。
+
+修正pilot于14:27:16 UTC从immutable `camera_fix_precommit_v2/code`启动，job `live_history_job_logs/20261108T142716Z-ce1945ff`，max2700秒；core/config为上述b823b3a bundle，仍为seed3407、前4条Full命令后的query1及raw/refined/null/refined-repeat各H32。此时尚无新分支结果，不将重跑启动计为机制证据。
+
+### 23.8 两个5更新训练预检的完成状态
+
+- source-only简化控制：job `training_job_logs/20261108T135011Z-7759fc16`，14:04:39 UTC前complete/exit0；actual step5/max30000、microbatch8/accum16/effective128、BF16、seed3407，共5条实际更新记录，权重SHA-256 `1503d79ffaf9ac65d370ae7fc2d700d5dc3adce3e8fa1ff014f1fa9a0588c1c4`。此为旧source-only工程prototype，不是完成3000次的性能基线。
+- Full同配方预检：job `20261108T140953Z-b06c248b`，现已complete/exit0并在step5保存；核心b823b3a只改变重复资产摘要读取，Full训练数学及预算未改。checkpoint/optimizer及吞吐的独立核验接续进行，不能只根据`training_complete`文件称科学对照完成。
+- 两者临时checkpoint工作区各约36GB，位于`/tmp/warm_rebuttal_p0_20261108/training_pilot_5799e7e/`。归档/本机转存尚在进行；只有传输后哈希相符才标为双端持久化。尚未开展3000-update匹配性能比较，未更新论文效能数字。

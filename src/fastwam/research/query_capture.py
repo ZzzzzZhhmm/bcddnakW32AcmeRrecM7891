@@ -10,9 +10,22 @@ from __future__ import annotations
 from contextlib import contextmanager
 from dataclasses import fields,replace
 from copy import deepcopy
+import random
 import numpy as np
 
 from .policy_state import deployed_policy_fingerprint
+
+
+@contextmanager
+def isolated_generation_rng():
+    """A diagnostic generation must not advance the factual rollout's RNG."""
+    import torch
+    python_state=random.getstate();numpy_state=np.random.get_state()
+    devices=list(range(torch.cuda.device_count())) if torch.cuda.is_initialized() else []
+    with torch.random.fork_rng(devices=devices):
+        try:yield
+        finally:
+            random.setstate(python_state);np.random.set_state(numpy_state)
 
 
 def clone_inference_context(context):
@@ -72,7 +85,7 @@ def generate_captured_null(full_policy,null_policy,capture):
     # online infer API again. Its factual tensors were already validated.
     full_policy.retriever.assert_owned_bound_step(step)
     before=deployed_policy_fingerprint(full_policy)
-    with torch.inference_mode():
+    with isolated_generation_rng(),torch.inference_mode():
         output=FastWAM.infer_action(model,prompt=step.prompt,
             input_image=torch.tensor(step.model_input,device=model.device,dtype=model.torch_dtype),
             action_horizon=32,proprio=torch.tensor(step.proprio,device=model.device,dtype=model.torch_dtype),
@@ -85,4 +98,4 @@ def generate_captured_null(full_policy,null_policy,capture):
     if deployed_policy_fingerprint(full_policy)!=before:raise RuntimeError('null generation mutated the Full policy state')
     action=output['action'].detach().float().cpu().numpy().copy()
     if action.shape!=(32,14) or not np.isfinite(action).all():raise RuntimeError('invalid null action chunk')
-    return {'action':action,'probe':probe,'full_policy_state_sha256':before,'derived_seed':int(step.derived_seed)}
+    return {'action':action,'probe':probe,'full_policy_state_sha256':before,'derived_seed':int(step.derived_seed),'factual_rng_isolated':True}
