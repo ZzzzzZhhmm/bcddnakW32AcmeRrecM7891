@@ -697,3 +697,12 @@ FastWAM guard有58次约5秒采样，无foreign compute PID、无采样错误。
 当前工作索引和执行队列已更新；后续快照为`tmp/rebuttal/execution/20261108/FOLLOWUP_STATE_20261108.json`，交付哈希清单为`FOLLOWUP_DELIVERY_MANIFEST.json`。首批`EXECUTION_STATE.json`仍保留其历史时点，不静默重写。最新模型指定已解除模型选择缺口，全部本批GPU作业已退出并完成原件归档。
 
 后续科学采集仍需实际WARM memory集成、逐任务阶段资格、预冻结独立进展标签和query cohort，再执行sealed raw/refined/candidate-null分支、自然非空缺技能及配对闭环。成本数据与四工程状态不关闭这些缺口，也不建立主表总体领先的显著性。外部专家模板的证据分级与可追溯包建议继续采用，但不采用为了避免数值差异而回避必要复验、或以定性方法表替代匹配训练对照的建议。
+
+## 23. 2026-11-08 直接效能证据P0与CCI切换
+
+作者要求以争取讨论后332/333为目标，主动补齐关键机制、缺技能与公平对照证据。新增预定计划`configs/nonreal/rebuttal_p0_evidence_plan.json`：Rearrange Blocks/Battery Try，固定v8-step3000、H32/prefix4/NFE10/K32、recent20/summary8；正式每任务/条件100对，从candidate seed340800000顺序进行官方专家准入，保留所有准入失败；pilot3407/3408不混入正式cohort。先运行独立fresh-reset闭环，使SR采集不依赖尚未完成的全阶段分支快照集成。
+
+- 新入口`scripts/run_rebuttal_rmbench_pairs.py`为Full/null各自构造独立model/retriever；null同时撤回source和conditioning、保留回合记忆。两角色核对初始物体/目标、qpos、相机及官方unseen指令，按预定case ID交替执行顺序；逐动作原qpos、完整policy telemetry、预定query数组/图像和trial结果保存在Git外。源码不拉取Git、不接触origin、输出目录拒绝覆盖原件。运行错误和资格截断不计作正常任务失败。
+- 新`policy_state.py`覆盖真实回合snapshot、事实执行历史、retriever发放/消费与continuation、模型thread及队列。7项软件测试通过；不以它们替代真实模型/模拟器资格。理论片段`docs/rebuttal/P0_THEORETICAL_EVIDENCE.tex`给出候选共享目标的均值/方差恒等式、事实监督风险分解和条件Euler稳定性界，未宣称自然缺技能或SR保证。
+- 原21276以外的20276入口从约北京时间19:24持续超时。作者切换到`slai_debug_workspace_1`、180.184.249.158:21276，路径不变。19:51实际连接验证H10080GB/81559MiB、driver580.95.05、GPU空闲；AFS源码d578a78且服务器工作树干净。仅为该绝对仓库路径配置Git safe.directory，不改系统驱动、现有环境或其他项目。
+- 新节点PID1显示2026-08-11；不以其作为本次CCI租期起点。GPU作业将有界执行、留证据归档余量。当前尚无新的策略成功率或修复率，实际启动及结果以接续的job manifest为准，禁止把准备就绪或模型import当作有效GPU实验。

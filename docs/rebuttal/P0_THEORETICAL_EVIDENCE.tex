@@ -1,0 +1,73 @@
+% Internal proof notes. Integrate into the original paper project after review.
+% These results do not assert natural skill detection or closed-loop success.
+\paragraph{What the shared-target candidate term identifies.}
+For a fixed query, let $w_i\geq0$, $\sum_iw_i=1$, let $f_i$ denote a
+candidate prediction, and let $y$ be the common demonstrated effect.
+Writing $\bar f=\sum_iw_if_i$, expansion of the squared norm gives
+\[
+ \sum_iw_i\|f_i-y\|^2
+ =\|\bar f-y\|^2+\sum_iw_i\|f_i-\bar f\|^2.
+\]
+The cross term vanishes because $\sum_iw_i(f_i-\bar f)=0$.
+Consequently this term alone does not identify distinct counterfactual effects;
+it also penalizes weighted within-query prediction variation.
+Its utility weights choose which predictions to regularize, without changing
+the common target into independently observed candidate outcomes.
+
+\paragraph{What factual action supervision can establish.}
+Let $S,A,Y$ denote a factual state, executed action, and observed effect, with
+finite second moments. Under squared loss and unrestricted predictors,
+the excess Bayes risk from forbidding action dependence is
+\[
+ \inf_h\mathbb E\|Y-h(S)\|^2-
+ \inf_f\mathbb E\|Y-f(S,A)\|^2
+ =\mathbb E\|\mathbb E[Y\mid S,A]-\mathbb E[Y\mid S]\|^2.
+\]
+This follows from conditional-mean orthogonality. It is strictly positive
+when the conditional effect mean carries action information beyond $S$.
+The result describes factual prediction on the observed distribution.
+It does not guarantee identification for unsupported alternative actions,
+or transfer from the zero-historical-prior factual input to all nonzero-prior
+candidate inputs. Executed candidate branches and a factual-only ablation
+directly test these remaining issues.
+
+\paragraph{Conditional withdrawal and a finite-step stability bound.}
+Fix the factual observation, episode history, selected candidate, model,
+token layout, noise $\xi$, and sampler schedule. With effective gate $g$,
+the implemented source has the form
+\[
+ z_g=\xi+g\{\mu-(1-\sigma)\xi\},\qquad
+ c_g=c_0+g\,\Delta c.
+\]
+Here $c_0$ retains recollection and the fixed zero-valued retrieved-token
+slots; it is not the context of the original memory-free backbone.
+The actual code appends the same number of conditioning tokens with the
+same mask at every $g$. For fixed candidate and history, the gist and action
+conditioning interpolation is affine in $g$.
+
+For Euler steps $x_{k+1}=x_k+h_kv_k(x_k,c)$, assume on the compared paths
+\[
+ \|v_k(x,c)-v_k(x',c')\|
+ \leq L_x\|x-x'\|+L_c\|c-c'\|.
+\]
+Set $M=\|\mu-(1-\sigma)\xi\|$, $C=\|\Delta c\|$, and
+$P_{a:b}=\prod_{k=a}^{b}(1+|h_k|L_x)$, with an empty product equal to one.
+Triangle inequality at each step yields
+\[
+ \|x_N^g-x_N^0\|
+ \leq g\left[P_{0:N-1}M+
+ L_cC\sum_{j=0}^{N-1}|h_j|P_{j+1:N-1}\right].
+\]
+At $g=0$, identical inputs and noise give identical actions under a
+deterministic sampler. The bound establishes conditional local continuity;
+the constants are assumptions, not measured certification values.
+It does not establish that a learned gate detects missing skills or that
+closed-loop success is unchanged. Discrete task success can change at an
+arbitrarily small action perturbation near a task boundary.
+
+\paragraph{Connection to an independently measured task margin.}
+If a fixed-state outcome score $q$ is $L_q$-Lipschitz and its null action
+has certified margin $q(x_N^0)=m>0$, then a bound strictly below $m/L_q$
+preserves that particular positive outcome. This additional margin must be
+independently established; it is not supplied by the learned utility score.
+No whole-task noninferiority claim follows without the paired rollouts.

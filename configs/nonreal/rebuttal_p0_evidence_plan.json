@@ -1,0 +1,58 @@
+{
+  "schema": "warm.rebuttal.p0-evidence-plan.v1",
+  "frozen_on": "2026-11-08",
+  "objective": "Directly resolve the mechanism, natural fallback and same-information control concerns; target post-rebuttal ratings of332 or333.",
+  "checkpoint_sha256": "68c7f3840921241df45a5b6997b772db3a69a31584644aa0e66929b841b845bf",
+  "tasks": ["rearrange_blocks", "battery_try"],
+  "task_selection": "Prespecified M1 deficit and Mn feedback task, using the two previously qualified simulator implementations, before new policy outcomes.",
+  "inference": {"precision": "bf16", "horizon":32, "execution_prefix":4, "nfe":10, "top_k":32, "recent_capacity":20, "summary_capacity":8},
+  "closed_loop": {
+    "roles": ["full", "candidate_null"],
+    "candidate_null": "Force both retrieved-source and retrieved-conditioning gates to zero; retain native episode recollection.",
+    "reset_seed_start":340800000,
+    "candidate_seed_limit":2000,
+    "accepted_episodes_per_task_per_condition":100,
+    "seed_admission": "Pinned official expert plan/success check only, shared across roles; preserve every rejected or errored seed and its reason.",
+    "instruction": "Pinned official unseen descriptions, selected deterministically after reset and verified identical across the pair.",
+    "success": "Official executor eval_success at the official task step limit; runtime-invalid and interrupted attempts retained separately.",
+    "reset_pair_checks": ["object/goal logical state", "native joint observation", "initial camera pixels", "instruction"],
+    "statistics": "Paired episode differences, task-specific and fixed-task macro; confidence intervals and discordant counts. No training-seed uncertainty claim."
+  },
+  "local_recovery": {
+    "roles": ["raw", "refined", "candidate_null"],
+    "horizon":32,
+    "query_replan_ordinals":[0,8,24,48,80,120],
+    "schedule": "Queries encountered on the fixed Full factual trajectory; unavailable ordinals retained as not reached, never replaced according to outcomes.",
+    "source_episodes_per_task":100,
+    "labels": "Task-predicate next-interaction outcomes with sealed definitions and independent traces; no prediction-derived labels.",
+    "statistics": "Repair, harm, net change and refined-minus-null on shared known-label support, with source-episode clustering.",
+    "qualification": "Actual WARM history/cursors and exact native-state restoration at every admitted stage before scientific branches."
+  },
+  "candidate_specific_effects": {
+    "source_episodes_per_task":20,
+    "query_replan_ordinals":[8,48],
+    "candidate_slots":32,
+    "references":["predicted", "query_only", "historical"],
+    "outcomes": ["centered effect error", "within-query ordering", "complete pool coverage", "selector applicability"],
+    "qualification": "Frozen semantic encoder/projection; common candidate/endpoint support; repeatability tolerances fixed on excluded pilot states."
+  },
+  "missing_skill": {
+    "nonempty_conditions":["clean", "target_skill_family_holdout"],
+    "bank_size_control_required":true,
+    "taxonomy": "Annotate task/interaction families before evaluation; distinguish missing terminal skill from retained generic grasp/transport primitives.",
+    "coverage_validation": "Execute retrieved pools at prespecified diagnostic queries. Task-name removal alone is not evidence of zero relevant-skill coverage.",
+    "outcomes":["measured candidate coverage", "natural gate/false activation", "paired Full/null success"],
+    "rejection_threshold_tuned_on_test":false
+  },
+  "simple_control": {
+    "status":"implementation_and_single_GPU_throughput_preflight",
+    "required_information":["same current observations", "same factual episode history", "same candidate pool"],
+    "required_budget":["same base checkpoint", "same train/dev split", "same optimizer schedule", "same effective batch128", "same3000 optimizer updates", "same checkpoint selection rule"],
+    "planned_control":"A separately trained rank/source conditioning policy without explicit consequence comparison; exact architecture and training ablation frozen before its runs.",
+    "training_seed_plan":[3407,3408,3409],
+    "execution":"Qualify one GPU memory and update integrity first; checkpoint in bounded restart-safe segments, then allocate the measured budget.",
+    "production_algorithm_changes":false
+  },
+  "qualification_pilot":{"seeds":[3407,3408],"excluded_from_formal_cohort":true},
+  "reporting":{"all_attempts_preserved":true,"raw_outputs_outside_git":true,"no_result_conditioned_stopping":true,"do_not_replace_original_paper_numbers":true}
+}
