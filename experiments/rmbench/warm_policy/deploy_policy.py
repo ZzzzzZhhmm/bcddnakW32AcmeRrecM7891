@@ -37,6 +37,7 @@ for _path in (PROJECT_ROOT, SRC_ROOT):
 from .policy_core import (  # noqa: E402
     JsonlEvidenceWriter,
     RecedingHorizonQueue,
+    audit_generated_execution_prefix,
     audit_qpos_execution,
     factual_cameras,
     factual_joint_state,
@@ -1024,11 +1025,9 @@ class RMBenchWarmPolicy:
         if model_chunk.shape != (32, 14) or not np.isfinite(model_chunk).all():
             raise RuntimeError("WARM action output must be finite shape [32,14]")
         environment_chunk = self.action_normalizer.denormalize(model_chunk)
-        round_trip = self.action_normalizer.normalize(
-            environment_chunk, fail_on_clip=True
+        round_trip,normalization_evidence = audit_generated_execution_prefix(
+            model_chunk,environment_chunk,self.action_normalizer,execution_prefix=self.replan_steps
         )
-        if not np.allclose(round_trip, model_chunk, rtol=1e-5, atol=2e-6):
-            raise RuntimeError("RMBench action normalization round trip drifted")
         executed_prefix = np.ascontiguousarray(
             environment_chunk[: self.replan_steps], dtype=np.float32
         )
@@ -1103,6 +1102,7 @@ class RMBenchWarmPolicy:
                 "left": [float(value) for value in executed_prefix[:, 6]],
                 "right": [float(value) for value in executed_prefix[:, 13]],
             },
+            "executed_prefix_normalization": normalization_evidence,
             "model": model_telemetry,
         }
         if self.timing_enabled:

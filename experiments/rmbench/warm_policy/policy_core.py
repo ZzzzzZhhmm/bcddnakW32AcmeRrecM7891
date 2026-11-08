@@ -531,6 +531,36 @@ class QueuedAction:
         object.__setattr__(self, "environment_space", environment)
 
 
+def audit_generated_execution_prefix(model_chunk,environment_chunk,normalizer,*,execution_prefix):
+    """Audit only commands the receding-horizon policy will actually enqueue.
+
+    Generated H-step tails are never executed after the declared prefix. A
+    data-normalization clamp violation in that discarded tail must not reject
+    an otherwise valid prefix. Native commands and model predictions are never
+    clipped here; the actual prefix retains the original strict range and
+    canonical-history round-trip checks.
+    """
+    model=np.asarray(model_chunk,dtype=np.float32)
+    environment=np.asarray(environment_chunk,dtype=np.float32)
+    if model.ndim!=2 or model.shape[1]!=14 or environment.shape!=model.shape:
+        raise RMBenchPolicyBoundaryError('matching [H,14] model/native chunks required')
+    if not np.isfinite(model).all() or not np.isfinite(environment).all():
+        raise RMBenchPolicyBoundaryError('full generated model/native chunks must be finite')
+    if type(execution_prefix) is not int or not 1<=execution_prefix<=len(model):
+        raise RMBenchPolicyBoundaryError('valid execution prefix required')
+    returned=normalizer.normalize(environment[:execution_prefix],fail_on_clip=True)
+    if not np.allclose(returned,model[:execution_prefix],rtol=1e-5,atol=2e-6):
+        raise RMBenchPolicyBoundaryError('RMBench executed-prefix action normalization round trip drifted')
+    canonical=np.array(model,copy=True)
+    canonical[:execution_prefix]=returned
+    evidence=dict(execution_prefix=execution_prefix,strictly_checked_values=execution_prefix*14,
+        discarded_tail_commands=len(model)-execution_prefix,
+        discarded_tail_values_outside_normalization_clip=int(np.count_nonzero(np.abs(model[execution_prefix:])>normalizer.clip)),
+        native_commands_clipped=False,model_predictions_clipped=False,
+        history_action_space='canonical_normalization_of_actual_execution_prefix')
+    return canonical,evidence
+
+
 class RecedingHorizonQueue:
     """Bounded FIFO that never silently mixes two replans."""
 

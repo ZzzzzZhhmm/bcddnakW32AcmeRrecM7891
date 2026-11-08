@@ -827,3 +827,13 @@ Full step5权重SHA-256 `c4bf3244f4e343a0d5938bfb14f8ffa9b7c5b08c604794bf38fb1fd
 共享权重v2的真实作者模型核验已通过：同一seed3407/query1，raw/refined/null/refined-repeat四套原生命令、Full与null所有probe数组、21个factual context tensor、非tensor字段及parent DINO token与先前独立模型逐元素相同；5,549个tensor引用共享，clone新增allocated CUDA bytes为0。仍仅是一处排除pilot的实测等价和软件只读保护，不宣称所有query经验覆盖或计时加速倍数。双端包`shared_weight_native_equivalence_qualification_v1.tar.gz`，4,363,358 bytes，SHA-256 `8369bdf397435b7d2cfb291f0c9fadc64fe7f0952047df0ed1ba410186f00263`；本机核对42文件，包含v1复制失败原件和v2完整分支，旧失败未删除。
 
 首个Battery Try正式Full尝试在80条命令后于重规划校验处停止，`success=null`、原始`invalid_runtime`记录保留，未组成pair。双端原件包`battery_first_formal_boundary_failure_v1.tar.gz`，1,578,925 bytes，SHA-256 `5b0f2f9331595189a5f08cdf7141d3d31ff03d56aa29cf2037f2a2d01eed13a3`，32文件本机核对。不得把生成/策略相关失败静默排除来抬高SR；必须先分清基础设施、审计范围和实际部署失败，再以显式口径报告全部尝试。
+
+### 23.14 80步停止的数值定位与实际执行前缀修正
+
+新增只读generation witness，在consumer归一化校验及该chunk任何执行之前封存完整模型动作、BoundStep/输入/候选payload身份、derived seed和consumer失败；不裁剪输出、不截断原异常。15项原生witness/role-merge/policy-state检查通过，来源集合`67c612673f6ca33d1658b8afb4915116cee696af1f2d52701914d64234f8706a`。原native测试receipt沿用了旧shared-weight scope文字；实际测试列表是action-witness、role-merge、policy-state，本节明确其真实范围，不据此再声称共享模型资格。
+
+同一case0/seed340800000的诊断attempt02于16:10:17 UTC启动`formal_diagnostic_job_logs/20261108T161017Z-c6dde853`，仍在80条命令后复现原guard。封存的query frame80动作最大值5.25，超出±5的仅为零基位置`(23,4),(24,4),(25,4),(26,4),(27,4)`，数值`[5.125,5.21875,5.25,5.1875,5.09375]`；**不属于浮点舍入误差**。真实执行前缀为前4步，其所有数值位于[-1.8125,1.140625]，按原normalizer严格`fail_on_clip`检查通过。两次尝试前80条实际命令、native qpos before/after以及此前20个完整生成chunk逐元素一致，证明witness没有改变原轨迹。
+
+`SingleFieldLinearNormalizer.forward`将输入特征截断到±5，而其`backward`为未裁剪仿射逆变换；±5不能直接当作物理关节限制。此次已确认的工程问题更具体：`RecedingHorizonQueue`只发布前4步，原guard却要求未进入执行队列的28步尾部也满足可逆检查，从而拒绝了严格有效的实际前缀。修正只对即将入队的前缀保留原范围/逆变换要求，仍检查整个H32 shape及有限性；队列native命令、原生成数组、checkpoint、NFE、H32、prefix4及历史前缀的canonical归一化均不裁剪或重定义。真实执行前缀若越界/逆变换不符仍须失败，不能以本次修正放行。
+
+该修正在precommit集合`6ab037a228e67e7e3ba8654c9c4465c77724752598e4dbe4aac565c9c5f67ca0`上36项原生policy/queue/witness/entrypoint回归通过（10.07秒），覆盖discarded-tail越界、执行prefix仍拒绝、逆变换错误及非有限尾部。Windows完整policy测试因缺PyYAML未收集，不计作通过。另用实际封存的5.25输出及原stats重现旧guard、核对严格prefix通过和原生入队命令逐元素不变，报告`S/rebuttal_20261108_p0/ACTUAL_PREFIX_BOUNDARY_VERIFICATION.json`。**仅有数值/队列证明，修正后完整物理回合仍须重跑**；原两次停止不改写为成功或正常官方失败，也不计成两条独立样本。新core将重新绑定严格bundle，保留相同evaluation namespace及共同Gaussian协议。

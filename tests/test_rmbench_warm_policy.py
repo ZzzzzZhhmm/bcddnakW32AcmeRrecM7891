@@ -26,6 +26,7 @@ PROCESSOR_CAMERA_KEYS = _CORE.PROCESSOR_CAMERA_KEYS
 RMBenchPolicyBoundaryError = _CORE.RMBenchPolicyBoundaryError
 RecedingHorizonQueue = _CORE.RecedingHorizonQueue
 audit_qpos_execution = _CORE.audit_qpos_execution
+audit_generated_execution_prefix = _CORE.audit_generated_execution_prefix
 factual_cameras = _CORE.factual_cameras
 factual_joint_state = _CORE.factual_joint_state
 replace_bridge_world_tokens_with_factual_dino = (
@@ -177,6 +178,37 @@ def test_receding_horizon_queue_retains_paired_exact_actions() -> None:
     queue.publish(model, environment)
     with pytest.raises(RuntimeError, match="non-empty"):
         queue.publish(model, environment)
+
+
+def test_prefix_audit_keeps_discarded_out_of_clip_tail_out_of_the_queue() -> None:
+    from fastwam.memory.robotwin_artifacts import RobotwinQposZScore
+    normalizer=RobotwinQposZScore(np.linspace(-.2,.2,14,dtype=np.float32),np.ones(14,dtype=np.float32))
+    model=np.full((32,14),.25,dtype=np.float32);model[23:28,4]=5.25
+    native=normalizer.denormalize(model);original_native=native.copy();original_model=model.copy()
+    canonical,evidence=audit_generated_execution_prefix(model,native,normalizer,execution_prefix=4)
+    assert np.array_equal(native,original_native) and np.array_equal(model,original_model)
+    assert np.array_equal(canonical[:4],normalizer.normalize(native[:4],fail_on_clip=True))
+    assert np.array_equal(canonical[4:],model[4:])
+    queue=RecedingHorizonQueue(replan_steps=4);queue.publish(canonical,native)
+    assert len(queue)==4
+    for index in range(4):
+        queued=queue.pop();assert np.array_equal(queued.environment_space,original_native[index])
+    assert evidence['discarded_tail_values_outside_normalization_clip']==5
+    assert evidence['native_commands_clipped'] is False and evidence['model_predictions_clipped'] is False
+
+
+def test_prefix_audit_still_rejects_actual_prefix_range_and_inverse_failures() -> None:
+    from fastwam.memory.robotwin_artifacts import RobotwinQposZScore,RobotwinArtifactContractError
+    normalizer=RobotwinQposZScore(np.zeros(14,dtype=np.float32),np.ones(14,dtype=np.float32))
+    model=np.zeros((32,14),dtype=np.float32);model[0,4]=5.25
+    with pytest.raises(RobotwinArtifactContractError):
+        audit_generated_execution_prefix(model,normalizer.denormalize(model),normalizer,execution_prefix=4)
+    model[0,4]=.25;native=np.array(normalizer.denormalize(model),copy=True);native[0,4]+=.5
+    with pytest.raises(RMBenchPolicyBoundaryError,match='round trip'):
+        audit_generated_execution_prefix(model,native,normalizer,execution_prefix=4)
+    native[23,4]=np.nan
+    with pytest.raises(RMBenchPolicyBoundaryError,match='finite'):
+        audit_generated_execution_prefix(model,native,normalizer,execution_prefix=4)
 
 
 def test_jsonl_evidence_is_exclusive_canonical_and_durable(tmp_path: Path) -> None:

@@ -72,6 +72,7 @@ def main():
     from fastwam.research.evidence import append_record,write_probe
     from fastwam.research.policy_state import deployed_policy_fingerprint
     from fastwam.research.repertoire import matched_search_rows,install_search_restriction
+    from fastwam.research.action_witness import seal_generated_action
     from scripts.nonreal_job import source_identity as code_identity
     if Path(builder.__file__).resolve()!=core/'scripts/build_warm_rmbench_contract_bundle.py':
         raise RuntimeError('wrong bound core/config root imported')
@@ -222,7 +223,10 @@ def main():
                         obs=env.get_obs()
                         if not policy.queue:
                             frame=policy._executed_policy_actions
-                            policy._replan(obs,env)
+                            with seal_generated_action(policy.model,role_dir/'generations'/f'replan-{replan_ordinal:04d}',
+                                dict(task=task,role=role,seed=seed,episode_id=index,frame_index=frame,
+                                     checkpoint_sha256=checkpoint_sha256)):
+                                policy._replan(obs,env)
                             probe=policy.model._last_research_probe
                             if probe is None:raise RuntimeError('missing pre-execution research capture')
                             if role=='candidate_null' and bool(probe['arrays']['g'].any()):
