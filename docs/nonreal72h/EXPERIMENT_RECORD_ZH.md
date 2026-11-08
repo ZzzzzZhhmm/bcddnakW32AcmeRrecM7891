@@ -863,3 +863,19 @@ K32扩展先封存同一真实Full context下所有原始valid rank、adapted H3
 v2仅给K32全候选执行开放具类型的官方executor拒绝续采：保留invalid结果及原始错误，完成六类精确恢复后才能继续下一rank；未知异常、效果读取异常、任何恢复不一致仍停止，raw/refined/null主分支的默认停止行为不变。有限generated动作按原backward解码，不再错误假设浮点全局可逆。该集合`b1d0e4e0790a6c1f8c9d415d9363faafb21f1e34fdcfebb3095dcc63bcb424a0`原生47项通过（23.22秒），含已知拒绝、一般错误、拒绝后恢复失败、无效果插补及centered metric检查；Rearrange Blocks另起v2排除pilot，不修改活动v1源或旧记录。全部仍属采集资格，**尚无正式完整pair、修复率优势、候选后果预测优势或不劣结论**。
 
 80步witness与两个124步中止角色及原处理器数值证明已双端封存：`archives/battery_boundary_witness_and_prefix124_failures_v1.tar.gz`，5,880,166 bytes，SHA-256 `303b9567633c187c8cb91712ee8f5c6b5c366f915008519cc5c27941da29a710`，本机逐项357文件通过。两份新包的独立本机报告为`tmp/rebuttal/execution/20261108_p0/evidence/P0_BOUNDARY_AND_TRAINING100_ARCHIVE_VERIFICATION.json`。以上raw均在Git外，Git只提交实现、检查、固定计划和本记录。
+
+### 23.17 首个完整K32排除pilot：后果区分优势未成立
+
+`actual_history_K32_pool_battery_try_q8_v1`在seed3407、真实Full事实轨迹query ordinal8/frame32完成原32个valid候选的32步原生执行，共1024条候选命令；另有raw/refined/null/refined-repeat共128条命令，refined完整endpoint/RGB重复精确、selected-rank候选与独立raw的endpoint精确相等，所有六类父状态恢复通过，32条全局event IDs均已保存。输出维度为768，所有预测和动作在真值读取前封存。本机独立重算centered和绝对误差，并核对32个H32原命令及全部封存哈希；未将此排除pilot并入正式cohort。
+
+同32个完整候选支持上，预测头绝对MSE `0.27574974966964133`、centered MSE `0.1106178077064582`、centered explained variance `-0.05967603190517745`；constant-query参照绝对MSE `0.22612540586336397`、centered MSE `0.1043883265978753`、centered explained variance0；historical参照绝对MSE `0.2082692016413086`、centered MSE `0.14076921292195332`、centered explained variance `-0.3485148915570271`。**该状态下预测未优于常量参照，不能用来证明候选后果区分能力；也不能从单个排除状态推广为所有任务的否定结论。** 保留不利结果，按固定正式source/query队列扩展，不能换query或用较好的historical对比掩盖constant参照。
+
+独立physical-next-interaction标签32个候选均为0；raw/refined/null也均为0，natural gate为`0.1904296875`。此为完整bank下的一个状态，不是非空holdout实验，不能将其改称missing-skill fallback或宣称已观测到harm、修复率优势。全部原件与此前Rearrange Blocks rank1规划拒绝合包`archives/K32_battery_complete_and_rearrange_rejected_qualification_v1.tar.gz`，35,554,819 bytes，SHA-256 `6804c1a86298af51b7a803683763879fa49d5c894f292a42a8e57a5be25d9bb0`，双端111文件核验；本机报告`P0_K32_BATTERY_QUALIFICATION_VERIFICATION.json`。
+
+### 23.18 固定正式机制source的采集准入（已实现，物理整回合待验证）
+
+正式模式从既有完整官方Full trial中按预定episode index准入前20个source，成功值0/1均接受，不以模型结果选样；必须匹配作者checkpoint、计划、任务、bank条件和固定core。K32仅前10个source的q8/q48；局部修复按q0/8/24/48/80/120，明确允许q0空事实历史。正式模式禁止手动覆盖query或截短官方轨迹；每个未到达query保留`not_reached`，不替换源回合。
+
+源回合的初始RGB/native qpos/逻辑任务状态/指令必须逐项相同。重新运行原策略，每条已生成的native命令与before/after qpos均核对原Full trace；参考动作只用于生成后校验，禁止teacher forcing。每个分支仍须六类精确恢复和重复endpoint检查；任何事实轨迹偏离保留失败，不能靠放松容差声称同轨迹。计划、source trial和trace哈希另行封存。新入口来源集合`7e79031a69fccce72efc5104b179ff8e13dbc4b86ae79b59c93ec9c8eef8f3a4`，65项原生协议/采集/分支/后果/静态入口检查通过（23.47秒），并已逐字节核对三个改动文件与本机一致。**尚未在正式source上完成整条物理轨迹的资格验证，不把单元检查当成正式机制结果。**
+
+修正原前后处理后的固定core集合`5d7748e77a648511c5ddcfc0c65c3fac9933bbeb0e2bff20c61a7fd7e6356638`另在Git字节上重跑38项检查通过（9.69秒）；新bundle manifest SHA-256 `ec2afcad56fc8ddb044ebae0b5d5c29cae02140d4ca2494129679bd963215599`，原数据recipe/checkpoint/共同Gaussian namespace保持。Battery Try case0的Full attempt04和null attempt02已登记在`AFFINE_CORRECTED_FORMAL_PAIR_QUEUE.json`，等待排除K32任务结束及至少75GiB空闲，随后按官方1000步运行两角色；排队不算GPU运行或完整pair。

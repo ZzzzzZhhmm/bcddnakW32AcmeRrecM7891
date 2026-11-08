@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Seal actual-policy raw/refined/null actions and execute same-state branches.
 
-This first entry qualifies actual history, capability ownership and deterministic
-restoration on an excluded pilot. Formal cohorts require separate stage admission.
-The original bound core/config root and the collector extension are recorded.
+Formal collection admits fixed source episode IDs from complete Full trials and
+checks the instrumented factual trajectory against their original native traces.
+The original bound core/config root and collector extension are recorded.
 """
 from __future__ import annotations
 import argparse
@@ -30,13 +30,24 @@ def main():
     p.add_argument('--rmbench-runtime',type=Path,required=True)
     p.add_argument('--output',type=Path,required=True)
     p.add_argument('--seed',type=int,default=3407)
-    p.add_argument('--trajectory-commands',type=int,default=8)
-    p.add_argument('--query-ordinals',type=int,nargs='+',default=[1])
+    p.add_argument('--phase',choices=('qualification','formal'),default='qualification')
+    p.add_argument('--plan',type=Path)
+    p.add_argument('--formal-source',type=Path,help='Completed official Full worker directory; admission never selects by its success value')
+    p.add_argument('--episode-index',type=int,default=0)
+    p.add_argument('--trajectory-commands',type=int)
+    p.add_argument('--query-ordinals',type=int,nargs='+')
     p.add_argument('--null-execution',choices=('independent','shared_weights'),default='independent')
     p.add_argument('--candidate-pool',action='store_true',help='Also execute all valid original K32 adapted proposals from each sealed parent')
     args=p.parse_args()
-    if args.trajectory_commands<8 or any(q<1 for q in args.query_ordinals):
-        raise ValueError('actual factual history and a later query are required')
+    if args.phase=='formal':
+        if args.plan is None or args.formal_source is None or args.trajectory_commands is not None or args.query_ordinals is not None or args.candidate_pool:
+            raise ValueError('formal sources require a frozen plan; command caps and query/pool overrides are forbidden')
+    else:
+        if args.formal_source is not None or args.episode_index!=0:raise ValueError('formal source identities are not excluded pilots')
+        args.trajectory_commands=8 if args.trajectory_commands is None else args.trajectory_commands
+        args.query_ordinals=[1] if args.query_ordinals is None else args.query_ordinals
+        if args.trajectory_commands<8 or any(q<1 for q in args.query_ordinals):
+            raise ValueError('actual factual history and a later qualification query are required')
     core=args.core_code.resolve(strict=True);out=args.output.resolve()
     if out.is_relative_to(ROOT) or out.is_relative_to(core):raise ValueError('evidence must be outside source trees')
     out.mkdir(parents=True,exist_ok=False)
@@ -59,6 +70,7 @@ def main():
     from fastwam.research.inference_replica import shared_weight_inference_replica,assert_shared_weights_unchanged
     from fastwam.research.policy_state import THREAD_FIELDS
     from fastwam.research.candidate_pool import decode_branch_actions,prepare_candidate_pool,centered_effect_metrics
+    from fastwam.research.recovery_protocol import admit_formal_recovery
     from scripts.assemble_nonreal_candidates import assemble
     from fastwam.research.query_capture import capture_online_replan,generate_captured_null
     from fastwam.research.rmbench_outcomes import observe_task_progress,label_next_interaction
@@ -77,24 +89,71 @@ def main():
         contract_path=a.output_root/experiment.id/f'{task}.json',seed_protocol_path=a.output_root/'seeds'/f'{task}.seed_protocol.npy',
         task_definition_path=a.rmbench_root/'envs'/f'{task}.py',root_seed=matrix.root_seed)
     runtime_root=args.rmbench_runtime.resolve(strict=True)
+    runtime_identity=simulator_identity(runtime_root)
+    for relative,digest in runtime_identity['files'].items():
+        if sha256_file(a.rmbench_root/relative)!=digest:
+            raise ValueError('runtime official source differs from bound checkout: '+relative)
     source=source_identity(core)
+    formal=args.phase=='formal';admission=None;reference_trace=None;query_outcomes={}
+    if formal:
+        plan=json.loads(args.plan.read_text());source_dir=args.formal_source.resolve(strict=True)
+        source_identity_row=json.loads((source_dir/'identity.json').read_text())
+        trials=[json.loads(s) for s in (source_dir/'role_trials.jsonl').read_text().splitlines() if s.strip()]
+        admission=admit_formal_recovery(plan,source_identity_row,trials,task=task,seed=args.seed,
+            episode_index=args.episode_index,plan_sha256=sha256_file(args.plan),core_source_sha256=source['sha256'],
+            search_condition='full_bank')
+        args.query_ordinals=admission['query_ordinals'];pool_query_ordinals=admission['candidate_pool_query_ordinals']
+        source_case=source_dir/f'case-{args.episode_index:04d}-seed-{args.seed}'/'full'
+        with np.load(source_case/'qpos_trace.npz',allow_pickle=False) as data:reference_trace={key:data[key].copy() for key in data.files}
+        reference_initial=json.loads((source_case/'initial_identity.json').read_text())
+        expected={'action_horizon':'horizon','replan_steps':'execution_prefix','num_inference_steps':'nfe','warm_top_k':'top_k',
+            'warm_recent_event_capacity':'recent_capacity','warm_action_summary_capacity':'summary_capacity'}
+        if matrix.root_seed!=3407 or any(runtime[key]!=plan['inference'][name] for key,name in expected.items()):
+            raise ValueError('formal runtime budget differs from the frozen plan')
+        if sha256_file(artifacts['warm_checkpoint'])!=plan['checkpoint_sha256']:raise ValueError('formal checkpoint differs')
+        (out/'frozen_plan.json').write_bytes(args.plan.read_bytes())
+        (out/'formal_admission.json').write_bytes(canonical(dict(admission,source=str(source_dir),
+            source_identity_sha256=sha256_file(source_dir/'identity.json'),source_trace_sha256=sha256_file(source_case/'qpos_trace.npz'),
+            use='Reference trace is checked after generation only; no teacher forcing or model inputs from future actions.')))
+    else:pool_query_ordinals=args.query_ordinals if args.candidate_pool else []
+    episode_id=args.episode_index if formal else f'pilot-{args.seed}'
+    cohort='fixed_full_factual_recovery' if formal else 'excluded_live_history_pilot'
     identity=dict(core_source_sha256=source['sha256'],collector_source_sha256=source_identity(ROOT)['sha256'],
-        simulator_source=simulator_identity(runtime_root),checkpoint_sha256=sha256_file(artifacts['warm_checkpoint']),
-        task=task,seed=args.seed,phase='excluded_actual-history_restoration_pilot',horizon=32,execution_prefix=4,
+        simulator_source=runtime_identity,checkpoint_sha256=sha256_file(artifacts['warm_checkpoint']),
+        task=task,seed=args.seed,phase='formal' if formal else 'excluded_actual-history_restoration_pilot',horizon=32,execution_prefix=4,
         planned_query_ordinals=args.query_ordinals,trajectory_commands=args.trajectory_commands,null_execution=args.null_execution,
-        execute_candidate_pool=args.candidate_pool)
+        candidate_pool_query_ordinals=pool_query_ordinals,episode_id=episode_id,
+        plan_sha256=sha256_file(args.plan) if formal else sha256_file(ROOT/'configs/nonreal/rebuttal_p0_evidence_plan.json'))
     (out/'identity.json').write_bytes(canonical(identity))
     os.chdir(runtime_root);sys.path[:0]=[str(runtime_root),str(runtime_root/'description/utils')]
     from generate_episode_instructions import generate_episode_descriptions
     env=getattr(importlib.import_module('envs.'+task),task)()
     config=resolved_config(runtime_root,task,args.seed);policies={};collected=0;started=time.monotonic()
+    config['now_ep_num']=args.episode_index
     report=dict(status='running',scientific_collection_qualified=False,queries=0,independent_branch_labels=0)
+    factual_commands=[];factual_before=[];factual_after=[]
     try:
         random.seed(args.seed);env.setup_demo(**config);info=env.play_once();env.close_env()
         if not env.plan_success or not env.check_success():raise RuntimeError('prespecified pilot expert seed rejected')
         random.seed(args.seed);env.setup_demo(**config)
         instruction=str(np.random.choice(generate_episode_descriptions(task,[info['info']],100)[0]['unseen']))
         env.set_instruction(instruction=instruction)
+        if formal:
+            initial=env.get_obs()
+            images={name:sha256_array(np.asarray(value['rgb'])) for name,value in initial['observation'].items() if 'rgb' in value}
+            images['native_qpos']=sha256_array(np.asarray(initial['joint_action']['vector']))
+            if task=='rearrange_blocks':
+                logical=dict(block1=env.block1.get_pose().p.tolist(),block2=env.block2.get_pose().p.tolist(),
+                    target1=env.target_pose1.p.tolist(),target2=env.target_pose2.p.tolist(),
+                    stage_id=int(env.stage_id),press_cnt=int(env.press_cnt))
+            else:
+                logical=dict(battery1_p=env.battery1.get_pose().p.tolist(),battery1_q=env.battery1.get_pose().q.tolist(),
+                    battery2_p=env.battery2.get_pose().p.tolist(),battery2_q=env.battery2.get_pose().q.tolist(),
+                    target1=np.asarray(env.target_pose1_p).tolist(),target2=np.asarray(env.target_pose2_p).tolist(),
+                    correct_combination=list(env.correct_combination))
+            if images!=reference_initial['observation_arrays'] or instruction!=reference_initial['instruction'] or logical!=reference_initial['task_state']:
+                raise RuntimeError('formal recovery reset differs from sealed source observations, logical task state or instruction')
+            args.trajectory_commands=env.step_lim
         roles=('full','candidate_null') if args.null_execution=='independent' else ('full',)
         for role in roles:
             print('stage=load_policy role='+role,flush=True)
@@ -113,6 +172,7 @@ def main():
                 allocated_before=allocated_before,allocated_after=torch.cuda.memory_allocated(),
                 native_independent_model_equivalence_requires_separate_qualification=True)))
         else:null=policies['candidate_null']
+        full._next_episode_index=args.episode_index
         full.reset()
 
         def policy_fingerprint():
@@ -129,12 +189,13 @@ def main():
                 obs,proof=prepare_native_query(env,emit=lambda r:preparation.append(r))
                 with capture_online_replan(full) as capture:full._replan(obs,env)
                 if ordinal in args.query_ordinals:
-                    query_id=f'pilot-{task}-seed{args.seed}-q{ordinal:04d}'
+                    query_outcomes[ordinal]='attempted'
+                    query_id=f'{"formal" if formal else "pilot"}-{task}-seed{args.seed}-q{ordinal:04d}'
                     qdir=out/query_id;qdir.mkdir()
                     (qdir/'preparation.pickle').write_bytes(pickle.dumps(preparation,protocol=4))
                     (qdir/'preparation.json').write_bytes(canonical(proof))
                     history=full.controller.retrospective_episode_memory._memory.snapshot()
-                    if history.counters.observation_updates<1:raise RuntimeError('live factual history was not populated')
+                    if ordinal>0 and history.counters.observation_updates<1:raise RuntimeError('live factual history was not populated')
                     (qdir/'actual_policy_state.json').write_text(history.to_json())
                     alternative=generate_captured_null(full,null,capture)
                     if shared_receipt is not None:assert_shared_weights_unchanged(shared_receipt)
@@ -160,7 +221,7 @@ def main():
                     proposal=write_probe(qdir/'probes','full',probe,query_identity)
                     write_probe(qdir/'probes','candidate-null',alternative['probe'],query_identity)
                     pool_commands=None
-                    if args.candidate_pool:
+                    if ordinal in pool_query_ordinals:
                         pool_commands,pool_native,pool_evidence=prepare_candidate_pool(probe,full.action_normalizer)
                         # This second index uses the actual query ID expected
                         # by the candidate assembler, also before any truth.
@@ -170,8 +231,8 @@ def main():
                         pool_evidence.update(native_actions_sha256=sha256_file(qdir/'sealed_pool_native_actions.npz'),
                             probe_metadata_sha256=pool_probe['metadata_sha256'],before_any_branch_truth=True)
                         (qdir/'sealed_candidate_pool.json').write_bytes(canonical(pool_evidence))
-                        pool_index=dict(task=task,episode_id=f'pilot-{args.seed}',query_id=query_id,
-                            cohort='excluded_live_history_candidate_pool_qualification',probe_path=pool_probe['path'],
+                        pool_index=dict(task=task,episode_id=episode_id,query_id=query_id,
+                            cohort='fixed_full_factual_candidate_pool' if formal else 'excluded_live_history_candidate_pool_qualification',probe_path=pool_probe['path'],
                             probe_metadata_sha256=pool_probe['metadata_sha256'])
                         append_record(out/'candidate_index.jsonl',pool_index)
                     sealed=dict(identity,query_id=query_id,gate=float(probe['arrays']['g'].reshape(-1)[0]),
@@ -256,21 +317,41 @@ def main():
                         raise RuntimeError('actual-model refined branch repeat is not exact')
                     labels={r['candidate_id']:label_next_interaction(parent_outcome,r['independent_outcome']['task_progress'],
                         valid_branch=r['endpoint_status']!='invalid_branch') for r in results[:3]}
-                    row=dict(schema='warm.recovery.query.v1',task=task,episode_id=f'pilot-{args.seed}',query_id=query_id,
-                        protocol_sha256=sha256_file(ROOT/'configs/nonreal/rebuttal_p0_evidence_plan.json'),
-                        checkpoint_sha256=full.checkpoint_sha256,cohort='excluded_live_history_pilot',horizon=32,
+                    row=dict(schema='warm.recovery.query.v1',task=task,episode_id=episode_id,query_id=query_id,
+                        protocol_sha256=identity['plan_sha256'],
+                        checkpoint_sha256=full.checkpoint_sha256,cohort=cohort,horizon=32,
                         gate=sealed['gate'],gate_intervention='natural',branches=labels,
                         exact_refined_repeat=True,raw_evidence=str(qdir))
                     append_record(out/'recovery_queries.jsonl',row)
+                    query_outcomes[ordinal]='complete'
                     collected+=1;print(json.dumps(dict(stage='branch_query_complete',query_id=query_id,labels=labels)),flush=True)
                 ordinal+=1
-            full.step(env,obs)
-        if collected!=len(args.query_ordinals):raise RuntimeError('planned pilot queries not all reached; no replacement allowed')
+            command=np.array(full.queue._items[0].environment_space,copy=True)
+            before=np.asarray(obs['joint_action']['vector']).copy();position=len(factual_commands)
+            if formal and (position>=len(reference_trace['commands']) or not np.array_equal(command,reference_trace['commands'][position])
+                or not np.array_equal(before,reference_trace['before'][position])):
+                raise RuntimeError('instrumented factual command or native state differs from fixed source; never teacher-force it')
+            previous=env.take_action_cnt;full.step(env,obs)
+            after=np.asarray(env.get_obs()['joint_action']['vector']).copy()
+            factual_commands.append(command);factual_before.append(before);factual_after.append(after)
+            if env.take_action_cnt!=previous+1:raise RuntimeError('official factual executor did not advance exactly one command')
+            if formal and not np.array_equal(after,reference_trace['after'][position]):
+                raise RuntimeError('instrumented factual native endpoint differs from fixed source')
+        if not formal and collected!=len(args.query_ordinals):raise RuntimeError('planned pilot queries not all reached; no replacement allowed')
+        if formal and (len(factual_commands)!=len(reference_trace['commands']) or int(bool(env.eval_success))!=admission['source_success']):
+            raise RuntimeError('formal factual trajectory did not reproduce the fixed complete source')
         report.update(status='qualified_actual_history_queries_only',queries=collected,
-            independent_branch_labels=3*collected,all_planned_scientific_stages_qualified=False)
+            independent_branch_labels=3*collected,all_planned_scientific_stages_qualified=False,
+            exact_complete_source_trace=formal,scientific_collection_qualified=formal)
     except BaseException as exc:
         report.update(status='failed_or_interrupted',error=repr(exc),traceback=traceback.format_exc());raise
     finally:
+        with (out/'factual_trace.npz').open('xb') as stream:
+            np.savez_compressed(stream,commands=np.asarray(factual_commands),before=np.asarray(factual_before),after=np.asarray(factual_after))
+        for query in args.query_ordinals:
+            append_record(out/'planned_query_status.jsonl',dict(episode_id=episode_id,query_ordinal=query,
+                status=query_outcomes.get(query,'not_reached'),source_run_status=report['status'],replacement_allowed=False))
+        report['factual_executed_commands']=len(factual_commands)
         for policy in policies.values():policy.close()
         if hasattr(env,'scene'):env.close_env(clear_cache=True)
         report.update(elapsed_seconds=time.monotonic()-started,core_source_sha256_after=source_identity(core)['sha256'])
