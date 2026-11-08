@@ -755,3 +755,11 @@ FastWAM guard有58次约5秒采样，无foreign compute PID、无采样错误。
 真实历史分支pilot在前一作业退出且GPU清空后，于13:20:04 UTC启动`live_history_job_logs/20261108T132004Z-eb70dd4c`，max5400秒。collector来自69ff6b4不可变代码（集合`4a6762f26fcdf6e9256fe305c84c3dcd7423ff4791296a10be22dae8deb31c37`），合同/core仍来自AE；seed3407、实际Full前4个命令后的query1、raw/refined/null/refined-repeat各H32。当前仍在模型加载，尚无真实分支效能结果。
 
 匹配训练两配置已按作者YAML哈希生成：Full SHA-256 `710b74b4a94036a1712c081f3d95aee18eb3e9bc5b91b2a836f6bc3d9fc5c0f8`，simple-prior SHA-256 `a00bcc14b6a7bed50ec7242aa982dfccc57cad8d3951b3cad3bfe593cd8936e3`。单卡5更新预检只在CPU真实TRAIN/DEV输入通过、前一GPU作业结束、显存清空且14:30 UTC前可启动时接续；max3600秒并保留重启/归档余量。此时训练尚未实际启动。正式100/250对及候选特异性结论均未产生。
+
+### 23.6 匹配训练输入及大资产重复校验预检
+
+TRAIN/DEV实际构建完成，样本数249,966/26,934；两个重点任务各自固定TRAIN/DEV前缀的候选、split和有限张量通过CPU预检，elapsed360.3542秒。原summary为`S/rebuttal_20261108_p0/control_data_preflight_5799e7e/summary.json`。不是逐项遍历全部媒体，也不是optimizer更新或效能证明。单卡5更新作业仍待上一GPU作业结束。
+
+针对反复读取同一大checkpoint的启动成本，新增默认关闭的Linux进程内摘要复用。首次完整字节SHA-256，后续仅对metadata完全相同且已打开的同一大文件复用；key包含PID/realpath/device/inode/size/mtime_ns/ctime_ns/mode，变更即重读、fork清空、无持久或外部提供摘要。测试覆盖恢复mtime/同大小写入、保留时间的原子替换，并连同EventBank、online retrieval和training attestation共49项原生通过（10.99秒），Windows只计默认路径1 pass，Linux专用2项skip。
+
+真实指定checkpoint12,148,647,926 bytes的首次完整哈希与`68c7f384...`相符，74.9567秒；同一进程二次打开/metadata核对后命中，0.8708秒，统计为miss1/hit1、实际累计哈希字节仅一个完整文件。原报告`asset_hash_cache_real_probe.json`，工程源码集合`cc55ceb21f5ce220c51b02fdfa38262a0ca6d6895ee0f8e6c495d84e42c37ba6`。此为当时AFS与并行负载下的单次文件级检查，不声称完整模型初始化加速倍数，不覆盖旧初始化或重规划成本数值。AE/69/579正在/排队的冻结作业不改用新实现；后续需要从新不可变版本显式启用并重新绑定core/config合同。

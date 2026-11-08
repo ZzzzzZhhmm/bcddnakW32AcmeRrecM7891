@@ -28,6 +28,8 @@
 
 AFS在本时点仅余约60GB；本节点临时盘余约6.9TB，本机C盘余约1.45TB。新增训练采用有界分段与临时checkpoint工作区，分段完成立即将完整state/weights/attestation及日志复制本机并核验哈希后方可视为可恢复。AFS只存小型receipt或经容量检查的必要中转，不清理原数据、checkpoint或别人的成果；单卡实际耗时确定后按剩余期限安排，而非按结果选择种子。
 
+后续不可变资产作业可显式设置`WARM_IMMUTABLE_ASSET_HASH_CACHE=1`。该Linux进程内优化首次对大文件完整读字节，复用时打开实际文件并核对device/inode/size/mtime/ctime/mode，替换或写入即失效，fork清空、不写持久缓存；默认关闭。原始AE/69/579冻结作业不变。49项原生bank/retrieval/attestation及cache测试通过，指定12.15GB checkpoint首次哈希与已知摘要相符、第二次复用不重读；仅为工程资格，未测得全策略启动加速，不改既有query成本数据。
+
 ## 理论证据同时推进
 
 `P0_THEORETICAL_EVIDENCE.tex`给出共享目标候选项的精确均值/方差分解、事实监督的条件Bayes风险差、同候选同历史下有限Euler步的撤回/稳定性推导。共同目标确实不能独立识别不同反事实；后两类理论结论都列出假设。自然缺技能识别和闭环成功必须由实验包1/2验证，不由条件零门恒等式代替。

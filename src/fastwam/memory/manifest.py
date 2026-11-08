@@ -37,6 +37,9 @@ def _plain_json_mapping(value: Mapping[str, Any], field: str) -> dict[str, Any]:
 
 
 def sha256_file(path: str | Path) -> str:
+    if os.environ.get("WARM_IMMUTABLE_ASSET_HASH_CACHE") == "1":
+        from .asset_hash_cache import sha256_asset_file
+        return sha256_asset_file(path)
     digest = hashlib.sha256()
     with Path(path).open("rb") as handle:
         for block in iter(lambda: handle.read(1024 * 1024), b""):
