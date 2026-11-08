@@ -1356,6 +1356,7 @@ def _trainer_stub(model: WarmSourceFastWAM) -> Wan22Trainer:
     trainer.batch_in_epoch = 7
     trainer.batch_size = 2
     trainer._consecutive_nonfinite_gradient_skips = 3
+    trainer._warm_training_attestation_context = None
     return trainer
 
 

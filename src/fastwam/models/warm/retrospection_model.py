@@ -502,6 +502,21 @@ def _wrong_event_indices(
 class WarmRetrospectionFastWAM(WarmSourceFastWAM):
     """FastWAM with state-action-effect retrospection and Gaussian fallback."""
 
+    def _source_ablation_mode(self, phase, configured_mode):
+        # Separately trained research subclasses may own a distinct recipe;
+        # inference controls still cannot alter this model's training.
+        return configured_mode if phase == "infer" else "full"
+
+    def _source_candidate_indices(self, context):
+        return context.forced_candidate_indices
+
+    def _source_acceptance(self, acceptance, *, selection, thread_source_eligible,
+                           forced_rejection):
+        return acceptance
+
+    def _source_only_conditioning(self, required_gist, selected_action_context):
+        return None
+
     @classmethod
     def from_wan22_pretrained(
         cls,
@@ -1214,11 +1229,11 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
         configured_controls = self._online_experiment_controls()
         if phase == "infer":
             self._warm_online_experiment_locked = True
-            ablation_mode = configured_controls.ablation_mode
+            ablation_mode = self._source_ablation_mode(phase, configured_controls.ablation_mode)
             memory_corruption = configured_controls.memory_corruption
         else:
             # Evaluation controls must never alter optimization semantics.
-            ablation_mode = "full"
+            ablation_mode = self._source_ablation_mode(phase, "full")
             memory_corruption = "clean"
         probe = (getattr(self, "_warm_research_probe", ResearchProbeControls())
                  if phase == "infer" else ResearchProbeControls())
@@ -1527,7 +1542,7 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             # Candidate-only ranking logits have no absolute null calibration;
             # the separately utility-supervised gate owns continuous fallback.
             automatic_null=False,
-            forced_candidate_indices=ctx.forced_candidate_indices,
+            forced_candidate_indices=self._source_candidate_indices(ctx),
         )
         corruption_fallback = torch.zeros_like(
             selection.memory_mask, dtype=torch.bool
@@ -1652,6 +1667,8 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
                 ),
                 accepted_mask=acceptance.accepted_mask & ~forced_rejection,
             )
+        acceptance = self._source_acceptance(acceptance, selection=selection,
+            thread_source_eligible=thread_source_eligible,forced_rejection=forced_rejection)
         relevance_gate = acceptance.effective_probability.to(
             dtype=base_gaussian.dtype
         )
@@ -1687,7 +1704,7 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             # This ablation modifies only the action-flow source.  It neither
             # selects by predicted consequence nor appends memory tokens to
             # the Action DiT condition sequence.
-            conditioning = None
+            conditioning = self._source_only_conditioning(required_gist, selected_action_context)
         else:
             predictive_gist = self.retrospective_gist(
                 world_tokens=bridge.world_tokens,

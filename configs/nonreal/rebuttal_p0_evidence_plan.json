@@ -1,5 +1,5 @@
 {
-  "schema": "warm.rebuttal.p0-evidence-plan.v1",
+  "schema": "warm.rebuttal.p0-evidence-plan.v2",
   "frozen_on": "2026-11-08",
   "objective": "Directly resolve the mechanism, natural fallback and same-information control concerns; target post-rebuttal ratings of332 or333.",
   "checkpoint_sha256": "68c7f3840921241df45a5b6997b772db3a69a31584644aa0e66929b841b845bf",
@@ -37,7 +37,12 @@
     "qualification": "Frozen semantic encoder/projection; common candidate/endpoint support; repeatability tolerances fixed on excluded pilot states."
   },
   "missing_skill": {
-    "nonempty_conditions":["clean", "target_skill_family_holdout"],
+    "nonempty_conditions":["clean_size_matched", "target_skill_family_holdout"],
+    "accepted_pairs_per_task":{"clean_size_matched":100,"target_skill_family_holdout":250},
+    "search_universe_seed":3407,
+    "noninferiority_margin_absolute_success":0.02,
+    "confidence":"One-sided95% conservative paired-risk-difference lower bound, exact Clopper-Pearson gain/harm marginal tails with fixed-task Bonferroni control. Also report two-sided intervals and all discordances.",
+    "noninferiority_admission":"Only the complete prespecified250-pair-per-task heldout cohort may establish the2pp fixed-task macro margin. Missing/invalid pairs block the conclusion; no inference from zero bootstrap variance.",
     "bank_size_control_required":true,
     "taxonomy": "Annotate task/interaction families before evaluation; distinguish missing terminal skill from retained generic grasp/transport primitives.",
     "coverage_validation": "Execute retrieved pools at prespecified diagnostic queries. Task-name removal alone is not evidence of zero relevant-skill coverage.",
@@ -48,7 +53,9 @@
     "status":"implementation_and_single_GPU_throughput_preflight",
     "required_information":["same current observations", "same factual episode history", "same candidate pool"],
     "required_budget":["same base checkpoint", "same train/dev split", "same optimizer schedule", "same effective batch128", "same3000 optimizer updates", "same checkpoint selection rule"],
-    "planned_control":"A separately trained rank/source conditioning policy without explicit consequence comparison; exact architecture and training ablation frozen before its runs.",
+    "planned_control":"Separately trained coarse top1 action prior with the same factual recollection, fixed0.25 source weight, common deterministic start-state warp, and no learned event adaptation, consequence prediction, reranking or confidence gate.",
+    "implementation":"fastwam.research.simple_prior.create_simple_prior; distinct checkpoint schema. Common semantic bridge/gist/recollection and ActionDiT are trained in both arms; removed-module auxiliary losses are zero in the control.",
+    "matched_reference":"New Full and simple-prior runs both start at the identical immutable FastWAM release with fresh optimizers, original30k-step scheduler, and fixed3000-update selection. This new single-GPU cohort does not silently replace the historical4-GPU resumed model.",
     "training_seed_plan":[3407,3408,3409],
     "execution":"Qualify one GPU memory and update integrity first; checkpoint in bounded restart-safe segments, then allocate the measured budget.",
     "production_algorithm_changes":false

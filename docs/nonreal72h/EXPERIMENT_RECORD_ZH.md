@@ -722,3 +722,11 @@ FastWAM guard有58次约5秒采样，无foreign compute PID、无采样错误。
 独立物理标签版本`warm.rmbench.physical-next-interaction.v1`，读取实际接触、提起、放置、任务stage与反馈配置，禁止将预测效应或selector得分作为真值。它是新定义的局部物理交互完成率，不冒充原稿19%/27.3%历史标注。2mm几何边界保留unknown；失误、回退、运行无效分别记录。Battery Try对新极性配置的探索进展不使用隐藏正确答案。
 
 `repertoire.py`预声明两个技能家族的非空holdout与等规模clean搜索域；原bank字节及global EventID不变，continuation不能泄漏被排除的条目。报告明确区分“家族可用性holdout”与“实际query不存在可用技能”，后者还需要完整候选执行覆盖。新增11项软件测试连同原62项，本地73项通过；实际分支、自然退让及SR仍以随后原生运行和独立验收为准。
+
+### 23.3 正式数据前的统计、资源与训练协议补强
+
+- v2计划将holdout固定为每任务250对、2pp绝对成功率不劣界，clean size-matched仍100对。`paired_binary.py`用gain/harm边际精确二项尾界加Bonferroni构造保守配对差区间；零discordance不报告伪[0,0]，未完成/invalid cohort禁止不劣结论。算法核对[SciPy官方精确区间示例](https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats._result_classes.BinomTestResult.proportion_ci.html)并通过零事件/不完整cohort边界测试。这是事前检验设计，不是实验观测，也不单独证明自然gate正确。
+- 为缩短CPU物理执行占比，新增单角色worker及严格merge入口；Full/null权重、retriever与环境仍独立，只有完全相同reset及source/model/protocol的trial可配对。旧顺序入口不变，尚待原生执行资格，不能把并发代码或单角色数当已完成pair。
+- `simple_prior.py`是独立训练控制：同一候选池/事实history与gist、粗排top1动作、固定0.25先验、确定性起点warp，无学习式动作适配/后果预测/重排/门控。单独checkpoint schema；Full的默认训练与推理语义由原有Torch回归测试覆盖。配置生成器强制作者原配置SHA-256，两分支共同从release以新optimizer起训，batch8×accum16=effective128、原max30000 scheduler、固定3000更新，不把新单卡cohort冒充原4卡续训的逐bit复现。
+- native precommit v1为96 pass/2 fail：两失败已在未修改的69ff6b4源码重复复现，分别为旧trainer stub遗漏attestation context、旧静态断言仍匹配已替换的完成日志。修复测试fixture/断言，未绕过真实resume检查或修改生产trainer。precommit v2包含Full/source/config/entrypoint与新control/统计/merge测试，100项原生通过（20.74秒）；本地非Torch相关78项通过。Windows无Torch，新控制的数值/梯度检查仅计原生CCI结果。
+- 已核实AFS余约60GB、节点临时盘约6.9TB、本机C盘约1.45TB。新增训练的state在有界分段后同步本机并验hash；原始checkpoint、数据与运行成果不清理。当前新simple-prior尚未训练，单卡吞吐与正式成功率仍待执行，不以软件通过替代公平训练比较。

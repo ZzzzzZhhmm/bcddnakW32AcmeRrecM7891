@@ -24,6 +24,10 @@ sys.path[:0]=[str(ROOT),str(ROOT/'src')]
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--bundle-args',type=Path,required=True)
+    parser.add_argument('--core-code',type=Path,help='Immutable, already bound core/config root; collector identity recorded separately')
+    parser.add_argument('--search-condition',choices=('full_bank','clean_size_matched','target_skill_family_holdout'),default='full_bank')
+    parser.add_argument('--roles',choices=('full','candidate_null'),nargs='+',default=['full','candidate_null'],
+        help='One role per isolated worker permits two CPU-physics episodes on one H100; merge only matching sealed reset identities')
     parser.add_argument('--rmbench-runtime',type=Path,required=True)
     parser.add_argument('--output',type=Path,required=True)
     parser.add_argument('--phase',choices=('qualification','formal'),required=True)
@@ -34,6 +38,7 @@ def main():
     parser.add_argument('--case-index-offset',type=int,default=0)
     parser.add_argument('--command-cap',type=int,help='Qualification only; never an official SR trial')
     args=parser.parse_args()
+    if len(args.roles)!=len(set(args.roles)):raise ValueError('distinct policy roles required')
     if min(args.cases,args.candidate_limit)<1 or min(args.seed_start,args.case_index_offset)<0:
         raise ValueError('positive counts and nonnegative identities required')
     if args.phase=='formal' and args.command_cap is not None:
@@ -41,13 +46,21 @@ def main():
     if args.command_cap is not None and args.command_cap<1:
         raise ValueError('positive qualification command cap required')
     plan=json.loads(args.plan.read_text())
+    planned_count=(plan['missing_skill']['accepted_pairs_per_task'][args.search_condition]
+        if args.search_condition!='full_bank' else plan['closed_loop']['accepted_episodes_per_task_per_condition'])
     if args.phase=='formal' and (args.seed_start<plan['closed_loop']['reset_seed_start'] or
             args.seed_start>=plan['closed_loop']['reset_seed_start']+plan['closed_loop']['candidate_seed_limit'] or
-            args.case_index_offset+args.cases>plan['closed_loop']['accepted_episodes_per_task_per_condition']):
+            args.seed_start+args.candidate_limit>plan['closed_loop']['reset_seed_start']+plan['closed_loop']['candidate_seed_limit'] or
+            args.case_index_offset+args.cases>planned_count):
         raise ValueError('formal cohort identity/count disagrees with the frozen plan')
     out=args.output.resolve()
     if out.is_relative_to(ROOT):raise ValueError('runtime evidence must be outside source checkout')
     out.mkdir(parents=True,exist_ok=False)
+    core=ROOT if args.core_code is None else args.core_code.resolve(strict=True)
+    if out.is_relative_to(core):raise ValueError('evidence must be outside the bound core')
+    sys.path[:0]=[str(core),str(core/'src')]
+    import fastwam.research
+    if core!=ROOT:fastwam.research.__path__.append(str(ROOT/'src/fastwam/research'))
     import numpy as np
     import torch
     from scripts import build_warm_rmbench_contract_bundle as builder
@@ -58,6 +71,10 @@ def main():
     from fastwam.memory.manifest import sha256_array,sha256_file
     from fastwam.research.evidence import append_record,write_probe
     from fastwam.research.policy_state import deployed_policy_fingerprint
+    from fastwam.research.repertoire import matched_search_rows,install_search_restriction
+    from scripts.nonreal_job import source_identity as code_identity
+    if Path(builder.__file__).resolve()!=core/'scripts/build_warm_rmbench_contract_bundle.py':
+        raise RuntimeError('wrong bound core/config root imported')
 
     bundle_args=builder.build_parser().parse_args(json.loads(args.bundle_args.read_text()))
     if len(bundle_args.task)!=1 or bundle_args.experiment!=['full_warm']:
@@ -97,7 +114,8 @@ def main():
         official_step_limit=task_by_name(task).step_limit,qualified_complete_pairs=0,
         candidate_null='Retrieved source and conditioning withdrawn; native episode recollection retained',
         contract_path=runtime['warm_online_contract_path'],checkpoint_sha256=checkpoint_sha256,
-        plan_sha256=sha256_file(args.plan))
+        plan_sha256=sha256_file(args.plan),search_condition=args.search_condition,requested_roles=args.roles,
+        core_source_sha256=code_identity(core)['sha256'],collector_source_sha256=code_identity(ROOT)['sha256'])
     (out/'identity.json').write_text(json.dumps(summary,indent=2))
 
     def save_observation(path,obs):
@@ -159,17 +177,26 @@ def main():
             # Fixed before seeing either role's result. Separate owned policy
             # capabilities avoid replaying a consumed BoundOnlineStep.
             if not policies:
-                for role in ('full','candidate_null'):
+                for role in args.roles:
                     policy_args=dict(runtime,warm_telemetry_path=str(out/f'{role}-telemetry.jsonl'))
                     (out/f'{role}-runtime_args.json').write_text(json.dumps(policy_args,indent=2))
                     print('stage=load_policy role='+role,flush=True)
                     policy=RMBenchWarmPolicy(policy_args)
                     policy.model.configure_research_probe(capture=True,force_null=role=='candidate_null')
+                    if args.search_condition!='full_bank':
+                        choices,search_report=matched_search_rows(policy.retriever._task_indices,
+                            policy.retriever.task_vocabulary,task,seed=plan['missing_skill']['search_universe_seed'])
+                        rows=choices[args.search_condition]
+                        restriction=install_search_restriction(policy.retriever,rows)
+                        np.save(out/f'{role}-eligible_bank_rows.npy',rows,allow_pickle=False)
+                        (out/f'{role}-search_universe.json').write_text(json.dumps(dict(search_report,
+                            condition=args.search_condition,restriction=restriction),indent=2))
                     policy._next_episode_index=args.case_index_offset
                     policies[role]=policy
             pair={};reference=preflight_reference
             # Counterbalance which implementation runs first by frozen case ID.
             role_order=('full','candidate_null') if index%2==0 else ('candidate_null','full')
+            role_order=tuple(role for role in role_order if role in args.roles)
             for role in role_order:
                 policy=policies[role];config.update(seed=seed,now_ep_num=index)
                 role_dir=case/role;role_dir.mkdir()
@@ -233,9 +260,10 @@ def main():
                     append_record(out/'events.jsonl',record)
                     env.close_env(clear_cache=True)
                 pair[role]=record
-            valid=all(r['status']=='complete' for r in pair.values())
-            append_record(out/'pairs.jsonl',dict(task=task,episode_id=index,seed=seed,phase=args.phase,
-                status='complete' if valid else 'qualification_censored',roles=pair,
+            valid=set(pair)=={'full','candidate_null'} and all(r['status']=='complete' for r in pair.values())
+            append_record(out/('pairs.jsonl' if len(args.roles)==2 else 'role_trials.jsonl'),dict(schema='warm.rebuttal.paired-episode.v1',task=task,episode_id=index,seed=seed,phase=args.phase,
+                checkpoint_sha256=checkpoint_sha256,plan_sha256=summary['plan_sha256'],search_condition=args.search_condition,
+                status='complete' if valid else 'unpaired_role_trial' if len(args.roles)==1 else 'qualification_censored',roles=pair,
                 full_minus_null=pair['full']['success']-pair['candidate_null']['success'] if valid else None))
             completed+=1;summary['qualified_complete_pairs']+=int(valid)
             summary.update(completed_pairs=completed,next_candidate_seed=next_seed)

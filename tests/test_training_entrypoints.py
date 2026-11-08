@@ -115,5 +115,5 @@ def test_acp_global_batch_and_runtime_cleanup_are_explicit() -> None:
     assert "accelerator.end_training()" in trainer
     assert "_run_main_process_step" in trainer
     assert "broadcast_object_list" in trainer
-    assert "[done] no optimizer steps remain" in trainer
+    assert 'reason="no optimizer steps remain"' in trainer
     assert "single-node orchestrator" in acp

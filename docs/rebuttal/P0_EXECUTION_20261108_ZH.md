@@ -14,13 +14,19 @@
 
 `scripts/run_rebuttal_rmbench_pairs.py`：独立Full/null模型和retriever能力令牌，按照相同专家准入seed与官方unseen指令重置；核对初始物体/目标、关节状态、相机和指令。按固定case ID交替执行顺序，保留全部seed准入、逐动作qpos、policy telemetry、预定query的源/候选数组与图像及每个完整回合的原始结果。运行错误、截断和正常失败分别记录。
 
-正式规模固定每任务/条件100对，candidate seed从340800000顺序开始，最多检查2000个；pilot用3407/3408且不混入正式cohort。续跑必须沿原seed序列与全局episode ID，不根据成功率决定何时停止。运行从immutable源码快照启动，不在任务中访问Git远端或拒绝dirty checkout。
+正式full-bank及size-matched clean规模每任务100对，技能家族holdout每任务250对；candidate seed从340800000顺序开始，最多检查2000个。v2计划在正式效能结果出现前声明holdout的2pp不劣界，采用gain/harm两项Clopper–Pearson单侧尾界及固定任务Bonferroni控制；零discordance仍有非零区间，任何未完成/invalid pair均阻止不劣结论。pilot用3407/3408且不混入正式cohort。续跑沿原seed序列与全局episode ID，不根据成功率停止。作业从immutable源码运行，不访问Git远端或拒绝dirty checkout。
+
+单角色worker可各自持有独立模型/环境并发执行，使用`--roles full`或`--roles candidate_null`；完整双角色顺序入口仍保留。`merge_rebuttal_role_trials.py`只合并source/model/protocol/condition一致且seed、初始RGB、qpos、task状态、指令完全相同的结果，重复attempt必须显式审计，缺失对保留incomplete。并发吞吐另测，不把单角色输出计作完整pair。
 
 `src/fastwam/research/policy_state.py`覆盖真实working-memory snapshot、执行历史、retriever发放/消费集合与continuation、模型thread和待执行队列；分支期间任何变化均可检出。7项纯软件测试已经通过，真实集成由CCI资格作业另验。
 
 后续真实历史入口为`scripts/collect_rebuttal_rmbench_recovery.py`：核心来自已绑定合同的immutable源码，采集扩展另记source hash。先在固定Full factual轨迹上到达有真实执行历史的query，封存同上下文的raw/refined/null，再做H32分支和重复refined。独立标签`physical-next-interaction.v1`只读实际物理/任务谓词，不能替代历史适用性标注；几何边界及无效分支保留unknown。该入口当前先做排除pilot，完成真实恢复与policy不变性验收后才晋级科学采集。
 
 技能库干预在`src/fastwam/research/repertoire.py`：预定家族holdout、等规模clean和stable全局row tie-break，共用原bank及EventID。新增搜索域是显式实验干预，不把受限检索伪装成原全库部署。query候选实际执行覆盖仍是零相关技能声明的必要证据。
+
+简单对照实现为`src/fastwam/research/simple_prior.py`：粗排首个valid动作、同一确定性起点warp、固定0.25源权重、同一事实recollection gist；移除学习式event adapter/效应预测/重排/门控，保留与Full一致的history conditioning token布局。独立checkpoint schema防止误当投稿Full模型加载。配置生成器`prepare_rebuttal_control_training.py`核对作者YAML原始哈希，两分支均从同一release和新optimizer开始，单卡batch8/accum16/effective128、原30k scheduler、固定3000-update checkpoint，先做5更新吞吐/更新完整性预检。不能只训练control再把它与不同单卡训练路径的模型差异当成唯一架构因素。
+
+AFS在本时点仅余约60GB；本节点临时盘余约6.9TB，本机C盘余约1.45TB。新增训练采用有界分段与临时checkpoint工作区，分段完成立即将完整state/weights/attestation及日志复制本机并核验哈希后方可视为可恢复。AFS只存小型receipt或经容量检查的必要中转，不清理原数据、checkpoint或别人的成果；单卡实际耗时确定后按剩余期限安排，而非按结果选择种子。
 
 ## 理论证据同时推进
 
