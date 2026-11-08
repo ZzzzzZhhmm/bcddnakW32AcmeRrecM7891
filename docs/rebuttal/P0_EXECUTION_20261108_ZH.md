@@ -18,6 +18,10 @@
 
 `src/fastwam/research/policy_state.py`覆盖真实working-memory snapshot、执行历史、retriever发放/消费集合与continuation、模型thread和待执行队列；分支期间任何变化均可检出。7项纯软件测试已经通过，真实集成由CCI资格作业另验。
 
+后续真实历史入口为`scripts/collect_rebuttal_rmbench_recovery.py`：核心来自已绑定合同的immutable源码，采集扩展另记source hash。先在固定Full factual轨迹上到达有真实执行历史的query，封存同上下文的raw/refined/null，再做H32分支和重复refined。独立标签`physical-next-interaction.v1`只读实际物理/任务谓词，不能替代历史适用性标注；几何边界及无效分支保留unknown。该入口当前先做排除pilot，完成真实恢复与policy不变性验收后才晋级科学采集。
+
+技能库干预在`src/fastwam/research/repertoire.py`：预定家族holdout、等规模clean和stable全局row tie-break，共用原bank及EventID。新增搜索域是显式实验干预，不把受限检索伪装成原全库部署。query候选实际执行覆盖仍是零相关技能声明的必要证据。
+
 ## 理论证据同时推进
 
 `P0_THEORETICAL_EVIDENCE.tex`给出共享目标候选项的精确均值/方差分解、事实监督的条件Bayes风险差、同候选同历史下有限Euler步的撤回/稳定性推导。共同目标确实不能独立识别不同反事实；后两类理论结论都列出假设。自然缺技能识别和闭环成功必须由实验包1/2验证，不由条件零门恒等式代替。

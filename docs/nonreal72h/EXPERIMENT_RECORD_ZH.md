@@ -706,3 +706,19 @@ FastWAM guard有58次约5秒采样，无foreign compute PID、无采样错误。
 - 新`policy_state.py`覆盖真实回合snapshot、事实执行历史、retriever发放/消费与continuation、模型thread及队列。7项软件测试通过；不以它们替代真实模型/模拟器资格。理论片段`docs/rebuttal/P0_THEORETICAL_EVIDENCE.tex`给出候选共享目标的均值/方差恒等式、事实监督风险分解和条件Euler稳定性界，未宣称自然缺技能或SR保证。
 - 原21276以外的20276入口从约北京时间19:24持续超时。作者切换到`slai_debug_workspace_1`、180.184.249.158:21276，路径不变。19:51实际连接验证H10080GB/81559MiB、driver580.95.05、GPU空闲；AFS源码d578a78且服务器工作树干净。仅为该绝对仓库路径配置Git safe.directory，不改系统驱动、现有环境或其他项目。
 - 新节点PID1显示2026-08-11；不以其作为本次CCI租期起点。GPU作业将有界执行、留证据归档余量。当前尚无新的策略成功率或修复率，实际启动及结果以接续的job manifest为准，禁止把准备就绪或模型import当作有效GPU实验。
+
+### 23.1 新入口的已完成准备与在途配对pilot
+
+- 已提交、推送并同步CCI的源码为`ae2459dd650a80a0e0cef960873c4dbd7dbb7cbe`。固定源码tar SHA-256 `ece6c36bdfaad2089d42fe7f0fd001bc6e9b82a09e7a90fb072515d3d9d23740`，代码集合SHA-256 `37d11caa89b3fb63f93a0d8a316ffb62e02fde1b4cc465d8f77039441ad864e9`；路径`S/rebuttal_20261108_p0/source_ae2459d/code`。活动作业不随canonical checkout同步而变化。62项定向测试已在本地及原生CCI通过。
+- 两任务严格bundle构建均exit0。Rearrange Blocks：job `preparation_job_logs/20261108T120558Z-81f247d9`，manifest SHA-256 `f002233241e861f55a9dfcc713258df375d3ceeed99658d6703ae3614fae12f7`，online contract canonical SHA-256 `1261c9a727cc9ae04094ecfd1cbceeb2269d1630ba7f3b8b24c44c52041dd17c`；Battery Try：job `20261108T121058Z-e691d7aa`，12:10:58–12:21:13 UTC，manifest SHA-256 `c42d9db90cb053863916942e6a1bbf302b1c1955a42df21319a199aaa180498d`，online contract canonical SHA-256 `51fc5539aa9d84def5e538e0982da2374548acaec8f7e06537008cb7e3c758a4`。二者共用指定checkpoint、89,680-event原bank及同一推理预算。
+- 新节点runtime preflight v2因symlink解释器默认manifest路径错误而终止，尚未启动策略试验；原日志保留。v3显式指定已有`warm-rmbench-eval/warm_rmbench_runtime.json`后通过实际H100渲染检查，未重装环境、驱动或修改官方任务源码。
+- Rearrange Blocks完整官方步数pilot于12:16:50 UTC启动，job `paired_job_logs/20261108T121650Z-51572500`，max7200秒，输出`S/rebuttal_20261108_p0/paired_pilot_v2_rearrange_blocks`。专家seed3407准入、两次独立reset的图像/qpos/物体目标/官方unseen指令身份完全一致；Full构造完成，candidate-null正在加载。此时尚无学习策略完整回合结果；该pilot无论成败均排除正式统计，不能替代100对cohort。
+- 已完成bundle、两份preflight日志及封存reset证明归档为`S/rebuttal_20261108_p0/archives/p0_bound_inputs_and_reset_preflight_v1.tar.gz`，411,515 bytes，SHA-256 `b927c0e7a99c70ec2a855efa69887ec7a330d753d3c1b8724bc7978817c900b1`。归档不含活动作业的未完成telemetry，不将其标为最终效能证据。
+
+### 23.2 真实历史分支及技能库干预采集器
+
+新增`collect_rebuttal_rmbench_recovery.py`及只读query capture：截取真正Full `_replan`已经消费的当前事实输入；candidate-null用独立同权重模型的production sampler重算同一上下文、同一Gaussian，不重放已消费的online capability。先封存当前历史、候选身份、动作、context tensor、噪声与gate，再执行raw/refined/null/refined-repeat。实际两策略memory/thread/queue/cursor和六类模拟器状态都进入fingerprint；重复refined必须重现完整endpoint与RGB。新增采集器首先仅做排除在正式cohort外的actual-history pilot，尚未宣称真实模拟器集成已通过。
+
+独立物理标签版本`warm.rmbench.physical-next-interaction.v1`，读取实际接触、提起、放置、任务stage与反馈配置，禁止将预测效应或selector得分作为真值。它是新定义的局部物理交互完成率，不冒充原稿19%/27.3%历史标注。2mm几何边界保留unknown；失误、回退、运行无效分别记录。Battery Try对新极性配置的探索进展不使用隐藏正确答案。
+
+`repertoire.py`预声明两个技能家族的非空holdout与等规模clean搜索域；原bank字节及global EventID不变，continuation不能泄漏被排除的条目。报告明确区分“家族可用性holdout”与“实际query不存在可用技能”，后者还需要完整候选执行覆盖。新增11项软件测试连同原62项，本地73项通过；实际分支、自然退让及SR仍以随后原生运行和独立验收为准。
