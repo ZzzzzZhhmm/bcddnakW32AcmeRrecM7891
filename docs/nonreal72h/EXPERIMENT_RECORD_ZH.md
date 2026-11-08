@@ -1,6 +1,6 @@
 # WARM 实验记录与论文回填索引
 
-更新日期：2026-09-24。本文是持续维护的回填入口；原始记录、数组、运行输出保存在仓库外，并在服务器与本地各留一份。每次取得数值，先保存，再核验，再更新本文。失败与不支持假设的结果同样保留。
+更新日期：2026-11-08。本文是持续维护的回填入口；原始记录、数组、运行输出按各条目的实际身份与可用性登记。每次取得数值，先保存，再核验，再更新本文。失败与不支持假设的结果同样保留。以下各历史条目的状态属于各自记录时点；投稿版本清点见第17节，作者来源澄清见第18节，rebuttal首批新诊断见第19节。下方09-24等历史快照不代表当前投稿结果或运行状态。
 
 **最新稿件回填映射：** 作者09-24新提供的28页PDF使用表1–11、图1–4；详见[最后24小时审计与计划](PLAN_24H_20260924_ZH.md)。本文旧条目中的表17–25等是早期论文表号，数值范围不变，不应据此误判新版缺口。当前C.2.2已包含forced-null 50/50记录；表4仍未实测。09-24 14:42 UTC再次只读检查AFS，训练指标仍停在02:03:32 UTC修改时间，未见stage1最终summary/15k/natural-gate产物；没有新增论文SR。
 
@@ -448,3 +448,90 @@ ACP启动器会逐worker在真实可见GPU下检验CUDA分配、渲染和恢复�
 新数据输出`resume-<timestamp>`，预计2–3小时但取决于CPU/AFS，6小时为每worker安全上限。
 本轮未提交ACP、未运行新效能实验；由作者使用已上传release-v4命令提交。
 本地相关单测53 passed，bash语法检查通过。源码仍为本地未提交修改，冻结运行包已同步服务器。
+
+## 17. 2026-11-05 审稿前通读与最终投稿版本确认（非新增实验）
+
+作者在当前对话明确确认：**33页的 `11572_World_Action_Retrospecti.pdf` 是最终投稿版本，以该版本为主。** 本轮工作为论文、方法核心实现、相关配置和测试的静态阅读，没有启动训练、ACP、仿真或真机试验，没有复算服务器原始测量，也没有把历史实验状态当作当前运行状态。
+
+### 17.1 原件、工作目录与源码身份
+
+- 最终投稿原件：`tmp/first_submission/11572_World_Action_Retrospecti.pdf`，37,342,016 bytes、33页；SHA-256 `aa04f9519881983b9f6f408dcfb5b912c9290b883dbe31567f671136fa864594`。
+- 原样备份：`tmp/rebuttal/baseline/11572_World_Action_Retrospecti.pdf`，本轮实际重算字节哈希一致。这些路径均在 Git 忽略的 `tmp/` 下，原始 PDF 和生成阅读材料不加入 Git。
+- 当前读取的代码 HEAD：`5eb321d95fe7f5e0db720e1f60df4d3926a9b1e7`；432份已跟踪源码、配置、脚本、实验入口和测试文件的逐文件哈希及集合摘要保存在 `tmp/rebuttal/reading/source_manifest.json`。该集合摘要为 `2e45333888eb23e8b20af92a6f67a2063250f52d7fcb58058b36135724bd6e49`。当前 checkout 身份不自动等于每项投稿结果的运行源码身份。
+- 工作路径：`tmp/rebuttal`；后续论文修订放在 `tmp/rebuttal/revision`，必须从核对后的原论文 LaTeX 工程编译 PDF。当前阅读笔记不是论文 revision。
+- 本记录修改前的副本保存在 `tmp/rebuttal/baseline/EXPERIMENT_RECORD_ZH.before_20261105.md`；原有工作区其他文档删除状态保持不动。
+- 已定位的历史 LaTeX 工程编译件为29–30页，尚未确认最终33页稿的完整源码。不能将旧工程的附录直接当作最终投稿底稿。
+
+### 17.2 最终稿主张与现有记录的对应范围
+
+`tmp/rebuttal/reading/claim_evidence_map.json` 记录最终稿 Table 1–4、Fig. 3–5、Tables 12–19及命题的主张、数值、cohort和证据状态。所有论文数值标为 **paper-reported，本轮未独立复现/验收原始测量**，不升级为新实测结果。
+
+- 最终稿报告 LIBERO 98.7%、RMBench 83.9%（M(1) 81.2%、M(n) 87.3%）。本轮只核对了表内算术：九任务成功整数合计755/900，组计数406/500与349/400；这不是一次新的评测。
+- Table 4 的三参考数值、Tables 12–15 的独立PBB/PB/BT分支cohort、Tables 16–17的gate分布，以及Table 18的三训练种子constant-utility对照，必须保留各自源码、checkpoint、config、query/branch/label/trial记录，不能用第16.3节旧LIBERO部分采集替代。
+- 已有第2/3/15节的旧LIBERO 1936/2000、N02 forced-null、N06/W08全零自然gate等记录继续保持原历史身份与边界。它们不否定也不独立支持最终稿的不同运行；本轮未联系服务器查新产物。
+- 最终稿真机17/16/15/15 successes out of20属于稿件报告；本轮没有获得或核验对应自主trial原件。25条示范、20/5划分、1356事件与已有历史数据审计的数值对应，但不据此证明自主成功率或当前硬件标定。
+
+### 17.3 独立内部对应问题
+
+这些是审稿前内部核验事项，不是实际Reviewer Concern，也没有据此修改论文或算法。
+
+1. 最终稿Table 8统一写write-threshold range为[0.08,0.85]，当前RMBench dataset factory和policy代码使用[0.015,0.25]。需由投稿运行的resolved config确认版本及分平台设置。
+2. 当前research/online probe开关在训练期被明确忽略；它们支持固定checkpoint干预，不能单凭开关配置证明Table 3或Table 18的独立训练对照已实现或完成。
+3. 在本轮定向读取的`src/scripts/configs/tests`和历史活动LaTeX中，尚未建立最终稿扩展centered-effect、full-selector和constant-utility研究的完整运行对应。搜索范围有限，不推断其他机器或团队不存在材料。
+4. legacy payload corruption与最终稿完整事件random/similar replacement的干预定义不同；后者需核对独立donor计划及实际覆盖。
+
+目前真实首轮审稿意见、评分与confidence仍不可见；约四名reviewer为作者预期。本轮不产生录用概率、模拟审稿结论或正式rebuttal。
+
+## 18. 2026-11-07 外部专家材料对照、候选源工程与作者来源澄清（非新增实验）
+
+本节记录本轮取得的源码与结果来源说明，没有启动训练、ACP、仿真或真机评测，也没有复算原始测量。第17节末尾的审稿状态是11-05历史时点；当前已读取三份官方审稿。
+
+### 18.1 新材料与原件保存
+
+- 已读取并对照 `tmp/rebuttal_wb/` 的逐条分析、统一补强、写作建议及新增七天计划；它们是参考意见，不代替原始实验数据或本对话授权。
+- 新定位的本地候选工程为 `tmp/first_submission/WARM_ICLR2027_new/`。已核对活动附录链：主文件 → `sec/999_appendix.tex` → `sec/appendices/c_additional_results.tex:90` → `c_rebuttal_p0_p1_draft.tex`。完整编译与最终33页稿的精确对版仍未进行。
+- `c_rebuttal_p0_p1_draft.tex` 第1–5行保留了旧 synthetic/TBD 说明，第323行也有 synthetic seed inputs 注释；可见单元包含与稿件C.2.2/C.2.3一致的候选中心化误差、完整选择率、配对区间及learned/constant utility对照数值。这是来源核对线索，不是新测量。
+- 该文件本轮读取时的SHA-256：`1af74b4f8f09ca2b1e360338cd732e6b688cbf341180a870d2de01335fe6eba0`。
+- 原工程的主文件、README和三份活动附录文件按字节保存在 `tmp/rebuttal/expert_reference/20261107/primary_source_snapshot/`；文件身份与作者澄清见同目录的 `primary_provenance_context.json`。本节追加前的实验记录副本为 `EXPERIMENT_RECORD_ZH.before_20261107_provenance.md`。原始工程与最终PDF未改动，原件及快照均不加入Git。
+
+### 18.2 作者明确澄清与证据等级
+
+作者在本对话于2026-11-07明确说明：**该文件夹中的数据均为真实可信结果；synthetic 是未及时删去的旧标记，并非虚假数值；原始结果存放位置已不可考。**
+
+- 当前登记为：**作者确认的真实既有结果；原始产物路径不可追溯，本轮未独立重算原始记录。**
+- 不再把“模板数值是否被当作结果”列为待作者确认的问题，也不因旧注释推断数值虚假。
+- 可按既有投稿结果引用；不得写成“本轮已重新复现/已复核逐样本日志”，也不能承诺提供当前无法定位的原始run产物。
+- 清理旧注释应在原工程归档、修订版本核对后进行；清理注释不改变数值及实验身份。本轮未执行该清理。
+
+### 18.3 对论文主张与后续补证的具体影响
+
+该澄清主要涉及引用C.2.2候选区分/完整选择器证据以及C.2.3学习utility对照时的来源状态，也更新全稿结果的作者确认口径。既有数字继续保留，不用历史smoke或其他run替换。
+
+新增验证应优先服务HH-W5的候选敏感性、BB-Q2的生成修复/闭环贡献、RK-Q2的自然缺技能退让和公平成本收益。新实验必须保留checkpoint/config/source/data/split/seed、原始标签/输出和聚合过程；与旧结果不一致时并列记录、说明条件，不能用新运行倒推出旧运行身份或静默替换原表。
+
+额外纳入WP2的设计注意点：完整初始化同时改变动作均值和噪声尺度，可使用现有`scale_only`推理probe做固定条件的敏感性诊断；该probe只在infer生效，不等同于匹配训练基线。本轮只有源码核对与方案补充，没有新增实验值。
+
+## 19. 2026-11-08 Rebuttal首批CCI诊断与论文工程对版
+
+### 19.1 运行端与不可变身份
+
+- 用户明确授权在单张H100 80GB的CCI执行补实验。本次现场观察为H100 80GB HBM3、81559MiB；容器PID1启动时间为2026-11-08 06:50:59 UTC。初始GPU空闲，后续发现同卡其他WAMO作业，保留该作业；本次耗时不作为独占GPU的正式成本证据。
+- 起始本地、GitHub、CCI代码均为`5eb321d95fe7f5e0db720e1f60df4d3926a9b1e7`。CCI工作树干净；本地既有文档删除未恢复、未暂存。
+- 新输出根`S/rebuttal_20261108/`。运行源码为`baseline_5eb321d/code`，原Git archive SHA-256 `6964c7f257550acf5a5e921b11f07b374b60375dbc08ee313f5f60b0b4f66ca5`；runner源码集合SHA-256 `75cbcc171be0669f0808cacdc6317225c30836eaea49add85a1b32b29397c829`。首次tar解包因AFS不允许修改归属而报错；随后使用不改变归属的解包完成，运行前冻结源码，未影响既有实验。
+- 只读盘点254个现有checkpoint/config/result元数据项，错误0；盘点不证明最终投稿模型身份。已找到的当前v8发布点为step3000，本轮不把它标为最终投稿模型。
+
+### 19.2 V8-step3000 / DEV4 自然source pilot（工程证据）
+
+- checkpoint：`S/nonreal_resume_20260922/stage1/training/checkpoints/weights/step_003000.pt`；SHA-256 `68c7f3840921241df45a5b6997b772db3a69a31584644aa0e66929b841b845bf`。resolved训练配置`resume_train.yaml` SHA-256 `34f5dc0a6f4cc354da61c0ba7bdc394b6c9652c7ef7706e72e8cbb683ec9a00c`。权重在运行前按字节验证，未修改checkpoint。
+- Press Button、Put Back Block各1个DEV来源episode，各2个预冻结前缀；共2episode/4query，H32×14、NFE10、seed3407、BF16。调用自然Full并作同输入重复；没有强设门控，也没有动作适用性标签。
+- **4/4 query自然g非零**；mean g=`0.18896484375`，mean noise-scale-squared=`0.7218399047851562`。失败query为0，模型脚本summary complete、runner exit0且源码前后身份一致；模型脚本elapsed=`497.01972905546427`秒，含初始化，不作为端到端策略成本。
+- CPU只读检查确认checkpoint version=8，gate末层权重非零且bias不再等于初始-2；这只是张量身份/训练变化检查，不证明校准、收敛或任务收益。
+- 原始输出`S/rebuttal_20261108/pilot_source_full/`；job `pilot_job_logs/20261108T070354Z-2367897a/`。archive `S/rebuttal_20261108/archives/pilot_source_full_evidence.tar.gz`，SHA-256 `8f4eb4a6719e830b7b29a6d709ac817e9263f53c7a8936d479ae6760c733ddad`，本地副本`tmp/rebuttal/execution/20261108/evidence/pilot_source_full_evidence.tar.gz`双端一致。
+- 本地`verify_source_pilot.py`实际重算probe JSON/NPZ哈希、4个prefix身份、自然门值、source尺度和重复输出容差，结果见相邻`PILOT_VERIFICATION.json`。
+- **支持的准确主张：** 当前step3000固定模型能在该DEV4小cohort产生非零自然source影响，具备继续做共同噪声source控制的条件。**不支持：** 适用性TA/FA、生成修复率、闭环SR、无技能退让、匹配训练比较、训练seed稳定性或最终投稿模型复现。不得把4个query当4个独立episode。
+
+### 19.3 原稿对版与修订v1（非新增效能结果）
+
+候选LaTeX工程已独立编译为33页。72dpi逐页渲染比较显示第2–33页逐像素相同，第1页只差OpenReview附加审稿提示；文本抽取差异主要是数学字体ToUnicode编码。源工程及原件未改动，完整副本和比较记录在`tmp/rebuttal/revision/`。
+
+本地修订v1编译为34页，正文结束于第10页；只做监督语义、指标/cohort、已报告机制证据、M(1)负差、已知任务/桌面范围和实际AI用途澄清，保留原实验数值。新DEV4工程pilot没有回填为论文结果。仅在修订副本清理作者已解释的旧synthetic/TBD注释；原工程完整保留。源差异版本化为`docs/rebuttal/MANUSCRIPT_REVISION_V1.patch`。

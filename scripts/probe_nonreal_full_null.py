@@ -248,7 +248,7 @@ def main():
                    median_inference_seconds=float(np.median([t for r in rows for t in r['inference_seconds']])),
                    p95_inference_seconds=float(np.quantile([t for r in rows for t in r['inference_seconds']],.95)),
                    peak_allocated_gib=max(r['peak_allocated_gib'] for r in rows),
-                   limitation="smoke-checkpoint offline prefix invariance; not learned rejection, online parity or task success")
+                   limitation="fixed-checkpoint offline prefix invariance; not learned rejection, online parity or task success")
     (args.output / "summary.json").write_bytes(canonical(summary))
     print(json.dumps(summary), flush=True)
     return 0 if summary['status'] == 'passed' else 2

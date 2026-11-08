@@ -80,7 +80,7 @@ def merge(output):
                    modes={mode:{key:float(np.mean([r[key] for r in paired if r['mode']==mode]))
                                 for key in ('mean_g','mean_noise_scale_squared','source_rms_delta','action_rms_delta')}
                           for mode in MODES},
-                   limitation='smoke checkpoint source intervention, not independent training, online parity or task SR')
+                   limitation='fixed-checkpoint source intervention, not independent training, online parity or task SR')
     (output/'summary.json').write_text(json.dumps(summary,indent=2,allow_nan=False))
     return summary
 

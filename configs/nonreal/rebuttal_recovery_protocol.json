@@ -1,0 +1,34 @@
+{
+  "schema": "warm.rebuttal.recovery-protocol.v1",
+  "status": "analysis_implemented_collection_not_qualified",
+  "review_items": ["BB-W3", "BB-Q2", "HH-W5", "RK-Q2"],
+  "planned_tasks": ["rearrange_blocks", "battery_try"],
+  "tasks_frozen_by": "availability and prespecified task mechanisms, before outcome inspection",
+  "branches": ["raw", "refined", "candidate_null"],
+  "branch_contract": {
+    "same_parent_simulator_controller_rng_and_history": true,
+    "same_execution_prefix": true,
+    "common_noise_for_refined_and_candidate_null": true,
+    "natural_gate_required": true,
+    "independent_task_progress_labels": true,
+    "sealed_actions_before_branch_truth": true,
+    "unknown_labels_imputed": false
+  },
+  "estimands": ["repair_rate", "harm_rate", "net_applicability_change", "refined_minus_null_applicability"],
+  "statistics": {
+    "unit": "fraction",
+    "common_support": "all three independent branch labels known",
+    "macro": "equal mean of fixed task-specific count ratios",
+    "bootstrap_cluster": "source episode within task",
+    "bootstrap_replicates": 10000,
+    "bootstrap_seed": 3407,
+    "sparse_denominator_policy": "retain missing CI; never select only defined resamples"
+  },
+  "blocking_requirements": [
+    "Freeze an explicitly identified evaluation checkpoint and compatible configuration.",
+    "Qualify a full-state simulator backend on the chosen tasks.",
+    "Freeze task-progress label definitions and held-out query schedule.",
+    "Collect independently labelled sealed raw/refined/null branches."
+  ],
+  "scope": "Local-action recovery only; final success contribution requires separate paired closed-loop episodes. The step3000 source pilot is a separate engineering cohort."
+}

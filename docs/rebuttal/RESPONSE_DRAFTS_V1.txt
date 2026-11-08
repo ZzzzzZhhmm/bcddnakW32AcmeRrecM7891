@@ -1,0 +1,103 @@
+WARM REBUTTAL RESPONSE DRAFTS — 2026-11-08 V1
+Internal source copy. Not posted. Empirical open items must be resolved or explicitly bounded before finalization.
+
+========================================================================
+EDITORIAL STATUS — LOCAL WORKING DRAFT, NOT POSTED
+The new recovery, no-skill, cost and matched-training results are not yet available. This draft covers the questions with current facts and explicitly leaves those empirical gaps open. The local revision is compiled; it has not been uploaded to OpenReview.
+
+Thank you for the careful assessment and for recognizing the distinction between recollection and repertoire. We have clarified the supervision, the scope of the comparisons, and the interpretation of the candidate diagnostics in the revised manuscript.
+
+**W1 / Q1 — Small aggregate margins and the M(1) deficit.**
+The reported aggregate margins are small: 0.1 percentage points over the cited WLA-0 result on LIBERO and 0.9 over MemoryWAM on RMBench. These reported-protocol comparisons do not establish matched-protocol statistical superiority. The uncertainty in the appendix describes specific mechanism contrasts; it is not an uncertainty estimate for these aggregate margins.
+
+WARM is lower on M(1), 81.2% versus 84.2%. This is a limitation of the reported results, and M(1) should not be dismissed as necessarily easy or outside the evaluation scope. The M(n) average is 87.3% versus 81.5%, with the largest positive differences on Battery Try (+23 points) and Press Button (+5); Blocks Ranking Try and Cover Blocks instead trail by three and two points. We have made this heterogeneity explicit. These observations locate the deficit but do not establish its cause.
+
+**W2 — Common-backbone experience-conditioned comparisons.**
+The Gaussian-source, no-comparison and constant-utility controls test individual design choices. They are not full reproductions of ReCAP or informed-source methods. We agree that a stronger head-to-head comparison must equalize the backbone, available history and retrieved information, data, training and tuning budgets, checkpoint selection, and inference budget. The existing component controls only partially address this concern; a fixed-checkpoint inference switch is not a separately trained baseline.
+
+**W3 / Q2 — Proposal selection, recovery, and final success.**
+The 19.0% applicable-choice result concerns the adapted proposal before Action DiT refinement. The appendix's 41.7% coverage and 27.3% all-query choice describe a separate cohort and the full selector; they do not replace Table 4. The 65.9% covered-pool figure is also a task-macro average, so multiplying the two macro averages is not an exact decomposition of 27.3%.
+
+The reported fixed-query contrasts support candidate sensitivity and selector value: predicted versus query-only centered MSE differs by -0.014 [-0.019, -0.009], and full selection versus rank plus continuity improves all-query choice by 4.3 points [2.0, 6.7]. Revised Table 5 brings these distinct tests into the main text.
+
+These diagnostics do not quantify the recovery rate you requested. An unsuitable proposal appearing in a successful episode cannot be counted as a repair, and final SR minus proposal applicability has no such interpretation. A direct measurement needs independently labelled raw/refined/candidate-null actions from the same restored state, separate repair and harm counts, and a paired closed-loop full/null comparison. The null policy must retain episode recollection. We have clarified this evidence boundary; the numerical recovery and closed-loop contribution remain to be established.
+
+**W4 / Q3 — Additional tasks and more than 50% misleading experience.**
+The reported complete-event replacement tests cover Put Back Block and Press Button at 50% replacement. They do not establish robustness on other tasks or at higher replacement rates. Moreover, 100% nominal replacement need not eliminate relevant skills. A useful extension must report actual candidate coverage, prespecified additional tasks and the gate response, alongside SR. This empirical extension is still required.
+
+**W5 / Q4 — Computational cost and simpler alternatives.**
+We agree that deployment value requires a quantitative cost comparison. A fair table should state the device, precision, observations/history, K, NFE, execution prefix, median/p95 latency and peak memory. Module costs and end-to-end replanning should be distinguished, and success measurements should use a stated comparable cohort. We do not yet have the final-model matched cost measurements needed to answer the numerical part of this question.
+
+**W6 — Physical validation.**
+The physical results cover four tasks with 20 trials each and familiar objects under the stated layout, destination and order changes. They support reuse within that scope, rather than broad object/environment robustness. The revised scope statements make this distinction explicit; qualitative deployment sequences do not increase the quantitative trial denominator.
+
+LOCAL REVISION LOCATORS
+Experimental setup and simulation-results interpretation; Section 3.4 supervision; Section 4.7 / Table 5 (p.10); Appendix A.4; abstract/introduction/conclusion scope statements. Use the final uploaded version's locators before posting.
+
+INTERNAL OPEN ITEMS — REMOVE THIS BLOCK BEFORE ANY POST
+BB-W1/Q1: new matched uncertainty and a defensible explanation of the M(1) deficit.
+BB-W2: a common-information, common-budget simple training control or an explicit residual limitation.
+BB-W3/Q2: paired branch recovery/harm/null increments and paired closed-loop contribution.
+BB-W4/Q3: new tasks, >50% replacement and measured coverage.
+BB-W5/Q4: final-model cost and comparable simpler-policy measurement.
+BB-W6: no additional physical trials currently claimed.
+
+========================================================================
+EDITORIAL STATUS — LOCAL WORKING DRAFT, NOT POSTED
+W1–W5 are all covered below; Q1 routes to these five points. Cost, larger-bank and matched-training results remain open. No engineering-pilot result is presented as final-model evidence.
+
+Thank you for recognizing the practical importance of selecting useful experience from both the ongoing episode and the demonstration bank. We address the supervision concern first, then the comparisons, complexity and retrieval scope.
+
+**W5 — What does the candidate regularizer actually supervise?**
+We agree that assigning the demonstrated effect to different candidates does not directly teach the distinct true consequences of those alternatives. The utility-weighted candidate term is a shared-query regularizer. Its weights change the influence of each candidate, not its target, and a candidate-insensitive prediction can minimize that term alone.
+
+The shared action-conditioned effect head also receives factual supervision from the observed transition: the demonstrated action and current world features predict the observed effect, with historical-effect input zeroed. This anchors observed transitions, but does not by itself guarantee correct distinctions on retrieved alternatives. We have made both the role and the limitation explicit in Section 3.4 and Appendix A.4.
+
+Candidate sensitivity is therefore evaluated separately against independently executed actions. As reported in the submission's expanded cohort, centered MSE is 0.025 for predicted effects, versus 0.039 for the query-only reference and 0.040 for historical effects. The paired predicted-minus-query difference is -0.014 [-0.019, -0.009]. This supports discrimination on that cohort; it is not a claim that the regularizer supplies counterfactual labels or guarantees such discrimination for arbitrary actions. Revised Table 5 summarizes the relevant contrast.
+
+**W1 — MemoryWAM and the limited aggregate improvement.**
+MemoryWAM is a particularly relevant comparator. The reported RMBench aggregate difference is 0.9 points, with a 3.0-point deficit on M(1) and a 5.8-point gain on M(n). We now describe the gains as task dependent and do not infer statistical superiority from the published aggregate values. We do not have a matched LIBERO MemoryWAM result to add; an unverified score would not improve this comparison. The matched common-backbone comparison remains an empirical gap.
+
+**W2 — Computational cost.**
+The final-model cost comparison with FastWAM and MemoryWAM remains to be measured under stated, comparable device/input/inference settings. A smaller-model or engineering-checkpoint timing cannot substitute for it. We will keep model-only, end-to-end replanning and robot control rates distinct when reporting that measurement.
+
+**W3 — Complexity and the scientific contribution.**
+The central question is when retrieved action structure should influence generation. Recollection supplies episode-specific evidence, consequence comparison assesses proposals, and the shared gate couples selection to both source initialization and conditioning. We have clarified the supervision and withdrawal boundaries rather than treating the number of components as a contribution.
+
+The submitted learned/constant-utility experiment provides one controlled test of adaptive strength: on the similar-distractor condition, the macro gain is 11.0 points, with a descriptive interval [7.7, 14.3] over three paired training seeds. The [8.3, 12.7] interval describes the different quantity, reduction in the normal-to-similar drop. These small-seed results support that specific comparison, not the necessity of every component or superiority to a simpler experience-conditioned policy.
+
+**W4 — How difficult is retrieval?**
+The limited physical demonstration bank does not establish retrieval quality in a large, diverse repertoire. The retrieval key includes a closed-set task block as well as visual features; that block contributes similarity rather than hard-filtering all cross-task events. A more discriminating test needs controlled repertoire diversity/size and nonempty banks missing the required skill, with actual coverage and gate behavior reported. The present scope is stated explicitly, and this larger-bank test remains open.
+
+**Q1 — Coverage.**
+The five sections above correspond to W1–W5. Please let us know which part of the supervision distinction or existing mechanism evidence still leaves the concern unresolved.
+
+INTERNAL OPEN ITEMS — REMOVE THIS BLOCK BEFORE ANY POST
+HH-W1: matched comparison; no invented MemoryWAM LIBERO score.
+HH-W2: final-model comparable costs.
+HH-W3: simplest common-information training control and cost/value evidence.
+HH-W4: nonempty missing-skill and diversity/coverage tests.
+HH-W5: new independent branch evidence; L_fact-only training ablation only if feasible and decision relevant.
+
+========================================================================
+EDITORIAL STATUS — LOCAL WORKING DRAFT, NOT POSTED
+Scope and adaptation semantics can be clarified now. New geometry/quality and no-skill performance results have not been obtained and are not claimed below.
+
+Thank you for recognizing the motivation for adapting the influence of retrieved experience to the current situation. Your distinction between reuse within known tasks and generalization to new tasks is important to the interpretation of our results.
+
+**W1 / W2 — Evaluation scope.**
+We agree with the scope distinction. RMBench uses task-specific models/configurations and retrieval includes closed-set task identity. The physical tasks use familiar objects, and all evaluations are tabletop manipulation. These results support experience reuse within the evaluated known-task settings; they do not establish a unified policy for unseen tasks or non-tabletop transfer. We have made this explicit in the abstract, introduction, experimental setup and conclusion, and have made the task-level positive and negative differences visible.
+
+**Q1 — Experience quality, diversity and position differences.**
+The alignment operator is defined in control coordinates. For absolute joint commands, it shifts arm targets using the difference between current and stored start states, preserving gripper commands, followed by a bounded learned residual. This is not an object-frame transformation that guarantees success when a plate is moved. A different plate position can alter visual context, proposal suitability and the required correction. Appendix A.2 now states this boundary directly.
+
+The current physical results demonstrate the stated layout/destination/order variations, rather than a calibrated displacement tolerance. Quality, diversity, repertoire size and geometric displacement also require distinct interventions; changing all of them together would obscure the cause. A controlled position test and quantitative dependence on actual candidate coverage remain to be measured.
+
+**Q2 — A nonempty bank with no relevant skill.**
+Proposition 1 establishes withdrawal conditional on g=0, while retaining episode recollection. It does not show that the learned gate naturally detects every bank lacking the required skill, and it does not guarantee unchanged SR. An empty bank or 100% nominal replacement does not answer the same question: replacement events may still provide relevant actions.
+
+A direct test should remove the target skill from a nonempty, size-controlled bank, retain the policy and task input dimensions, and measure natural false activation, coverage, gate values and paired full/candidate-null SR. The null reference must retain the episode-memory mechanism; in closed-loop runs each policy updates its own history after the shared reset. Without such outcomes and an adequately precise difference interval, we cannot claim non-inferiority. We have clarified this limitation; the requested empirical performance comparison is still open.
+
+INTERNAL OPEN ITEMS — REMOVE THIS BLOCK BEFORE ANY POST
+RK-Q1: quality/coverage and controlled object/container displacement measurements.
+RK-Q2: operational missing-skill definition, natural gate and paired SR; no post-hoc threshold tuning or significance-as-equivalence claim.
