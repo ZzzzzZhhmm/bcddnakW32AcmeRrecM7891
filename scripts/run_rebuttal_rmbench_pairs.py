@@ -12,6 +12,7 @@ import importlib
 import json
 import os
 from pathlib import Path
+import random
 import sys
 import time
 import traceback
@@ -122,6 +123,7 @@ def main():
             admission={'kind':'seed_admission','seed':seed,'candidate_number':candidate_number}
             print(f'stage=expert_seed_check task={task} seed={seed}',flush=True)
             try:
+                random.seed(seed)
                 env.setup_demo(**config)
                 info=env.play_once()
                 env.close_env()
@@ -138,6 +140,22 @@ def main():
             index=completed+args.case_index_offset
             case=out/f'case-{index:04d}-seed-{seed}';case.mkdir()
             (case/'expert_info.json').write_text(json.dumps(info,indent=2))
+            # Test reset pairing before expensive model construction. The
+            # pinned environment resets NumPy/Torch; seed Python explicitly
+            # as part of this separately identified paired-reset protocol.
+            preflight_reference=None
+            for reset_number in range(2):
+                random.seed(seed)
+                env.setup_demo(**config)
+                descriptions=generate_episode_descriptions(task,[info['info']],100)
+                instruction=str(np.random.choice(descriptions[0]['unseen']))
+                env.set_instruction(instruction=instruction)
+                identity={'observation_arrays':save_observation(case/f'reset-preflight-{reset_number}.npz',env.get_obs()),
+                          'task_state':initial_task_values(),'instruction':instruction}
+                (case/f'reset-preflight-{reset_number}.json').write_text(json.dumps(identity,indent=2))
+                env.close_env(clear_cache=True)
+                if preflight_reference is None:preflight_reference=identity
+                elif identity!=preflight_reference:raise RuntimeError('reset identity qualification failed before policy loading')
             # Fixed before seeing either role's result. Separate owned policy
             # capabilities avoid replaying a consumed BoundOnlineStep.
             if not policies:
@@ -149,7 +167,7 @@ def main():
                     policy.model.configure_research_probe(capture=True,force_null=role=='candidate_null')
                     policy._next_episode_index=args.case_index_offset
                     policies[role]=policy
-            pair={};reference=None
+            pair={};reference=preflight_reference
             # Counterbalance which implementation runs first by frozen case ID.
             role_order=('full','candidate_null') if index%2==0 else ('candidate_null','full')
             for role in role_order:
@@ -160,6 +178,7 @@ def main():
                 append_record(out/'events.jsonl',record)
                 commands=[];qpos_before=[];qpos_after=[]
                 try:
+                    random.seed(seed)
                     env.setup_demo(**config)
                     descriptions=generate_episode_descriptions(task,[info['info']],100)
                     instruction=str(np.random.choice(descriptions[0]['unseen']))
@@ -167,8 +186,7 @@ def main():
                     obs=env.get_obs();initial_images=save_observation(role_dir/'initial_observation.npz',obs)
                     identity={'observation_arrays':initial_images,'task_state':initial_task_values(),'instruction':instruction}
                     (role_dir/'initial_identity.json').write_text(json.dumps(identity,indent=2))
-                    if reference is None:reference=identity
-                    elif identity!=reference:raise RuntimeError('fresh-reset role pair has different initial state, cameras or instruction')
+                    if identity!=reference:raise RuntimeError('fresh-reset role pair has different initial state, cameras or instruction')
                     policy.reset()
                     if policy.controller.active_episode_index!=index:raise RuntimeError('policy episode cursor does not match the pair')
                     limit=env.step_lim if args.command_cap is None else min(env.step_lim,args.command_cap)
