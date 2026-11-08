@@ -1,0 +1,181 @@
+{
+  "schema": "warm.rebuttal.p0-evidence-plan.v3",
+  "frozen_on": "2026-11-08",
+  "objective": "Directly resolve the mechanism, natural fallback and same-information control concerns; target post-rebuttal ratings of332 or333.",
+  "checkpoint_sha256": "68c7f3840921241df45a5b6997b772db3a69a31584644aa0e66929b841b845bf",
+  "tasks": [
+    "rearrange_blocks",
+    "battery_try"
+  ],
+  "task_selection": "Prespecified M1 deficit and Mn feedback task, using the two previously qualified simulator implementations, before new policy outcomes.",
+  "inference": {
+    "precision": "bf16",
+    "horizon": 32,
+    "execution_prefix": 4,
+    "nfe": 10,
+    "top_k": 32,
+    "recent_capacity": 20,
+    "summary_capacity": 8
+  },
+  "closed_loop": {
+    "roles": [
+      "full",
+      "candidate_null"
+    ],
+    "candidate_null": "Force both retrieved-source and retrieved-conditioning gates to zero; retain native episode recollection.",
+    "reset_seed_start": 340800000,
+    "candidate_seed_limit": 2000,
+    "accepted_episodes_per_task_per_condition": 50,
+    "seed_admission": "Pinned official expert plan/success check only, shared across roles; preserve every rejected or errored seed and its reason.",
+    "instruction": "Pinned official unseen descriptions, selected deterministically after reset and verified identical across the pair.",
+    "success": "Official executor eval_success at the official task step limit; runtime-invalid and interrupted attempts retained separately.",
+    "reset_pair_checks": [
+      "object/goal logical state",
+      "native joint observation",
+      "initial camera pixels",
+      "instruction"
+    ],
+    "statistics": "Paired episode differences, task-specific and fixed-task macro; confidence intervals and discordant counts. No training-seed uncertainty claim."
+  },
+  "local_recovery": {
+    "roles": [
+      "raw",
+      "refined",
+      "candidate_null"
+    ],
+    "horizon": 32,
+    "query_replan_ordinals": [
+      0,
+      8,
+      24,
+      48,
+      80,
+      120
+    ],
+    "schedule": "Queries encountered on the fixed Full factual trajectory; unavailable ordinals retained as not reached, never replaced according to outcomes.",
+    "source_episodes_per_task": 20,
+    "labels": "Task-predicate next-interaction outcomes with sealed definitions and independent traces; no prediction-derived labels.",
+    "statistics": "Repair, harm, net change and refined-minus-null on shared known-label support, with source-episode clustering.",
+    "qualification": "Actual WARM history/cursors and exact native-state restoration at every admitted stage before scientific branches."
+  },
+  "candidate_specific_effects": {
+    "source_episodes_per_task": 10,
+    "query_replan_ordinals": [
+      8,
+      48
+    ],
+    "candidate_slots": 32,
+    "references": [
+      "predicted",
+      "query_only",
+      "historical"
+    ],
+    "outcomes": [
+      "centered effect error",
+      "within-query ordering",
+      "complete pool coverage",
+      "selector applicability"
+    ],
+    "qualification": "Frozen semantic encoder/projection; common candidate/endpoint support; repeatability tolerances fixed on excluded pilot states."
+  },
+  "missing_skill": {
+    "nonempty_conditions": [
+      "clean_size_matched",
+      "target_skill_family_holdout"
+    ],
+    "accepted_pairs_per_task": {
+      "clean_size_matched": 50,
+      "target_skill_family_holdout": 200
+    },
+    "search_universe_seed": 3407,
+    "noninferiority_margin_absolute_success": 0.02,
+    "confidence": "Primary Rearrange Blocks only: one-sided95% paired-risk lower bound with exact gain/harm marginal tails at alpha/2 each;2pp margin and200 complete pairs. Battery Try20-pair results are descriptive task-specific paired evidence, not a2pp noninferiority claim.",
+    "noninferiority_admission": "Only all200 prespecified Rearrange Blocks pairs, without missing/invalid roles, may establish the primary2pp margin. Report all discordances, null success, common failures and actual candidate coverage. A performance-floor result does not establish useful fallback competence.",
+    "bank_size_control_required": true,
+    "taxonomy": "Annotate task/interaction families before evaluation; distinguish missing terminal skill from retained generic grasp/transport primitives.",
+    "coverage_validation": "Execute retrieved pools at prespecified diagnostic queries. Task-name removal alone is not evidence of zero relevant-skill coverage.",
+    "outcomes": [
+      "measured candidate coverage",
+      "natural gate/false activation",
+      "paired Full/null success"
+    ],
+    "rejection_threshold_tuned_on_test": false,
+    "primary_counts_by_task": {
+      "rearrange_blocks": {
+        "clean_size_matched": 50,
+        "target_skill_family_holdout": 200
+      },
+      "battery_try": {
+        "clean_size_matched": 20,
+        "target_skill_family_holdout": 20
+      }
+    },
+    "collector_count_compatibility": "accepted_pairs_per_task provides shared collector upper bounds; launchers must enforce the tighter primary_counts_by_task. Reports must use actual prespecified task counts, never the upper bound.",
+    "primary_noninferiority_tasks": [
+      "rearrange_blocks"
+    ],
+    "null_execution": "Independent null roles in each condition. No cross-condition null reuse in the primary protocol."
+  },
+  "simple_control": {
+    "status": "conditioned-prior initial100-update segment running; neither3000-update arm complete",
+    "required_information": [
+      "same current observations",
+      "same factual episode history",
+      "same candidate pool"
+    ],
+    "required_budget": [
+      "same base checkpoint",
+      "same train/dev split",
+      "same optimizer schedule",
+      "same effective batch128",
+      "same3000 optimizer updates",
+      "same checkpoint selection rule"
+    ],
+    "planned_control": "Separately trained coarse top1 fixed0.25 action prior plus four lossless direct-action condition tokens and the same eight factual-history gist slots, without learned action adaptation, effect predictor, reranker or confidence gate.",
+    "implementation": "fastwam.research.simple_prior.create_conditioned_prior; distinct schema. See rebuttal_matched_conditioned_control_plan.json for the preregistered recipe.",
+    "matched_reference": "New Full and simple-prior runs both start at the identical immutable FastWAM release with fresh optimizers, original30k-step scheduler, and fixed3000-update selection. This new single-GPU cohort does not silently replace the historical4-GPU resumed model.",
+    "training_seed_plan": [
+      3407,
+      3408,
+      3409
+    ],
+    "execution": "First complete the fixed3000-update Full/control comparison for seed3407. Additional predeclared seeds are secondary after primary evidence. Report actual completed seeds and no unsupported training-seed uncertainty.",
+    "production_algorithm_changes": false,
+    "primary_training_seeds": [
+      3407
+    ],
+    "secondary_training_seed_order": [
+      3408,
+      3409
+    ],
+    "matched_evaluation_pairs_per_task": 50
+  },
+  "qualification_pilot": {
+    "seeds": [
+      3407,
+      3408
+    ],
+    "excluded_from_formal_cohort": true
+  },
+  "reporting": {
+    "all_attempts_preserved": true,
+    "raw_outputs_outside_git": true,
+    "no_result_conditioned_stopping": true,
+    "do_not_replace_original_paper_numbers": true
+  },
+  "amendment": "Single-H100 primary allocation, frozen before any qualified corrected formal episode outcome. Supersedes v2 primary sample targets; v2 and its excluded/failed attempts remain preserved.",
+  "resource_allocation": {
+    "available_gpus": "one H10080GB, confirmed by author",
+    "evaluation_workers": 2,
+    "training_exclusive": true,
+    "priority": [
+      "repair and action-specific consequences",
+      "natural missing-skill behavior with primary M1 noninferiority",
+      "same-budget conditioned control",
+      "main Full/null pairing"
+    ],
+    "planning_basis": "Observed excluded700-command role about17 minutes, plus measured cold-load and update costs. This is an engineering schedule estimate, not a guarantee of completion or a latency benchmark.",
+    "admission": "Measure actual two-worker throughput and CCI downtime; preserve fixed primary cohorts and never stop based on favorable outcomes. Training keeps the original30k scheduler and fixed3000-update selection.",
+    "historical_plan": "The larger v2 targets and all three training seeds are secondary extensions; incomplete extensions do not enter completed-cohort claims."
+  }
+}

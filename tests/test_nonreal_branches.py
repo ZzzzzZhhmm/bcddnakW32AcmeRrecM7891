@@ -2,7 +2,7 @@ import copy
 import numpy as np
 import pytest
 
-from fastwam.research.branches import STATE_COMPONENTS, StepResult, execute_branches
+from fastwam.research.branches import STATE_COMPONENTS, InvalidBranchExecution, StepResult, execute_branches
 
 
 class Toy:
@@ -87,3 +87,43 @@ def test_independent_outcome_read_before_parent_restoration():
     assert result[0]["independent_outcome"] == {"task_progress": 7}
     assert result[0]["observed_effect"] is None
     assert backend.n == 0
+
+
+def test_known_executor_rejection_can_continue_only_after_exact_restoration():
+    class RejectOne(Toy):
+        def step(self, command):
+            if command[0] == 1 and self.n == 2:
+                raise InvalidBranchExecution('known planner rejection')
+            return super().step(command)
+    backend, rows = RejectOne(), []
+    result=execute_branches(backend,query_id='q',candidates={'bad':np.ones((32,2)),'good':np.zeros((32,2))},
+        proposal_sha256='a'*64,project_effect=lambda before,delta:delta,emit=rows.append,
+        continue_invalid_execution=True)
+    assert backend.n==0 and len(rows)==4
+    assert result[0]['endpoint_status']=='invalid_branch' and result[0]['executed_steps']==2
+    assert result[0]['observed_effect'] is None and result[0]['parent_restored'] is True
+    assert 'independent_outcome' not in result[0]
+    assert result[1]['endpoint_status']=='complete_horizon' and result[1]['observed_effect']==[32.,0.]
+
+
+@pytest.mark.parametrize('backend',[Toy(fail=2),Toy(bad_restore=True)])
+def test_opt_in_continuation_does_not_hide_unrelated_errors_or_restore_failures(backend):
+    rows=[]
+    with pytest.raises(RuntimeError,match='recorded'):
+        execute_branches(backend,query_id='q',candidates={'a':np.ones((32,2)),'b':np.zeros((32,2))},
+            proposal_sha256='a'*64,project_effect=lambda before,delta:delta,emit=rows.append,
+            continue_invalid_execution=True)
+    assert len(rows)==2
+
+
+def test_executor_rejection_followed_by_bad_restore_still_stops():
+    class BadAfterRejection(Toy):
+        def step(self,command):
+            self.bad_restore=True
+            raise InvalidBranchExecution('known rejection')
+    rows=[]
+    with pytest.raises(RuntimeError,match='recorded'):
+        execute_branches(BadAfterRejection(),query_id='q',candidates={'a':np.zeros((32,2)),'b':np.ones((32,2))},
+            proposal_sha256='a'*64,project_effect=lambda before,delta:delta,emit=rows.append,
+            continue_invalid_execution=True)
+    assert len(rows)==2 and rows[-1]['parent_restored'] is False

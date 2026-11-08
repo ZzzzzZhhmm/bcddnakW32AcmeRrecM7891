@@ -15,7 +15,7 @@ import random
 
 import numpy as np
 
-from .branches import StepResult
+from .branches import InvalidBranchExecution, StepResult
 
 
 @dataclass
@@ -291,7 +291,7 @@ class RMBenchQposBackend:
         self.topp_errors = []
         self.env.take_action(command.copy(), action_type="qpos")
         if self.topp_errors:
-            raise RuntimeError("official TOPP failed inside branch: " + str(self.topp_errors))
+            raise InvalidBranchExecution("official TOPP failed inside branch: " + str(self.topp_errors))
         executed = self.env.take_action_cnt == before + 1
         self.obs = self.env.get_obs()
         self.last_outcome = {"success": bool(self.env.eval_success), "executed": executed}

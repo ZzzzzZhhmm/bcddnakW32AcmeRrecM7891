@@ -18,6 +18,10 @@ import numpy as np
 STATE_COMPONENTS = frozenset({"physics", "controller", "task", "rng", "observation", "policy"})
 
 
+class InvalidBranchExecution(RuntimeError):
+    """Known executor rejection; never a complete endpoint or a zero effect."""
+
+
 @dataclass(frozen=True)
 class StepResult:
     executed: bool
@@ -46,12 +50,15 @@ def execute_branches(backend: BranchBackend, *, query_id: str,
                      proposal_sha256: str,
                      project_effect: Callable[[np.ndarray, np.ndarray], np.ndarray],
                      emit: Callable[[dict], None], horizon: int = 32,
-                     observe_outcome: Callable[[], dict] | None = None) -> list[dict]:
+                     observe_outcome: Callable[[], dict] | None = None,
+                     continue_invalid_execution: bool = False) -> list[dict]:
     """Record every attempt, run H commands without replanning, always restore.
 
     `candidates` are denormalized adapted means, not stored actions or new policy
     rollouts. Predictions/labels must be sealed elsewhere before entering here.
     A restore mismatch stops the job; it can never silently poison later queries.
+    Opt-in continuation handles only a typed executor rejection after exact
+    restoration. Unrelated exceptions and restoration failures always stop.
     """
     if type(horizon) is not int or horizon <= 0 or not query_id:
         raise ValueError("positive integer horizon and query_id required")
@@ -124,6 +131,7 @@ def execute_branches(backend: BranchBackend, *, query_id: str,
             row["endpoint_status"] = "invalid_branch"
             row["error"] = f"{type(e).__name__}: {e}"
             failure = e
+            row["known_executor_rejection"] = isinstance(e, InvalidBranchExecution)
         finally:
             try:
                 restore()
@@ -134,6 +142,9 @@ def execute_branches(backend: BranchBackend, *, query_id: str,
                 failure = e
             emit(deepcopy({**row, "kind": "branch_result"}))
         results.append(row)
-        if failure is not None:
+        if failure is not None and not (
+            continue_invalid_execution and isinstance(failure, InvalidBranchExecution)
+            and row.get("parent_restored") is True
+        ):
             raise RuntimeError("branch failed; attempt/result were recorded") from failure
     return results

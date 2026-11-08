@@ -33,6 +33,7 @@ def main():
     p.add_argument('--trajectory-commands',type=int,default=8)
     p.add_argument('--query-ordinals',type=int,nargs='+',default=[1])
     p.add_argument('--null-execution',choices=('independent','shared_weights'),default='independent')
+    p.add_argument('--candidate-pool',action='store_true',help='Also execute all valid original K32 adapted proposals from each sealed parent')
     args=p.parse_args()
     if args.trajectory_commands<8 or any(q<1 for q in args.query_ordinals):
         raise ValueError('actual factual history and a later query are required')
@@ -57,6 +58,8 @@ def main():
     from fastwam.research.policy_state import deployed_policy_fingerprint,digest_state
     from fastwam.research.inference_replica import shared_weight_inference_replica,assert_shared_weights_unchanged
     from fastwam.research.policy_state import THREAD_FIELDS
+    from fastwam.research.candidate_pool import decode_branch_actions,prepare_candidate_pool,centered_effect_metrics
+    from scripts.assemble_nonreal_candidates import assemble
     from fastwam.research.query_capture import capture_online_replan,generate_captured_null
     from fastwam.research.rmbench_outcomes import observe_task_progress,label_next_interaction
     from fastwam.models.warm.retrospection_model import _spatial_effect_summary
@@ -78,7 +81,8 @@ def main():
     identity=dict(core_source_sha256=source['sha256'],collector_source_sha256=source_identity(ROOT)['sha256'],
         simulator_source=simulator_identity(runtime_root),checkpoint_sha256=sha256_file(artifacts['warm_checkpoint']),
         task=task,seed=args.seed,phase='excluded_actual-history_restoration_pilot',horizon=32,execution_prefix=4,
-        planned_query_ordinals=args.query_ordinals,trajectory_commands=args.trajectory_commands,null_execution=args.null_execution)
+        planned_query_ordinals=args.query_ordinals,trajectory_commands=args.trajectory_commands,null_execution=args.null_execution,
+        execute_candidate_pool=args.candidate_pool)
     (out/'identity.json').write_bytes(canonical(identity))
     os.chdir(runtime_root);sys.path[:0]=[str(runtime_root),str(runtime_root/'description/utils')]
     from generate_episode_instructions import generate_episode_descriptions
@@ -141,11 +145,7 @@ def main():
                                    'refined_repeat':capture['action'].copy()}
                     commands={}
                     for role,action in model_actions.items():
-                        native=full.action_normalizer.denormalize(action)
-                        returned=full.action_normalizer.normalize(native,fail_on_clip=True)
-                        if not np.allclose(returned,action,rtol=1e-5,atol=2e-6):
-                            raise RuntimeError('shared action normalization round trip failed: '+role)
-                        commands[role]=native
+                        commands[role]=decode_branch_actions(full.action_normalizer,action)
                     np.savez_compressed(qdir/'sealed_actions.npz',**commands)
                     step=capture['online_step']
                     query_identity=dict(identity,bound_step_sha256=step.step_sha256,
@@ -159,6 +159,21 @@ def main():
                     (qdir/'context_non_tensor_fields.json').write_bytes(canonical({name:value for name,value in context_values.items() if not torch.is_tensor(value)}))
                     proposal=write_probe(qdir/'probes','full',probe,query_identity)
                     write_probe(qdir/'probes','candidate-null',alternative['probe'],query_identity)
+                    pool_commands=None
+                    if args.candidate_pool:
+                        pool_commands,pool_native,pool_evidence=prepare_candidate_pool(probe,full.action_normalizer)
+                        # This second index uses the actual query ID expected
+                        # by the candidate assembler, also before any truth.
+                        pool_probe=write_probe(qdir/'candidate-pool-probe',query_id,probe,
+                            dict(query_identity,event_ids=query_identity['candidate_event_ids']))
+                        np.savez_compressed(qdir/'sealed_pool_native_actions.npz',actions=pool_native)
+                        pool_evidence.update(native_actions_sha256=sha256_file(qdir/'sealed_pool_native_actions.npz'),
+                            probe_metadata_sha256=pool_probe['metadata_sha256'],before_any_branch_truth=True)
+                        (qdir/'sealed_candidate_pool.json').write_bytes(canonical(pool_evidence))
+                        pool_index=dict(task=task,episode_id=f'pilot-{args.seed}',query_id=query_id,
+                            cohort='excluded_live_history_candidate_pool_qualification',probe_path=pool_probe['path'],
+                            probe_metadata_sha256=pool_probe['metadata_sha256'])
+                        append_record(out/'candidate_index.jsonl',pool_index)
                     sealed=dict(identity,query_id=query_id,gate=float(probe['arrays']['g'].reshape(-1)[0]),
                         raw_definition='Selected current-state adapted proposal immediately before source mixing/flow; not unwarped stored qpos.',
                         factual_rng_isolated=alternative['factual_rng_isolated'],
@@ -179,11 +194,17 @@ def main():
                         if dict(backend.fingerprint())!=before_read or not np.array_equal(parent_features,step.factual_world_tokens):
                             raise RuntimeError('independent effect reader differs from actual retrieval tokens or mutated parent')
                         np.save(qdir/'parent_dino_spatial.npy',parent_features,allow_pickle=False)
+                        outcome_parent_fingerprint=dict(backend.fingerprint())
+                        parent_outcome=observe_task_progress(env)
+                        if dict(backend.fingerprint())!=outcome_parent_fingerprint:
+                            raise RuntimeError('independent parent outcome reader mutated live state')
+                        (qdir/'parent_outcome.json').write_bytes(canonical(parent_outcome))
                         (qdir/'parent_receipt.json').write_bytes(canonical(dict(sealed_query_sha256=seal_sha,
                             parent_state_sha256=sha256_file(qdir/'parent_state.pickle'),
                             parent_dino_spatial_sha256=sha256_file(qdir/'parent_dino_spatial.npy'),
+                            parent_outcome_sha256=sha256_file(qdir/'parent_outcome.json'),
                             exact_retrieval_spatial_tokens=True,before_any_branch_truth=True)))
-                        parent_outcome=observe_task_progress(env);endpoints=[]
+                        endpoints=[]
                         def observe_outcome():
                             outcome=observe_task_progress(env)
                             observed={'task_progress':outcome,'endpoint_fingerprint':dict(backend.fingerprint()),
@@ -196,6 +217,39 @@ def main():
                             horizon=32,emit=lambda row:append_record(qdir/'branches.jsonl',row),
                             project_effect=lambda before,delta:_spatial_effect_summary(torch.from_numpy(delta)[None],torch.from_numpy(before)[None])[0].numpy(),
                             observe_outcome=observe_outcome)
+                        if endpoints[1]['endpoint_fingerprint']!=endpoints[3]['endpoint_fingerprint'] or endpoints[1]['rgb_sha256']!=endpoints[3]['rgb_sha256']:
+                            raise RuntimeError('actual-model refined branch repeat is not exact')
+                        if pool_commands is not None:
+                            print('stage=sealed_K32_execution query_id='+query_id,flush=True)
+                            pool_trace=[]
+                            def emit_pool(row):
+                                pool_trace.append(row);append_record(out/'candidate_branches.jsonl',row)
+                            pool_results=execute_branches(backend,query_id=query_id,candidates=pool_commands,
+                                proposal_sha256=pool_probe['metadata_sha256'],horizon=32,emit=emit_pool,
+                                project_effect=lambda before,delta:_spatial_effect_summary(torch.from_numpy(delta)[None],torch.from_numpy(before)[None])[0].numpy(),
+                                observe_outcome=observe_outcome,continue_invalid_execution=True)
+                            selected_result=next((r for r in pool_results if r['candidate_id']==f'rank-{idx}'),None)
+                            if selected_result is None or selected_result['independent_outcome']!=results[0]['independent_outcome']:
+                                raise RuntimeError('selected pool proposal did not reproduce the earlier raw endpoint')
+                            pool_labels=[]
+                            for result in pool_results:
+                                if result['endpoint_status']=='invalid_branch':
+                                    label=dict(applicable=None,label_provenance=parent_outcome['rubric'],
+                                        reason='Known executor rejection; no complete endpoint or imputed label.',
+                                        terminal_success=None)
+                                else:
+                                    label=label_next_interaction(parent_outcome,result['independent_outcome']['task_progress'],valid_branch=True)
+                                row=dict(query_id=query_id,candidate_id=result['candidate_id'],**label)
+                                pool_labels.append(row);append_record(out/'candidate_labels.jsonl',row)
+                            assembled,=assemble([pool_index],pool_trace,pool_labels)
+                            append_record(out/'candidate_effects.jsonl',assembled)
+                            centered=dict(task=task,episode_id=pool_index['episode_id'],query_id=query_id,
+                                **centered_effect_metrics(assembled))
+                            append_record(out/'centered_effects.jsonl',centered)
+                            print(json.dumps(dict(stage='candidate_pool_complete',query_id=query_id,
+                                complete_horizons=sum(r['endpoint_status']=='complete_horizon' for r in pool_results),
+                                independently_known_labels=sum(r['applicable'] is not None for r in pool_labels),
+                                observed_centered_variance=centered['observed_centered_variance'])),flush=True)
                     # Repeated refined actions must reproduce all saved endpoint
                     # components and RGB; do not derive tolerances from outcomes.
                     if endpoints[1]['endpoint_fingerprint']!=endpoints[3]['endpoint_fingerprint'] or endpoints[1]['rgb_sha256']!=endpoints[3]['rgb_sha256']:
