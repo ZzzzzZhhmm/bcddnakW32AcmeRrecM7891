@@ -32,7 +32,7 @@ We agree that deployment value requires a quantitative cost comparison. A fair t
 The physical results cover four tasks with 20 trials each and familiar objects under the stated layout, destination and order changes. They support reuse within that scope, rather than broad object/environment robustness. The revised scope statements make this distinction explicit; qualitative deployment sequences do not increase the quantitative trial denominator.
 
 LOCAL REVISION LOCATORS
-Experimental setup and simulation-results interpretation; Section 3.4 supervision; Section 4.7 / Table 5 (p.10); Appendix A.4; abstract/introduction/conclusion scope statements. Use the final uploaded version's locators before posting.
+Experimental setup and simulation-results interpretation; Section 3.5 supervision; Section 4.7 / Table 5 (p.10); Appendix A.4; abstract/introduction/conclusion scope statements. Use the final uploaded version's locators before posting.
 
 INTERNAL OPEN ITEMS — REMOVE THIS BLOCK BEFORE ANY POST
 BB-W1/Q1: new matched uncertainty and a defensible explanation of the M(1) deficit.
@@ -51,7 +51,7 @@ Thank you for recognizing the practical importance of selecting useful experienc
 **W5 — What does the candidate regularizer actually supervise?**
 We agree that assigning the demonstrated effect to different candidates does not directly teach the distinct true consequences of those alternatives. The utility-weighted candidate term is a shared-query regularizer. Its weights change the influence of each candidate, not its target, and a candidate-insensitive prediction can minimize that term alone.
 
-The shared action-conditioned effect head also receives factual supervision from the observed transition: the demonstrated action and current world features predict the observed effect, with historical-effect input zeroed. This anchors observed transitions, but does not by itself guarantee correct distinctions on retrieved alternatives. We have made both the role and the limitation explicit in Section 3.4 and Appendix A.4.
+The shared action-conditioned effect head also receives factual supervision from the observed transition: the demonstrated action and current world features predict the observed effect, with historical-effect input zeroed. This anchors observed transitions, but does not by itself guarantee correct distinctions on retrieved alternatives. We have made both the role and the limitation explicit in Section 3.5 and Appendix A.4.
 
 Candidate sensitivity is therefore evaluated separately against independently executed actions. As reported in the submission's expanded cohort, centered MSE is 0.025 for predicted effects, versus 0.039 for the query-only reference and 0.040 for historical effects. The paired predicted-minus-query difference is -0.014 [-0.019, -0.009]. This supports discrimination on that cohort; it is not a claim that the regularizer supplies counterfactual labels or guarantees such discrimination for arbitrary actions. Revised Table 5 summarizes the relevant contrast.
 

@@ -535,3 +535,35 @@ ACP启动器会逐worker在真实可见GPU下检验CUDA分配、渲染和恢复�
 候选LaTeX工程已独立编译为33页。72dpi逐页渲染比较显示第2–33页逐像素相同，第1页只差OpenReview附加审稿提示；文本抽取差异主要是数学字体ToUnicode编码。源工程及原件未改动，完整副本和比较记录在`tmp/rebuttal/revision/`。
 
 本地修订v1编译为34页，正文结束于第10页；只做监督语义、指标/cohort、已报告机制证据、M(1)负差、已知任务/桌面范围和实际AI用途澄清，保留原实验数值。新DEV4工程pilot没有回填为论文结果。仅在修订副本清理作者已解释的旧synthetic/TBD注释；原工程完整保留。源差异版本化为`docs/rebuttal/MANUSCRIPT_REVISION_V1.patch`。
+
+最终v1交付件为`tmp/rebuttal/revision/WARM_ICLR2027_revision_v1.pdf`，SHA-256 `96ea251702bcc7020a6dee49fcb22a5142ecbf315afe9b2d3304bea40c788315`；完整可编辑源包为同目录`WARM_ICLR2027_revision_v1_source.zip`，SHA-256 `ea973e283dbaa2af294ff8af8d2f4820b31cd9ad3d8bb76b5a537e3b763d75b1`。34页均已渲染检查；原四张主表、C.2数值表和九个图文件保持原样。修订v1并非新增实验完成后的最终稿，未上传OpenReview或写入Inscrive。
+
+### 19.4 DEV50 Full / scale-only / Gaussian共同噪声诊断（工程证据）
+
+- 固定代码`S/rebuttal_20261108/dev50_23d86dd/code/`来自提交`23d86ddd4a21fbb07d46f7ccfcd020a939d702b7`；Git archive SHA-256 `cba0684dc30e5e32d82ace889be5bb062594b996d14cfcee5c2725f98e98a30a`，runner源码集合SHA-256 `ff6a66121cbede70ae6bcb52a8070eab969cf274871e0d48ffc1f472c9bd5951`，运行前后一致。checkpoint与训练配置同19.2，均在运行前核验哈希。
+- Press Button、Put Back Block各5个DEV来源episode、每episode 5个冻结前缀：共10 episode / 50 query，每query三种source模式。H32×14、NFE10、seed3407、BF16。DEV4 pilot属于该DEV50集合，不将二者相加称为54个query。
+- 逐query核对共享Gaussian噪声、conditioning、自然g、alpha、候选索引、adapted actions和valid mask一致；Full与scale-only的噪声尺度也一致。scale-only仅移除source动作均值，Gaussian另外恢复单位噪声尺度。这是固定checkpoint推理干预，不是匹配训练消融。
+- **50/50自然门控非零**，三模式mean g均为`0.1885546875`。Full与scale-only的mean noise-scale-squared均为`0.7214434814453125`；Gaussian为`1.0`。
+- 相对Full，scale-only的source RMS差均值为`0.16606547594070434`，生成action RMS差均值为`0.08441442349925637`；Gaussian分别为`0.2231895759701729`和`0.08490878326818346`。另外直接比较Gaussian与scale-only的action RMS差均值为`0.01029347077012062`。这些单位均为归一化模型动作坐标、先逐query求RMS再取均值，不能解释成物理动作误差或收益。
+- 数据身份：bank `758bfee0225ef33fe1e158502949f296318144438cff531a84fe0c0ebc0c336c`；query corpus `9b568fad0eee677cf6df4d6335fe61c4b248d0bafa3941667596001a10a887ab`；normalizer `2cac1e1b434b2a339f2e4eddeab7815682e243d59428bc7dcaddca14f173746d`；冻结prefix manifest `9a03542fc9dc532558848a50ed39ee732a6854cd02b3511a488a441abeabf1c6`。
+- 三模式子进程均exit0；job `dev50_job_logs/20261108T073515Z-4606f9d1/`，elapsed `1614.6069943904877`秒，包含三次初始化及同卡资源竞争，不作正式部署成本。原输出`S/rebuttal_20261108/dev50_source_modes/`；证据包`S/rebuttal_20261108/archives/dev50_source_modes_evidence.tar.gz`，SHA-256 `ebf1f1f6e4332d338ba78d35cb1e905f5d4ec505eb914031bd0d45043540ecb9`；本地同名副本在`tmp/rebuttal/execution/20261108/evidence/`。
+- 本地从归档原数组重新运行`scripts/verify_nonreal_source_archive.py`并计算额外RMS，结果为`evidence/DEV50_VERIFICATION.json`。JSON/NPZ哈希、共同输入、源码身份、样本矩阵和失败状态均通过核验。
+- **支持的准确主张：** 当前v8-step3000在这10个DEV来源episode的事实历史输入上，对source动作均值存在生成输出敏感性；固定方差时差异仍非零。**不支持：** 候选适用性、生成修复/损害率、闭环成功率、自然无技能退让、匹配训练公平比较或最终投稿模型复现。本次没有独立分支标签或仿真策略执行，不把50个相关query当50个独立episode，也不将诊断写入论文效能结果表。
+
+### 19.5 进程内图形运行环境修复与相机读回（工程资格检查）
+
+- 原有RMBench runtime checker先报`failed to find a rendering device`；现场driver为`580.95.05`，MIG Disabled。容器内缺少对应Vulkan/EGL组件；未修改内核、系统驱动、设备或挂载，未重启容器，未终止其他项目作业。
+- 从NVIDIA官方取得精确版本`NVIDIA-Linux-x86_64-580.95.05-no-compat32.run`，325,359,760 bytes，官方及双端文件SHA-256均为`482130b27454864f3873729debbffa9e317badd1c56271dd811219c2385da575`。服务器直接下载出现EOF/慢速，保留失败partial；改由本地核验下载后上传。**只运行extract-only，不运行安装器。** 运行时提取位置`S/rebuttal_20261108/runtime_verified_client/extracted/`；大体积二进制不入Git。
+- 新增`scripts/setup_rebuttal_graphics_env.py`，验证提取库版本与当前驱动一致，只在`S/rebuttal_20261108/graphics_5809505/`写进程专用ICD/EGL JSON和`graphics_env.sh`。现有不同配置拒绝覆盖，不改全局环境或site-packages。GLX库SHA-256 `ffcafdde84c33cd14ca52d06873fce20eed7d26e10516ec61fe025a3d9fe704e`；EGL库SHA-256 `7210a8a23fad4bc81cca1337bd5f5e2fabba8e27e42770201e2444460a9510f9`。
+- 在单次命令中source该环境后，原有未修改的`check_warm_rmbench_eval_runtime.py`通过：Python3.10.20、Torch2.7.1+cu128、SAPIEN3.0.0b1、MPLib0.2.1、H100、press_button、renderer=ok。该检查不是完整任务重置或策略评测。
+- 追加实际相机读回：128×128场景、原运行端rt shader / 1 sample / path depth1 / oidn设置；读取`Color`为有限且非均匀的float32 RGBA `(128,128,4)`，RGB标准差`0.10467271506786346`，原数组SHA-256 `656f17804a1a90ccaeb2aaaf1a615687ce5c8f08287cb94deaaf90b6f9b6d1a3`。场景含ground与红色box，无机器人、任务标签或策略执行，不能用作论文视觉或实验结果。
+- 证据包`S/rebuttal_20261108/archives/graphics_qualification_evidence.tar.gz`，SHA-256 `6394494630c74189690d8c514ec523ac3af72db5133d151f641aad79447d1734`，本地副本在`tmp/rebuttal/execution/20261108/evidence/`；包含修复前后日志、实际读回数组/图像、配置、库哈希和资格脚本。原官方驱动包单独保存在运行目录及本地私有cache。
+- **资格边界：** 只证明当前环境可初始化渲染并从相机读回。完整RMBench任务重置、controller/task/RNG/history的全状态恢复、A-A-B-A、独立分支标签以及正式模型身份仍未验收；不能据此声称恢复cohort已开始或已经获得任务成功率。
+
+### 19.6 完整任务资格首次失败：cuRobo CUDA kernel（工程失败保留）
+
+- 使用新脚本`scripts/qualify_rebuttal_rmbench_task.py`，预声明`rearrange_blocks`、seed3407、1次重置、最多32条保持当前qpos命令。它不是学习策略，不计算修复率或任务成功率。官方`envs/task_config`复制到`S/rebuttal_20261108/rmbench_qualification_source/`，assets仅链接既有固定仓；源码集合SHA-256 `a97e308ca053c3aeb1bfec8e3c4c4f550aac7f6ae753e36bbce82e9522292379`，运行前后一致。
+- job `task_qualification_job_logs/20261108T083310Z-1cfb152b/`，elapsed `61.417216777801514`秒、exit1。在`setup_demo`内部，cuRobo `MotionGen.warmup`的CUDA kernel报`illegal instruction`，随后规划子进程退出、父进程收取开夹爪规划结果时报`ConnectionResetError`。重置未完成，**相机任务观测0、保持命令0、有效策略episode0**；不能登记为已通过的完整任务资格。
+- 原日志和失败summary原样保留在`task_qualification_rearrange_blocks/`及相邻job目录；双端证据包`archives/task_qualification_failed_evidence.tar.gz`，SHA-256 `e1ca1cb30f28e449362f68d82a0034bcc3bba1527db5d296329d5c64bcb4751b`；本地副本位于`tmp/rebuttal/execution/20261108/evidence/`。未以另一个seed重试掩盖错误，未绕过官方规划器，`battery_try`尚未启动。
+- 环境排查定位现有系统nvcc12.4，以及包含sm_90的已安装cuRobo扩展；尚不能仅凭此证明根因。参考[cuRobo维护者的H100兼容性讨论](https://github.com/NVlabs/curobo/issues/481)，正在保留原site-packages的条件下，以官方CUDA12.8编译器、相同固定cuRobo源码和相同编译选项建立私有扩展。此诊断不关闭正式实验的模型、全状态恢复或标签缺口。
+- CUDA编译器包来自NVIDIA官方Ubuntu2204仓，七个deb逐文件按官方Packages SHA-256核验，只解包到本次输出根，不通过apt/dpkg安装、不修改系统CUDA。包清单及哈希见`runtime_verified_client/package_manifest.json`。首次`dpkg-deb --extract`因AFS禁止chown而失败，保留`cuda128_private/`和原日志；r2改为fsys-tarfile加no-same-owner解包到新目录，未覆盖第一次失败。

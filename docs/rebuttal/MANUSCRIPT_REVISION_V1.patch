@@ -1,3 +1,13 @@
+--- a/iclr2027_conference.tex
++++ b/iclr2027_conference.tex
+@@ -10,6 +10,7 @@
+ \usepackage{pifont}
+ \usepackage{siunitx}
+ \usepackage{tabularx}
++\usepackage{longtable}
+ \usepackage{float}
+ \usepackage{tikz}
+ \usetikzlibrary{arrows.meta,fit,positioning,calc}
 --- a/sec/0_abstract.tex
 +++ b/sec/0_abstract.tex
 @@ -6,5 +6,5 @@
@@ -128,7 +138,7 @@
 @@ -1,5 +1,5 @@
  \subsection*{AI use statement}
 -We used generative AI tools to assist with manuscript drafting, language editing, LaTeX organization, and consistency checks.
-+We used generative AI tools to assist with manuscript drafting, language editing, LaTeX organization, consistency checks, and planning additional experimental analyses during the discussion phase.
++We used generative AI tools to assist with manuscript drafting, language editing, LaTeX organization, consistency checks, analysis-code preparation, and planning and interpreting additional experimental analyses during the discussion phase.
  We take full responsibility for the final technical content, citations, analyses, and reported results.
  
  \subsection*{Ethics statement}
@@ -152,15 +162,42 @@
  Appendix~\ref{app:effect_probes} therefore evaluates candidate sensitivity against independently executed effects, comparing $\widehat E_i$ with $r_t$ and $E_i$.
  
  \paragraph{Utility targets and retrieval corruptions.}
-@@ -442,7 +446,7 @@
+@@ -441,17 +445,21 @@
+ Candidate quantities refer to the current query $t$ unless indicated; hats mark learned representations, stars mark demonstration targets, and $i^\star$ is the selected index.
  Local proof and diagnostic variables are defined where used; numerical settings appear in Table~\ref{tab:app_run_settings}.
  
- \vspace{-0.20cm}
+-\vspace{-0.20cm}
 -\begin{table}[H]
-+\begin{table}[!htbp]
- \centering\small
+-\centering\small
++\begingroup\small
  \setlength{\tabcolsep}{4pt}
++\setlength{\LTcapwidth}{\linewidth}
  \renewcommand{\arraystretch}{1.08}
+-\caption{\textbf{Core notation by computational role.} Definition references connect the main method to its detailed specification.}
+-\label{tab:notation_index}
+-\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.265\linewidth}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}p{0.15\linewidth}@{}}
++\begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.265\linewidth}>{\raggedright\arraybackslash}p{0.53\linewidth}>{\raggedright\arraybackslash}p{0.15\linewidth}@{}}
++\caption{\textbf{Core notation by computational role.} Definition references connect the main method to its detailed specification.}\label{tab:notation_index}\\
+ \toprule
+ Symbol or module & Meaning and role & Definition \\
+ \midrule
++\endfirsthead
++\multicolumn{3}{@{}l}{Table~\thetable{} (continued)}\\
++\toprule
++Symbol or module & Meaning and role & Definition \\
++\midrule
++\endhead
+ \multicolumn{3}{@{}l}{\textbf{Interaction, experience, and actions}}\\
+ $t,o_t,q_t,\ell$ & Replan time, RGB observation, robot state, instruction. & \S\ref{sec:method} \\
+ $\mathcal M_t,\mathcal B$ & Current-episode recollection; fixed cross-episode repertoire. & \S\ref{sec:memory} \\
+@@ -484,5 +492,5 @@
+ $\mathcal L_{\mathrm{FM}}^a,\mathcal L_{\mathrm{FM}}^v$ & Action-flow and video-flow objectives. & Eqs.~\eqref{eq:action_fm},\eqref{eq:loss} \\
+ $\mathcal L_j,\lambda_j,\lambda_v$ & Six auxiliary losses and auxiliary/video weights in the joint objective. & Eq.~\eqref{eq:loss} \\
+ \bottomrule
+-\end{tabularx}
+-\end{table}
++\end{longtable}
++\endgroup
 --- a/sec/appendices/c_rebuttal_p0_p1_draft.tex
 +++ b/sec/appendices/c_rebuttal_p0_p1_draft.tex
 @@ -1,9 +1,4 @@

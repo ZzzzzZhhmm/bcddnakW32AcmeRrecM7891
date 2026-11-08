@@ -8,15 +8,15 @@ from pathlib import Path
 import numpy as np
 
 
-def verify(root):
+def verify(root, *, data_directory='dev50', job_logs='job_logs'):
     if not __debug__:
         raise RuntimeError('do not disable verification assertions with -O')
-    data = root / 'dev50'
+    data = root / data_directory
     summary = json.loads((data / 'summary.json').read_text())
     prefixes = json.loads((data / 'frozen_prefixes.json').read_text())
     rows = [json.loads(line) for line in (data / 'source_results.jsonl').read_text().splitlines()]
-    runs = [json.loads(path.read_text()) for path in (root / 'job_logs').glob('*/run_manifest.json')]
-    runs = [run for run in runs if any(arg.endswith('/dev50') for arg in run['argv'])]
+    runs = [json.loads(path.read_text()) for path in (root / job_logs).glob('*/run_manifest.json')]
+    runs = [run for run in runs if any(Path(arg).name == Path(data_directory).name for arg in run['argv'])]
     assert len(runs) == 1 and runs[0]['status'] == 'complete' and runs[0]['exit_code'] == 0
     assert runs[0]['source_sha256'] == runs[0]['source_sha256_after']
     assert summary['queries'] == len(prefixes) and len(rows) == 3 * len(prefixes)
@@ -64,5 +64,7 @@ def verify(root):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('root',type=Path)
+    parser.add_argument('--data-directory',default='dev50')
+    parser.add_argument('--job-logs',default='job_logs')
     args = parser.parse_args()
-    print(json.dumps(verify(args.root)))
+    print(json.dumps(verify(args.root,data_directory=args.data_directory,job_logs=args.job_logs)))
