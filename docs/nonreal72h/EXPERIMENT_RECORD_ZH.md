@@ -1030,3 +1030,14 @@ Git `fabb74b3f46b5634d7eeeaccb8aa9b21259bb534`已推送并核对GitHub/main，CC
 revision干净29文件source ZIP已在独立空目录重新完整LaTeX/BibTeX编译，35页每页提取文本与交付PDF完全一致，无overfull、缺字或未定义引用；报告`tmp/rebuttal/revision/CLEAN_SOURCE_PACKAGE_REBUILD_VERIFICATION.json`。实时三个人工review的全部20项原句亦逐项核对通过，`LIVE_REVIEW_COVERAGE_VERIFICATION.json`。回复修正了HH-W5的精确章节定位；原稿数字、PDF及source ZIP不变。
 
 文稿与回复基础包已在AFS逐项核验26文件，SHA `c5c8470ea3fc506e7f310f8cbe68a41d16138b99c77d4187c27ef8debe840b09`；24文件preflight补丁SHA `b48a6ab4dfde130cca388948c4931f960c040ef8fe8706231fb80490c17981a2`亦已核验。基础材料位于`S/rebuttal_20261109_acp/writing_candidates/20261110_v3`，更新的回复、证据映射和干净编译核对在同级`20261110_v3_preflight_patch1`。原包和补丁均保留、未对外发布。Full200已保全；control100→200已进入真实优化步骤，不能将正在训练或待评测写为完整公平对照结果。
+
+
+### 23.32 非真机优先级更新与可续跑固定source K32实现
+
+作者于北京时间11月10日更新：暂时找不到真机逐次结果和录像，先考虑非真机工作。已更新本对话`warm-rebuttal`每小时任务及runbook，将新增真机实验/录像审计移出当前关键路径；保留原真实机器人结果和已有协议的报告身份，不据此推翻原稿结论，也不继续承诺正在采集新的真机困难库结果。当前重点为后果预测、同状态修复、自然缺失技能与公平对照。
+
+新增fresh-scene K32固定source采集入口：原v3计划、作者checkpoint、原始Full封存的全部valid候选及q8/q48不变，按refined/refined、原rank顺序、末尾refined执行。每一分支独立reset并精确重放原事实prefix，核对RGB、官方drive-target、native父状态与独立实际qpos；不unpack物理，不生成或替代事实策略动作。每个终止分支写原始command/actual-qpos/qvel、完整端点、独立标签及逐文件complete收据，中断attempt保持unknown；总12h资源窗口跨续跑持久化，AFS独占锁防重复，不按结果挑rank或换query。完整query自动追加本台账且无Git操作；原始集群/CI工作树脏不会阻止运行。candidate-null仍须同一Full事实上下文另行生成，没有拿独立null rollout代替。
+
+独立DINO truth reader绑定原M1处理器、相机、normalization、DINO tree与CUDA/bf16 runtime，复用原始effect投影。第一版工程preflight因将JSON列表直接传给baseline normalizer而失败，未产生候选结果；已保留冻结v1源码并改为复用原`load_dataset_stats_from_json`的float32 tensor路径。v2原生读取source0/q8的两次特征完全相同、CPU/CUDA RNG不变，shape4×768 float32，feature SHA `41d5632901305a025308b4100aecdb2cbdbcdbb1bb34d583e1aee45489bc0c82`，`FRESH_POOL_READER_PREFLIGHT_V2.json`。只确认相同原输入/recipe/encoder，不声称核对过未保存的原retrieval tensor。Windows15项、CCI原生30项分支/传感/归一化工件/不可变收据/独立标签检查通过（原生0.94秒）。新完整K32物理查询尚待执行，不先填写后果优势。
+
+control100→200于17:15 UTC写出`training_complete.json`，原训练run_steps100、固定选择点3000与原30k scheduler保持；完整state原件存在，当前独立TAR/CAS保全仍在进行，未将200更新或保存成功称为最终匹配性能。Full200已完整保全。后续须先确认control档案、AFS剩余空间和CCI实际重启状态再接续训练；不删除唯一state或旧证据来腾空间。
