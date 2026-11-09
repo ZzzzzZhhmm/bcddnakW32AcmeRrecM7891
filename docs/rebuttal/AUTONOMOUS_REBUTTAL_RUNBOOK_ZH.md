@@ -20,10 +20,12 @@ CCI别名`slai_debug_workspace_1`；工作目录`/mnt/afs/task3_2/L202500276_lwz
 
 - RB固定case0/1/2各Full/null700步，共3对，均0/0；BT原完整case0也0/0。它们是新固定seed cohort，不能替代原稿任务均值，更不能声称新增收益。
 - 原始投稿表12–18的结果按作者说明是真实结果，保留为原稿报告证据；旧synthetic注释是作者确认的残留。新复现实测与原稿结果使用不同证据ID，不伪装为原始日志恢复。
-- 双遍fresh-scene native replay v2已exit0：RB源case0的全部700命令、六个固定query、物理状态与独立qpos/qvel跨两遍一致；这是工程资格，反事实分支数仍0。下一步实现从独立fresh-reset重放到同一父状态的真实候选分支，并做A-A-B-A及原事实轨迹保护。不要继续使用会重编码事实父状态的旧pack/unpack入口获取正式机制数值。
+- 双遍fresh-scene native replay v2已exit0：RB源case0的全部700命令、六个固定query、物理状态与独立qpos/qvel跨两遍一致。随后Git `fabb74b`的fresh-scene分支入口已在同一source0/q8通过真实A-A-B-A：四个父状态精确一致，三次refined端点一致，raw端点在真实物理bytes上不同，共128条完整分支命令。此单query的raw/refined独立局部标签均0，candidate-null尚未执行，不能称为修复优势。下一步扩展固定source/query及K32后果读取，并从同一原始Full事实上下文生成null。不要继续使用会重编码事实父状态的旧pack/unpack入口获取正式机制数值。
+- A-A-B-A是工程资格检查；正式cohort遇到raw/refined完全相同、未到达query、执行拒绝或几何歧义均须保留原身份，不因资格或成败选择替换query。新query的父状态与重复端点应单独核验，不能将q8通过推广为全部阶段已经通过。
 - 官方`joint_action.vector`臂部是drive target，夹爪项也是controller API值。保持官方policy输入；物理运动证据使用独立articulation qpos/qvel和图像。旧命名native_qpos不自动等于实际关节传感。
-- Full/control100-update状态已逐字节恢复。续训operator v2误把运行中的部分summary当成失败；v3已修复，source/seed/配方/原截止窗口保持。先核实`MATCHED_TO200_QUEUE_V3_STATE.json`与真实job，不重复恢复或开训练。固定选择点仍3000；100/200工程段不是TEST结论。
+- Full100→200训练及完整state档案已完成；control100→200在单列资源窗口内续训。续训operator v2误把运行中的部分summary当成失败，v3修复后原截止窗口保留。先核实`MATCHED_CONTROL_TO200_QUEUE_STATE.json`与真实job，不重复恢复或开训练。固定选择点仍3000；100/200工程段不是TEST结论。
 - 当前conditioned-prior是适配对照，不是官方ReCAP/WarmPrior复现。其信息输入忠实性、训练对齐和最终性能须明确，不以概念区别代替受控对照。
+- 当前AFS剩余容量约139GiB（2026-11-09 16:47 UTC观察，仅为当时值）。新训练段前重新检查空间与完整state保全，避免100-update重复大状态无界累积；分层须先验证完整重建和持久副本，不删除唯一checkpoint、数据或未知产物。CCI重启窗口仍应以实际控制台/容器信息核实，不从宿主PID1或旧hostname推算。
 - ACP `warm-rb-resume-20261109-e`已创建且拥有固定case3–9；核实其真实状态及AFS心跳后再分配，不能与CCI重复。标准资源已明确成员GPU配额为0；闲时仍可能抢占。
 - 真机合作方保留旧逐次结果/录像，本周可做1–2任务。协议见`REAL_ROBOT_REBUTTAL_PROTOCOL_ZH.tex`。优先R2P困难经验库×显式比较对照，可选SOR候选撤回。历史依赖与检索难度分别取证；原四任务20次不等于每个桌面外观20次。
 

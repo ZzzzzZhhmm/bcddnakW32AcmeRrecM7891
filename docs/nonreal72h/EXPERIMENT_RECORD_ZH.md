@@ -1017,3 +1017,16 @@ fresh-scene replay v2于15:33:04 UTC exit0：两遍各700条原命令、六个�
 SenseCore会话过期由作者重新登录后恢复；16:32 UTC回读ACP e仍等待、0GPU、事件`FailedScheduling / insufficient resource: nvidia.com/gpu 1`，并非已运行或实验失败。原始UI收据`ACP_E_REAUTHENTICATED_STATE_20261110.json`，case3–9所有权保持，未重复创建。OpenReview实时回读仍为Bbqv/Hh4E/rkWY三位人工审稿，3/2/2、最后修改11月6日，逐条20项仍为当前回复依据；另有PAT LLM反馈单独保留，未算作第四审稿人。
 
 逐审稿人v3正文、20项问题—证据—修订映射及15个独立短回复块已完成内部首版：`tmp/rebuttal/responses/20261110_v3/`。revision v3从完整原LaTeX工程编译为35页、主文10页，保留全部原始数值表及9个有效图件；加强R2P/SOR有序操作、历史依赖、起始盘7/7/6和两顺序各10的呈现，新增真机任务结构表，保留录制观测成本证据。PDF SHA `ef9e6d55c7a24822b147ec392773c2a5c17ec7bfe9bbfbf79d6d34ee04545b4b`；干净29文件完整source ZIP SHA `120daf4e8d298e8181565a646d9c6f5f424add748c97d4d2ed91f1e303733304`。全35页渲染检查完成，无overfull、未定义引用、缺字；存在继承模板的Times斜体小型大写字体fallback warning，已记录。当前仍为`stable_release_ready=false`：直接修复、候选区分扩展、同信息最终对照、非空missing-skill和困难经验库证据尚未全部关闭，不能以文稿完工冒充科学闭环。
+
+
+### 23.31 首个原始事实父状态fresh-scene A-A-B-A通过及干净源包重建
+
+Git `fabb74b3f46b5634d7eeeaccb8aa9b21259bb534`已推送并核对GitHub/main，CCI canonical已保留自动采集台账后fast-forward；运行端冻结`controller_fabb74b/code`，source SHA `b96ec080e834f5b1884de4ebeb858962a5a82f6c026c0c534dd47f7395a1146b`。Windows11项通过，CCI原生分支/回放/独立rubric/恢复检查26项通过（0.90秒）。执行程序没有Git网络操作。
+
+首个固定Full source0/seed340800000/q8的真实fresh-scene A-A-B-A已完整通过：4次独立reset重放原命令到frame32，原RGB/官方drive-target与封存source相同，四个真实physics/poses/controller/task/camera/RNG/actual-qpos父状态哈希一致；三次refined H32端点逐项相同，raw H32的实际physics端点与refined不同。128条分支命令全部完成、无TOPP拒绝，物理unpack和事实策略更新均0。raw与三次refined的独立physical-next-interaction标签均0，**尚无修复收益、candidate-null比较、候选后果预测优势或整任务性能结论；资格仅限当前source/query。** 不按此结果替换query，继续原固定cohort。
+
+实际runner exit0及全部原件封存`S/rebuttal_20261109_acp/rb_source0_q8_fresh_branches_v1_complete.tar.gz`，4,679,786 bytes，SHA `55984ff0eddc44b5840ceb590067151f6325becc5a3acf72a007c53dab8efb44`；本机22项内部文件全部核验。报告`FRESH_AABA_ARCHIVE_RECEIPT.json`/`FRESH_AABA_LOCAL_VERIFICATION.json`；启动spec文件SHA `553370f24cbf9052f10e4ea3d926213e211d7d8bbfa2218f398b9c969170a562`，runner规范化JSON spec SHA `1c907a56ca7de6010c63e2cdffbd71e6be2ee7a212fd416ae15fc5608fd2656b`，两种哈希对象分别登记，不混称。
+
+revision干净29文件source ZIP已在独立空目录重新完整LaTeX/BibTeX编译，35页每页提取文本与交付PDF完全一致，无overfull、缺字或未定义引用；报告`tmp/rebuttal/revision/CLEAN_SOURCE_PACKAGE_REBUILD_VERIFICATION.json`。实时三个人工review的全部20项原句亦逐项核对通过，`LIVE_REVIEW_COVERAGE_VERIFICATION.json`。回复修正了HH-W5的精确章节定位；原稿数字、PDF及source ZIP不变。
+
+文稿与回复基础包已在AFS逐项核验26文件，SHA `c5c8470ea3fc506e7f310f8cbe68a41d16138b99c77d4187c27ef8debe840b09`；24文件preflight补丁SHA `b48a6ab4dfde130cca388948c4931f960c040ef8fe8706231fb80490c17981a2`亦已核验。基础材料位于`S/rebuttal_20261109_acp/writing_candidates/20261110_v3`，更新的回复、证据映射和干净编译核对在同级`20261110_v3_preflight_patch1`。原包和补丁均保留、未对外发布。Full200已保全；control100→200已进入真实优化步骤，不能将正在训练或待评测写为完整公平对照结果。
