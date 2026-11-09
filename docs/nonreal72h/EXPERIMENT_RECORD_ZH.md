@@ -1041,3 +1041,31 @@ revision干净29文件source ZIP已在独立空目录重新完整LaTeX/BibTeX编
 独立DINO truth reader绑定原M1处理器、相机、normalization、DINO tree与CUDA/bf16 runtime，复用原始effect投影。第一版工程preflight因将JSON列表直接传给baseline normalizer而失败，未产生候选结果；已保留冻结v1源码并改为复用原`load_dataset_stats_from_json`的float32 tensor路径。v2原生读取source0/q8的两次特征完全相同、CPU/CUDA RNG不变，shape4×768 float32，feature SHA `41d5632901305a025308b4100aecdb2cbdbcdbb1bb34d583e1aee45489bc0c82`，`FRESH_POOL_READER_PREFLIGHT_V2.json`。只确认相同原输入/recipe/encoder，不声称核对过未保存的原retrieval tensor。Windows15项、CCI原生30项分支/传感/归一化工件/不可变收据/独立标签检查通过（原生0.94秒）。新完整K32物理查询尚待执行，不先填写后果优势。
 
 control100→200于17:15 UTC写出`training_complete.json`，原训练run_steps100、固定选择点3000与原30k scheduler保持；完整state原件存在，当前独立TAR/CAS保全仍在进行，未将200更新或保存成功称为最终匹配性能。Full200已完整保全。后续须先确认control档案、AFS剩余空间和CCI实际重启状态再接续训练；不删除唯一state或旧证据来腾空间。
+
+
+### 自动采集：control matched seed3407 完成update200（训练证据）
+
+UTC 2026-11-09T17:26:08.169622+00:00；严格resume100→200，batch128、原30k scheduler与源集合`4efb8094729ba8771c7ec0d472c30ad8b585ef319e897edb566b12d3d5a81a14`。权重SHA `93870d3395cb0ee62978e627ec13d8da38f5b41c886fd5cba11aa60664069a41`；逐字节TAR重建SHA `d838ed0c5fc039170394a9719523a3c8d738929c9652b8f49ea6795d895451d7`、38437867520 bytes。原件与档案收据`/mnt/afs/task3_2/L202500276_lwz/projects/WARM_evaluations/rebuttal_20261109_acp/CONTROL_UPDATE200_ARCHIVE.json`。共100条有限loss/grad、更新101–200，优化器/随机数/数据游标由原完整状态续训；固定选择点仍3000。**仅训练执行和保全证据，无TEST配对性能、无正式baseline收益结论。**
+
+
+### 23.33 Full/control200完整保全、首三源并行K32与传输归档
+
+control200训练与lossless档案于17:26:08 UTC完成：权重SHA `93870d3395cb0ee62978e627ec13d8da38f5b41c886fd5cba11aa60664069a41`，由control100权重`3064637f...`完整optimizer/scheduler/RNG/dataloader状态续训，100条更新101–200的loss/grad均有限。原始TAR 38,437,867,520 bytes，SHA `d838ed0c5fc039170394a9719523a3c8d738929c9652b8f49ea6795d895451d7`，AFS CAS逐字节重建通过；收据`CONTROL_UPDATE200_ARCHIVE.json`。与已保全Full200构成同一原配方/seed3407的两个训练段，最终选择点仍3000，**没有新的匹配TEST结果**。前面“保全中”状态由本条完成收据替代，不删除历史前缀。
+
+Git `eb0545c18138e9744a32bcd19fa2e4112e2b64c7`已本机提交并推送核验，CCI冻结`controller_eb0545c/code`，source集合`823404c10af58f90b932b406b0a4cc2a3632acb20b691841a8a82ac7b0c5cdad`。本机35通过/1个Torch检查跳过；该Torch检查在CCI补跑，完整51项原生通过（10.79秒）。frozen reader对原q8输入重复得到相同4×768特征，CPU/CUDA RNG保持，原始处理器stats loader修复已在真实native执行核验。
+
+资源级扩展为在同一H100上并行固定source0/1/2的K32采集：source0于17:27 UTC准入，source1/2于17:44 UTC准入，各自主process的PyTorch fraction0.12、单次runner7200秒、每source持久总窗口43200秒。原v3的首10个source、q8/q48、原valid rank、所有已封存动作/预测与H32保持，不改变模型/数据/样本/统计目标。运行时已观察三路真实GPU进程、合计约27GiB；不是三个GPU，也不是新训练速度或推理延迟benchmark。已有完整分支复用，部分attempt保留unknown；当前未完成query不写成候选效应优势。
+
+18:04 UTC已保全的活动快照：三个q8各有两次完整refined anchor；候选共有30条终止收据，其中29个完整H32、1个source0/rank11在23步后TOPP拒绝，保持未知标签/effect。29个已知独立局部标签均0，尚无完整K32 query、candidate-null或新增收益结论。原件`fresh_pool_first3_sources_active_snapshot_20261110_v1.tar.gz`，44,126,627 bytes，SHA `dcc3aaafe72b67ad8862f99e55414370f1f69e500651a5e95ca1c4047a19a79f`，本机307项文件核验；`FRESH_POOL_FIRST3_LOCAL_VERIFICATION.json`明确区分terminal与完整H32，不将invalid终止收据计为成功端点。
+
+ACP e于17:35 UTC实际回读仍0GPU等待、`insufficient resource: nvidia.com/gpu 1`；原任务与case3–9所有权保留，未因排队重复创建。控制台通过现有浏览器登录流程恢复，只回读任务状态，不记录口令或token。另从现有CCI实例表核对其Pod名与SSH hostname一致，配置为1卡22核230GiB；该观察时点UI运行时长8小时35分、重启180次。该值不确定下一次重启时间，不据宿主PID1或旧“4h”文字保证长任务安全，仍以持久分支/训练state恢复。
+
+AFS剩余约89GiB（本轮观察），后续训练需先重新做空间准入。Full/control200两份native已验证CAS的联合本机传输已启动：401个blob/manifest条目、35,973,567,912 bytes，inventory SHA `c896c79385d2103ec511686d4761105c403d8da7ac70046f05f1808cd7d81d0e`；复用已核验本机共用payload，新增部分后台SFTP续传到`tmp/rebuttal/execution/20261108_p0/evidence/update5_cas_store_v1`。仅完成全部SHA/长度核对后才登记本机完整保全；当前为在途，未删除任何checkpoint或AFS blob。传输进度`MATCHED200_CAS_TRANSPORT_PROGRESS.json`，本机进程与日志另行登记。
+
+作者的非真机优先要求已进入每小时任务、runbook、回复README及问题—证据映射。HH-W4与RK-Q1已去除新增真机/位移结果正在采集的误导性暗示；既有真机任务、数值、论文PDF和完整LaTeX源包保留。下一优先项为完成固定K32查询，并在不canonicalize原事实轨迹的条件下封存同一Full上下文/共同噪声的candidate-null H32；不能用独立null回合历史代替。
+
+### 23.34 同一事实H32与检索上下文绑定的candidate-null封存入口
+
+新增opt-in `--seal-null-on-factual-replay`，仅允许原formal固定source、完整事实生成见证与单模型只读共享权重模式组合。每个固定query在执行该chunk之前，先对照原`generation.json`的bound-step、模型输入、候选payload及derived seed，逐元素核对原封存float32 H32全448值与其array SHA；不是只比较执行的四步前缀。再核对原RGB/官方drive target，使用同一Full上下文、相同Gaussian与独立RNG生成g=0撤回候选结果，封存native动作、全部上下文与双方probe。原事实队列不被替换、不调用物理unpack、不执行任何null分支；即便封存完成，也不自动构成修复效果或candidate-null成功率证据。
+
+本机30项通过，1项Torch副本检查因本机无Torch跳过；原生Torch与实际完整事实重现仍须在冻结版本补验。新增测试拒绝完整H32末端的1ULP变化、只传四步前缀、不同dtype、不同输入/检索/seed/封存哈希。原始fixed source、checkpoint、计划、H32/NFE及统计目标不变。此条记录代码和资格门槛，未宣称已生成正式null动作或取得收益。

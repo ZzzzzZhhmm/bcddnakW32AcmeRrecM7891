@@ -39,7 +39,10 @@ def main():
     p.add_argument('--null-execution',choices=('independent','shared_weights'),default='independent')
     p.add_argument('--candidate-pool',action='store_true',help='Also execute all valid original K32 adapted proposals from each sealed parent')
     p.add_argument('--factual-replay-only',action='store_true',help='Engineering witness only: reproduce the complete fixed factual source without state round-trips or counterfactual branches')
+    p.add_argument('--seal-null-on-factual-replay',action='store_true',help='Also seal same-context/null H32 actions without executing any counterfactual branch')
     args=p.parse_args()
+    if args.seal_null_on_factual_replay and (not args.factual_replay_only or args.phase!='formal' or args.null_execution!='shared_weights'):
+        raise ValueError('null sealing requires the fixed formal factual witness and separately qualified read-only shared weights')
     if args.phase=='formal':
         if args.plan is None or args.formal_source is None or args.trajectory_commands is not None or args.query_ordinals is not None or args.candidate_pool:
             raise ValueError('formal sources require a frozen plan; command caps and query/pool overrides are forbidden')
@@ -74,7 +77,7 @@ def main():
     from fastwam.research.candidate_pool import decode_branch_actions,prepare_candidate_pool,centered_effect_metrics
     from fastwam.research.recovery_protocol import admit_formal_recovery
     from scripts.assemble_nonreal_candidates import assemble
-    from fastwam.research.query_capture import capture_online_replan,generate_captured_null
+    from fastwam.research.query_capture import capture_online_replan,generate_captured_null,require_original_generation
     from fastwam.research.rmbench_outcomes import observe_task_progress,label_next_interaction
     from fastwam.models.warm.retrospection_model import _spatial_effect_summary
 
@@ -126,6 +129,7 @@ def main():
         planned_query_ordinals=args.query_ordinals,trajectory_commands=args.trajectory_commands,null_execution=args.null_execution,
         candidate_pool_query_ordinals=pool_query_ordinals,episode_id=episode_id,
         factual_replay_only=args.factual_replay_only,
+        seal_null_on_factual_replay=args.seal_null_on_factual_replay,
         plan_sha256=sha256_file(args.plan) if formal else sha256_file(ROOT/'configs/nonreal/rebuttal_p0_evidence_plan.json'))
     (out/'identity.json').write_bytes(canonical(identity))
     os.chdir(runtime_root);sys.path[:0]=[str(runtime_root),str(runtime_root/'description/utils')]
@@ -208,6 +212,39 @@ def main():
                     write_probe(out/'factual-witness-probes',f'q{ordinal:04d}',capture['probe'],
                         dict(identity,query_ordinal=ordinal,frame_index=len(factual_commands),counterfactual_branches_executed=False))
                     query_outcomes[ordinal]='factual_witness_only'
+                    if args.seal_null_on_factual_replay:
+                        from fastwam.research.native_replay import require_observation,observation_arrays
+                        reference_generation=source_case/f'generations/replan-{ordinal:04d}'
+                        generation=json.loads((reference_generation/'generation.json').read_text())
+                        original_actions=np.load(reference_generation/'model_actions.npy',allow_pickle=False)
+                        require_original_generation(capture,generation,original_actions)
+                        with np.load(source_case/f'replan-{ordinal:04d}.npz',allow_pickle=False) as data:
+                            require_observation({k:data[k] for k in data.files},observation_arrays(obs))
+                        alternative=generate_captured_null(full,null,capture)
+                        assert_shared_weights_unchanged(shared_receipt)
+                        qdir=out/f'null-seal-q{ordinal:04d}';qdir.mkdir(exist_ok=False)
+                        native_actions={role:decode_branch_actions(full.action_normalizer,value) for role,value in
+                            (('refined',capture['action']),('candidate_null',alternative['action']))}
+                        np.savez_compressed(qdir/'sealed_native_actions.npz',**native_actions)
+                        context_values={field.name:getattr(capture['context'],field.name) for field in fields(capture['context'])}
+                        torch.save({name:value.detach().cpu() for name,value in context_values.items() if torch.is_tensor(value)},qdir/'sealed_factual_context.pt')
+                        (qdir/'context_non_tensor_fields.json').write_bytes(canonical({name:value for name,value in context_values.items() if not torch.is_tensor(value)}))
+                        write_probe(qdir/'probes','full',capture['probe'],dict(identity,query_ordinal=ordinal))
+                        write_probe(qdir/'probes','candidate-null',alternative['probe'],dict(identity,query_ordinal=ordinal))
+                        step=capture['online_step']
+                        seal=dict(identity,query_ordinal=ordinal,frame_index=len(factual_commands),
+                            original_generation_sha256=sha256_file(reference_generation/'generation.json'),
+                            original_model_actions_sha256=sha256_file(reference_generation/'model_actions.npy'),
+                            native_actions_sha256=sha256_file(qdir/'sealed_native_actions.npz'),
+                            factual_context_sha256=sha256_file(qdir/'sealed_factual_context.pt'),
+                            bound_step_sha256=step.step_sha256,model_input_sha256=step.model_input_sha256,
+                            candidate_payload_sha256=step.candidate_payload_sha256,derived_seed=int(step.derived_seed),
+                            exact_original_full_H32=True,exact_original_query_RGB_and_drive_target=True,
+                            same_context_and_Gaussian=True,factual_rng_isolated=True,
+                            full_policy_state_sha256=alternative['full_policy_state_sha256'],
+                            before_any_generated_null_execution=True,counterfactual_branches_executed=0)
+                        (qdir/'sealed_query.json').write_bytes(canonical(seal))
+                        query_outcomes[ordinal]='factual_witness_null_actions_sealed'
                     print(json.dumps(dict(stage='exact_factual_replan_witness',query_ordinal=ordinal,
                         executed_commands=len(factual_commands))),flush=True)
                 if ordinal in args.query_ordinals and not args.factual_replay_only:
@@ -375,7 +412,8 @@ def main():
                 status=query_outcomes.get(query,'not_reached'),source_run_status=report['status'],replacement_allowed=False))
         report['factual_executed_commands']=len(factual_commands)
         report.update(queries=collected,independent_branch_labels=3*collected,
-            factual_witness_queries=sum(value=='factual_witness_only' for value in query_outcomes.values()))
+            factual_witness_queries=sum(value in ('factual_witness_only','factual_witness_null_actions_sealed') for value in query_outcomes.values()),
+            factual_null_actions_sealed=sum(value=='factual_witness_null_actions_sealed' for value in query_outcomes.values()))
         for policy in policies.values():policy.close()
         if hasattr(env,'scene'):env.close_env(clear_cache=True)
         report.update(elapsed_seconds=time.monotonic()-started,core_source_sha256_after=source_identity(core)['sha256'])
