@@ -1137,3 +1137,13 @@ fresh-pool:fixed-fresh-rearrange_blocks-e0001-q0008:517aeba2b01241fdac23e393f77c
 Full/control200联合CAS本机传输已完成：401项、35,973,567,912 bytes均核对长度/SHA，inventory SHA `c896c79385d2103ec511686d4761105c403d8da7ac70046f05f1808cd7d81d0e`，本机verification收据SHA `9351592b76799ba58f4b4a62f2290d36331be8788e4680f01d16c03eaa663964`。这是原native逐字节重建通过CAS的完整压缩持久副本，未在本机新做全TAR重建或Torch tensor扫描；未删除AFS当前state/原始checkpoint或数据。续训备份阻塞解除，后续仍要做空间与GPU准入；最终选择点3000不变，200不是性能证据。
 
 v4在原q0模型动作保存后、任何null/事实执行前因实际BoundOnlineStep使用frozen slots、没有__dict__而在比较视图vars()处停止。已改为读取dataclass fields；新增测试直接构造生产BoundOnlineStep并用原action-witness生成文件，核对真实slots/frozen/mappingproxy结构、整个production digest及真实对象不被改动。初始fixture total_s小于四阶段和的错误由生产构造器拒绝，fixture按有效时间账修正；55项本机通过、1个Torch检查跳过。旧v4原件保留，下一v5须先核实terminal exit和H32原件，再做原生补验准入；尚未报告null动作或对照效果。
+
+### 23.41 v5与source0原预算续跑、三query完整本机快照及材料镜像
+
+`bc133087dfaec78ec147c6b7ac182bc91a0676d1`已本机/GitHub/CCI canonical对齐；冻结source `84af4413e9c59934c34664c35bbfab86fb165f2604a2e01ffbf104f4f6716c3e`，64项原生测试通过（21.00秒），包括生产frozen/slotted BoundOnlineStep。v4已明确exit1、0事实命令和0null封存，其保存的完整q0 H32与原NPY逐元素/dtype一致。v5于19:31:11 UTC准入，launcher2177770、5400秒上限，spec SHA `b7e01ff71b5f0634c42265037d2a632c243a2737be210513528cac3535234975`，仍是前述原固定source0/同上下文撤回方案；真实null封存与物理对照待核验，不预填效果。
+
+source0旧K32 runner于19:27:15 UTC exit-15，reason wall_time_limit，source前后SHA均`823404c10af58f90b932b406b0a4cc2a3632acb20b691841a8a82ac7b0c5cdad`。确认退出与AFS lease后19:31:11 UTC以launcher2177767重跑原冻结入口/原输出，原campaign起点17:27:25 UTC、余35,774秒，总12h窗口不重置。完整q8分支复用，旧未封存attempt继续unknown并留存，q48从固定rank顺序续采。source1/2仍用原冻结流，后续核实19:44首段退出，不重复未知任务。
+
+19:28 UTC新原始快照`fresh_pool_first3_sources_snapshot_20261110_v3.tar.gz`已在本机核对976项文件，139,982,825 bytes，SHA `aaf1994187c4206ebbc7a1b546f983060c1903eaaf2e8806744c4d81b5412f41`。含3个完整q8及当时已结束的部分q48：全快照共101候选终止收据、91完整H32和10无效未知；其中3个q8独立表仍为86完整/10未知，不混淆scope。Markdown/LaTeX表`fresh_snapshot_v3_query_results/ANALYSIS.md`与`effect_comparison.tex`保留三个不及query-constant的primary结果。相关性为post-hoc诊断，未作拟合/替换primary或新增收益声明。
+
+逐审稿人回复、20项映射、首三query表/诊断、完整200备份收据和v5准入已形成29文件research-patch2，SHA `583b802d8a2cb6cfc222e667926854e47c5f5b7f4b3c685418440f316b9c2360`，AFS逐项核验在`S/rebuttal_20261109_acp/writing_candidates/20261110_v3_research_patch2`。原v3 PDF/完整source ZIP不变，内部stable_release_ready=false，未发布评论或上传正式投稿。下一步优先实际v5封存后做fresh-scene null分支、完成固定后期query，并核查模型/评测协议及公平训练资源，保持负结果与旧原稿数据的独立身份。
