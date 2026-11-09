@@ -39,3 +39,12 @@ CCI别名`slai_debug_workspace_1`；工作目录`/mnt/afs/task3_2/L202500276_lwz
 - 11月14日后：保留稳定基线，按新增实测和真实讨论反馈有界更新。未经作者最终指示不发布OpenReview评论、不上传正式投稿、不发他人消息。
 
 每轮至少推进一项可独立完成的实质工作。等待GPU时写回复、修订、核对原证据、整理图表或开发下一实验。每晚做跨材料一致性检查。完整cohort/同状态直接对照未完成时，保持内部release gate为blocked，不编造结果，也不轻率推翻原论文的核心贡献。
+
+## 最新恢复锚点（2026-11-09 21:19 UTC以后）
+
+- source0/q8物理null与post-null Full已exit0，各32步，共64分支命令，另64共同前缀命令；重复Full端点精确。Raw/Full/null局部标签全部0，单query资格不等于修复收益。80文件档案`FIRST_PHYSICAL_NULL_Q8_V1_ARCHIVE.json`已本机核验。
+- v5原700命令事实重现和六个同历史null动作封存已exit0，92文件完整档案已本机核验。无需再启动这一source的同一封存任务。
+- 旧CCI三路进程在连接重置后消失且lease空，旧exit保持未知。21:19以同Eb source恢复PIDs2198110/2198111/2198112；持续12h起点不变，旧partial保持未知。下次按`FRESH_POOL_RESET_RECOVERY_V1.json`和新runner真实收据核查，不再找已不存在的旧PID。
+- ACP e真实发生DINO runtime契约失败，工程attempt0正式role，已停止重复重启；case3–9待修复接续，原campaign截止2026-11-10 08:31:04 UTC不得重置。前置兼容资格必须保存实际runtime、仅允许platform元数据差异，并通过四份原事实DINO的精确bytes校验；在ACP实际通过前不能声称故障已解决。
+- Full200→500已完成父状态/冻结代码准入；标准a为真实WAIT_QUOTA后已停止，闲时b UID9c6000a4ce734a7bac717b2053197a1e持有唯一该段，cluster01仍排队0GPU。使用`controller_d3abf15/code`和plan7d359a7d…，不要重复创建。当前control200经审计仅为动作先验消融，仍缺真正消费检索视觉/效应的同信息最终对照。
+- 已更新三位回复中信息匹配的定义、15个comment block与20项矩阵。PDF/完整LaTeX源包本轮不变，保留35页/10页主文验证；没有把单query无收益或中间训练写成新增机制优势。

@@ -1180,3 +1180,23 @@ Git `3c1ea491f76e85699799af1a3a0f46d01326d9ff`已推送核验并同步CCI；冻�
 v5于20:46:36 UTC明确exit0（4523.429秒），`exact_complete_source_trace=true`，原700条事实命令和6个预定query见证全部精确匹配；六份null均来自该Full事实历史/同Gaussian，实际撤回g=0。collector source前后均`84af4413e9c59934c34664c35bbfab86fb165f2604a2e01ffbf104f4f6716c3e`，原core也未变化。它仅重现事实和封存备选动作，独立null物理分支0；上一条qualifier的两个新增物理分支是另一个独立证据ID，不混合计数。
 
 完整原件包`source0_complete_factual700_same_context_null6_v5.tar.gz`，7,058,889 bytes、92项原文件，SHA `f5cc232c29f7c01044ee01914c33eeb628633d7728235468d2e26f04667b8d3d`；manifest SHA `dae0b62896c8f3bb804af595ce9e353b4144c19054f09b3a30dbaef66604f1ee`。原v1–v4故障/中断、原q0/q8活动快照及本次terminal原件均保留。此结果关闭这一个source的完整事实动作来源检查，尚未关闭固定cohort的后果预测、修复/损害率、自然missing-skill和公平最终性能。
+
+### 23.46 Full200→500原状态准入与ACP标准后闲时分配
+
+`d3abf1569741296331134d54c413cdb0e25acc5a`已推送并同步CCI，冻结`controller_d3abf15/code`，source `043dd179e5b2000b3404fd64a6c6548235e0cf6a05a3e9e70f53bccbc1d79ba2`。Full200权重及7项完整state文件逐项SHA核对通过；原生/本机各4项segment contract检查通过，冻结operator/tests与真实父状态preflight所用文件逐字节一致。正式续训计划`full_resume200_to500_v1.plan.json`，SHA `7d359a7d95b03ee4e18435910fe7a622346e79bcd4d7e369f54df15cec119b61`。只改变restart/output/run_steps与checkpoint保存频次，数学配方不变；旧数据/state/CAS均未删除。
+
+标准任务`warm-full-resume200-500-20261110-a`（UID `20239e012666446493a1470c726624c2`）在实际限额提示后创建为WAIT_QUOTA，实际0GPU。它是已创建的限额等待任务，**不是已被API拒绝的创建**；已确认“已停止”后才另建闲时`warm-full-resume200-500-20261110-b`（UID `9c6000a4ce734a7bac717b2053197a1e`）。闲时选择cluster01、1张80GB/22CPU/230GiB、确认私有镜像和afs-p3-01e当前用户读写挂载/mnt/afs，自动重试0。05:01北京时间创建，21:04 UTC回读仍排队、0GPU，事件23/25可匹配节点、2节点cordon、insufficient nvidia.com/gpu1；AFS operator/output尚未生成，**未开始训练**。这条任务只持有Full200→500，不拥有e的cases3–9，不能再重复创建未知/活动训练段。
+
+### 23.47 ACP e真实失败、未知运行字段与保全
+
+旧e实际于20:31 UTC拿到H100（80GB、cap9.0、driver580.95.05、Torch2.7.1+cu128）并开始case3/seed340800003/candidate-null；20:39:36明确exit1，错误`online DINO runtime differs from the M1 contract`，发生在策略构造，新增完整role0、正式策略回合0。不能把原UI的“启动中”写成仍在计算，也不把此工程错误记为策略失败或成功率0。旧实现未保存实际runtime的差异字段，目前不能断言只差platform；下一次须保存真实字段并提前检查。e的自动重启已于21:08 UTC确认“已停止”，原attempt与case3–9所有权保留，后续修复须沿同一campaign/plan和原截止08:31:04 UTC继续，不重置12h预算。
+
+原始失败包`acp_e_failed_dino_runtime_attempt_v1.tar.gz`，450,840 bytes、30项，SHA `2ec2226c648cd94056c903f49901338703815d58eb7ce66e7b4ba0f446f1b74d`；manifest `b18271a51925a3e15e60ae0ae02ff14510b94d428d537d6530dda9965b1fb71a`，本机30项均核验。精确退出、reset预检、实际硬件、frozen计划、完整日志和旧campaign_state均保留。原3个已完成RB对仍为0/0；case3工程失败仍pending，不产生第4对样本。
+
+### 23.48 CCI连接重置后的三路恢复与前置DINO资格入口
+
+21:17 UTC连接重置后旧pool PIDs2177767/2181269/2181270均不存在，三个native campaign lease均可独占取得，旧runner收据仍running/exit null。保留其**未知退出**身份和全部partial attempt，不补造exit code。21:19 UTC按同一Eb冻结代码、spec和输出恢复，PIDs2198110/2198111/2198112；原source0起点17:27:25和source1/2起点17:44:21不变，余窗口分别29,305/30,321/30,321秒。完整q8复用；固定q48当时完成候选12/6/6，尚无完整后期query。恢复收据`FRESH_POOL_RESET_RECOVERY_V1.json`保存原manifest SHA、空lease、旧PID缺失及新PID，不归因于已证实的某种具体基础设施故障。
+
+新增opt-in前置encoder资格入口：从原M1 contract恢复数值策略；实际字段必须完全匹配，唯一可单独记录的非数值差异为platform。再对预先固定source0/q8、source0/q48、source1/q8、source2/q8的原事实观测，核对原float32四空间token的shape/dtype/全部bytes。成功前不运行原policy；数值字段、设备或任一特征变化即停止。仅在资格通过后为旧full-map hash提供明示的platform比较视图，原contract、实际runtime原件、权重、输入与科学core保持；正式policy仍从原冻结core解析，不覆盖其模块。DINO加载前后的CPU/CUDA/NumPy/Python RNG恢复，资格不是训练或收益证据。
+
+本机与原生已有16项检查通过（包括严格字段、1ULP/dtype/形状拒绝及旧worker不变）；本机初版测试路径断言按Windows路径语义修正。前置实际观测准备最初误指向不存在的anchor NPZ，未运行DINO；现改用原Full完整replan NPZ，并由原pool identity的qpos_trace路径定位。随后CCI实际runtime已与M1全字段相同，但四观测检查尚未完成时连接中断，旧`ENCODER_PLATFORM_CCI_QUALIFICATION_V1.json`停在checking、0个golden；保留未知，不写成资格通过。最终冻结入口须再做16项原生检查与四份实际观测完整验证，再提交修复后的ACP接续。

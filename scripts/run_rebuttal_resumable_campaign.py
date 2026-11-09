@@ -100,11 +100,29 @@ def worker_environment(plan,scratch):
     return env
 
 
+def role_wrapper(plan, *, qualification_plan=None, qualification_sha=None, receipt=None):
+    prefix='import torch,runpy\ntorch.cuda.set_per_process_memory_fraction('+repr(plan['memory_fraction'])+')\n'
+    if qualification_plan is not None:
+        module=ROOT/'src/fastwam/research/encoder_provenance.py'
+        prefix=('import importlib.util,runpy\n'+
+                'spec=importlib.util.spec_from_file_location("warm_encoder_provenance",'+repr(str(module))+')\n'+
+                'module=importlib.util.module_from_spec(spec)\nspec.loader.exec_module(module)\n'+
+                'module.install('+repr(str(qualification_plan))+','+repr(qualification_sha)+','+repr(str(receipt))+',memory_fraction='+repr(plan['memory_fraction'])+')\n')
+    return prefix+'runpy.run_path('+repr(str(Path(plan['core_code'])/'scripts/run_rebuttal_rmbench_pairs.py'))+",run_name='__main__')\n"
+
+
 def main():
     import fcntl
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--plan',type=Path,required=True)
     parser.add_argument('--expected-plan-sha256',required=True);parser.add_argument('--validate-only',action='store_true')
+    parser.add_argument('--encoder-qualification-plan',type=Path)
+    parser.add_argument('--expected-encoder-qualification-plan-sha256')
     args=parser.parse_args();plan,seeds=load_plan(args.plan,args.expected_plan_sha256);plan['_plan_sha256']=args.expected_plan_sha256
+    if bool(args.encoder_qualification_plan)!=bool(args.expected_encoder_qualification_plan_sha256):raise ValueError('both encoder qualification path and SHA required')
+    if args.encoder_qualification_plan is not None:
+        if file_sha(args.encoder_qualification_plan)!=args.expected_encoder_qualification_plan_sha256:raise ValueError('encoder qualification plan changed')
+        qualification=read_json(args.encoder_qualification_plan)
+        if qualification['core_code']!=plan['core_code'] or qualification['core_source_sha256']!=plan['core_source_sha256']:raise ValueError('qualification uses a different bound core')
     if args.validate_only:print(json.dumps(dict(status='validated_not_executed',cases=plan['case_ids'])));return
     root=Path(plan['run_root']);root.mkdir(parents=True,exist_ok=True)
     lock=(root/'campaign.lock').open('a');fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
@@ -147,12 +165,14 @@ def main():
                 raise RuntimeError('bounded retry limit reached for the same fixed role; diagnose before another campaign amendment')
             if __import__('shutil').disk_usage(root).free<512*1024**2:raise OSError('AFS reserve below512MiB')
             attempt=root/'attempts'/(f'{index:04d}-{role}-'+uuid.uuid4().hex);attempt.mkdir(parents=True,exist_ok=False)
-            wrapper=attempt/'run_role.py';wrapper.write_text('import torch,runpy\ntorch.cuda.set_per_process_memory_fraction('+repr(plan['memory_fraction'])+')\nrunpy.run_path('+repr(str(Path(plan['core_code'])/'scripts/run_rebuttal_rmbench_pairs.py'))+",run_name='__main__')\n")
+            wrapper=attempt/'run_role.py';wrapper.write_text(role_wrapper(plan,qualification_plan=args.encoder_qualification_plan,
+                qualification_sha=args.expected_encoder_qualification_plan_sha256,receipt=attempt/'encoder_qualification.json'))
             argv=[sys.executable,str(wrapper),'--core-code',plan['core_code'],'--bundle-args',plan['bundle_args'],'--rmbench-runtime',plan['runtime'],
                 '--output',str(attempt/'worker'),'--phase','formal','--plan',plan['evidence_plan'],'--seed-start',str(seed),'--candidate-limit','1',
                 '--cases','1','--case-index-offset',str(index),'--roles',role,'--search-condition','full_bank']
             meta=dict(episode_id=index,role=role,seed=seed,plan_sha256=args.expected_plan_sha256,controller_source_sha256=source['sha256'],
                 argv=argv,wrapper_sha256=file_sha(wrapper),started_utc=datetime.now(timezone.utc).isoformat(),hardware_receipt=str(hardware_path))
+            if args.encoder_qualification_plan is not None:meta['encoder_qualification_plan_sha256']=args.expected_encoder_qualification_plan_sha256
             atomic_json(attempt/'attempt.json',meta)
             scratch=Path('/tmp')/('warm-resumable-'+attempt.name);scratch.mkdir(exist_ok=False)
             log=(attempt/'console.log').open('xb')
