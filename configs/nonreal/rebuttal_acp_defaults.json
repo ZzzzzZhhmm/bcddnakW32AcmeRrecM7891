@@ -1,0 +1,23 @@
+{
+  "schema": "warm.rebuttal.acp-defaults.v1",
+  "confirmed_by_user_on": "2026-11-09",
+  "region": "cn-sh-01",
+  "zone": "cn-sh-01z",
+  "workspace": "p3-spatial-intelligence",
+  "resource_preference": ["standard", "idle_if_standard_gpu_quota_is_insufficient"],
+  "image": {
+    "source": "private",
+    "namespace": "ccr-zhicheng-02",
+    "repository": "lwz_wam",
+    "tag": "lwz-workspace-20261029145800"
+  },
+  "afs": {
+    "volume": "afs-p3-01e",
+    "subdirectory": "/",
+    "mount_path": "/mnt/afs",
+    "permission_mode": "read_write_as_current_user"
+  },
+  "development": "CCI: edit, validate, synchronize and freeze source before ACP execution.",
+  "execution": "CCI for suitable single-GPU jobs shorter than4h; ACP for longer or parallel work.",
+  "submission_rule": "Verify actual job identity and resource state after submission; never resubmit an uncertain create action."
+}
