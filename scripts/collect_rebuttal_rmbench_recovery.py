@@ -76,6 +76,7 @@ def main():
     from fastwam.research.policy_state import THREAD_FIELDS
     from fastwam.research.candidate_pool import decode_branch_actions,prepare_candidate_pool,centered_effect_metrics
     from fastwam.research.recovery_protocol import admit_formal_recovery
+    from fastwam.research.resumable_pairs import read_committed_trials,verify_role
     from scripts.assemble_nonreal_candidates import assemble
     from fastwam.research.query_capture import capture_online_replan,generate_captured_null,require_original_generation
     from fastwam.research.rmbench_outcomes import observe_task_progress,label_next_interaction
@@ -103,10 +104,15 @@ def main():
     if formal:
         plan=json.loads(args.plan.read_text());source_dir=args.formal_source.resolve(strict=True)
         source_identity_row=json.loads((source_dir/'identity.json').read_text())
-        trials=[json.loads(s) for s in (source_dir/'role_trials.jsonl').read_text().splitlines() if s.strip()]
+        trials=read_committed_trials(source_dir)
         admission=admit_formal_recovery(plan,source_identity_row,trials,task=task,seed=args.seed,
             episode_index=args.episode_index,plan_sha256=sha256_file(args.plan),core_source_sha256=source['sha256'],
             search_condition='full_bank')
+        source_row,=[row for row in trials if row['episode_id']==args.episode_index and row['seed']==args.seed]
+        verified_source=verify_role(source_dir,source_row,'full',dict(task=task,
+            checkpoint_sha256=plan['checkpoint_sha256'],evidence_plan_sha256=sha256_file(args.plan),
+            core_source_sha256=source['sha256'],runtime_source_sha256=runtime_identity['sha256'],
+            official_step_limit={'rearrange_blocks':700,'battery_try':1000}[task]),{args.episode_index:args.seed})
         args.query_ordinals=admission['query_ordinals'];pool_query_ordinals=admission['candidate_pool_query_ordinals']
         source_case=source_dir/f'case-{args.episode_index:04d}-seed-{args.seed}'/'full'
         with np.load(source_case/'qpos_trace.npz',allow_pickle=False) as data:reference_trace={key:data[key].copy() for key in data.files}
@@ -119,6 +125,7 @@ def main():
         (out/'frozen_plan.json').write_bytes(args.plan.read_bytes())
         (out/'formal_admission.json').write_bytes(canonical(dict(admission,source=str(source_dir),
             source_identity_sha256=sha256_file(source_dir/'identity.json'),source_trace_sha256=sha256_file(source_case/'qpos_trace.npz'),
+            verified_source_files=verified_source['files'],
             use='Reference trace is checked after generation only; no teacher forcing or model inputs from future actions.')))
     else:pool_query_ordinals=args.query_ordinals if args.candidate_pool else []
     episode_id=args.episode_index if formal else f'pilot-{args.seed}'

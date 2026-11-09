@@ -74,7 +74,8 @@ def verify_role(directory, row, role, plan, seeds):
     return receipt
 
 
-def read_roles(directory, plan, seeds):
+def read_committed_trials(directory):
+    """Read committed trial rows from either official collector layout."""
     directory = Path(directory)
     trial_path = directory / "role_trials.jsonl"
     if not trial_path.exists():
@@ -85,7 +86,12 @@ def read_roles(directory, plan, seeds):
     # Append records commit with a newline. Preserve a killed writer's partial
     # tail on disk, while admitting only its fully committed predecessor rows.
     if text and not text.endswith('\n'):text=text[:text.rfind('\n')+1]
-    rows = [json.loads(line) for line in text.splitlines() if line.strip()]
+    return [json.loads(line) for line in text.splitlines() if line.strip()]
+
+
+def read_roles(directory, plan, seeds):
+    directory = Path(directory)
+    rows = read_committed_trials(directory)
     result = []
     for row in rows:
         for role, value in row["roles"].items():

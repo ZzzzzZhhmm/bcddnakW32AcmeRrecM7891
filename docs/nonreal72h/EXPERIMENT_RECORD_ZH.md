@@ -1069,3 +1069,9 @@ AFS剩余约89GiB（本轮观察），后续训练需先重新做空间准入。
 新增opt-in `--seal-null-on-factual-replay`，仅允许原formal固定source、完整事实生成见证与单模型只读共享权重模式组合。每个固定query在执行该chunk之前，先对照原`generation.json`的bound-step、模型输入、候选payload及derived seed，逐元素核对原封存float32 H32全448值与其array SHA；不是只比较执行的四步前缀。再核对原RGB/官方drive target，使用同一Full上下文、相同Gaussian与独立RNG生成g=0撤回候选结果，封存native动作、全部上下文与双方probe。原事实队列不被替换、不调用物理unpack、不执行任何null分支；即便封存完成，也不自动构成修复效果或candidate-null成功率证据。
 
 本机30项通过，1项Torch副本检查因本机无Torch跳过；原生Torch与实际完整事实重现仍须在冻结版本补验。新增测试拒绝完整H32末端的1ULP变化、只传四步前缀、不同dtype、不同输入/检索/seed/封存哈希。原始fixed source、checkpoint、计划、H32/NFE及统计目标不变。此条记录代码和资格门槛，未宣称已生成正式null动作或取得收益。
+
+### 23.35 原事实null封存v1入参失败与双trial布局修复
+
+`f826c4c`已推送、CCI canonical保留自动control200台账后fast-forward；冻结source SHA `d0e50f7b198f5762dd2f46e927d2833f4d4d8bec7cdcb4252ee156f8bacf2ddc`。34项原生query/replica/branch/admission检查通过（19.74秒）。18:27:09 UTC以53,489MiB空闲显存准入source0 null封存v1，runner于18:27:41 UTC明确exit1：旧recovery入口只找`role_trials.jsonl`，但当前固定paired worker保存的是`pairs.jsonl`。失败发生在Full模型加载和事实执行之前，未生成null或分支真值，不算策略失败或候选标签0；完整failed runner原件保留于`rb_source0_nullseal_v1_job_logs/20261109T182711Z-a8065790`，spec文件SHA `d8003f5ffc3509405642de185856ecbe0f2e0ac73acba56a85b4dd4cd164f710`，runner规范化spec SHA `b4981dec7cfee92482f4d217307ae59cc6be532fb1208524ea05ac6ab4b4bdb4`。
+
+修复为复用resumable pair公共的两种已提交trial布局读取：优先role-trials，其次pairs；只采纳带最终换行的完整记录，原partial tail原样保留。此外正式source在加载策略前复核原result、官方完整trace、原始初始图像/drive-target和simulator/source绑定，未放松身份或轨迹要求。本机42项通过。后续以独立v2目录与冻结版本重试；本条保留v1失败身份，重试尚未取得科学结果。
