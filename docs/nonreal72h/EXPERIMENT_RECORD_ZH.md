@@ -1116,3 +1116,24 @@ Git `66c301b21084169e4b8afa910379aee71f49c121`已推送核验；冻结`controlle
 closed v1–v3失败/中断、双方原telemetry、v3完整模型q0等值诊断和v4准入收据已打包`nullseal_v1_v3_failed_attempts_and_v4_admission.tar.gz`，356,942 bytes，SHA `e4dd9563a72b2bb677fcdbf6d0c32581747e0f8a003e364826dd368173867ac7`，本机51项内部文件逐项核验。原source和3条fresh K32流保持冻结；每条source各自原12h总窗口不重置，单次7200秒runner到期后仅在退出/lease核实后从同一输出续跑。
 
 本机回复保留原稿已报告的真机任务难度、历史依赖和既有布局例子；新增现场数据按作者要求延期。逐条20项问题—证据—修订映射和15个短回复块继续维护，HH-W5的首个新负结果、同信息最终对照和非空missing-skill仍为明确未关闭项。正文PDF和完整LaTeX ZIP没有新改动，延续先前35页/10页主文的完整编译与视觉核验，不将工程故障修复或中间训练完成写成新实证收益。
+
+
+### 自动采集：fresh-scene K32 fixed-fresh-rearrange_blocks-e0002-q0008
+
+fresh-pool:fixed-fresh-rearrange_blocks-e0002-q0008:cb5cfd629f06c871aa90286c67db24a6adb142f564a0ed5f7a6977db3813b29e；原K32有效候选32，完整H32端点29，完整refined重复支持True；原件`/mnt/afs/task3_2/L202500276_lwz/projects/WARM_evaluations/rebuttal_20261109_acp/rb_source2_fresh_K32_v1/q0008`，候选结果SHA `ca8cfac5be607efb06eb5337fe748b04f3cd511743da48f6991bebe5741fd5f4`，centered结果SHA `1e4abf24629fff8cc8ebe23eef905d57dfd58c079c2f9ce3c8ece5a7d2ccfbf8`。**仅固定source/query的直接候选效应数据；不替换原论文表格，不视作整个cohort或策略收益。**
+
+
+### 自动采集：fresh-scene K32 fixed-fresh-rearrange_blocks-e0001-q0008
+
+fresh-pool:fixed-fresh-rearrange_blocks-e0001-q0008:517aeba2b01241fdac23e393f77ce9e7398c7edd245639cf0176d2cb4be71a62；原K32有效候选32，完整H32端点29，完整refined重复支持True；原件`/mnt/afs/task3_2/L202500276_lwz/projects/WARM_evaluations/rebuttal_20261109_acp/rb_source1_fresh_K32_v1/q0008`，候选结果SHA `eae9eb6bff2b7617833713e7821fe3a19fa00274e29b375ae746577f7078d023`，centered结果SHA `d32675eb07c73097b1f8f7c19685f299c02c592b3bc5d669c586b62d18e87efe`。**仅固定source/query的直接候选效应数据；不替换原论文表格，不视作整个cohort或策略收益。**
+
+
+### 23.40 首三源早期查询、独立误差分解、完整本机200备份与slotted对象修复
+
+固定source1/2的q8也已完成：各29个完整H32、3个无效未知；与source0合计86个完整端点/10个未知，3个固定早期query。source0/1/2预测centered MSE为0.077411/0.071247/0.094636，query-constant为0.052806/0.060099/0.052307，预测centered explained variance为-0.465948/-0.185498/-0.809227；三者均不支持新增候选区分优势。所有比较保留各query相同完整支持集，未知不填0。source1的候选中有2个独立正局部标签，但3个query实际所选raw与refined标签均0，重复refined一致，不能声称已取得修复收益。原件和SHA见此前自动采集条目；`FIRST3_Q8_EFFECT_ERROR_DIAGNOSIS_V1.json`和`FIRST3_Q8_RAW_REFINED_DESCRIPTIVE_V1.json`完整保留全部三组结果。
+
+误差分解是明确post-hoc诊断，未拟合任何校准或替换primary metric：预测的centered correlation为0.359359/0.373618/0.028558，历史为0.254235/0.311095/-0.022999。此相关性不代替失败的primary MSE比较，不给统计显著性或因果识别结论；继续原fixed q48/后续来源、核查原投稿模型和协议对应关系，不在当前评估query上调参。
+
+Full/control200联合CAS本机传输已完成：401项、35,973,567,912 bytes均核对长度/SHA，inventory SHA `c896c79385d2103ec511686d4761105c403d8da7ac70046f05f1808cd7d81d0e`，本机verification收据SHA `9351592b76799ba58f4b4a62f2290d36331be8788e4680f01d16c03eaa663964`。这是原native逐字节重建通过CAS的完整压缩持久副本，未在本机新做全TAR重建或Torch tensor扫描；未删除AFS当前state/原始checkpoint或数据。续训备份阻塞解除，后续仍要做空间与GPU准入；最终选择点3000不变，200不是性能证据。
+
+v4在原q0模型动作保存后、任何null/事实执行前因实际BoundOnlineStep使用frozen slots、没有__dict__而在比较视图vars()处停止。已改为读取dataclass fields；新增测试直接构造生产BoundOnlineStep并用原action-witness生成文件，核对真实slots/frozen/mappingproxy结构、整个production digest及真实对象不被改动。初始fixture total_s小于四阶段和的错误由生产构造器拒绝，fixture按有效时间账修正；55项本机通过、1个Torch检查跳过。旧v4原件保留，下一v5须先核实terminal exit和H32原件，再做原生补验准入；尚未报告null动作或对照效果。

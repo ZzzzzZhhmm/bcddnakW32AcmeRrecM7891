@@ -133,3 +133,30 @@ def test_timing_reconciliation_rejects_any_other_changed_bound_content(tmp_path,
     setattr(step,field,value);step.step_sha256=_step_digest(step)
     with pytest.raises(ValueError,match='non-timing'):
         require_original_generation(capture,generation,actions,original_actions_sha256=file_sha,original_retrieval_latency=latency)
+
+
+def test_real_slotted_bound_step_uses_its_production_digest_without_mutation(tmp_path):
+    from dataclasses import replace
+    from fastwam.memory.candidate_cache import QueryId
+    from fastwam.memory.online_retrieval import BoundOnlineStep,_step_digest
+    names=('online_contract_sha256','training_run_contract_sha256','validation_run_contract_sha256',
+        'bank_manifest_sha256','bank_content_sha256','encoder_contract_sha256','camera_contract_sha256',
+        'normalization_stats_sha256','action_space_contract_sha256','catalog_sha256','audit_sha256')
+    # Structural hash fixture only. Its dummy capability is never presented to
+    # a retriever/model and does not authorize inference or simulated motion.
+    original=BoundOnlineStep(**{name:'a'*64 for name in names},query_id=QueryId('data',0,0,0),
+        task_description='task',task_index=0,prompt='prompt',proprio=np.zeros(14,dtype=np.float32),
+        raw_camera_sha256={'head':'b'*64},processed_camera_sha256={'head':'c'*64},
+        model_input=np.zeros((1,3,2,2),dtype=np.float32),factual_world_tokens=np.zeros((4,3),dtype=np.float32),
+        context_key=np.ones(3,dtype=np.float32),event_ids=(None,)*32,bank_rows=np.full(32,-1,dtype=np.int64),
+        cosine_scores=np.zeros(32,dtype=np.float64),candidate_valid_mask=np.zeros(32,dtype=np.bool_),
+        candidate_means=np.zeros((32,32,14),dtype=np.float32),derived_seed=17,
+        telemetry=dict(preprocess_s=.1,dino_s=.1,search_s=.1,gather_s=.1,total_s=.5),_capability=object())
+    capture,generation,actions,file_sha=sealed_query(tmp_path,original)
+    current=replace(original,telemetry={name:5.0 if name=='total_s' else 1.1 for name in original.telemetry});capture['online_step']=current
+    actual_digest=current.step_sha256;assert not hasattr(current,'__dict__')
+    proof=require_original_generation(capture,generation,actions,original_actions_sha256=file_sha,
+        original_retrieval_latency=dict(original.telemetry))
+    assert proof['comparison_bound_step_sha256']==original.step_sha256
+    assert current.step_sha256==actual_digest==_step_digest(current)
+    assert current.telemetry['total_s']==5.0 and current.telemetry['preprocess_s']==1.1

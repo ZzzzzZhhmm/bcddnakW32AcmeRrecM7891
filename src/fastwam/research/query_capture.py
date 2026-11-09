@@ -8,7 +8,7 @@ It does not replay a consumed BoundOnlineStep capability.
 from __future__ import annotations
 
 from contextlib import contextmanager
-from dataclasses import fields,replace
+from dataclasses import fields,is_dataclass,replace
 from copy import deepcopy
 import random
 import math
@@ -37,7 +37,9 @@ def require_original_generation(capture, generation, original_actions, *, origin
         from fastwam.memory.online_retrieval import _step_digest
         # Hash-only comparison view: never modify or present a replacement
         # capability to the model/retriever. Every non-timing field stays exact.
-        values=dict(vars(step));values['telemetry']=dict(original_retrieval_latency)
+        values=({field.name:getattr(step,field.name) for field in fields(step)}
+            if is_dataclass(step) else dict(vars(step)))
+        values['telemetry']=dict(original_retrieval_latency)
         compared_digest=_step_digest(SimpleNamespace(**values));timing_normalized=True
         if compared_digest!=generation['bound_step_sha256']:
             raise ValueError('reconstructed Full query differs in non-timing bound content')
