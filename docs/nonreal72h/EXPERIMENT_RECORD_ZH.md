@@ -985,3 +985,15 @@ expert-only roster在原seed流340800000–340800009逐个通过，共10/10原�
 研究资格入口新增独立`articulation.get_qpos/get_qvel`只读采集，每条命令与固定query分开保存实际关节状态；不改官方观测、动作、模型或采样。Windows4项及CCI原生47项观察语义/状态拥有权、真实坐标读取、单ULP/像素拒绝和既有policy检查通过（1.01秒）。原native replay v1仍在独立冻结的Git `dc50f06`/源码集合`a8653771793bd02d78389597f99a2edd8a5d07efe53bfca6dc861faf3fde3c52`运行，14:18:57 UTC启动、1800秒上限、spec SHA `b6418a7bb107cf344ff45a6d2ae28dfaefaf94c0298219dc5bde21fcfac826fa`；14:40 UTC首遍700命令已重放，第二遍及完整资格尚未结束。此处不把旧通道一致性扩张为新物理读数已完成。
 
 Full/control的100-update完整状态已从双端压缩CAS逐块校验并重建至独立CCI scratch：分别38,599,567,360与38,438,236,160 bytes，TAR SHA `fb4321c8dc16b449d320cc6f97fafaaa88b08d22214af13af4127852e5e96a87`和`2acd20824aacce72e6520866b7e980ee9ca64bd926315e4854d0a259b794385c`，两权重SHA与23.16/23.20一致，14:30:31–32 UTC完成。收据`RESTORE_FULL100_RECEIPT.json`/`RESTORE_CONTROL100_RECEIPT.json`，并非新增训练结果。原配方/优化器/调度器/RNG/数据游标续训100→200的有界顺序队列已启动等待（14:28:42 UTC、队列3h、每角色3600秒），只在现有评测终止且GPU无其他进程时准入；checkpoint选择仍固定3000，暂无新的200-update或TEST结果。产物写AFS，成功后自动保全并追加本ledger，执行程序不执行任何Git网络操作。
+
+### 23.29 回放超时的实际核销、遥测新轮与过程材料双端核验
+
+native replay v1于14:49:01 UTC由1800秒预算终止：runner `failed`、exit−15、`wall_time_limit`，elapsed1802.036秒，前后源码集合不变。首遍700条源命令及六个query已通过；代码进入第二遍后，q0/8/24/48的native物理bytes、poses、controller/task/camera/RNG和RGB均与首遍逐项哈希相同。第二遍没有完成，程序最终summary缺失，因此仅登记“首遍完整＋第二遍四个固定query前缀匹配”，**不是完整双遍资格或反事实收益**。原件、runner、下一轮路由封存`native_replay_v1_terminal_and_v2_route_v1.tar.gz`，5,256,272 bytes，SHA `b7b4cf94a4db5120871fd1fe07a993c58c53108ee243bf508b6d4787fd480fff`，本机23项内部文件核验。
+
+按实际耗时单独冻结v2的5400秒工程预算，原source、seed、两遍全程、官方700步与精确一致性门槛保持不变。旧进程确已退出后自动准入，新spec文件SHA `e8adbd9ced889a8d4a1e73cdc97ec011da89404c26caf222c9a2e0d9f4dd1049`、Git `29ca02561f39cabe8fa577bd6b19b89ff36a6e8f`、源码集合`04c320a3e775b41890a47ef61bbeb7c3bce86578fe30582e07362d57b0594d79`，准入GPU空闲24,059MiB。新轮已真实生成`physical_joint_trace.jsonl`，独立读取实际articulation qpos/qvel，包括机器人与任务button；这与官方drive-target输入分开保存。**当前仅是已启动并采到首条真实遥测，未宣称完整回放、分支修复或候选效应已完成。**
+
+顺序训练队列亦修复了“硬中断程序可能没有自身summary”的准入问题：只停止了确认仍在等待、尚未启动训练的自有旧waiter，保留其旧源码与停机收据；v2改读runner实际终止收据，且等待遥测v2结束及GPU空闲。原14:28:44开始的3h总窗口保留，没有重置预算。队列仍等待，Full/control仍100/3000；大权重原始证据、恢复state及其他作业均未删除。
+
+在实际AFS上另做跨进程独占锁检查，竞争者确被阻止，释放后可获取，收据`AFS_CAMPAIGN_LEASE_QUALIFICATION.json`；这只验证ACP续跑租约的存储能力。ACP e在14:46 UTC详情仍启动中/实际规格乘数0，最后Worker事件为`insufficient resource: nvidia.com/gpu1`；不重复未知创建、不记为活跃GPU或SR失败。
+
+过程材料封存`closed_loop_evidence_progress_20261109_v1.tar.gz`：1,982,961 bytes，SHA `84a5fd63f5b7b0b585d7b45a20941340132eee0eae90c2fd89fcab68b2142228`，本机37项内部哈希核验。当前真实计数CSV/LaTeX、SVG/PNG、原相机序列和语义修正后的诊断JSON整理到`tmp/rebuttal/analysis/20261109_experiment_progress/`。这些是2/10固定配对的过程和诊断材料，不能作为未完成总体的收益结果；最终rebuttal图表须待相应固定cohort与直接机制实验完成后再据实提炼。
