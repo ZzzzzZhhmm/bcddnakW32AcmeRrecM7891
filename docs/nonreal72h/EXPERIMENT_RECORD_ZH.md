@@ -1101,3 +1101,9 @@ fresh-pool:fixed-fresh-rearrange_blocks-e0000-q0008:1b87159dd4cf6d74833a7d801eea
 已修复NPY封存契约，Git `f82f8b043e1d2c2b7a23439a86da1c64d2b5c063`推送核验；冻结`controller_f82f8b0/code`，source SHA `8deb4c37d0a616211e84f05a9bdc4703fb55297c07bbab8262babf833589479d`。57项原生检查通过（21.05秒），原6个query的真实generation工件均在模型加载前通过producer/consumer契约核对。v2 runner明确exit-2，0事实命令、0null封存、0分支标签，原件保全；并非策略结果。v3于18:40:54 UTC准入，launcher PID2163273，spec SHA `e9ccbc76381c42354f6d576d3460f634592f085726c3d004b9e6ff2873c22c08`，5400秒上限；仅正式原source0、同Full历史与共同噪声，不执行null分支。此时仍在实际模型加载/推理流程，未宣称完整事实重现、null动作或修复收益已经完成。服务器canonical同步因刚产生的新query自动台账暂缓，冻结代码不受影响；须保留导入此自动条目后再fast-forward。
 
 ACP e于18:30 UTC仍等待，事件`FailedScheduling / insufficient resource: nvidia.com/gpu 1`，case3–9所有权不变，未重复提交。Full/control200 native档案仍有效；本机联合CAS传输仍在途，必须待401项完整验证后再登记本机保全或分层旧AFS重复payload。当前优先完成固定直接查询、核对新负结果与模型/协议对应关系，核验简单对照的信息匹配；当前适配control不称作ReCAP/WarmPrior复现或最终公平性能。回复和论文的公开草稿暂不添加新增收益结论；HH-W5新增直接证据缺口列为明确release gate。
+
+### 23.38 原始事实q0完整模型动作一致，绑定哈希含实测延迟导致v3停止
+
+v3重建已在source0/q0生成实际Full H32：原始/处理后图像、proprio、context、DINO、候选payload、model-action整chunk及native整chunk的哈希均与原source相同，QueryId与instruction亦相同。原telemetry中retrieval的唯一差异键为`latency_s`与`step_sha256`；生产`_step_digest`包含五项实测检索耗时，因此跨运行原始step hash不可机械要求相等。真实诊断`NULLSEAL_V3_BINDING_DIAGNOSIS.json`保留所有对照字段和双方原telemetry SHA。v3在q0执行之前因该严格检查停止，0事实命令、0null封存/分支标签；保留失败，不赋策略或效应标签。不能将这一工程哈希阻塞与首个K32真实负结果混淆。
+
+修复只作用于独立比较视图：用原Full replan记录中的五项已测延迟替换比较对象的telemetry，然后仍调用原production step-digest，要求整个其余绑定内容精确重建原hash。实际BoundOnlineStep、capability、模型输入、历史、随机数、动作和真正计时均不改、不重放capability。原文件SHA、完整H32逐元素一致仍强制要求，封存双方真实hash与比较proof。新增测试确保模型输入、原world-token hash、bank rows、cosine或valid mask任何变化均无法通过；54项本机通过、1个Torch检查跳过。v4应在冻结版本原生验证后准入，尚无null执行或修复结果。

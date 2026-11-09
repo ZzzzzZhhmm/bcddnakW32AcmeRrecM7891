@@ -50,9 +50,9 @@ def test_capture_removes_wrappers_when_inference_raises():
     assert 'infer_action' not in vars(model) and '_resolve_action_source' not in vars(model)
 
 
-def sealed_query(tmp_path):
+def sealed_query(tmp_path,step=None):
     actions=np.zeros((32,14),dtype=np.float32)
-    step=NS(step_sha256='bound',candidate_payload_sha256='retrieval',model_input_sha256='observation',derived_seed=17)
+    if step is None:step=NS(step_sha256='bound',candidate_payload_sha256='retrieval',model_input_sha256='observation',derived_seed=17)
     model=NS(infer_action=lambda **kwargs:{'action':actions})
     with seal_generated_action(model,tmp_path/'original',{}):model.infer_action(online_step=step)
     generation=json.loads((tmp_path/'original/generation.json').read_text())
@@ -91,3 +91,45 @@ def test_generation_contract_hashes_the_npy_file_including_its_header(tmp_path):
     assert file_sha!=sha256_array(actions)
     with pytest.raises(ValueError,match='sealed metadata'):
         require_original_generation(capture,generation,actions,original_actions_sha256=sha256_array(actions))
+
+
+def timed_step():
+    from fastwam.memory.candidate_cache import QueryId
+    from fastwam.memory.online_retrieval import _step_digest
+    names=('online_contract_sha256','training_run_contract_sha256','validation_run_contract_sha256',
+        'bank_manifest_sha256','bank_content_sha256','encoder_contract_sha256','camera_contract_sha256',
+        'normalization_stats_sha256','action_space_contract_sha256','catalog_sha256','audit_sha256',
+        'prompt_sha256','proprio_sha256','model_input_sha256','factual_world_tokens_sha256','context_key_sha256',
+        'candidate_payload_sha256')
+    values={name:hashlib.sha256(name.encode()).hexdigest() for name in names}
+    step=NS(**values,query_id=QueryId('dataset',0,0,0),task_description='task',task_index=0,
+        raw_camera_sha256={'head':'raw'},processed_camera_sha256={'head':'processed'},
+        event_ids=(None,)*32,bank_rows=np.arange(32,dtype=np.int64),cosine_scores=np.ones(32,dtype=np.float64),
+        candidate_valid_mask=np.ones(32,dtype=np.bool_),derived_seed=17,
+        telemetry={name:.1 for name in ('preprocess_s','dino_s','search_s','gather_s','total_s')})
+    step.step_sha256=_step_digest(step);return step
+
+
+def test_only_original_recorded_timings_can_reconcile_the_full_bound_digest(tmp_path):
+    from fastwam.memory.online_retrieval import _step_digest
+    step=timed_step();latency=dict(step.telemetry)
+    capture,generation,actions,file_sha=sealed_query(tmp_path,step)
+    step.telemetry={k:v+1 for k,v in latency.items()};step.step_sha256=_step_digest(step)
+    actual_digest=step.step_sha256;actual_latency=dict(step.telemetry)
+    proof=require_original_generation(capture,generation,actions,original_actions_sha256=file_sha,original_retrieval_latency=latency)
+    assert proof['timing_only_comparison_view'] and proof['comparison_bound_step_sha256']==generation['bound_step_sha256']
+    assert step.step_sha256==actual_digest and step.telemetry==actual_latency and _step_digest(step)==actual_digest
+
+
+@pytest.mark.parametrize('field',['model_input_sha256','factual_world_tokens_sha256','bank_rows','cosine_scores','candidate_valid_mask'])
+def test_timing_reconciliation_rejects_any_other_changed_bound_content(tmp_path,field):
+    from fastwam.memory.online_retrieval import _step_digest
+    step=timed_step();latency=dict(step.telemetry)
+    capture,generation,actions,file_sha=sealed_query(tmp_path,step)
+    step.telemetry={k:v+1 for k,v in latency.items()}
+    value=getattr(step,field)
+    if isinstance(value,np.ndarray):value=value.copy();value[0]=not value[0] if value.dtype==np.bool_ else value[0]+1
+    else:value='changed'
+    setattr(step,field,value);step.step_sha256=_step_digest(step)
+    with pytest.raises(ValueError,match='non-timing'):
+        require_original_generation(capture,generation,actions,original_actions_sha256=file_sha,original_retrieval_latency=latency)

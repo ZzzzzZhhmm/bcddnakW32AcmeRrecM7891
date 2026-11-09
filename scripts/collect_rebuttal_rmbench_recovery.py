@@ -100,7 +100,7 @@ def main():
         if sha256_file(a.rmbench_root/relative)!=digest:
             raise ValueError('runtime official source differs from bound checkout: '+relative)
     source=source_identity(core)
-    formal=args.phase=='formal';admission=None;reference_trace=None;query_outcomes={}
+    formal=args.phase=='formal';admission=None;reference_trace=None;query_outcomes={};source_replans={}
     if formal:
         plan=json.loads(args.plan.read_text());source_dir=args.formal_source.resolve(strict=True)
         source_identity_row=json.loads((source_dir/'identity.json').read_text())
@@ -115,6 +115,14 @@ def main():
             official_step_limit={'rearrange_blocks':700,'battery_try':1000}[task]),{args.episode_index:args.seed})
         args.query_ordinals=admission['query_ordinals'];pool_query_ordinals=admission['candidate_pool_query_ordinals']
         source_case=source_dir/f'case-{args.episode_index:04d}-seed-{args.seed}'/'full'
+        if args.seal_null_on_factual_replay:
+            source_telemetry=source_dir/'full-telemetry.jsonl'
+            for line in source_telemetry.read_text().splitlines():
+                row=json.loads(line)
+                if row.get('kind')=='replan' and row.get('episode_index')==args.episode_index:
+                    frame=row['frame_index']
+                    if frame in source_replans:raise ValueError('duplicate original factual replan evidence')
+                    source_replans[frame]=row
         with np.load(source_case/'qpos_trace.npz',allow_pickle=False) as data:reference_trace={key:data[key].copy() for key in data.files}
         reference_initial=json.loads((source_case/'initial_identity.json').read_text())
         expected={'action_horizon':'horizon','replan_steps':'execution_prefix','num_inference_steps':'nfe','warm_top_k':'top_k',
@@ -224,8 +232,23 @@ def main():
                         reference_generation=source_case/f'generations/replan-{ordinal:04d}'
                         generation=json.loads((reference_generation/'generation.json').read_text())
                         original_actions=np.load(reference_generation/'model_actions.npy',allow_pickle=False)
-                        require_original_generation(capture,generation,original_actions,
-                            original_actions_sha256=sha256_file(reference_generation/'model_actions.npy'))
+                        reference_replan=source_replans[len(factual_commands)]
+                        if (reference_replan['bound_step_sha256']!=generation['bound_step_sha256'] or
+                            reference_replan['model']['retrieval']['step_sha256']!=generation['bound_step_sha256'] or
+                            reference_replan['model_action_chunk_sha256']!=sha256_array(original_actions)):
+                            raise ValueError('original replan and generation seals disagree')
+                        binding_dir=out/f'query-binding-q{ordinal:04d}';binding_dir.mkdir(exist_ok=False)
+                        np.save(binding_dir/'reconstructed_full_H32.npy',capture['action'],allow_pickle=False)
+                        step=capture['online_step']
+                        (binding_dir/'observed_binding.json').write_bytes(canonical(dict(
+                            actual_step_sha256=step.step_sha256,model_input_sha256=step.model_input_sha256,
+                            candidate_payload_sha256=step.candidate_payload_sha256,derived_seed=int(step.derived_seed),
+                            actual_latency=dict(step.telemetry),original_latency=reference_replan['model']['retrieval']['latency_s'],
+                            original_telemetry_sha256=sha256_file(source_telemetry))))
+                        binding_proof=require_original_generation(capture,generation,original_actions,
+                            original_actions_sha256=sha256_file(reference_generation/'model_actions.npy'),
+                            original_retrieval_latency=reference_replan['model']['retrieval']['latency_s'])
+                        (binding_dir/'comparison_proof.json').write_bytes(canonical(binding_proof))
                         with np.load(source_case/f'replan-{ordinal:04d}.npz',allow_pickle=False) as data:
                             require_observation({k:data[k] for k in data.files},observation_arrays(obs))
                         alternative=generate_captured_null(full,null,capture)
@@ -243,6 +266,7 @@ def main():
                         seal=dict(identity,query_ordinal=ordinal,frame_index=len(factual_commands),
                             original_generation_sha256=sha256_file(reference_generation/'generation.json'),
                             original_model_actions_sha256=sha256_file(reference_generation/'model_actions.npy'),
+                            original_telemetry_sha256=sha256_file(source_telemetry),binding_comparison=binding_proof,
                             native_actions_sha256=sha256_file(qdir/'sealed_native_actions.npz'),
                             factual_context_sha256=sha256_file(qdir/'sealed_factual_context.pt'),
                             bound_step_sha256=step.step_sha256,model_input_sha256=step.model_input_sha256,

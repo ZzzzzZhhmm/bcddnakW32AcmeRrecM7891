@@ -11,18 +11,36 @@ from contextlib import contextmanager
 from dataclasses import fields,replace
 from copy import deepcopy
 import random
+import math
+from types import SimpleNamespace
 import numpy as np
 
 from .policy_state import deployed_policy_fingerprint
 
 
-def require_original_generation(capture, generation, original_actions, *, original_actions_sha256):
+def require_original_generation(capture, generation, original_actions, *, original_actions_sha256,
+                                original_retrieval_latency=None):
     """Bind a reconstructed Full context to its original sealed H32 output."""
     step=capture['online_step']
-    pairs=(('bound_step_sha256','step_sha256'),('candidate_payload_sha256','candidate_payload_sha256'),
+    pairs=(('candidate_payload_sha256','candidate_payload_sha256'),
            ('model_input_sha256','model_input_sha256'),('derived_seed','derived_seed'))
     if not generation.get('before_any_execution_of_this_chunk'):
         raise ValueError('original generation was not sealed before execution')
+    compared_digest=step.step_sha256
+    timing_normalized=False
+    if compared_digest!=generation['bound_step_sha256']:
+        keys={'preprocess_s','dino_s','search_s','gather_s','total_s'}
+        if original_retrieval_latency is None or set(original_retrieval_latency)!=keys or set(step.telemetry)!=keys:
+            raise ValueError('reconstructed Full query differs: bound_step_sha256; original five latency values required')
+        if any(type(value) not in (int,float) or not math.isfinite(value) or value<0 for value in original_retrieval_latency.values()):
+            raise ValueError('invalid original retrieval latency evidence')
+        from fastwam.memory.online_retrieval import _step_digest
+        # Hash-only comparison view: never modify or present a replacement
+        # capability to the model/retriever. Every non-timing field stays exact.
+        values=dict(vars(step));values['telemetry']=dict(original_retrieval_latency)
+        compared_digest=_step_digest(SimpleNamespace(**values));timing_normalized=True
+        if compared_digest!=generation['bound_step_sha256']:
+            raise ValueError('reconstructed Full query differs in non-timing bound content')
     for key,field in pairs:
         if generation[key]!=getattr(step,field):raise ValueError('reconstructed Full query differs: '+key)
     expected=np.asarray(original_actions);observed=np.asarray(capture['action'])
@@ -31,6 +49,9 @@ def require_original_generation(capture, generation, original_actions, *, origin
     if (not np.isfinite(expected).all() or generation.get('shape')!=list(expected.shape)
             or generation.get('dtype')!=str(expected.dtype) or generation.get('array_sha256')!=original_actions_sha256):
         raise ValueError('original Full H32 artifact differs from its sealed metadata')
+    return dict(original_bound_step_sha256=generation['bound_step_sha256'],
+        actual_bound_step_sha256=step.step_sha256,comparison_bound_step_sha256=compared_digest,
+        timing_only_comparison_view=timing_normalized,actual_capability_unmodified=True)
 
 
 @contextmanager
