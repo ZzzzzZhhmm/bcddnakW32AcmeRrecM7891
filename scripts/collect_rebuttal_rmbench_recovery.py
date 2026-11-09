@@ -38,11 +38,13 @@ def main():
     p.add_argument('--query-ordinals',type=int,nargs='+')
     p.add_argument('--null-execution',choices=('independent','shared_weights'),default='independent')
     p.add_argument('--candidate-pool',action='store_true',help='Also execute all valid original K32 adapted proposals from each sealed parent')
+    p.add_argument('--factual-replay-only',action='store_true',help='Engineering witness only: reproduce the complete fixed factual source without state round-trips or counterfactual branches')
     args=p.parse_args()
     if args.phase=='formal':
         if args.plan is None or args.formal_source is None or args.trajectory_commands is not None or args.query_ordinals is not None or args.candidate_pool:
             raise ValueError('formal sources require a frozen plan; command caps and query/pool overrides are forbidden')
     else:
+        if args.factual_replay_only:raise ValueError('factual replay witnesses require a fixed complete formal source')
         if args.formal_source is not None or args.episode_index!=0:raise ValueError('formal source identities are not excluded pilots')
         args.trajectory_commands=8 if args.trajectory_commands is None else args.trajectory_commands
         args.query_ordinals=[1] if args.query_ordinals is None else args.query_ordinals
@@ -123,6 +125,7 @@ def main():
         task=task,seed=args.seed,phase='formal' if formal else 'excluded_actual-history_restoration_pilot',horizon=32,execution_prefix=4,
         planned_query_ordinals=args.query_ordinals,trajectory_commands=args.trajectory_commands,null_execution=args.null_execution,
         candidate_pool_query_ordinals=pool_query_ordinals,episode_id=episode_id,
+        factual_replay_only=args.factual_replay_only,
         plan_sha256=sha256_file(args.plan) if formal else sha256_file(ROOT/'configs/nonreal/rebuttal_p0_evidence_plan.json'))
     (out/'identity.json').write_bytes(canonical(identity))
     os.chdir(runtime_root);sys.path[:0]=[str(runtime_root),str(runtime_root/'description/utils')]
@@ -135,6 +138,26 @@ def main():
     try:
         random.seed(args.seed);env.setup_demo(**config);info=env.play_once();env.close_env()
         if not env.plan_success or not env.check_success():raise RuntimeError('prespecified pilot expert seed rejected')
+        roles=('full','candidate_null') if args.null_execution=='independent' else ('full',)
+        for role in roles:
+            print('stage=load_policy role='+role,flush=True)
+            policy=RMBenchWarmPolicy(dict(runtime,warm_telemetry_path=str(out/f'{role}-telemetry.jsonl')))
+            policy.model.configure_research_probe(capture=True,force_null=role=='candidate_null')
+            policies[role]=policy
+        full=policies['full'];shared_receipt=None
+        if args.null_execution=='shared_weights':
+            allocated_before=torch.cuda.memory_allocated()
+            null_model,shared_receipt=shared_weight_inference_replica(full.model)
+            null_model.configure_research_probe(capture=True,force_null=True)
+            null=SimpleNamespace(model=null_model,checkpoint_sha256=full.checkpoint_sha256)
+            (out/'shared_weights_receipt.json').write_bytes(canonical(dict(
+                mode='serial_readonly_shared_weights_independent_module_state',
+                shared_tensor_references=len(shared_receipt),
+                allocated_before=allocated_before,allocated_after=torch.cuda.memory_allocated(),
+                native_independent_model_equivalence_requires_separate_qualification=True)))
+        else:null=policies['candidate_null']
+        # Match the original source lifecycle: construct every model before the
+        # fresh role reset. Model initialization must not consume episode RNG.
         random.seed(args.seed);env.setup_demo(**config)
         instruction=str(np.random.choice(generate_episode_descriptions(task,[info['info']],100)[0]['unseen']))
         env.set_instruction(instruction=instruction)
@@ -154,24 +177,6 @@ def main():
             if images!=reference_initial['observation_arrays'] or instruction!=reference_initial['instruction'] or logical!=reference_initial['task_state']:
                 raise RuntimeError('formal recovery reset differs from sealed source observations, logical task state or instruction')
             args.trajectory_commands=env.step_lim
-        roles=('full','candidate_null') if args.null_execution=='independent' else ('full',)
-        for role in roles:
-            print('stage=load_policy role='+role,flush=True)
-            policy=RMBenchWarmPolicy(dict(runtime,warm_telemetry_path=str(out/f'{role}-telemetry.jsonl')))
-            policy.model.configure_research_probe(capture=True,force_null=role=='candidate_null')
-            policies[role]=policy
-        full=policies['full'];shared_receipt=None
-        if args.null_execution=='shared_weights':
-            allocated_before=torch.cuda.memory_allocated()
-            null_model,shared_receipt=shared_weight_inference_replica(full.model)
-            null_model.configure_research_probe(capture=True,force_null=True)
-            null=SimpleNamespace(model=null_model,checkpoint_sha256=full.checkpoint_sha256)
-            (out/'shared_weights_receipt.json').write_bytes(canonical(dict(
-                mode='serial_readonly_shared_weights_independent_module_state',
-                shared_tensor_references=len(shared_receipt),
-                allocated_before=allocated_before,allocated_after=torch.cuda.memory_allocated(),
-                native_independent_model_equivalence_requires_separate_qualification=True)))
-        else:null=policies['candidate_null']
         full._next_episode_index=args.episode_index
         full.reset()
 
@@ -186,9 +191,26 @@ def main():
             obs=env.get_obs();capture=None
             if not full.queue:
                 preparation=[]
-                obs,proof=prepare_native_query(env,emit=lambda r:preparation.append(r))
+                if not args.factual_replay_only:
+                    obs,proof=prepare_native_query(env,emit=lambda r:preparation.append(r))
                 with capture_online_replan(full) as capture:full._replan(obs,env)
-                if ordinal in args.query_ordinals:
+                if formal:
+                    position=len(factual_commands)
+                    if (position>=len(reference_trace['commands']) or
+                        not np.array_equal(full.queue._items[0].environment_space,reference_trace['commands'][position]) or
+                        not np.array_equal(np.asarray(obs['joint_action']['vector']),reference_trace['before'][position])):
+                        np.savez_compressed(out/'rejected_factual_replan.npz',
+                            generated_command=full.queue._items[0].environment_space,
+                            reference_command=reference_trace['commands'][position],
+                            generated_qpos=np.asarray(obs['joint_action']['vector']),reference_qpos=reference_trace['before'][position])
+                        raise RuntimeError('instrumented factual replan differs from fixed source before branching; never teacher-force it')
+                if args.factual_replay_only and ordinal in args.query_ordinals:
+                    write_probe(out/'factual-witness-probes',f'q{ordinal:04d}',capture['probe'],
+                        dict(identity,query_ordinal=ordinal,frame_index=len(factual_commands),counterfactual_branches_executed=False))
+                    query_outcomes[ordinal]='factual_witness_only'
+                    print(json.dumps(dict(stage='exact_factual_replan_witness',query_ordinal=ordinal,
+                        executed_commands=len(factual_commands))),flush=True)
+                if ordinal in args.query_ordinals and not args.factual_replay_only:
                     query_outcomes[ordinal]='attempted'
                     query_id=f'{"formal" if formal else "pilot"}-{task}-seed{args.seed}-q{ordinal:04d}'
                     qdir=out/query_id;qdir.mkdir()
@@ -340,9 +362,9 @@ def main():
         if not formal and collected!=len(args.query_ordinals):raise RuntimeError('planned pilot queries not all reached; no replacement allowed')
         if formal and (len(factual_commands)!=len(reference_trace['commands']) or int(bool(env.eval_success))!=admission['source_success']):
             raise RuntimeError('formal factual trajectory did not reproduce the fixed complete source')
-        report.update(status='qualified_actual_history_queries_only',queries=collected,
+        report.update(status='qualified_complete_factual_replay_witness_only' if args.factual_replay_only else 'qualified_actual_history_queries_only',queries=collected,
             independent_branch_labels=3*collected,all_planned_scientific_stages_qualified=False,
-            exact_complete_source_trace=formal,scientific_collection_qualified=formal)
+            exact_complete_source_trace=formal,scientific_collection_qualified=formal and not args.factual_replay_only)
     except BaseException as exc:
         report.update(status='failed_or_interrupted',error=repr(exc),traceback=traceback.format_exc());raise
     finally:
@@ -352,6 +374,8 @@ def main():
             append_record(out/'planned_query_status.jsonl',dict(episode_id=episode_id,query_ordinal=query,
                 status=query_outcomes.get(query,'not_reached'),source_run_status=report['status'],replacement_allowed=False))
         report['factual_executed_commands']=len(factual_commands)
+        report.update(queries=collected,independent_branch_labels=3*collected,
+            factual_witness_queries=sum(value=='factual_witness_only' for value in query_outcomes.values()))
         for policy in policies.values():policy.close()
         if hasattr(env,'scene'):env.close_env(clear_cache=True)
         report.update(elapsed_seconds=time.monotonic()-started,core_source_sha256_after=source_identity(core)['sha256'])

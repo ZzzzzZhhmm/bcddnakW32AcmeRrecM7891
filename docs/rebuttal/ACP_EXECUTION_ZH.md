@@ -12,4 +12,8 @@
 
 本轮已完成的Battery Try正式case0为Full0/1、null0/1，两个角色各执行1000步。这只是一个固定完整pair，不替换投稿表格，也不足以建立策略收益。正式机制source0因第一条事实轨迹不匹配停止；原分支与失败保留，在CCI修复后重新资格验证。匹配Full和conditioned-prior各到step100，Full完整state续训和AFS无损重建通过，但3000更新及SR比较仍未完成。
 
+首个闲时2卡作业已创建，UID `9515df9ea9354f32acc2cda0ae1a4f75`；但Worker事件明确为`FailedScheduling / insufficient nodeSpec quota`，涉及CPU和内存，未运行策略。较紧凑的单卡8核128GiB规格可使用两个独立进程共享这一张分配GPU，各自模型/检索器与事实历史独立；之前CCI已实际容纳两角色约57GiB。新执行布局必须显式冻结为`shared_single_gpu`，最多12小时，不能把共享卡结果用作延迟基准。该布局保持原前10对、官方上限和采样配置，仅改变资源分配。
+
+机制采集另设`--factual-replay-only`工程验证：与原Full source一致，在模型构造后重新reset，不在事实轨迹中pack/unpack；逐条比较重新生成的命令及before/after qpos，不以原动作驱动策略。只运行完整原回合，不截短；即使通过，也不计为新增独立SR或反事实机制证据。普通机制模式在分支之前就检查事实首条命令，避免在已偏离源轨迹后继续采集。异常结束仍记录实际已完成query数量，原失败记录不覆盖。
+
 ACP显示“运行中/完成”仅代表平台状态。科学验收须读取原始命令、checkpoint/config/source、完整回合、失败计数、配对身份与保存哈希。控制台创建失败或网络响应不确定时先核对实际作业，避免重复占用算力。用户其他项目的作业保持原样。

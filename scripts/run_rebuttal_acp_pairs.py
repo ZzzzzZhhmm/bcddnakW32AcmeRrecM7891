@@ -14,12 +14,14 @@ def digest(path):
     return h.hexdigest()
 
 
-def assigned_devices(count,declared):
-    if type(count) is not int or count!=2:raise ValueError('this batch requires exactly two assigned visible GPUs')
+def assigned_devices(count,declared,layout='two_gpu'):
+    if layout not in ('two_gpu','shared_single_gpu'):raise ValueError('unknown execution layout')
+    expected=1 if layout=='shared_single_gpu' else 2
+    if type(count) is not int or count!=expected:raise ValueError('visible GPU count differs from the frozen execution layout')
     values=[v.strip() for v in declared.split(',')] if declared else [str(i) for i in range(count)]
     if len(values)!=count or len(set(values))!=count or any(not v or v in ('-1','all') for v in values):
         raise ValueError('ambiguous scheduler device assignment')
-    return values
+    return values*2 if layout=='shared_single_gpu' else values
 
 
 def validate_plan(plan):
@@ -27,7 +29,10 @@ def validate_plan(plan):
     if plan.get('roles')!=['full','candidate_null'] or plan.get('cases')!=10 or plan.get('case_index_offset')!=0:
         raise ValueError('fixed first ten Full/null pairs required')
     if plan.get('task')!='rearrange_blocks' or plan.get('search_condition')!='full_bank':raise ValueError('unexpected primary cohort')
-    if not 1<=plan.get('max_seconds',0)<=6*3600:raise ValueError('bounded six-hour allocation required')
+    layout=plan.get('execution_layout','two_gpu')
+    if layout not in ('two_gpu','shared_single_gpu'):raise ValueError('unknown execution layout')
+    if not 1<=plan.get('max_seconds',0)<=(12 if layout=='shared_single_gpu' else 6)*3600:
+        raise ValueError('allocation exceeds the bounded layout budget')
     for key in ('core_code','bundle_args','runtime','evidence_plan','run_root'):
         if not Path(plan[key]).is_absolute():raise ValueError('absolute paths required')
     evidence=json.loads(Path(plan['evidence_plan']).read_text())
@@ -63,6 +68,7 @@ def main():
     source=source_identity(ROOT);workers={};started=time.monotonic();reason=None
     summary=dict(status='preflight',controller_source_sha256=source['sha256'],core_source_sha256=plan['core_source_sha256'],
         checkpoint_sha256=plan['checkpoint_sha256'],plan_sha256=digest(args.plan),task=plan['task'],
+        execution_layout=plan.get('execution_layout','two_gpu'),
         requested_pairs=10,complete_pairs=0,scope='Fixed primary closed-loop success trials; no timing benchmark or automatic efficacy conclusion.')
     def save():
         temp=summary_path.with_suffix('.partial');temp.write_text(json.dumps(summary,indent=2));temp.replace(summary_path)
@@ -74,10 +80,11 @@ def main():
     signal.signal(signal.SIGTERM,stop);signal.signal(signal.SIGINT,stop);save()
     try:
         import torch
-        devices=assigned_devices(torch.cuda.device_count(),os.environ.get('CUDA_VISIBLE_DEVICES'))
+        count=torch.cuda.device_count()
+        devices=assigned_devices(count,os.environ.get('CUDA_VISIBLE_DEVICES'),summary['execution_layout'])
         driver=subprocess.check_output(['nvidia-smi','--query-gpu=driver_version','--format=csv,noheader'],text=True).strip().splitlines()
         hardware=dict(devices=[dict(name=torch.cuda.get_device_name(i),capability=list(torch.cuda.get_device_capability(i)),
-            bytes=torch.cuda.get_device_properties(i).total_memory) for i in range(2)],drivers=driver,
+            bytes=torch.cuda.get_device_properties(i).total_memory) for i in range(count)],drivers=driver,
             torch_version=str(torch.__version__),torch_cuda=torch.version.cuda,scheduler_cuda_visible_devices=os.environ.get('CUDA_VISIBLE_DEVICES'))
         (output/'hardware.json').write_text(json.dumps(hardware,indent=2))
         if any(row['capability']!=[9,0] or row['bytes']<75*1024**3 for row in hardware['devices']):

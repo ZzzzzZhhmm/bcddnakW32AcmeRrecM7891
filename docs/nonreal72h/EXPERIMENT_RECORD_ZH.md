@@ -903,3 +903,21 @@ Rearrange Blocks v2已对原32个valid候选全部尝试：27个完整H32、5个
 conditioned-prior step100的390个压缩blob及1份manifest已全部在本机核验，总22,373,314,771 bytes，完成耗时2392.42秒；本机完整transport receipt SHA-256 `c256f054592a30e783a00339742372b3abb9a12cf94bc768a35f35e381da4728`，对应inventory SHA-256 `456e141e620a9a2445fa1fa6436ae5f32b1e3aca96984d83a6a00b000ee72faa`。receipt已回传AFS，和先前原生完整raw TAR重建证明共同构成双端保全链；本机并未重新解压TAR，不能混称已做本机全tensor扫描。23.16/23.19关于本机step100下载在途的状态现由本节完成记录替代；训练仍为100/3000，非性能结果。
 
 18:48 UTC读取时，正在运行的正式Full/null均已生成到frame140，越过先前124步审计停止点；官方上限仍1000，尚无完成pair。正式机制source0与Full5→100链仍等待该角色试验结束，不能把后续排队项计为运行中。
+
+### 23.21 首个完整正式pair、原轨迹机制采集失败及Full到100的实际结果（11-09核验）
+
+11-08 19:37:23 UTC，`formal_battery_affine_decode_pair_case0000_v1.jsonl`已完成合并：Battery Try固定case0/seed340800000，Full与candidate-null各执行原官方1000条命令，均success=0、max_reward=0；完整pair数1，角色initial RGB/native qpos/task/instruction完全匹配。仍用作者step3000（SHA `68c7f3840921241df45a5b6997b772db3a69a31584644aa0e66929b841b845bf`）、固定core `5d7748e77a648511c5ddcfc0c65c3fac9933bbeb0e2bff20c61a7fd7e6356638`、原v3计划及bank。**这是完整的零/零观测，不是Full收益证据；样本1也不支持不劣或总体负面结论，不替换原投稿表格。** 原两个80/124步审计失败继续保留。
+
+随后`formal_recovery_battery_source0000_v1`用collector集合`91f7f1f22f6f06812447347328b4e01a9c949d76c98a4bd7c3ac6491faeedc2c`运行483.798秒后因事实首条命令/状态与固定原source不一致停止，事实执行数0。q0实际已完成四分支及一条query记录，q8/24/48/80/120均not_reached；旧summary的queries=0源于异常路径未更新计数，不能据此抹去q0原件，也不能把该q0作为正式cohort证据。只读诊断`S/rebuttal_20261109_acp/RECOVERY_FIRST_STEP_DIAGNOSIS.json`显示Gaussian逐元素相等，但selected index、适配动作和conditioning不同，首4条native命令最大差`0.007313606329262257`；preparation明确`original_cpu_encoding_changed=true`、两轮达到固定点。**分支内部精确恢复不等于原事实轨迹保持。** 后续验证必须保留命令/qpos精确比较，不放松容差或teacher-force原动作。
+
+Full原step5完整state成功续到step100，20:27:18 UTC保存链exit0：新增95更新有限，配置SHA `ad428616cb581e4c3d21473763b3479f7a30b98ab619718b6510ecc778b990ff`，job spec SHA `ee2acd97b25645387def4e518ac9657badb0883ee688e6f201c607edc81f1b8b`，训练source仍`4efb8094729ba8771c7ec0d472c30ad8b585ef319e897edb566b12d3d5a81a14`。step100权重SHA `049f7d387c59ef4418f5c045e557124598b3a0e5b93eabda69316866bc1e64fc`，原始TAR 38,599,567,360 bytes、SHA `fb4321c8dc16b449d320cc6f97fafaaa88b08d22214af13af4127852e5e96a87`；AFS自包含CAS已完整逐字节重建核验，receipt为`archives/LOSSLESS_FULL_RESUME_UPDATE100.json`。11-09重连后旧/tmp TAR与训练目录已不存在，AFS manifest及引用blob仍在；当前本机完整CAS传输尚在途，inventory SHA `d8cabfdef5994286c0831521c790c64a28ee6fdb1ee326af68873d7c3b31677a`。**Full/control均100/3000，无匹配性能结果。**
+
+上述完整角色、失败机制及训练保存收据已双端封存：`archives/completed_cci_pair_failed_mechanism_and_full100_receipts_v1.tar.gz`，22,715,936 bytes，SHA `50b9243f14b2022be54632df4dccb1fcdbc8c8077d464836d6ac67f63fddbc27`。本机1633项内部文件哈希全部核验，报告`tmp/rebuttal/execution/20261109_acp/COMPLETED_CCI_CYCLE_LOCAL_VERIFICATION.json`；此小包含大训练TAR的manifest/收据，不冒充包含完整大权重。
+
+### 23.22 ACP配置确认、实际调度受限与不干预事实轨迹的工程验证
+
+作者11-09亲自填写并确认私有镜像`ccr-zhicheng-02/lwz_wam:lwz-workspace-20261029145800`，AFS `afs-p3-01e`的`/`挂载`/mnt/afs`、以当前用户权限读写；已写入`configs/nonreal/rebuttal_acp_defaults.json`并作为之后自动填充项。CCI开发/测试/冻结，ACP仅执行快照；优先标准，GPU限额不足再用闲时。标准2卡申请明确返回“限额不足”，未生成标准作业；闲时集群02成功创建`warm-rebuttal-rb-pairs-20261109-a`，UID `9515df9ea9354f32acc2cda0ae1a4f75`、2卡44核460GiB。08:34 UTC实读Worker为等待中，事件`FailedScheduling / insufficient nodeSpec quota`涉及CPU/内存，尚无原生启动receipt，**不计GPU已运行**。
+
+该已提交原作业controller固定Git `76979a5d1bc28b33df08a6259cd664228757dece`、源码集合`16f73967e8ade41ce805da900612b310e0c78afacb5df2e4e3d1638d4aff115c`，计划`S/rebuttal_20261109_acp/rb_pairs_0000_0009_a_plan.json` SHA `cfa2e52b50d039106b8c1d1a6d4de290d6c04148b9a04f4585c475b38be87059`；固定前10个RB Full/null对、官方700步、原checkpoint/core/recipe、K32/NFE10/H32/prefix4。原生14项controller/merge/runner检查通过。资源受限后的更小规格使用独立新计划和输出，不修改已提交source，不重复未知创建。
+
+机制入口新增完整事实回放专用工程模式：模型构造先于fresh role reset，事实推理不做物理pack/unpack，每一条新生成命令与before/after qpos均精确对照既有完整source；保留原官方终止，禁止截短、原动作驱动策略或充当新的独立SR。仅工程回放通过后，仍需独立完成原始父状态下的反事实资格。普通机制入口亦将事实首命令一致性检查提前到分支执行前；异常路径实际query数保留。原生48项branch/capture/replica/policy-state/准入/资源布局检查通过（21.75秒），precommit源码集合`ed6c8d7a39d79673776367c93b22fa5a1c34bd7d55f779207678286eb10b7f13`，收据`S/rebuttal_20261109_acp/REPLAY_AND_RESOURCE_NATIVE_TESTS.json`。此阶段实现检查与未来实际回放必须分开记录，不能写成机制优势已补齐。

@@ -11,6 +11,14 @@ def test_scheduler_visibility_is_not_remapped_outside_allocation():
     assert module.assigned_devices(2,None)==['0','1']
 
 
+def test_single_gpu_layout_shares_only_the_one_assigned_device():
+    assert module.assigned_devices(1,'GPU-assigned','shared_single_gpu')==['GPU-assigned','GPU-assigned']
+    assert module.assigned_devices(1,None,'shared_single_gpu')==['0','0']
+    for count,declared in ((2,'0,1'),(1,'0,1'),(1,'-1'),(1,'all')):
+        with pytest.raises(ValueError):module.assigned_devices(count,declared,'shared_single_gpu')
+    with pytest.raises(ValueError):module.assigned_devices(1,'0','unknown')
+
+
 @pytest.mark.parametrize('count,declared',[(1,None),(2,'0,0'),(2,'all'),(2,'0,1,2'),(2,'0,-1')])
 def test_invalid_or_unallocated_devices_are_rejected(count,declared):
     with pytest.raises(ValueError):module.assigned_devices(count,declared)
