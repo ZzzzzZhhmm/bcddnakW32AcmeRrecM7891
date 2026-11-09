@@ -17,7 +17,7 @@ AUTHOR_CONFIG_SHA256='34f5dc0a6f4cc354da61c0ba7bdc394b6c9652c7ef7706e72e8cbb683e
 
 
 def make_config(original,*,kind,output,seed,segment_updates):
-    if kind not in ('full','simple_prior','conditioned_prior') or seed not in (3407,3408,3409) or not 1<=segment_updates<=250:
+    if kind not in ('full','simple_prior','conditioned_prior','pooled_memory_prior') or seed not in (3407,3408,3409) or not 1<=segment_updates<=250:
         raise ValueError('declared model, seed and bounded segment required')
     cfg=deepcopy(original)
     if cfg['batch_size']!=8 or cfg['gradient_accumulation_steps']!=4 or cfg['max_steps']!=30000:
@@ -29,6 +29,7 @@ def make_config(original,*,kind,output,seed,segment_updates):
         # a distinct checkpoint schema and does not enter full online eval.
         eval_every=500)
     cfg['model']['_target_']=('fastwam.runtime.create_warm_retrospection' if kind=='full'
+                            else 'fastwam.research.pooled_memory_prior.create_pooled_memory_prior' if kind=='pooled_memory_prior'
                             else 'fastwam.research.simple_prior.create_'+kind)
     cfg['model']['retrospection']['corruption_seed']=seed
     cfg['data']['train']['instruction_variant_seed']=seed
@@ -46,7 +47,7 @@ def main():
     p.add_argument('--training-output-root',type=Path,required=True)
     p.add_argument('--seed',type=int,default=3407)
     p.add_argument('--segment-updates',type=int,default=5)
-    p.add_argument('--control-kind',choices=('simple_prior','conditioned_prior'),default='simple_prior')
+    p.add_argument('--control-kind',choices=('simple_prior','conditioned_prior','pooled_memory_prior'),default='simple_prior')
     a=p.parse_args()
     raw=a.author_config.read_bytes()
     if hashlib.sha256(raw).hexdigest()!=AUTHOR_CONFIG_SHA256:raise ValueError('author recipe bytes differ')

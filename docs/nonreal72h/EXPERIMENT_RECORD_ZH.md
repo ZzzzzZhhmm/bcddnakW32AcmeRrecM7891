@@ -1224,3 +1224,27 @@ source2的21:19恢复runner于21:21:41明确exit1，source前后均Eb/823404c…
 新增`--max-new-roles`只限制一次controller invocation接收的新完整role数：优先判断全部owned工作完成，否则达到局部上限时标为`partial_verified_invocation_limit`，不写成整个campaign完成。默认行为不变；原plan、固定case/seed顺序、模型/协议、失败保留及12h deadline均不变。Windows23项通过，原生23项通过（0.97秒），真实原campaign和四观测资格计划加max-new-roles=1的validate-only通过；无policy执行结果。
 
 准备把一个固定role从排队f转回CCI：必须先确认f停止且native lease空，再用新冻结controller、原plan d8512a23…与encoder资格0df7b0f…接续；单次只收1个新完整role，worker4500秒、外层5400秒，运行前至少45,000MiB空闲显存。原08:31:04 UTC截止不重置，b仍独占Full200→500申请。此条是具体可核查的资源切换准备，不预填已停止、已准入或已完成数据。
+
+### 23.52 ACP f已停止与CCI同计划固定role接续
+
+22:25:31 UTC浏览器实际确认f（UID5be8c6689d44435a8ef2c0b9497ec820）“已停止”；批量停止确认框仅含这一个已知排队任务。先前More菜单操作均未确认停止；最终确认点击后的首个断言遇到modal/table重复row，未重复提交，而是单独只读核实终态。`ACP_F_STOP_FOR_CCI_RECEIPT.json`保留实际收据。
+
+22:25:59 UTC核实native campaign lease可独占、原next role、原deadline及54,830MiB空闲显存后，CCI准入PID2204773；f不再拥有活动执行，cases3–9仍由原campaign独占。冻结`controller_5b9ebd7/code`，source SHA `56393c5a5d944004c55bf88e91aff9b4687be49849bc7da3b8d18fc578cb6971`；spec文件SHA `1e0df6a3fb9ad5f5ab78d75237e25d79f9ee219a077ea0cc735b54b11227482e`，规范化runner spec SHA `2f9ea49715e86ff4ad217ae6f5ff99d6602bace2e0070c39fb2b7c095095199b`。只接收1个新完整role，原case3/seed340800003/candidate-null顺序、d8512a23计划、20:31:04起点和次日08:31:04 UTC截止均不变；外层5400秒，原失败attempt保留。
+
+该attempt的四份DINO原事实数组于22:27:00 UTC再次全部bytes精确通过，actual runtime没有差异，也未应用platform比较视图。原policy加载后22:40开始正式闭环，telemetry实际推进；此处仍未登记role完成、成功率或第4个完整pair。Full200→500的ACP b仍拥有唯一训练段，22:42 AFS operator未生成；不把排队/加载写成完成。
+
+### 23.53 同信息池化对照实现与真实记录BF16资格
+
+新增`PooledMemoryPriorFastWAM`：所有K个检索动作、视觉前态、历史效应、context、时间和阶段经一次线性投影及单层4-query attention池化，与共同8个history gist组成12个conditioning token。保留确定性起态对齐、coarse prior及常量0.25和共同规则；不输出学习的动作残差、后果预测、效用排序或置信度。通用attention会学习内容权重，不能称完全无学习的检索读取。独立schema和RNG初始化隔离防止静默继承control200或扰动共同训练流；原Full/旧control行为回归通过。
+
+Windows配置3项通过、Torch模块2项按缺包跳过；原生首轮44通过/1失败（新schema额外字段未从父校验视图移除），修复后45项全部通过（20.27秒）。检查覆盖未选候选各字段的实际影响和梯度、padding/空候选有限零、未来teacher隔离、共同初始化/RNG、12-token接口、checkpoint隔离及原Full路径。真实记录预检v1在dataset统计副本默认工作目录不存在时停止，发生在读固定样本及优化器/policy动作前；保留原日志。修复只配置Git外工作目录，v2以900秒logged runner执行并明确exit0，source前后均`5347088c09f34707d4df80f6adf0b9c6d565a5e2be5303b0f53a45d0c4beb23e`。
+
+实际训练样本index32和原封存source0/q8在线记录均有32个有效候选，BF16输出1×32×4×512，所有池化参数梯度有限；池化模块5,767,168参数。该模块预检明确使用零history-gist占位，在线proprio也为占位，不能称完整采样器资格或收益，单次并发耗时不作为部署benchmark。数据配方SHA `42d3b8c763ef61cf7c3c7b102a65b3dfeed1084aad4b33be98ec8b6998238adb`，原在线context SHA `2c05f995eddcf6dfafe84d0c72703fcb21045bcacd6dc603f04e274ecf96cb6a`。
+
+新seed3407初始配置已由原author recipe生成，SHA `d5a7bd8c76aee178991e593439124aec72077e1734eb831cf2dfda55883846c3`；新优化器、从共同released base的0更新开始、有效batch128、30k scheduler、固定3000最终选择点，首段100更新。**尚未提交新训练任务，完成更新0**；必须解决与独占Full b并行的持久state/归档空间后准入。旧control200保留为动作先验消融，不更名为同信息对照。BB-W2、HH-W1、HH-W3仍未关闭。
+
+### 23.54 动作/时间核对与35项新原件双端保全
+
+原训练源码与实际第0个Parquet前64个transition确认action[t]=state[t+1]；H32 target读取frame+32。num_frames33/ratio4对应9个视频采样点，并非128动作步；没有依据按四倍或一行偏移修改truth。实际metadata fps15仅给出名义编码时间32/15秒，未证明示教物理时长。native每次qpos请求通过TOPP轨迹执行多次250Hz physics step，32控制命令不保证固定物理时长。时间对应是否解释新负结果仍未核实，不据此调尺度或替换主指标。完整核对见`docs/rebuttal/ACTION_TIME_SEMANTICS_AUDIT_20261110_ZH.md`与Git外`OFFLINE_NATIVE_TIME_SEMANTICS_V1.json`。
+
+schema失败、工作目录失败、45项原生检查、真实训练/在线输入资格、测试源码、原context、冻结配置、时间审计及ACP/CCI交接收据共35项已打包`same_information_control_and_time_audit_v1.tar.gz`，509,306 bytes，SHA `c7dddd91d7239cc84fdf5a1e5b699570d1dbdad87a556420f73cda37cba94596`，manifest SHA `19c86abae0e1c6e172c9e4695281426eab5c414f5343d965c63394b0062b9eb0`。本机全部35项长度/SHA核验；报告`tmp/rebuttal/execution/20261110_iter2/POOLED_CONTROL_TIME_LOCAL_VERIFICATION_V1.json`。此包是实现/资格/审计证据，不包含新的完整科学cohort或训练收益；原三q8 adverse primary、原稿数据及真机延期身份不变。

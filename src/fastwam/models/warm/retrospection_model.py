@@ -517,6 +517,10 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
     def _source_only_conditioning(self, required_gist, selected_action_context):
         return None
 
+    def _source_only_event_inputs(self, inputs, *, context, payload, phase_features):
+        """Allow separately trained source-only controls to consume causal records."""
+        return inputs
+
     @classmethod
     def from_wan22_pretrained(
         cls,
@@ -1480,7 +1484,7 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
             if source_only
             else candidate_payload.effect_delta
         )
-        event = self.retrospective_event_adapter(
+        event_inputs = dict(
             warped_actions=warped_candidate_actions,
             gripper_timing=candidate_payload.timing,
             candidate_valid_mask=valid,
@@ -1506,6 +1510,12 @@ class WarmRetrospectionFastWAM(WarmSourceFastWAM):
                 )
             ),
         )
+        if source_only:
+            event_inputs = self._source_only_event_inputs(
+                event_inputs, context=ctx, payload=candidate_payload,
+                phase_features=candidate_phase_features,
+            )
+        event = self.retrospective_event_adapter(**event_inputs)
         observed_effect = _spatial_effect_summary(
             candidate_payload.effect_delta,
             candidate_payload.effect_pre,

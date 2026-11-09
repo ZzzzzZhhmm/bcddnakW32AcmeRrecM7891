@@ -50,3 +50,10 @@ CCI别名`slai_debug_workspace_1`；工作目录`/mnt/afs/task3_2/L202500276_lwz
 - 已更新三位回复中信息匹配的定义、15个comment block与20项矩阵。PDF/完整LaTeX源包本轮不变，保留35页/10页主文验证；没有把单query无收益或中间训练写成新增机制优势。
 - writing research-patch3已在AFS核验44项、SHA517ab30d…；当前live状态以`tmp/rebuttal/planning/current_iteration.json`为准。下一步还要直接核查模型/数据/动作时间语义，解决前三q8不及query-constant的实证问题，不调truth尺度或按结果换样。
 - 22:10 UTC b/f仍实际0GPU等待。已开发max-new-roles=1的有界CCI invocation（23项本机/原生检查与真实计划准入通过），拟在f明确停止、lease空后接续同一campaign；不得在f仍活动或状态未知时并发启动。外层5400秒、单role4500秒，原deadline08:31UTC不重置；这是资源调度变更，不改变样本或科学目标。
+
+## 22:46 UTC后接续锚点
+
+- f于22:25:31已确认停止，CCI同计划单role接续已准入（runner2204773、child2204785；`CCI_BOUNDED_CAMPAIGN_SEGMENT_V1_LAUNCH.json`）。原case3/null、seed340800003和08:31:04 UTC截止不变；四份原DINO在该attempt再次精确通过，22:40实际开始闭环。查真实worker/退出，不将局部invocation完成当全部campaign完成；此后才能接续下一个固定role。不得重新启动f形成重复。
+- 真正消费所有K32检索记录的新pooling对照已实现，45项原生检查及实际训练/封存在线记录BF16模块检查通过。冻结配置`pooled_memory_seed3407_configs_v1/manifest.json`，source5347088c…、配置d5a7bd8c…、从共同base0更新起步，最终固定3000。尚未提交新训练，必须先保证与已排队Full b同时保存完整state/CAS的空间；旧control200不改身份、不丢原件。
+- 动作索引audit确认33原始观察/32动作/9视频采样点、action[t]=state[t+1]、target frame+32。metadata15fps不是实测物理时钟；native TOPP每命令多物理步，elapsed-time对应仍待测。不能擅自按4倍或一行偏移改truth或主指标。
+- 新35项资格/失败/审计证据已双端核验，archive c7dddd91…；具体见台账23.52–23.54与两份新协议/audit文档。此轮仍无新增完整科学cohort或收益，回复/论文经验结论门槛保持未关闭。

@@ -26,3 +26,12 @@ def test_training_segments_cannot_silently_change_seed_or_scheduler_budget():
     with pytest.raises(ValueError):make_config(recipe(),kind='conditioned_prior',output='/tmp/a',seed=1,segment_updates=100)
     original=recipe();original['max_steps']=3000
     with pytest.raises(ValueError,match='recipe'):make_config(original,kind='full',output='/tmp/a',seed=3407,segment_updates=100)
+
+
+def test_pooled_memory_control_starts_a_new_lineage_with_the_common_fixed_recipe():
+    full=make_config(recipe(),kind='full',output='/tmp/full',seed=3407,segment_updates=100)
+    pooled=make_config(recipe(),kind='pooled_memory_prior',output='/tmp/pooled',seed=3407,segment_updates=100)
+    assert pooled['model']['_target_']=='fastwam.research.pooled_memory_prior.create_pooled_memory_prior'
+    for name in ('data','max_steps','batch_size','gradient_accumulation_steps','seed','run_steps','eval_every','save_every'):
+        assert full[name]==pooled[name]
+    assert pooled['resume'] is None and pooled['initialization_checkpoint'] is None
