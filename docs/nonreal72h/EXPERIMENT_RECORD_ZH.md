@@ -951,3 +951,15 @@ Full100本机自包含压缩CAS传输已完成：388个blob及1份manifest共389
 优先恢复原80个任务-reset在所有方法下的逐次对应，登记R2P起始盘7/7/6、SOR两种顺序各10、实际几何/桌面条件、失败/接管、输入时间窗及checkpoint/bank来源；不把黑桌面七组定性序列补写成分外观成功率。优先建议R2P：20 reset×原库/困难库×Full/关闭显式比较，共80个新自主试验；计算困难库Full对照差和配对交互。若只能60次，预注册三条件降配，并明确缺少完整交互。新增donor必须独立于TEST、保持完整真实事件和原动作/encoder/normalizer语义；若仅操纵既有top-K，则称候选压力测试，不称自然大库扩展。
 
 可选SOR：20 reset×Full/candidate-null，共40次，二者均保留回合recollection、共同撤回候选source和conditioning，检验已有顺序记忆后跨回合经验的增量。若用固定权重开关，按推理干预报告；独立训练baseline另记身份，不能混称。上述试次数是待首次TEST前冻结的建议，不是完成量，不保证显著性。整体长时序、历史依赖、库多样性及实际候选歧义是不同证据轴；当前R2P/SOR的原稿15/20与35/30点增益可以积极阐明，但不能替代困难检索和模块必要性的直接对照。
+
+### 23.26 自主实验闭环、RB首个完整pair与角色级续跑实现
+
+作者明确授权后续自主设计、CCI实现/同步、ACP提交/查验、修复重提、记录分析以及整理图表；常规实现、合理资源分配和失败恢复继续执行，不因任务失败停在状态说明。科学方案、checkpoint/数据范围和既有固定样本规则不因资源失败而静默更换。
+
+`rb_pair_case0000_cci_v1`已完整完成：case0/seed340800000、Full与null各700步，均success0、max_reward0，原生完整pair数1。elapsed2714.626秒，next_candidate_seed340800001；两角色初始身份精确相同，core仍`5d7748e77a648511c5ddcfc0c65c3fac9933bbeb0e2bff20c61a7fd7e6356638`、作者step3000、原v3计划。原件及job日志封存`S/rebuttal_20261109_acp/rb_case0000_complete_pair_v1.tar.gz`，7,689,063 bytes，SHA `d5b9567f25ec96dba377115a5a993ba873427b5a8637dc12b7dbd54ed562e780`，本机1120项内部文件核验；新证据validator亦已读取真实结果、700×14三类轨迹及初始图像哈希通过。**这是第二个任务的单个零/零pair，仍无策略收益结论；不替换投稿任务SR。**
+
+固定下一段`rb_pairs_cases0001_0002_cci_v1`于13:38:13 UTC启动：沿既有完整case0给出的next seed，起点340800001、全局剩余candidate预算1999，case index1/2，两个完整角色、原700步与采样预算；上限10800秒。准入时GPU空闲81,080MiB，模型显存fraction0.7，spec SHA `15ddc87b3aac1b77464466c85d64806da56bbe30276a17fe1369a110af129f53`。这是进行中的两对固定任务，不能将启动量记为完成量。
+
+新增expert-admitted reset roster与角色级campaign：每次只执行一个固定role/case，完成后严格核对模型/core/协议/runtime、原步数、完整native轨迹及初始图片/qpos，再独立压缩并计算哈希；中断角色保持未知。ACP容器重启后读取已核验原件，仅补缺失角色；原始开始时间与总预算不重置。worker继承文件锁，阻止旧子进程未退出时重复提交；重复完整role须明确核销，不能按好成绩挑选。case0及CCI case1/2明确作为外部来源，ACP计划仅覆盖不重叠case3–9。roster按原seed流及expert准入产生，不看策略结果；所有新资格仍须真实运行，不以协议测试替代。
+
+CCI原生27项证据完整性、JSONL中断尾部、封存恢复、继承锁、持久时间预算、资源分配和合并检查通过（2.34秒）；Windows13项通过、1项POSIX锁检查仅在原生执行。导出JSON/CSV/LaTeX计数表，绘图程序用灰色保留pending；图表是已完成的逐条证据展示，不能将partial counts包装为总体收益或不劣。实际case0的独立validator报告为`RESUMABLE_ACTUAL_CASE0_VERIFICATION.json`。

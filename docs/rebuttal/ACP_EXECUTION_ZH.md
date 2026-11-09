@@ -16,4 +16,8 @@
 
 机制采集另设`--factual-replay-only`工程验证：与原Full source一致，在模型构造后重新reset，不在事实轨迹中pack/unpack；逐条比较重新生成的命令及before/after qpos，不以原动作驱动策略。只运行完整原回合，不截短；即使通过，也不计为新增独立SR或反事实机制证据。普通机制模式在分支之前就检查事实首条命令，避免在已偏离源轨迹后继续采集。异常结束仍记录实际已完成query数量，原失败记录不覆盖。
 
+新闭环使用`qualify_rebuttal_reset_roster.py`按原expert准入顺序预先封存reset roster，不依据策略成功与否选seed。`run_rebuttal_resumable_campaign.py`在同一分配GPU上逐角色执行固定case，完整角色须通过模型/core/协议/runtime、700/1000官方步数、native轨迹与初始图像哈希核验，再单独压缩封存；重启后仅补缺失角色。未提交的JSONL尾部不作为标签，完整角色重复会停止并要求显式核销，不按成绩挑选。子进程继承campaign文件锁，防止控制器中断后与残留worker重复运行；原始开始时间和12小时总预算不会随容器重启归零。每角色最多三次尝试，代码错误须诊断后修复，不无限盲重试。
+
+自动导出`verified_pairs.json`、`paired_counts.csv`和`verified_counts.tex`，完整与pending分开；`plot_rebuttal_campaign.py`从已核验记录生成原始结果矩阵SVG/PNG，待完成项保持灰色，不补零。原case0与CCI进行中的case1/2可以作为明确的外部来源，ACP仅负责不重叠的固定case3–9，合并前逐项核对reset及来源。上述是执行层变化，科学worker仍绑定已验证的原core，K32/H32/NFE10/prefix4、checkpoint和任务上限不变。
+
 ACP显示“运行中/完成”仅代表平台状态。科学验收须读取原始命令、checkpoint/config/source、完整回合、失败计数、配对身份与保存哈希。控制台创建失败或网络响应不确定时先核对实际作业，避免重复占用算力。用户其他项目的作业保持原样。
