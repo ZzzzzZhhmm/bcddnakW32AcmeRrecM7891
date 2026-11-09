@@ -973,3 +973,15 @@ expert-only roster在原seed流340800000–340800009逐个通过，共10/10原�
 本次标准资源提交直接捕获服务端429正文：code8、`MEMBER_QUOTA_EXCEEDED`，`workspace_aec2_total`剩余GPU0、请求1。故此前仅根据HTTP429写成“限流”的解释不充分；本次有明确**成员配额不足**依据，按作者要求转闲时。闲时创建返回200，任务`warm-rb-resume-20261109-e`，UID `e9c3736f61124ffebebef597abf524b0`，22:09:09 CST创建，集群02、1卡8核128GiB、最大重启2；镜像、AFS与冻结命令均已在详情页回读。14:15 UTC附近Worker仍等待中，AFS无运行心跳，**未声称GPU已运行**。原始响应字段和实际UI观察来源保存在外部`ACP_E_CREATION_RECEIPT.json`；旧失败、旧计划和case0完整原件保留。
 
 为处理23.19/23.24尚未解决的原始事实父状态问题，新增独立fresh-scene native replay资格入口：只执行既有完整Full source的记录命令，两次独立reset，每条before/after qpos、固定query的RGB必须逐元素等于原source，新采集的native物理bytes/驱动目标/task/controller/camera/RNG必须跨reset精确重复；不做物理unpack。opaque句柄仅做显式类型检查，不宣称隐藏状态已完整捕获。Windows3项与CCI原生26项包含单像素、dtype和单ULP篡改拒绝的检查通过（原生0.79秒）。**实际物理回放尚待启动，不能用这些检查宣称反事实机制已通过。**
+
+### 23.28 第二个RB配对、完整训练状态恢复与官方观测语义更正
+
+固定case1/seed340800001已完成：Full0/null0，各700条官方命令、max_reward0。当前RB完整配对共2个，均0/0；继续固定case2及ACP case3–9，不按成败换seed。原worker在执行case2，因此只复制case1完整目录、原始对应JSONL行和静态身份，封存`S/rebuttal_20261109_acp/rb_case0001_complete_snapshot_v1.tar.gz`：6,631,192 bytes，SHA `f7d74bd7c38143e4406d411a97c5c247b871dd2fc6dce698fa9d560cfb549c66`，本机1112项文件哈希核验通过。计数表和过程图已刷新为2/10 complete、8pending，**仍无新增性能优势证据，不替换原稿数字。**
+
+本次原生源码核查发现需要收窄早先的“实际关节运动”解释：官方`envs/robot/robot.py`中`get_left/right_arm_jointState`读取`joint.get_drive_target()`（约524/531行）；`_base_task.get_obs`由此组成`joint_action.vector`。夹爪API也读取controller的`left/right_gripper_val`。故历史工件字段`native_qpos`和`qpos_trace.before/after`保留原命名，但其臂部是**驱动目标通道**，不是独立物理关节传感。原审计可以检查命令是否被官方目标通道接受，不能由此声称物理servo精度或全部实际运动已获证明。原始图像、官方物体几何成败和官方输入协议保留；不为补传感而静默改变policy输入。
+
+首个RB对的原始相机序列已形成`diagnostic_rb_case0_v3/source_rgb_montage.png`，含官方输入的3相机及仅用于取证的front相机；与`native_execution.svg/png`、逐文件输入哈希和诊断JSON同存外部。两角色的臂部target-minus-after均0，只证明目标接受；旧v2图曾标为realized，已明确由v3的drive-target标签与上述源码语义更正，不作为物理跟踪证据。图中可见实际机械臂运动及操作尝试，但不能凭视觉序列宣称长时序任务已成功。
+
+研究资格入口新增独立`articulation.get_qpos/get_qvel`只读采集，每条命令与固定query分开保存实际关节状态；不改官方观测、动作、模型或采样。Windows4项及CCI原生47项观察语义/状态拥有权、真实坐标读取、单ULP/像素拒绝和既有policy检查通过（1.01秒）。原native replay v1仍在独立冻结的Git `dc50f06`/源码集合`a8653771793bd02d78389597f99a2edd8a5d07efe53bfca6dc861faf3fde3c52`运行，14:18:57 UTC启动、1800秒上限、spec SHA `b6418a7bb107cf344ff45a6d2ae28dfaefaf94c0298219dc5bde21fcfac826fa`；14:40 UTC首遍700命令已重放，第二遍及完整资格尚未结束。此处不把旧通道一致性扩张为新物理读数已完成。
+
+Full/control的100-update完整状态已从双端压缩CAS逐块校验并重建至独立CCI scratch：分别38,599,567,360与38,438,236,160 bytes，TAR SHA `fb4321c8dc16b449d320cc6f97fafaaa88b08d22214af13af4127852e5e96a87`和`2acd20824aacce72e6520866b7e980ee9ca64bd926315e4854d0a259b794385c`，两权重SHA与23.16/23.20一致，14:30:31–32 UTC完成。收据`RESTORE_FULL100_RECEIPT.json`/`RESTORE_CONTROL100_RECEIPT.json`，并非新增训练结果。原配方/优化器/调度器/RNG/数据游标续训100→200的有界顺序队列已启动等待（14:28:42 UTC、队列3h、每角色3600秒），只在现有评测终止且GPU无其他进程时准入；checkpoint选择仍固定3000，暂无新的200-update或TEST结果。产物写AFS，成功后自动保全并追加本ledger，执行程序不执行任何Git网络操作。

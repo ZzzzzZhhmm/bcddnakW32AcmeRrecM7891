@@ -1,6 +1,8 @@
 """Strict observations and value-state identities across independently reset scenes.
 
-Opaque Python handles are compared by declared type rather than process address;
+The historical ``native_qpos`` observation field retains the official API:
+its12 arm entries are drive targets, not measured joint positions. Opaque
+Python handles are compared by declared type rather than process address;
 this is not a certificate that their hidden state has been captured. Native CPU
 physics, drive targets, task values, camera values and RNG remain exact checks.
 """
@@ -34,8 +36,14 @@ def native_parent(env,observation):
         task=portable_python_state(env),robot=portable_python_state(env.robot),
         cameras=portable_python_state(env.cameras),articulations=articulation_state(env),
         topp={name:portable_python_state(getattr(env.robot,name)) for name in ('left_mplib_planner','right_mplib_planner')},
-        observations=observation_arrays(observation),rng=rng_state(),
+        observations=observation_arrays(observation),physical_joints=physical_joint_state(env),rng=rng_state(),
         opaque_scope='Opaque handles are type-checked only. Planner RPC is not used by native qpos replay. No hidden-state completeness claim.')
+
+
+def physical_joint_state(env):
+    """Read actual simulator coordinates independently of official drive targets."""
+    return [dict(name=art.name,qpos=np.array(art.get_qpos(),copy=True),qvel=np.array(art.get_qvel(),copy=True))
+            for art in env.scene.get_all_articulations()]
 
 
 def state_hashes(state):

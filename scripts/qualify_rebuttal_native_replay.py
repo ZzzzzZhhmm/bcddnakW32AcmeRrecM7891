@@ -1,7 +1,7 @@
 """Check native replay of a fixed complete Full source without physical unpack.
 
 Runs two fresh scenes through every recorded command. Exact native before/after
-qpos and saved query RGB must match the source; all new query-state components
+drive-target coordinates and saved query RGB must match the source; all new query-state components
 must repeat across the two scenes. This is engineering evidence only: no new
 policy SR, model-effect validity or counterfactual benefit is measured.
 """
@@ -23,7 +23,7 @@ def main():
     import numpy as np
     from scripts.nonreal_job import source_identity
     from scripts.qualify_rebuttal_rmbench_task import resolved_config,source_identity as runtime_identity
-    from fastwam.research.native_replay import observation_arrays,require_observation,native_parent,state_hashes,require_trace_step
+    from fastwam.research.native_replay import observation_arrays,require_observation,native_parent,state_hashes,require_trace_step,physical_joint_state
     from fastwam.research.resumable_pairs import file_sha,read_json,read_roles
     from fastwam.research.evidence import append_record
     identity=read_json(a.source/'identity.json');plan=read_json(a.plan)
@@ -47,6 +47,7 @@ def main():
         runtime_source_sha256=native_identity['sha256'],collector_source_sha256=source_identity(ROOT)['sha256'],
         checkpoint_sha256=plan['checkpoint_sha256'],plan_sha256=file_sha(a.plan),replays_completed=0,
         counterfactual_branches_executed=0,full_scientific_qualification=False)
+    report['observation_semantics']='Official joint_action arm entries are drive targets; original qpos_trace alone is not a physical tracking certificate. New query snapshots separately read actual articulation qpos/qvel.'
     (out/'identity.json').write_text(json.dumps(report,indent=2));started=time.monotonic();env=None;reference={}
     os.chdir(runtime);sys.path[:0]=[str(runtime),str(runtime/'description/utils')]
     from generate_episode_instructions import generate_episode_descriptions
@@ -75,8 +76,14 @@ def main():
                         differences=[k for k in hashes if hashes[k]!=reference[query][k]]
                         raise ValueError('fresh-scene native parent components differ: '+','.join(differences))
                     print(json.dumps(dict(stage='native_query_replay',repeat=repeat,query_ordinal=query,frame_index=index)),flush=True)
+                physical_before=physical_joint_state(env)
                 previous=env.take_action_cnt;env.take_action(command.copy(),action_type='qpos')
                 after=np.array(env.get_obs()['joint_action']['vector'],copy=True)
+                physical_after=physical_joint_state(env)
+                append_record(out/'physical_joint_trace.jsonl',dict(repeat=repeat,command_index=index,
+                    before=[{k:v.tolist() if hasattr(v,'tolist') else v for k,v in arm.items()} for arm in physical_before],
+                    after=[{k:v.tolist() if hasattr(v,'tolist') else v for k,v in arm.items()} for arm in physical_after],
+                    use='Read-only physical articulation qpos/qvel; never substituted for official policy input.'))
                 if env.take_action_cnt!=previous+1:raise ValueError('official command count did not advance')
                 require_trace_step(trace,index,before,after)
             if int(bool(env.eval_success))!=report['full_source_success']:raise ValueError('source terminal outcome differs')

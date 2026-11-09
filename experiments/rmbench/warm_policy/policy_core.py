@@ -166,11 +166,14 @@ def audit_qpos_execution(
     command_threshold: float = 1.0e-2,
     motion_threshold: float = 1.0e-5,
 ) -> dict[str, Any]:
-    """Fail closed when RMBench silently drops a commanded arm trajectory.
+    """Reject arm commands that the official drive-target channel never accepts.
 
     The official ``take_action(..., action_type='qpos')`` catches TOPP
     exceptions internally.  On that path the affected arm is never actuated,
     while the evaluator still increments its policy step and returns normally.
+    The official ``joint_action`` arm entries read ``get_drive_target``.
+    This checks target acceptance, not actual physical joint motion or servo
+    tracking. Those require separate articulation ``get_qpos/get_qvel`` reads.
     Grippers are excluded because their controller is independent from TOPP.
     """
 

@@ -1125,8 +1125,8 @@ class RMBenchWarmPolicy:
             target=queued.environment_space,
             after=factual_qpos_after,
         )
-        # Record only after factual state proves the simulator did not silently
-        # discard either arm's TOPP trajectory.
+        # Check official drive-target acceptance before recording. Actual
+        # articulation motion is not measured by this observation channel.
         self.controller.note_executed_action(
             queued.environment_space,
             model_space_action=queued.model_space,

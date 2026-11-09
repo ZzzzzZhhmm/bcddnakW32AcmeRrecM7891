@@ -1,7 +1,7 @@
 from types import SimpleNamespace
 import numpy as np
 import pytest
-from fastwam.research.native_replay import require_observation,portable_python_state,require_trace_step
+from fastwam.research.native_replay import require_observation,portable_python_state,require_trace_step,physical_joint_state
 
 
 def test_observation_rejects_changed_pixel_missing_camera_or_coerced_dtype():
@@ -25,3 +25,11 @@ def test_replay_rejects_a_single_native_state_ulp():
     require_trace_step(trace,0,trace['before'][0],trace['after'][0])
     changed=trace['after'][0].copy();changed[3]=np.nextafter(changed[3],np.float32(2))
     with pytest.raises(ValueError,match='command 0'):require_trace_step(trace,0,trace['before'][0],changed)
+
+
+def test_physical_reader_uses_articulation_coordinates_and_owns_arrays():
+    measured=np.array([.125,.25]);velocity=np.array([.01,.02])
+    art=SimpleNamespace(name='robot',get_qpos=lambda:measured,get_qvel=lambda:velocity)
+    env=SimpleNamespace(scene=SimpleNamespace(get_all_articulations=lambda:[art]))
+    state=physical_joint_state(env);measured[0]=9;velocity[0]=8
+    assert state[0]['qpos'][0]==.125 and state[0]['qvel'][0]==.01
