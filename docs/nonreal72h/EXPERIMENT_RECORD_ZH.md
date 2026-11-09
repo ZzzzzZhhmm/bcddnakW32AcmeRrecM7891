@@ -931,3 +931,23 @@ Full原step5完整state成功续到step100，20:27:18 UTC保存链exit0：新增
 CCI完整事实回放于08:45:01 UTC实际启动，job `factual_replay_job_logs/20261109T084504Z-49a42bda`，spec SHA `91f984fe9731e9936429b0ac1dbc5d52fc957c2a9f1420200723c5a02013a256`，仍用原Battery Try source0及作者checkpoint，官方1000步，独立7200秒上限，模型进程显存fraction0.4。现场另有WAMO进程运行，按至少64GiB空闲准入，保留它不变；本项不作为延迟基准。09:02:31 UTC固定快照中官方executor日志推进261步，q0/q8/q24/q48分别封存在事实命令0/32/96/192处，生成命令和before/after qpos精确比较已通过对应前缀；尚无完整回放最终收据，反事实分支数0，也不是额外的独立成功率样本。
 
 该活动快照连同ACP可见配置、冻结计划/来源、启动收据和先前不一致诊断已双端封存：`S/rebuttal_20261109_acp/active_factual_witness_and_acp_submission_snapshot_v1.tar.gz`，956,743 bytes，SHA `4b267cd3d91dd7f4182c877f9d7561af4546bd84d23c5be68397e8a8295a6c5b`，本机23项内部文件核验，报告`ACTIVE_WITNESS_SNAPSHOT_LOCAL_VERIFICATION.json`。只截取捕获时点的console前缀，不把可继续增长的活动日志称为完整结果。Full100完整CAS本机传输继续进行，不能据此移除其AFS独占payload。
+
+### 23.24 原生运行状态核销、Full100双端保全与CCI首个RB正式pair尝试
+
+11-09再次核验发现，ACP b的AFS `running/elapsed18.9566s`收据已停更；控制台为17:16:58失败，Worker事件4301明确`has been preempted by job`，其后容器被停止。实际GPU为H100 80GB、SM90、580.95.05，Torch2.7.1+cu128；两worker曾启动，但`role_trials`完成数0，无完整pair。原native receipt不覆盖，外部状态标记抢占失败，**不记为SR=0或政策科学失败**。原标准c与新的标准d提交均见429响应，随后详情页明确任务不存在，未登记为成功作业。d保持原core/模型/前10对，仅新运行目录，冻结计划SHA `83902800b8d75b8cf15dcdd24581ff55382728a9421fb476be9a3bfd7926ccd0`；当前没有新的ACP正式完成结果。
+
+CCI Battery source0事实回放的六个q0/8/24/48/80/120前缀探针均已落盘；最后console为768/1000、mtime09:15:53 UTC。10:05 UTC现场进程2090137/2090133已不存在，`summary.json`和最终事实trace未生成；原running manifest同样为停更状态。记录为**中断、最终资格未通过、原因待进一步定位**，不凭时间关联直接断言平台重启，也不以部分前缀替代完整机制证据。
+
+Full100本机自包含压缩CAS传输已完成：388个blob及1份manifest共389文件、22,539,160,115 bytes，耗时2473.891秒；本机transport receipt SHA `3e650a982454f186602dd0c02eb4533e73e703c65a52d5c59dde7c685dbec76e`，已回传AFS。结合23.21原生完整TAR逐字节重建，构成双端保全；本机仍未执行TAR解压或全tensor复扫。原始author权重、数据及任何当前引用blob均未删除。
+
+为继续获取真实闭环数据，在确认无既有RB完整trial后，CCI新尝试`rb_pair_case0000_cci_v1`于10:13:27 UTC启动，spec SHA `7efa2e345a5558a536d87d162da34d3a5783dd50b8af8f17add440859ca2de65`。使用固定core `5d7748e77a648511c5ddcfc0c65c3fac9933bbeb0e2bff20c61a7fd7e6356638`、作者step3000与原v3主计划；同一进程中两个独立policy按原次序运行case0/seed340800000、Full/null、官方各700步，H32/prefix4/K32/NFE10不变，7200秒上限。空闲67,023MiB时准入，模型进程显存fraction0.7，保留其他工作；这不是延迟benchmark。此处仅登记启动，尚无完成pair或收益，不将ACP抢占产生空目录视作已完成或换样本。
+
+当前核销包`S/rebuttal_20261109_acp/evidence_and_infrastructure_audit_20261109_v1.tar.gz`，2,041,005 bytes，SHA `c9c4558be8ca0072ecde580f470b23d3e22987df11f44e7a955b3083c550cbe7`，双端44项文件核验，报告`CURRENT_AUDIT_LOCAL_VERIFICATION.json`。包含ACP原件/可见事件、CCI中断前缀/收据、Full100本机保全证明及新CCI启动身份，未声称大权重在这个小包内。
+
+### 23.25 AC视角证据盘点与真机1–2任务补强（计划，不是新结果）
+
+作者本轮确认合作方仍保留四任务各20次评测的逐次结果与录像，本周可安排约1–2个task的小规模对照。完整分析与可编译LaTeX/PDF保存于`tmp/rebuttal/analysis/20261109_ac_evidence_real/`，六页PDF已编译、渲染检查，0个排版警告；可交付的协议片段为`docs/rebuttal/REAL_ROBOT_REBUTTAL_PROTOCOL_ZH.tex`。
+
+优先恢复原80个任务-reset在所有方法下的逐次对应，登记R2P起始盘7/7/6、SOR两种顺序各10、实际几何/桌面条件、失败/接管、输入时间窗及checkpoint/bank来源；不把黑桌面七组定性序列补写成分外观成功率。优先建议R2P：20 reset×原库/困难库×Full/关闭显式比较，共80个新自主试验；计算困难库Full对照差和配对交互。若只能60次，预注册三条件降配，并明确缺少完整交互。新增donor必须独立于TEST、保持完整真实事件和原动作/encoder/normalizer语义；若仅操纵既有top-K，则称候选压力测试，不称自然大库扩展。
+
+可选SOR：20 reset×Full/candidate-null，共40次，二者均保留回合recollection、共同撤回候选source和conditioning，检验已有顺序记忆后跨回合经验的增量。若用固定权重开关，按推理干预报告；独立训练baseline另记身份，不能混称。上述试次数是待首次TEST前冻结的建议，不是完成量，不保证显著性。整体长时序、历史依赖、库多样性及实际候选歧义是不同证据轴；当前R2P/SOR的原稿15/20与35/30点增益可以积极阐明，但不能替代困难检索和模块必要性的直接对照。

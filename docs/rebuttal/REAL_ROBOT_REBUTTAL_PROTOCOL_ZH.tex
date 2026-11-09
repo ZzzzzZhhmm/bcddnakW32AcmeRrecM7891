@@ -1,0 +1,46 @@
+% Internal LaTeX protocol fragment; planned trials, no new real-motion or efficacy claim.
+% The complete compiled analysis is under tmp/rebuttal/analysis/20261109_ac_evidence_real/.
+% Requires the internal article template, booktabs, and the P column type defined there.
+
+\section{建议交给真机合作方的最小完整协议}
+\subsection{优先任务：R2P，经验库难度与比较机制的配对对照}
+建议以 \textbf{20 个固定 reset $\times$ 四条件，共 80 个新自主试验} 为完整目标。三个源盘按 7/7/6 分配，物体与盘子布局预先固定；每个 reset 内随机/平衡条件顺序，控制现场时段变化。只做一个任务也应优先保全关键对照。
+
+\small\begin{center}\begin{tabular}{P{1.3cm}P{4.5cm}P{4.3cm}P{4.9cm}}\toprule
+条件 & 经验库 & 策略 & 核心作用\\\midrule
+A & 原训练库 & Full & 同期正常参考\\
+B & 原训练库 & 关闭显式比较 & 正常库下的比较贡献\\
+C & 较丰富/困难库 & Full & 复杂候选下完整方法\\
+D & 同一较丰富/困难库 & 关闭显式比较 & 复杂候选下的直接替代解释\\\bottomrule
+\end{tabular}\end{center}\normalsize
+
+“关闭显式比较”若使用原已训练的 matching no-comparison checkpoint，应明确其训练身份；若只在同一 Full checkpoint 上使用 \texttt{comparison=false}，应称为\textbf{固定权重推理干预}，不声称最佳训练 baseline。当前研究实现支持该开关，但真机 checkpoint、实际部署后端和现场行为仍须合作方核验；不把仿真开关通过视作真机已部署。
+
+\textbf{库的构造按可用数据分两种清楚命名。}优先添加独立补采、同一硬件/动作语义的真实 donor demonstrations，丰富既有任务中的目标、布局、阶段、源盘关系；只改变 bank，保持模型权重、原 normalization/encoder、任务词表和 K32 不变。新增任务标签如果超出现有表示，需要另立适配方案，不能悄悄扩网络。
+
+若没有额外演示，则从原 training-only 库构造相似但目标/阶段不匹配的 complete-event 候选干扰，事前固定比例（例如 50\%），明确叫\textbf{受控候选压力测试}，不叫大规模自然经验库扩展。一个条件只选择其中一种定义并在 TEST 前固定，不能混合到同一 SR。
+
+新增 bank 容量、独立 demonstrations 数、任务/阶段构成，以及真正进入 top-K 的干扰比例都要报告。来源标签是语义相容证据，不等于该 adapted H32 动作的独立物理后果真值。状态、动作、效果及来源信息整条保留；禁止拆散后拼接。原自主 TEST 录像用于审计，\textbf{不能回灌 repertoire 再评测相同 reset}，也不能按 TEST 失败挑 donor 或调阈值。
+
+\textbf{主指标与判断。}以无接管的整任务成功率为主，计算困难库下 C--D 的 paired 差值及交互
+\[
+\Gamma=(\mathrm{SR}_C-\mathrm{SR}_D)-(\mathrm{SR}_A-\mathrm{SR}_B).
+\]
+同时报告 C--A 的变化。只做 A/C/D 三条件可降至 60 次，是降配协议，能够给困难库下对照及 Full 跨库变化，但不能估计完整交互 $\Gamma$。采样数小，报告配对差值区间、四格计数和完整失败；不能预先保证统计显著。
+
+原始初始信息、传感器、部署预算、K/NFE/horizon/prefix、执行上限一致。重置及 bank 可配对，但不同策略后续轨迹、访问状态和检索候选允许自然分歧，不能声称整个 on-policy 候选序列完全相同。
+
+\subsection{可选第二任务：SOR，保留回合记忆的 candidate-null 对照}
+建议 \textbf{20 个 reset $\times$ 两条件，共 40 次}：Full 与 candidate-null，共同保留本回合 recollection，撤回的是跨回合候选的 source 与 conditioning 两个通道。固定权重撤回仍是机制干预；若采用独立训练的 recollection-only 模型则另列训练身份，两者不混称。两种顺序各 10 次，最终位置与顺序独立。
+
+这个对照直接回答“在已经能记住顺序时，跨回合经验是否仍有贡献”。再利用已有录像核实线索退出当前输入时间窗，补放置/取回时间线、错误顺序及接管。不增加新硬件或全新技能作为当前主线。若现场只能做一个任务，先完成 R2P；若研究重点转为只证明 episode memory 的必要性，可另预注册 Full/no-recollection 的 SOR 对照，但它不能替代 repertoire 贡献检验。
+
+\subsection{每条记录的最小字段}
+\begin{itemize}
+\item task、reset ID、条件、盘子/放置顺序、几何/外观设置、运行顺序、checkpoint/config/bank/encoder/normalizer 身份。
+\item 开始、线索建立、staging/placement 完成、关键 replan、回收/返回、结束时间戳；当前输入帧范围和实际历史访问。
+\item 每次检索的 source task/episode/event/action interval、K32 候选及最终选择、比较分数、raw utility、effective gate、veto 原因；不只保留成功试验。
+\item 全任务成功、超时、错目标/错序、抓取/掉落/释放失败、干预；阶段条件统计的分母单列。SOR 的 requested/completed order 分开记录。
+\item 原始外部/腕部视频、完整动作/状态日志、原件哈希及逐次索引。录像中的任务线索、指令和末端状态不能泄露待记忆的答案。
+\end{itemize}
+
