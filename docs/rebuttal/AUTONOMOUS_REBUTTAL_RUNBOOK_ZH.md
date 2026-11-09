@@ -22,6 +22,8 @@ CCI别名`slai_debug_workspace_1`；工作目录`/mnt/afs/task3_2/L202500276_lwz
 - 原始投稿表12–18的结果按作者说明是真实结果，保留为原稿报告证据；旧synthetic注释是作者确认的残留。新复现实测与原稿结果使用不同证据ID，不伪装为原始日志恢复。
 - 双遍fresh-scene native replay v2已exit0：RB源case0的全部700命令、六个固定query、物理状态与独立qpos/qvel跨两遍一致。随后Git `fabb74b`的fresh-scene分支入口已在同一source0/q8通过真实A-A-B-A：四个父状态精确一致，三次refined端点一致，raw端点在真实物理bytes上不同，共128条完整分支命令。此单query的raw/refined独立局部标签均0，candidate-null尚未执行，不能称为修复优势。下一步扩展固定source/query及K32后果读取，并从同一原始Full事实上下文生成null。不要继续使用会重编码事实父状态的旧pack/unpack入口获取正式机制数值。
 - A-A-B-A是工程资格检查；正式cohort遇到raw/refined完全相同、未到达query、执行拒绝或几何歧义均须保留原身份，不因资格或成败选择替换query。新query的父状态与重复端点应单独核验，不能将q8通过推广为全部阶段已经通过。
+- 首个完整fresh K32 source0/q8：28完整H32、4无效未知；predicted centered MSE0.077411高于query-constant0.052806，centered explained variance为-0.465948。这是一个真实待解决的直接证据问题，不能称新增预测优势。四个已生成父状态DINO的dtype/shape/bytes哈希已核对原在线telemetry全部相同；继续固定cohort、查动作/时间语义及原投稿模型对应关系，不按此query调参、换样或重缩放truth。
+- 同一Full事实null动作封存使用`controller_f82f8b0/code`的v3运行，57项原生检查和6个真实generation工件契约preflight通过，实际重现/封存状态查`RB_SOURCE0_NULLSEAL_V3_LAUNCH.json`和worker原件。v1 trial布局失败、v2已知NPY哈希契约停止保留；original generation的`array_sha256`是完整NPY文件SHA，和`manifest.sha256_array`不是同一种对象。不要重复启动尚未知是否结束的v3。
 - 官方`joint_action.vector`臂部是drive target，夹爪项也是controller API值。保持官方policy输入；物理运动证据使用独立articulation qpos/qvel和图像。旧命名native_qpos不自动等于实际关节传感。
 - Full/control100→200训练及逐字节可重建state档案均已完成，不能再次启动同一段。续训operator v2误把运行中的部分summary当成失败，v3修复后原截止窗口保留，control另有预算修订。先核实两份200收据、本机CAS传输和空间准入，再续向固定选择点3000；100/200工程段不是TEST结论。
 - 当前conditioned-prior是适配对照，不是官方ReCAP/WarmPrior复现。其信息输入忠实性、训练对齐和最终性能须明确，不以概念区别代替受控对照。

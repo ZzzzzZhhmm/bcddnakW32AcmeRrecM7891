@@ -1083,3 +1083,21 @@ paired布局修复`01fd751`已本机/GitHub/CCI对齐；冻结source `f0a11d72fb
 随后跨组件复核发现原`action_witness.generation.json`中`array_sha256`实际是**包含头部的完整model_actions.npy文件SHA**，不是`manifest.sha256_array`的dtype/shape/array-byte SHA。原生unit fixture此前手造metadata，未覆盖这个producer/consumer契约。已改为直接由原production action-witness生成测试文件，消费者显式接收并核对原NPY文件SHA，保持完整H32逐元素相等及输入/候选/seed约束；新增检查确保不能混用两种哈希。Windows48通过、1个Torch测试跳过。
 
 18:37:45 UTC已用v2冻结检查函数对真实原q0工件复现该契约错误（原NPY和metadata文件SHA均`afac084c743ef5b9e8c52b41c04b47b7a92306405eb22d8bd341f571f86ebdd5`），故向核对命令行和独立process group后的本次v2进程发送SIGINT，避免继续无效GPU采集；三路K32工作保持。停止原因是已验证工程错误、非策略结果，不据此赋策略失败或null标签。`NULLSEAL_V2_KNOWN_HASH_CONTRACT_STOP.json`保留操作证据，真实runner退出/已执行prefix须继续核实；原始失败和中断不删除。修复后应先对原6个query的实际generation工件做契约preflight，再以独立v3冻结目录重跑。
+
+
+### 自动采集：fresh-scene K32 fixed-fresh-rearrange_blocks-e0000-q0008
+
+fresh-pool:fixed-fresh-rearrange_blocks-e0000-q0008:1b87159dd4cf6d74833a7d801eea81a56e57fcae7ac575666d091f340fa267f3；原K32有效候选32，完整H32端点28，完整refined重复支持True；原件`/mnt/afs/task3_2/L202500276_lwz/projects/WARM_evaluations/rebuttal_20261109_acp/rb_source0_fresh_K32_v1/q0008`，候选结果SHA `286c8dc177ea0e085ddeb25f78df507cad38903e51d71fe428b49ba212fa4fb3`，centered结果SHA `2fcb6bb996e7634fdf3151a94d89bba90c1386999eaaac6a1b06fde01bb852c8`。**仅固定source/query的直接候选效应数据；不替换原论文表格，不视作整个cohort或策略收益。**
+
+
+### 23.37 首个完整K32查询的负结果、原始特征哈希核对及null封存v3
+
+固定source0/seed340800000/q8已完成原32个valid候选与三次refined anchor：28个完整H32端点，4个TOPP等执行无效、效应与局部标签保持未知；28个已知独立局部标签均0。三个refined端点精确相同。使用同一28候选支持集，predicted/historical/query-constant的centered MSE分别为0.0774111356/0.1023458527/0.0528061854；centered explained variance为-0.465948/-0.938141/0。对应absolute MSE为0.197898964/0.188502407/0.244073412。**模型在本query的中心化误差优于历史效应，但不及查询常量；绝对误差排序不同。本条不支持新的候选区分优势或修复收益。** 一个query不等于整个固定cohort，保留其他预定query和所有无效分支，不按结果替换样本，也不静默替代原稿作者确认的历史表格。
+
+18:44 UTC不可变快照包含三个source已终止78条候选分支，其中69个完整H32、9个无效未知，8个完整anchor、1个完整query。原件`fresh_pool_first3_sources_snapshot_20261110_v2.tar.gz`，105,516,761 bytes，SHA `0f7b61a774934ba49d7da075f779fa739e956b48615d6b9f47c0ad1564f1763c`；本机736项逐文件核验。原sealed branch、负结果、v1失败和v2中断日志均保留。可审阅的对照表和分析为本机`tmp/rebuttal/execution/20261109_acp/fresh_snapshot_v2_query_results/ANALYSIS.md`与`effect_comparison.tex`；不将28个相关候选当作28个独立query计算置信区间。
+
+原Full telemetry实际上还保存了`factual_world_tokens_sha256`。独立审计4个已生成父状态（source0/q8与q48、source1/q8、source2/q8），新增reader的4×768 float32语义tokens之dtype/shape/bytes SHA与原模型实际在线tokens哈希全部一致。`FRESH_PARENT_ORIGINAL_TOKEN_HASH_AUDIT_V1.json`同时绑定原telemetry文件SHA和bound-step；这是原hash的精确核对，不是未保存原tensor的直接数组对照，也不将NPY文件SHA混用。原先“未获得原tensor”的收据保留，此新增审计收窄了父特征读取失配这一解释。训练target索引为frame+action_horizon，当前分支为原32条native命令；物理耗时和原投稿评估模型/配置对应关系仍需核实，不从索引相同推断全部时间语义一致。
+
+已修复NPY封存契约，Git `f82f8b043e1d2c2b7a23439a86da1c64d2b5c063`推送核验；冻结`controller_f82f8b0/code`，source SHA `8deb4c37d0a616211e84f05a9bdc4703fb55297c07bbab8262babf833589479d`。57项原生检查通过（21.05秒），原6个query的真实generation工件均在模型加载前通过producer/consumer契约核对。v2 runner明确exit-2，0事实命令、0null封存、0分支标签，原件保全；并非策略结果。v3于18:40:54 UTC准入，launcher PID2163273，spec SHA `e9ccbc76381c42354f6d576d3460f634592f085726c3d004b9e6ff2873c22c08`，5400秒上限；仅正式原source0、同Full历史与共同噪声，不执行null分支。此时仍在实际模型加载/推理流程，未宣称完整事实重现、null动作或修复收益已经完成。服务器canonical同步因刚产生的新query自动台账暂缓，冻结代码不受影响；须保留导入此自动条目后再fast-forward。
+
+ACP e于18:30 UTC仍等待，事件`FailedScheduling / insufficient resource: nvidia.com/gpu 1`，case3–9所有权不变，未重复提交。Full/control200 native档案仍有效；本机联合CAS传输仍在途，必须待401项完整验证后再登记本机保全或分层旧AFS重复payload。当前优先完成固定直接查询、核对新负结果与模型/协议对应关系，核验简单对照的信息匹配；当前适配control不称作ReCAP/WarmPrior复现或最终公平性能。回复和论文的公开草稿暂不添加新增收益结论；HH-W5新增直接证据缺口列为明确release gate。
