@@ -1,6 +1,6 @@
 # WARM 实验记录与论文回填索引
 
-更新日期：2026-11-08。本文是持续维护的回填入口；原始记录、数组、运行输出按各条目的实际身份与可用性登记。每次取得数值，先保存，再核验，再更新本文。失败与不支持假设的结果同样保留。以下各历史条目的状态属于各自记录时点；投稿版本清点见第17节，作者来源澄清见第18节，rebuttal首批新诊断见第19节。下方09-24等历史快照不代表当前投稿结果或运行状态。
+更新日期：2026-11-09。本文是持续维护的回填入口；原始记录、数组、运行输出按各条目的实际身份与可用性登记。每次取得数值，先保存，再核验，再更新本文。失败与不支持假设的结果同样保留。以下各历史条目的状态属于各自记录时点；投稿版本清点见第17节，作者来源澄清见第18节，rebuttal首批新诊断见第19节。下方09-24等历史快照不代表当前投稿结果或运行状态。
 
 **最新稿件回填映射：** 作者09-24新提供的28页PDF使用表1–11、图1–4；详见[最后24小时审计与计划](PLAN_24H_20260924_ZH.md)。本文旧条目中的表17–25等是早期论文表号，数值范围不变，不应据此误判新版缺口。当前C.2.2已包含forced-null 50/50记录；表4仍未实测。09-24 14:42 UTC再次只读检查AFS，训练指标仍停在02:03:32 UTC修改时间，未见stage1最终summary/15k/natural-gate产物；没有新增论文SR。
 
@@ -921,3 +921,13 @@ Full原step5完整state成功续到step100，20:27:18 UTC保存链exit0：新增
 该已提交原作业controller固定Git `76979a5d1bc28b33df08a6259cd664228757dece`、源码集合`16f73967e8ade41ce805da900612b310e0c78afacb5df2e4e3d1638d4aff115c`，计划`S/rebuttal_20261109_acp/rb_pairs_0000_0009_a_plan.json` SHA `cfa2e52b50d039106b8c1d1a6d4de290d6c04148b9a04f4585c475b38be87059`；固定前10个RB Full/null对、官方700步、原checkpoint/core/recipe、K32/NFE10/H32/prefix4。原生14项controller/merge/runner检查通过。资源受限后的更小规格使用独立新计划和输出，不修改已提交source，不重复未知创建。
 
 机制入口新增完整事实回放专用工程模式：模型构造先于fresh role reset，事实推理不做物理pack/unpack，每一条新生成命令与before/after qpos均精确对照既有完整source；保留原官方终止，禁止截短、原动作驱动策略或充当新的独立SR。仅工程回放通过后，仍需独立完成原始父状态下的反事实资格。普通机制入口亦将事实首命令一致性检查提前到分支执行前；异常路径实际query数保留。原生48项branch/capture/replica/policy-state/准入/资源布局检查通过（21.75秒），precommit源码集合`ed6c8d7a39d79673776367c93b22fa5a1c34bd7d55f779207678286eb10b7f13`，收据`S/rebuttal_20261109_acp/REPLAY_AND_RESOURCE_NATIVE_TESTS.json`。此阶段实现检查与未来实际回放必须分开记录，不能写成机制优势已补齐。
+
+### 23.23 紧凑ACP作业与CCI真实回放的当前证据
+
+实现Git `faeb4d6f927c4c5272b40fb00b86afa3aa44dc37`已完成本机提交、origin/main核对及CCI canonical快进。任务只用`S/rebuttal_20261109_acp/controller_faeb4d6/code`独立快照，源码集合`ab19db64db3d9ac47e4969b7d402c07f5f31a73a911e648b65595d8035266f03`；与48项已测precommit的三个改动文件统一行尾后逐字节相同。正在运行的旧快照没有修改，36项无关文档删除没有纳入提交。
+
+已用记录的镜像与AFS自动填入并创建`warm-rebuttal-rb-pairs-20261109-b`，UID `6ff8eb21848c4f9696ad25c6c76cbe97`，闲时集群02、1卡8核128GiB、最大重启0；原2卡作业a已确认“已停止”，没有原生启动输出。b计划SHA `51118b16d10be66a81f4f2b7484ed14a8628e042a686dbb0f5b749de156c106e`，固定前10对不变，两个独立角色进程共享唯一分配GPU、最长12小时。08:52 UTC Worker事件已无原CPU/内存错误，最新为`insufficient resource: nvidia.com/gpu 1`，此前挂载PVC等待事件亦保留；09:00 UTC控制台仍“启动中”、实际规格乘数0，AFS无原生启动receipt。**提交完成，GPU尚未运行。** 单卡标准资源另做较小配额尝试c，服务返回429限流；随后详情页与404明确训练任务c不存在，没有再点击未知创建或把它登记为成功标准作业。c计划SHA `89def89af83f932cc18abe5089dcc91c2e5b5b3612cfddf93268f928f5915b0e`仅保留为未创建计划；b继续排队。
+
+CCI完整事实回放于08:45:01 UTC实际启动，job `factual_replay_job_logs/20261109T084504Z-49a42bda`，spec SHA `91f984fe9731e9936429b0ac1dbc5d52fc957c2a9f1420200723c5a02013a256`，仍用原Battery Try source0及作者checkpoint，官方1000步，独立7200秒上限，模型进程显存fraction0.4。现场另有WAMO进程运行，按至少64GiB空闲准入，保留它不变；本项不作为延迟基准。09:02:31 UTC固定快照中官方executor日志推进261步，q0/q8/q24/q48分别封存在事实命令0/32/96/192处，生成命令和before/after qpos精确比较已通过对应前缀；尚无完整回放最终收据，反事实分支数0，也不是额外的独立成功率样本。
+
+该活动快照连同ACP可见配置、冻结计划/来源、启动收据和先前不一致诊断已双端封存：`S/rebuttal_20261109_acp/active_factual_witness_and_acp_submission_snapshot_v1.tar.gz`，956,743 bytes，SHA `4b267cd3d91dd7f4182c877f9d7561af4546bd84d23c5be68397e8a8295a6c5b`，本机23项内部文件核验，报告`ACTIVE_WITNESS_SNAPSHOT_LOCAL_VERIFICATION.json`。只截取捕获时点的console前缀，不把可继续增长的活动日志称为完整结果。Full100完整CAS本机传输继续进行，不能据此移除其AFS独占payload。
