@@ -1160,3 +1160,23 @@ UTC 2026-11-09T19:48:49.570658+00:00；已封存queries 0,8；每个query原Full
 Windows26项通过；原生冻结precommit26相关组件加query/replica共52项通过（20.73秒）。在真实source0/q8旧pool与v5 null seal上CPU预检通过，已核对真实Raw/Full/null action文件、context、原生产probe和source/runtime身份；preflight-only没有加载DINO或创建模拟器，物理null仍0，不能将该检查称为反事实效果。冻结precommit archive SHA `6b8f06d99ca7a7f674c2283062176274b70fa5603eddcfb0d187282898b753f6`；实际worker须用已提交的新冻结版本，运行前保持输入绑定不变。
 
 定时任务原提示乱码已通过应用automation_update修复为完整UTF-8中文，回读确认无U+FFFD；原hourly周期、ACTIVE、同一thread与11月13日23:00稳定版目标不变。原始最终PDF及既有3位审稿人20项映射继续作为文稿依据，新增真机工作仍延期。ACP e于20:05 UTC实际回读仍等待，FailedScheduling/insufficient nvidia.com/gpu1，未获GPU、未重复提交cases3–9。后续资源扩展仅考虑独立匹配训练的可用资源，不把排队当执行。
+
+### 23.43 首个同父状态物理null对照完成与证据边界
+
+Git `3c1ea491f76e85699799af1a3a0f46d01326d9ff`已推送核验并同步CCI；冻结`controller_3c1ea49/code`，source SHA `0e2bf707080fe70ab7cdd90727413aba4a296d5dcf001f01d3d698a4ea7798f2`。source0/q8 qualifier于20:18:47 UTC启动、20:33:45 UTC明确exit0（898.745秒）；spec文件SHA `6344c6ea37099daa7194f5cd41b4b219ec750d1049a03f90c2fb2e0d3f586b90`，runner规范化spec SHA `4655bdfd29cb3b784b92d2b9cd441c13738e4aa1211c89a46525e81e02a5b6a0`。新增candidate-null和post-null Full各执行32条native命令，共64条；完整physics/task/controller/camera/RNG/实际qpos父状态与原pool anchor精确相同，post-null Full端点及DINO效应精确复现原Full。原core/runtime和collector前后source SHA均不变。
+
+本次仅一个预先固定source0/seed340800000/q8/frame32，复用原selected Raw rank10及三个Full anchor，没有按已知候选局部结果换rank。Raw、Full、candidate-null、重复Full的独立“下一物理交互完成”标签均0。**首次得到可核对的同历史、同Gaussian、同物理父状态null分支；本query没有显示修复或相对null收益，不能由资格通过推断整个cohort优势。** 原K32前三个q8的负primary结果仍保持，候选未知不填0，原稿表12–18身份不变。
+
+完整新分支、实际qpos/qvel逐命令轨迹、原Raw/Full anchor、同上下文null封存与终止runner原件打包`first_same_parent_physical_null_source0_q8_v1.tar.gz`，8,954,471 bytes，SHA `1da847e3a991d001ce772c92d79d4ce3b61137e7079c067abdadee16745da28e`，manifest SHA `f81e2a60e878e04e38c06e3a46fe3ba77a66e99c242a8aab1b85b56e5076850a`。本机80项内部原件均核对长度/SHA，收据`tmp/rebuttal/execution/20261110_direct/FIRST_PHYSICAL_NULL_Q8_V1_LOCAL_VERIFICATION.json`；AFS原件和同名档案保留。v5已有六个动作封存不自动等于完整700步事实见证；其余运行另查真实终止收据。
+
+### 23.44 简化对照信息审计与Full独立续训准备
+
+实际代码路径确认当前`ConditionedPriorFastWAM`只把历史gist和检索动作token送入简化conditioning；`DirectActionEvent`未消费检索事件的视觉/效应记录。现有control200定位为动作先验消融，不能独立关闭BB-W2/HH-W1/HH-W3的同信息公平对照质疑，也不称官方ReCAP/WarmPrior复现。完整审计与后续接口门槛见`docs/rebuttal/BASELINE_INFORMATION_AUDIT_20261110_ZH.md`。Full/control200保留；新结构不得静默继承control200为已匹配训练预算。
+
+准备独立Full200→500（仍固定最终选择点3000），原训练source `4efb8094729ba8771c7ec0d472c30ad8b585ef319e897edb566b12d3d5a81a14`、seed3407、有效batch128及30k scheduler不变；完整optimizer/scheduler/RNG/数据游标父状态先按清单逐项核验。新增operator只允许output/resume/run_steps/save_every控制项变更；为在当前AFS容量内保全完整state，将save_every100改为500，使此段仅在终点保存，eval_every500和数学配方不变。训练4h上限，ACP额外留归档时间，运行前要求80GiB AFS空闲；不删除旧state/CAS，不重复e持有cases3–9。当前为代码与准入准备，**未在此条预填ACP创建、训练执行或匹配收益**。
+
+### 23.45 v5完整700事实命令与六个null动作封存正常结束
+
+v5于20:46:36 UTC明确exit0（4523.429秒），`exact_complete_source_trace=true`，原700条事实命令和6个预定query见证全部精确匹配；六份null均来自该Full事实历史/同Gaussian，实际撤回g=0。collector source前后均`84af4413e9c59934c34664c35bbfab86fb165f2604a2e01ffbf104f4f6716c3e`，原core也未变化。它仅重现事实和封存备选动作，独立null物理分支0；上一条qualifier的两个新增物理分支是另一个独立证据ID，不混合计数。
+
+完整原件包`source0_complete_factual700_same_context_null6_v5.tar.gz`，7,058,889 bytes、92项原文件，SHA `f5cc232c29f7c01044ee01914c33eeb628633d7728235468d2e26f04667b8d3d`；manifest SHA `dae0b62896c8f3bb804af595ce9e353b4144c19054f09b3a30dbaef66604f1ee`。原v1–v4故障/中断、原q0/q8活动快照及本次terminal原件均保留。此结果关闭这一个source的完整事实动作来源检查，尚未关闭固定cohort的后果预测、修复/损害率、自然missing-skill和公平最终性能。
