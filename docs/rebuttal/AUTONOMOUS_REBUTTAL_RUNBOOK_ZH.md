@@ -57,3 +57,18 @@ CCI别名`slai_debug_workspace_1`；工作目录`/mnt/afs/task3_2/L202500276_lwz
 - 真正消费所有K32检索记录的新pooling对照已实现，45项原生检查及实际训练/封存在线记录BF16模块检查通过。冻结配置`pooled_memory_seed3407_configs_v1/manifest.json`，source5347088c…、配置d5a7bd8c…、从共同base0更新起步，最终固定3000。尚未提交新训练，必须先保证与已排队Full b同时保存完整state/CAS的空间；旧control200不改身份、不丢原件。
 - 动作索引audit确认33原始观察/32动作/9视频采样点、action[t]=state[t+1]、target frame+32。metadata15fps不是实测物理时钟；native TOPP每命令多物理步，elapsed-time对应仍待测。不能擅自按4倍或一行偏移改truth或主指标。
 - 新35项资格/失败/审计证据已双端核验，archive c7dddd91…；具体见台账23.52–23.54与两份新协议/audit文档。此轮仍无新增完整科学cohort或收益，回复/论文经验结论门槛保持未关闭。
+
+## 23:15 UTC后接续锚点
+
+- pooling已提交f9f1090并同步CCI，最终Linux冻结source48ce6ba8…；45项原生重复通过。precommit source5347088c…与其余旧文件仅行尾不同，六项新文件byte-exact，原资格保持原身份，不混写SHA。
+- checkpoint scope audit为新增高优先级：作者指定v8为shared-stage，原稿写task specialists。找到BT/PB旧v3 specialist与原Gitf77c633/47277e5，但它们不是已确认的投稿选点，不迁移进v8、不按成绩替换当前实验。具体事实核对已异步发给作者，继续查原DEV/eval bundle绑定；新shared3000比较还不能称原稿specialist协议的完全匹配复现。
+- v4回复与论文将新成本profile的shared-stage update3000范围写明；35页/10页主文，仅page35变化，数字与9张图保持。完整工程及29文件干净ZIP重编译、全35页render和视觉检查通过；PDF e9f99e86…、sourceZIP e4db2687…。当前回复路径改为responses/20261110_v4；v3完整保留，20项覆盖不等于实证关闭。
+- 本机control200原38.44GB TAR已完整重建、7项26.31GB state与AFS逐项匹配。原AFS文件全部未移动/删除；这只是受保护的分层准备，不登记已释放容量。
+- 23:03实际ACP b仍0GPU/无Host IP/insufficient GPU，f保持已停止；不能重复创建训练段。23:00 CCI case3/null仍运行，3个pool的q48 terminal候选21/15/15，未成完整query；GPU58,980MiB、100%。pool0/1旧7200秒invocation约23:19到期，pool2约23:27：核对退出、PID与free native lease后再按原Eb冻结spec续跑，原05:27/05:44 UTC总截止不变。未取得真实terminal前不能重复启动。
+
+## 23:34 UTC最高优先级恢复锚点
+
+- 上述旧case3/null v1已在23:26因实际**3600秒**worker上限中断（原文4500估计不准确，见台账更正23.59），frame592完整prefix、native计数最后595开始，未完成700，不记策略失败或第4对。497项原件包5e05f0d2…已双端核验。
+- 独占重试v2已23:30:23准入，**runner2211054 / child2211066**，原controller5b9ebd7、case3/null/seed340800003、plan d8512a23…、四观测资格0df7b0f…和08:31:04 UTC截止保持。worker3600、outer5400，绝不延长/重置。23:31:17 encoder资格通过，新attempt `0003-candidate_null-1c8ac648c9b14501a92d53b298140dc4`；先看真实heartbeat/完整trace/exit/rolearchive，不依赖旧PID或旧running。
+- **pool0/1/2全部已知7200秒退出，暂缓重启，让v2独占CCI。** 不要见GPU有空闲就把三路重新并发塞回去。待v2明确terminal和casecampaign lease核实后，再续跑原Eb三路，原05:27/05:44总窗口仍不变；末次q48 terminal候选23/17/17，尚无完整后期query。原partial attempts不丢弃。`POOL_LIMIT_HOLD_FOR_CCI_ROLE_V1.json`及最新current_iteration记录调度与真实时限。
+- 下一步同时核对原specialist评测绑定/作者事实答复，以及评估不改变physics/控制命令的采集性能改进。任何跳过中间渲染等优化都必须先在原固定q8/q48通过完整父状态、RGB/DINO及重复Full端点的精确资格；不得直接改活动快照、跳过物理步或把工程优化当性能收益。

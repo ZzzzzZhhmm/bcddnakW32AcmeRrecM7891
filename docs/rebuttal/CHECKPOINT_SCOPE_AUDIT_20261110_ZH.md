@@ -1,0 +1,26 @@
+# 原稿、现用checkpoint与新增证据的范围核对
+
+本核对保留作者指定的v8-step3000与全部冻结实验，不替换原稿结果，不按新测成绩换模型。作者此前指定该最新模型用于补实验；这一授权继续有效。当前需要进一步确定的是它与原稿逐任务评测配置的具体对应关系。
+
+## 可直接复核的事实
+
+1. 原稿及当前revision的RMBench协议写明九个任务各训练一个specialist，详见`sec/appendices/b_experimental_details.tex`。
+2. 现用checkpoint为`nonreal_resume_20260922/stage1/training/checkpoints/weights/step_003000.pt`，SHA `68c7f3840921241df45a5b6997b772db3a69a31584644aa0e66929b841b845bf`。原实际训练配置标为`rmbench_training_stage: shared`，train task allowlist为空，实际step3000，checkpoint schema version8，timing_dim8；原resume计划的target是15000。计划终点不等于已完成或开发集选择结论。
+3. 指定目录内的有限深度metadata清单找到105份training attestation，其中66份对应权重文件存在。此为受限目录清单，不是整个AFS的穷尽搜索。
+4. 找到Battery Try和Press Button的历史逐任务specialist，其config只允许相应任务。CPU FakeTensor/mmap读取的两份step12000 checkpoint均是完整retrospection schema version3、timing_dim4。此读取不执行policy、不扫描全部tensor内容，也不重新验证12GB权重的全文件SHA。
+5. 两份历史attestation分别指向Git `f77c63385c747fdc1424386489cbf9c7ea57ddc5`和`47277e58624366506ee032f4ad27560c7e4bdd19`；提交对象存在，相应原始源码已从Git独立冻结。它们目前只是可追溯的历史候选，不等于已经确认的最终投稿模型或DEV选择点。
+6. 已核对新增deployment-cost原件`MODEL_SELECTION.json`和`runtime_args.json`，该100个DEV观察的profile确实使用上述v8 shared-stage step3000。因此将这项成本测量的checkpoint范围明确写入revision和回复；其530.1/565.2ms等原实测数值不变。
+
+## 证据应怎样使用
+
+- 原稿benchmark与表12–18保留为作者确认的原稿报告证据；不把新cohort当作原始逐次日志恢复。
+- 现用v8固定cohort的真实结果、失败与unknown全部保留。metadata范围差异尚不能证明它导致了新负结果，更不能据此丢弃负结果或宣称原稿已被推翻。
+- 四份DINO精确、完整native replay及同父状态资格证明各自的数值/执行一致性；它们不会自动证明与原稿checkpoint和任务训练协议对应。
+- 旧v3 specialist不自动迁移进v8 loader，不混装timing维度、门控参数或训练状态；不得因看到不利结果而改选有利checkpoint。
+- 新pooled-memory实现和资格有效，但从common base生成的shared-stage固定3000计划还不是原稿逐任务specialist的完全匹配复现。进一步正式比较需要清楚声明其训练阶段，或在原评测配置对应关系明确后另行冻结相应协议；旧计划与已完成Full/control200不覆盖、不重命名。
+
+## 优先接续
+
+首先核对原始评测bundle/DEV选择记录是否绑定了上述历史specialist和原Git源码，再对其bank、normalizer、camera、runtime及推理profile逐项绑定。没有确认对应关系前，不把任何候选称为原投稿模型，也不改动正在运行的固定v8任务。若需额外训练阶段或不同结构，先形成完整、可审阅的协议修订，保持原cohort和结果独立。
+
+15项metadata、原配置/attestation、源码身份、最终已提交pooling代码资格及原控制state哈希已双端保全：`checkpoint_scope_and_committed_control_qualification_v1.tar.gz`，22,226 bytes，SHA `831a763ade5187facb83ef61fb9a7dcf615b13416f2a72528e10812291b87e63`。本机15项全部核验。两份历史源码快照留在AFS的`historical_specialist_source_f77c633/code`和`historical_specialist_source_47277e5/code`，未启动新评测。

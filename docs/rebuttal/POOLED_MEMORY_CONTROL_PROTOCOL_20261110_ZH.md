@@ -34,3 +34,7 @@
 原始检查/失败日志、实际记录资格、源码和冻结配置共35项已双端保全：`same_information_control_and_time_audit_v1.tar.gz`，SHA `c7dddd91d7239cc84fdf5a1e5b699570d1dbdad87a556420f73cda37cba94596`。首次前向和并发运行时的单次模块耗时不作为部署延迟benchmark。冻结seed3407配置SHA `d5a7bd8c76aee178991e593439124aec72077e1734eb831cf2dfda55883846c3`，训练更新数仍0，尚未提交新训练任务。
 
 当前训练/最终评测尚未完成，不能用实现或资格通过关闭审稿人的性能质疑。下一步是实际记录资格、冻结已提交源码和新训练配置，再在持久state与归档空间可核验时启动独立训练。
+
+最终提交`f9f1090`的Linux Git快照source为`48ce6ba809788fc1c2c55b5303cc9617e2852050dd2bd8e104dc8192ee98e358`。预检快照其余464个文件仅CRLF/LF不同，全部源码经行尾规范化后相同，六个本轮实现/检查文件原始bytes相同；最终Git快照又独立通过45项原生检查（19.72秒）。原预检source5347088c…保留原身份，不混写成同一字节源码。
+
+另查明当前author recipe为shared-stage，而原稿RMBench描述逐任务specialist。新计划目前是共同shared阶段的研究对照，尚不能自动称原稿逐任务协议的完全匹配复现。详见`CHECKPOINT_SCOPE_AUDIT_20261110_ZH.md`；先核对原评测绑定，再明确后续正式比较的训练阶段。已排队Full b和正在运行的固定v8任务保持各自身份，不按结果改模型。

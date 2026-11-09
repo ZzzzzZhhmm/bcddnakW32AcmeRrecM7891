@@ -1248,3 +1248,37 @@ Windows配置3项通过、Torch模块2项按缺包跳过；原生首轮44通过/
 原训练源码与实际第0个Parquet前64个transition确认action[t]=state[t+1]；H32 target读取frame+32。num_frames33/ratio4对应9个视频采样点，并非128动作步；没有依据按四倍或一行偏移修改truth。实际metadata fps15仅给出名义编码时间32/15秒，未证明示教物理时长。native每次qpos请求通过TOPP轨迹执行多次250Hz physics step，32控制命令不保证固定物理时长。时间对应是否解释新负结果仍未核实，不据此调尺度或替换主指标。完整核对见`docs/rebuttal/ACTION_TIME_SEMANTICS_AUDIT_20261110_ZH.md`与Git外`OFFLINE_NATIVE_TIME_SEMANTICS_V1.json`。
 
 schema失败、工作目录失败、45项原生检查、真实训练/在线输入资格、测试源码、原context、冻结配置、时间审计及ACP/CCI交接收据共35项已打包`same_information_control_and_time_audit_v1.tar.gz`，509,306 bytes，SHA `c7dddd91d7239cc84fdf5a1e5b699570d1dbdad87a556420f73cda37cba94596`，manifest SHA `19c86abae0e1c6e172c9e4695281426eab5c414f5343d965c63394b0062b9eb0`。本机全部35项长度/SHA核验；报告`tmp/rebuttal/execution/20261110_iter2/POOLED_CONTROL_TIME_LOCAL_VERIFICATION_V1.json`。此包是实现/资格/审计证据，不包含新的完整科学cohort或训练收益；原三q8 adverse primary、原稿数据及真机延期身份不变。
+
+### 23.55 最终已提交pooling源码与行尾差异核实
+
+`f9f109069d7992d802d8e9815b84bebfad434ec6`已推送并核对origin/main，CCI canonical于22:51:51快进到同一提交。Linux Git冻结source为`48ce6ba809788fc1c2c55b5303cc9617e2852050dd2bd8e104dc8192ee98e358`，不是Windows precommit的5347088c…：初次部署的严格source断言正当停止，随后核对全部源码，仅464项旧文件为CRLF/LF差异，六项本轮实现/检查文件原始bytes相同，全部文件行尾规范化后相同。原测试/真实记录资格保持其原source身份，不回填成新SHA。最终Linux Git快照独立再通过45项原生检查（19.72秒），`F9F1090_SOURCE_RECEIPT.json`和`POOLED_MEMORY_COMMITTED_QUALIFICATION_V1.json`保留完整核对；未修改任何活动科学快照。
+
+### 23.56 checkpoint训练范围与原稿对应关系的新增审计
+
+现用作者指定v8-step3000的原训练记录明确为shared阶段、task allowlist空；原稿RMBench描述逐任务specialist。有限目录metadata清单发现105份attestation、66份对应权重存在；抽查Battery Try和Press Button旧specialist的config与CPU FakeTensor/mmap metadata，二者是version3/timing_dim4，现用v8为version8/timing_dim8。两份旧attestation原Git提交f77c633…与47277e5…确实存在，已各自独立冻结，尚未选择或启动它们的新评测，也未对12GB权重重新全SHA扫描。
+
+这些历史候选与原投稿DEV选择、准确率记录的对应关系仍未确认；不自动混装v3/v8，不按负结果换checkpoint，不推断范围差异已解释新负结果。已向作者提出原RMBench训练设置/评测记录的具体事实核对，现有固定v8工作继续，作者原指定授权仍有效。原稿结果保持原稿报告身份。新从common base生成的pooling计划当前是shared阶段研究对照，尚不能等同原稿逐任务specialist的完全匹配复现。详见`docs/rebuttal/CHECKPOINT_SCOPE_AUDIT_20261110_ZH.md`。
+
+15项原metadata/config/attestation、历史源码身份、最终已提交pooling资格和control200原state哈希双端包为`checkpoint_scope_and_committed_control_qualification_v1.tar.gz`，22,226 bytes，SHA `831a763ade5187facb83ef61fb9a7dcf615b13416f2a72528e10812291b87e63`，manifest SHA `c5f81634127f64be1783d564316ca4e6c79b4119d11ac1e338df74ea9e63f372`；本机15项全部核验。原模型、原件、checkpoint、固定样本和科学计划未被替换。
+
+### 23.57 control200完整state的额外持久重建验证
+
+为准备后续存储准入，从已核验的本机CAS完整逐字节重建control200原TAR：38,437,867,520 bytes，SHA `d838ed0c5fc039170394a9719523a3c8d738929c9652b8f49ea6795d895451d7`，与原native重建一致；本机原始TAR及7项解出state留在`C:/Users/admin/.cache/warm-rebuttal-control200-state-v1`。7项共26,307,343,356 bytes，与新读取的AFS现有原始state逐项SHA/长度完全一致，无活动control200进程。用时133.922秒；这是原始state重建验证，不是新Torch tensor扫描或训练。
+
+原AFS checkpoint/state、权重、CAS及数据均未移动或删除，AFS并未因此腾空；不能把已验证的分层准备写成已释放容量。所有完整原件和既有本机压缩CAS保留，`CONTROL200_LOCAL_REBUILD_V1.json`及`SCOPE_AND_CONTROL200_LOCAL_VERIFICATION_V1.json`记载可恢复位置和匹配清单。后续仅在独立空间方案明确、持久副本核实后分层重复payload，不能破坏排队Full b的父状态。
+
+### 23.58 v4回复与完整论文的成本测量范围澄清
+
+核对新成本profile的原MODEL_SELECTION/runtime_args，确认其确为作者指定shared-stage v8-step3000。据此在v4 Appendix C.4和Bbqv/Hh4E对应回复中明确，该profile与原稿task-specialist准确率协议分开；530.1/565.2ms等实测数值全部不变。补明新同信息对照采用全部K检索记录池化，但性能仍pending；新scope/时间审计仅作为内部release gate，不把工程资格写成收益。三位草稿共15个可粘贴comment block、20项问题映射均已核对，v3基线原件保留。
+
+v4由原完整LaTeX工程运行pdflatex/BibTeX/多轮引用编译，35页/10页主文；仅第35页文本变化，其余34页与v3逐页文本相同，原数值表和9张active图保持。全部35页已渲染并检查contact sheet与第35页细图，没有裁切、重叠或未定义引用；46条原有字体替代warning与v3相同。PDF SHA `e9f99e86c807233df280883eadfdb84aabea02d87fd80a128f12f6e69df4e2ec`。29文件完整source ZIP SHA `e4db2687b591dca4633f57be80b6bcb72d8e7acc9301d5dece911229de24b1e9`；从干净ZIP独立重编译的全部35页文本与交付PDF一致。PDF作者metadata空、主文匿名，未发布OpenReview或上传正式稿；stable_release_ready=false。
+
+### 23.59 单角色真实3600秒上限、未完成原件与独占重试
+
+**时限更正：**23.51–23.52的准备说明把worker上限写成4500秒；实际冻结d8512a23计划的`worker_max_seconds`是3600，外层仍5400，整体12h截止仍08:31:04 UTC。controller严格执行了原3600秒，不是模型异常或policy任务失败。CCI v1 child于23:26:20明确exit-15/`bounded_worker_or_campaign_time`，outer于23:26:23 exit1。最后完整replan记录frame592，日志中的native计数达到595（计数在控制调用开始时增加，不能声称595次均完成）；没有完整700轨迹或新accepted role，complete pairs仍3。
+
+pool0/1于23:19:05、pool2约23:27按原7200秒退出，均是已知wall-time，原source前后不变。先确认退出、旧PID缺失及free native lease，再暂缓续跑这些流以给固定闭环role资源；这不延长任何原窗口或改变样本。首轮CCI未完成attempt、encoder资格、完整partial工件和exit/controller状态共497项已双端保全：`cci_case3_null_incomplete3600_attempt_v1.tar.gz`，3,668,592 bytes，SHA `5e05f0d209489060f123f2fd0a8255565ea3424e321148fcbc8437fcbedd9a60`，manifest SHA `733efbd47697b9e31bfb2cee365249f515e8d687d08cca9e53e55b6290855733`；本机497项全部核验，不把中断填为SR=0。
+
+23:30:23 UTC以81,080MiB空闲显存、无其他GPU进程准入独占CCI v2，runner PID2211054、child2211066；冻结controller5b9ebd7/source56393c5a…、原plan/seed/case3/candidate-null与原起点/截止完全保持。spec文件SHA `8c2fa7bfd7a3f627252464a895120616bb2758aea949e6b9abdf321edc36c1eb`。仍只接收一个新完整role，actual worker3600秒、outer5400，不修改既有timeout后补造成功；v1旧失败与ACPe失败均保留。23:31:17该新attempt的固定原事实DINO资格再次通过，原policy尚在加载/执行准备，此处不预填完成或收益。
+
+当前所有fresh pool续跑都等待本次v2真实terminal；届时检查三个原窗口剩余、完整query/未知attempt与native lease，再用原Eb冻结spec续跑。这个独占安排是针对已知超时的资源调度修正，不能断言已经证明具体瓶颈或一定避免下一次超时。不要在v2活动时重新启动ACP f或同case/role；也不要把论文原稿与当前shared阶段对应关系的待核查问题当作更换样本/丢弃结果的理由。
