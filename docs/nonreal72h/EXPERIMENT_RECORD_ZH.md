@@ -1107,3 +1107,12 @@ ACP e于18:30 UTC仍等待，事件`FailedScheduling / insufficient resource: nv
 v3重建已在source0/q0生成实际Full H32：原始/处理后图像、proprio、context、DINO、候选payload、model-action整chunk及native整chunk的哈希均与原source相同，QueryId与instruction亦相同。原telemetry中retrieval的唯一差异键为`latency_s`与`step_sha256`；生产`_step_digest`包含五项实测检索耗时，因此跨运行原始step hash不可机械要求相等。真实诊断`NULLSEAL_V3_BINDING_DIAGNOSIS.json`保留所有对照字段和双方原telemetry SHA。v3在q0执行之前因该严格检查停止，0事实命令、0null封存/分支标签；保留失败，不赋策略或效应标签。不能将这一工程哈希阻塞与首个K32真实负结果混淆。
 
 修复只作用于独立比较视图：用原Full replan记录中的五项已测延迟替换比较对象的telemetry，然后仍调用原production step-digest，要求整个其余绑定内容精确重建原hash。实际BoundOnlineStep、capability、模型输入、历史、随机数、动作和真正计时均不改、不重放capability。原文件SHA、完整H32逐元素一致仍强制要求，封存双方真实hash与比较proof。新增测试确保模型输入、原world-token hash、bank rows、cosine或valid mask任何变化均无法通过；54项本机通过、1个Torch检查跳过。v4应在冻结版本原生验证后准入，尚无null执行或修复结果。
+
+
+### 23.39 v4实际准入、失败原件逐项归档与非真机工作交接
+
+Git `66c301b21084169e4b8afa910379aee71f49c121`已推送核验；冻结`controller_66c301b/code`，source SHA `a720c23952c709d0cacb4e6bdb60165e98b9621494b62e8c45d043894dfc7dc5`。63项原生检查通过（19.96秒），原6个query真实NPY封存、telemetry与完整model-action chunk哈希均在GPU准入前一致。v4于19:03:13 UTC以50,703MiB空闲显存准入，launcher PID2170812，5400秒上限；spec文件SHA `9e62714e095d82ac9c8bb9019631efb485de9922a8020bbe5da95497dcf8eaf3`。比较原绑定时只在独立hash视图使用原5项实测延迟，真实capability和模型不改；实际q0比较及完整Full重现仍须查worker，**尚无null执行、修复或新增性能结论**。旧v1/v2/v3终止状态已核实再启动v4，未重复未知运行。
+
+closed v1–v3失败/中断、双方原telemetry、v3完整模型q0等值诊断和v4准入收据已打包`nullseal_v1_v3_failed_attempts_and_v4_admission.tar.gz`，356,942 bytes，SHA `e4dd9563a72b2bb677fcdbf6d0c32581747e0f8a003e364826dd368173867ac7`，本机51项内部文件逐项核验。原source和3条fresh K32流保持冻结；每条source各自原12h总窗口不重置，单次7200秒runner到期后仅在退出/lease核实后从同一输出续跑。
+
+本机回复保留原稿已报告的真机任务难度、历史依赖和既有布局例子；新增现场数据按作者要求延期。逐条20项问题—证据—修订映射和15个短回复块继续维护，HH-W5的首个新负结果、同信息最终对照和非空missing-skill仍为明确未关闭项。正文PDF和完整LaTeX ZIP没有新改动，延续先前35页/10页主文的完整编译与视觉核验，不将工程故障修复或中间训练完成写成新实证收益。
