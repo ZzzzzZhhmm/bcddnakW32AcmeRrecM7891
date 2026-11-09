@@ -1147,3 +1147,16 @@ source0旧K32 runner于19:27:15 UTC exit-15，reason wall_time_limit，source前
 19:28 UTC新原始快照`fresh_pool_first3_sources_snapshot_20261110_v3.tar.gz`已在本机核对976项文件，139,982,825 bytes，SHA `aaf1994187c4206ebbc7a1b546f983060c1903eaaf2e8806744c4d81b5412f41`。含3个完整q8及当时已结束的部分q48：全快照共101候选终止收据、91完整H32和10无效未知；其中3个q8独立表仍为86完整/10未知，不混淆scope。Markdown/LaTeX表`fresh_snapshot_v3_query_results/ANALYSIS.md`与`effect_comparison.tex`保留三个不及query-constant的primary结果。相关性为post-hoc诊断，未作拟合/替换primary或新增收益声明。
 
 逐审稿人回复、20项映射、首三query表/诊断、完整200备份收据和v5准入已形成29文件research-patch2，SHA `583b802d8a2cb6cfc222e667926854e47c5f5b7f4b3c685418440f316b9c2360`，AFS逐项核验在`S/rebuttal_20261109_acp/writing_candidates/20261110_v3_research_patch2`。原v3 PDF/完整source ZIP不变，内部stable_release_ready=false，未发布评论或上传正式投稿。下一步优先实际v5封存后做fresh-scene null分支、完成固定后期query，并核查模型/评测协议及公平训练资源，保持负结果与旧原稿数据的独立身份。
+
+
+### 自动采集：v5真实同历史null封存及两个已知超时续跑
+
+UTC 2026-11-09T19:48:49.570658+00:00；已封存queries 0,8；每个query原Full完整H32和全部非计时绑定内容精确一致、同上下文同Gaussian、实际capability不改、g=0，物理null执行0，完整700事实重现尚不先宣称。原始包`/mnt/afs/task3_2/L202500276_lwz/projects/WARM_evaluations/rebuttal_20261109_acp/source0_same_context_null_seals_active_v1.tar.gz`，SHA `58e04201aa3c5d53792a5734440a336aa4823a1e4928c41ac4b694bb95ec0031`，22文件、1612970 bytes。source1/2已核实wall_time_limit与空lease后按同一冻结代码、输出、原12h预算续跑；进程 2181269,2181270，收据`FRESH_POOL_SOURCE12_RESUME1_RECEIPT.json`。无新增修复/策略收益结论。
+
+### 23.42 同历史null物理分支入口与真实工件准入
+
+新增`qualify_rebuttal_fresh_null.py`与`sealed_null.py`，先针对预定source0/q8复用已有不可变Raw/Full原件，再从同一原始事实prefix分别新跑null和post-null Full重复。两次新reset都必须与原K32 anchor的完整physics/task/controller/camera/RNG/实际qpos父状态逐项一致，post-null Full端点和DINO效应须精确复现原三次Full anchor。原Full H32/输入/候选/seed封存、原NPY文件SHA、同Gaussian和g=0 probe、无future/teacher的context工件都在物理执行前核对。保留原selected raw，不根据已知局部成功候选换rank；两策略动作相同也是合法结果，invalid/early-success不伪造H32效应。新增实际关节qpos/qvel记录和错误前的观察/原生父状态取证，未调用physics unpack，也不更新事实policy。
+
+Windows26项通过；原生冻结precommit26相关组件加query/replica共52项通过（20.73秒）。在真实source0/q8旧pool与v5 null seal上CPU预检通过，已核对真实Raw/Full/null action文件、context、原生产probe和source/runtime身份；preflight-only没有加载DINO或创建模拟器，物理null仍0，不能将该检查称为反事实效果。冻结precommit archive SHA `6b8f06d99ca7a7f674c2283062176274b70fa5603eddcfb0d187282898b753f6`；实际worker须用已提交的新冻结版本，运行前保持输入绑定不变。
+
+定时任务原提示乱码已通过应用automation_update修复为完整UTF-8中文，回读确认无U+FFFD；原hourly周期、ACTIVE、同一thread与11月13日23:00稳定版目标不变。原始最终PDF及既有3位审稿人20项映射继续作为文稿依据，新增真机工作仍延期。ACP e于20:05 UTC实际回读仍等待，FailedScheduling/insufficient nvidia.com/gpu1，未获GPU、未重复提交cases3–9。后续资源扩展仅考虑独立匹配训练的可用资源，不把排队当执行。
