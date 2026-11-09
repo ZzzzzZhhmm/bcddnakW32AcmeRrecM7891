@@ -1200,3 +1200,19 @@ v5于20:46:36 UTC明确exit0（4523.429秒），`exact_complete_source_trace=tru
 新增opt-in前置encoder资格入口：从原M1 contract恢复数值策略；实际字段必须完全匹配，唯一可单独记录的非数值差异为platform。再对预先固定source0/q8、source0/q48、source1/q8、source2/q8的原事实观测，核对原float32四空间token的shape/dtype/全部bytes。成功前不运行原policy；数值字段、设备或任一特征变化即停止。仅在资格通过后为旧full-map hash提供明示的platform比较视图，原contract、实际runtime原件、权重、输入与科学core保持；正式policy仍从原冻结core解析，不覆盖其模块。DINO加载前后的CPU/CUDA/NumPy/Python RNG恢复，资格不是训练或收益证据。
 
 本机与原生已有16项检查通过（包括严格字段、1ULP/dtype/形状拒绝及旧worker不变）；本机初版测试路径断言按Windows路径语义修正。前置实际观测准备最初误指向不存在的anchor NPZ，未运行DINO；现改用原Full完整replan NPZ，并由原pool identity的qpos_trace路径定位。随后CCI实际runtime已与M1全字段相同，但四观测检查尚未完成时连接中断，旧`ENCODER_PLATFORM_CCI_QUALIFICATION_V1.json`停在checking、0个golden；保留未知，不写成资格通过。最终冻结入口须再做16项原生检查与四份实际观测完整验证，再提交修复后的ACP接续。
+
+### 23.49 最终冻结四观测资格通过与ACP f接续已创建
+
+`6b803c23d7472a86d0bec26e8b874cf73e0af6ff`已本机/GitHub/CCI对齐，冻结source `7966b63c3b24a1f9efc772fc4332b7e251b558c3ccee7f8ef822e767d4e90e22`。最终原生16项通过（0.94秒），包含dtype/shape/1ULP及有符号零bytes差异拒绝；原campaign与新增资格CLI的validate-only通过。21:24:47以600秒上限准入独立logged runner，21:25左右明确exit0（48.252秒）：预定四份原Full观测的4×768 float32 DINO全部bytes与原pool父特征相同。真实CCI runtime本身与M1全字段相同，未使用platform比较视图；保留旧checking/0个golden的未知运行，不将其追认为成功。原policy未加载、正式分支动作0，实际ACP兼容性仍须逐节点独立验证。
+
+完整资格包`encoder_factual_four_observation_qualification_v2.tar.gz`，1,068,556 bytes、32项，SHA `b15d09a6e22497a84cfb13ed19292723c99be076a825bc547942fd05a82ed507`；manifest SHA `e2bfd26518983a5fcb90c61094a7b6ecd234e9538d878612bc5374d54bf909e7`，本机32项均核验。资格计划`encoder_platform_qualification_v1.plan.json` SHA `0df7b0f93bcd61f375bc259929631f487dfc07d915eaf22d6fbfd44202bf8d3e`，原科学core、数据/processor/encoder文件、四份原观测和预期特征均绑定，不读取未来或分支标签。
+
+新任务`warm-rb-resume-20261110-f`（UID `5be8c6689d44435a8ef2c0b9497ec820`）于21:31:44 UTC由API200明确创建。先实测标准资源“限额不足”对话框并取消该前端确认（未创建另一标准f），才改用cluster02闲时1GPU/8CPU/128GiB、确认镜像与AFS、重试0。旧e已停止，f沿**同一旧campaign/root、plan d8512a23…、case3–9及原08:31:04 UTC截止**继续，不重新计时、不替换reset、不丢弃旧失败。21:34实际回读f为0GPU等待、insufficient GPU及PVC调度事件；Full续训b亦0GPU等待。两者的UI“启动中”不构成实际训练或策略执行证明。
+
+### 23.50 已知planner RPC故障、实际采集状态与三线材料归档
+
+source2的21:19恢复runner于21:21:41明确exit1，source前后均Eb/823404c…；错误为`env.setup_demo`初始化夹爪时cuRobo RPC连接重置，发生在新的branch parent/动作之前。保留原attempt unknown，确认退出与空lease后21:27:21按原冻结spec/输出重试一次，PID2199487，预算不重置。21:33:45实际核查source0/1/2的PIDs2198110/2198111/2199487均运行，q48已有完整候选14/8/7，后续分支仍在原native前缀回放中；没有完整后期query或新增repair收益。该时点单张H100为25,990MiB/81,559MiB、100%利用率；AFS空闲91,688,407,040 bytes。只记录当时状态，后续须复核真实worker/lease与心跳。
+
+已更新Bbqv/Hh4E回复的信息匹配定义、15个可粘贴comment block与20项问题映射，逐项核验所有block SHA及证据ID引用。新单query物理对照表（Markdown/LaTeX）与四观测资格、失败和资源收据分别保全；未将资格或中间训练写成科学收益。论文完整v3 PDF仍35页/10页主文，SHA `ef9e6d55c7a24822b147ec392773c2a5c17ec7bfe9bbfbf79d6d34ee04545b4b`，完整源ZIP仍`120daf4e…`；另准备尚未纳入active工程的同状态协议LaTeX候选。没有新的PDF编译或正式上传、OpenReview发帖、对外消息。
+
+44文件writing research-patch3已在AFS逐项核验：`writing_candidates/20261110_v3_research_patch3`，archive SHA `517ab30d96e067c7beb1e5cce889e15005afd3a0dc101f444973bcf1c7a86524`，49,128 bytes。它是21:40附近的不可变快照；`planning/current_iteration.json`与AFS根目录live handoff继续更新，读取时区分快照与当前值。stable_release_ready=false，关键后果预测、完整修复/损害cohort、真正同信息最终对照、非空missing-skill仍须正面补齐；新真机取证按作者要求延期。
