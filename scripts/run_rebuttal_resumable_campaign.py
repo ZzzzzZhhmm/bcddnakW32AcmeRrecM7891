@@ -111,13 +111,27 @@ def role_wrapper(plan, *, qualification_plan=None, qualification_sha=None, recei
     return prefix+'runpy.run_path('+repr(str(Path(plan['core_code'])/'scripts/run_rebuttal_rmbench_pairs.py'))+",run_name='__main__')\n"
 
 
+def invocation_stop_status(request, completed_new_roles, max_new_roles):
+    """A bounded CCI invocation is partial unless all owned roles are done."""
+    if type(completed_new_roles) is not int or completed_new_roles < 0:
+        raise ValueError('new-role count must be a nonnegative integer')
+    if max_new_roles is not None and (type(max_new_roles) is not int or max_new_roles <= 0):
+        raise ValueError('max-new-roles must be a positive integer')
+    if request is None:return 'complete_verified_owned_cases'
+    if max_new_roles is not None and completed_new_roles >= max_new_roles:
+        return 'partial_verified_invocation_limit'
+    return None
+
+
 def main():
     import fcntl
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--plan',type=Path,required=True)
     parser.add_argument('--expected-plan-sha256',required=True);parser.add_argument('--validate-only',action='store_true')
     parser.add_argument('--encoder-qualification-plan',type=Path)
     parser.add_argument('--expected-encoder-qualification-plan-sha256')
+    parser.add_argument('--max-new-roles',type=int,help='Stop after this many newly verified roles without changing the persistent campaign window')
     args=parser.parse_args();plan,seeds=load_plan(args.plan,args.expected_plan_sha256);plan['_plan_sha256']=args.expected_plan_sha256
+    invocation_stop_status(None,0,args.max_new_roles)
     if bool(args.encoder_qualification_plan)!=bool(args.expected_encoder_qualification_plan_sha256):raise ValueError('both encoder qualification path and SHA required')
     if args.encoder_qualification_plan is not None:
         if file_sha(args.encoder_qualification_plan)!=args.expected_encoder_qualification_plan_sha256:raise ValueError('encoder qualification plan changed')
@@ -137,7 +151,8 @@ def main():
     deadline=campaign_deadline(identity,args.expected_plan_sha256,plan['max_seconds'],time.time())
     child=None;stop_reason=None
     state=dict(status='preflight',controller_source_sha256=source['sha256'],plan_sha256=args.expected_plan_sha256,
-        first_started_utc=identity['first_started_utc'],deadline_utc=datetime.fromtimestamp(deadline,timezone.utc).isoformat())
+        first_started_utc=identity['first_started_utc'],deadline_utc=datetime.fromtimestamp(deadline,timezone.utc).isoformat(),
+        max_new_roles=args.max_new_roles,new_roles_this_invocation=0)
     def save():atomic_json(root/'campaign_state.json',state)
     def stop(signum,_frame):
         nonlocal stop_reason
@@ -158,7 +173,8 @@ def main():
             records,attempts=owned_records(root,plan,seeds);accepted=unique_roles(records);stats=export(root,plan,seeds,records)
             request=next_role(accepted,seeds,plan['case_ids'])
             state.update(status='running',**stats,accepted_role_count=len(accepted),updated_utc=datetime.now(timezone.utc).isoformat());save()
-            if request is None:state['status']='complete_verified_owned_cases';save();break
+            completed=invocation_stop_status(request,state['new_roles_this_invocation'],args.max_new_roles)
+            if completed is not None:state['status']=completed;save();break
             if stop_reason or time.time()>=deadline:raise TimeoutError(stop_reason or 'original persistent campaign budget expired')
             index,role,seed=request
             if sum(a['episode_id']==index and a['role']==role for _,a,_ in attempts)>=plan['max_attempts_per_role']:
@@ -196,6 +212,7 @@ def main():
             if len(evidence)!=1:raise RuntimeError('worker exited without exactly one verified complete role')
             from fastwam.research.resumable_pairs import archive_verified_role
             atomic_json(attempt/'verified_role.json',evidence[0]);archive_verified_role(attempt/'worker');child=None
+            state['new_roles_this_invocation']+=1;save()
             print(json.dumps(dict(stage='verified_role',episode_id=index,role=role,seed=seed,success=evidence[0]['row']['roles'][role]['success'])),flush=True)
     except BaseException as exc:
         state.update(status='failed_or_interrupted',error=repr(exc));raise

@@ -1216,3 +1216,11 @@ source2的21:19恢复runner于21:21:41明确exit1，source前后均Eb/823404c…
 已更新Bbqv/Hh4E回复的信息匹配定义、15个可粘贴comment block与20项问题映射，逐项核验所有block SHA及证据ID引用。新单query物理对照表（Markdown/LaTeX）与四观测资格、失败和资源收据分别保全；未将资格或中间训练写成科学收益。论文完整v3 PDF仍35页/10页主文，SHA `ef9e6d55c7a24822b147ec392773c2a5c17ec7bfe9bbfbf79d6d34ee04545b4b`，完整源ZIP仍`120daf4e…`；另准备尚未纳入active工程的同状态协议LaTeX候选。没有新的PDF编译或正式上传、OpenReview发帖、对外消息。
 
 44文件writing research-patch3已在AFS逐项核验：`writing_candidates/20261110_v3_research_patch3`，archive SHA `517ab30d96e067c7beb1e5cce889e15005afd3a0dc101f444973bcf1c7a86524`，49,128 bytes。它是21:40附近的不可变快照；`planning/current_iteration.json`与AFS根目录live handoff继续更新，读取时区分快照与当前值。stable_release_ready=false，关键后果预测、完整修复/损害cohort、真正同信息最终对照、非空missing-skill仍须正面补齐；新真机取证按作者要求延期。
+
+### 23.51 排队复核与单回合有界CCI接续入口
+
+22:10 UTC实际回读ACP b/f，均0GPU、Worker等待、无Host IP，仍为insufficient nvidia.com/gpu；Full续训operator未生成，f的campaign_state仍是旧e的20:39工程失败，没有新attempt。CCI三路K32保持运行，21:56 q48已完整候选16/10/9，尚未完成query。22:07测得同一H100空闲54,836MiB；此前同机Full封存模型与三路pool并发已有完整执行资格。
+
+新增`--max-new-roles`只限制一次controller invocation接收的新完整role数：优先判断全部owned工作完成，否则达到局部上限时标为`partial_verified_invocation_limit`，不写成整个campaign完成。默认行为不变；原plan、固定case/seed顺序、模型/协议、失败保留及12h deadline均不变。Windows23项通过，原生23项通过（0.97秒），真实原campaign和四观测资格计划加max-new-roles=1的validate-only通过；无policy执行结果。
+
+准备把一个固定role从排队f转回CCI：必须先确认f停止且native lease空，再用新冻结controller、原plan d8512a23…与encoder资格0df7b0f…接续；单次只收1个新完整role，worker4500秒、外层5400秒，运行前至少45,000MiB空闲显存。原08:31:04 UTC截止不重置，b仍独占Full200→500申请。此条是具体可核查的资源切换准备，不预填已停止、已准入或已完成数据。

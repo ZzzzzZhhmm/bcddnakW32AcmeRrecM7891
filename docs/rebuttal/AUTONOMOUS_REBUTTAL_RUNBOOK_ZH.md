@@ -49,3 +49,4 @@ CCI别名`slai_debug_workspace_1`；工作目录`/mnt/afs/task3_2/L202500276_lwz
 - Full200→500已完成父状态/冻结代码准入；标准a为真实WAIT_QUOTA后已停止，闲时b UID9c6000a4ce734a7bac717b2053197a1e持有唯一该段，21:34 cluster01仍0GPU等待，即使UI写启动中。使用`controller_d3abf15/code`和plan7d359a7d…，不要重复创建。当前control200经审计仅为动作先验消融，仍缺真正消费检索视觉/效应的同信息最终对照；新结构须从共同初始化独立训练，不静默继承control200预算。
 - 已更新三位回复中信息匹配的定义、15个comment block与20项矩阵。PDF/完整LaTeX源包本轮不变，保留35页/10页主文验证；没有把单query无收益或中间训练写成新增机制优势。
 - writing research-patch3已在AFS核验44项、SHA517ab30d…；当前live状态以`tmp/rebuttal/planning/current_iteration.json`为准。下一步还要直接核查模型/数据/动作时间语义，解决前三q8不及query-constant的实证问题，不调truth尺度或按结果换样。
+- 22:10 UTC b/f仍实际0GPU等待。已开发max-new-roles=1的有界CCI invocation（23项本机/原生检查与真实计划准入通过），拟在f明确停止、lease空后接续同一campaign；不得在f仍活动或状态未知时并发启动。外层5400秒、单role4500秒，原deadline08:31UTC不重置；这是资源调度变更，不改变样本或科学目标。
