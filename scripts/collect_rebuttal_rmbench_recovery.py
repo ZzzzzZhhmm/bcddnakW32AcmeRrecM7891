@@ -224,7 +224,8 @@ def main():
                         reference_generation=source_case/f'generations/replan-{ordinal:04d}'
                         generation=json.loads((reference_generation/'generation.json').read_text())
                         original_actions=np.load(reference_generation/'model_actions.npy',allow_pickle=False)
-                        require_original_generation(capture,generation,original_actions)
+                        require_original_generation(capture,generation,original_actions,
+                            original_actions_sha256=sha256_file(reference_generation/'model_actions.npy'))
                         with np.load(source_case/f'replan-{ordinal:04d}.npz',allow_pickle=False) as data:
                             require_observation({k:data[k] for k in data.files},observation_arrays(obs))
                         alternative=generate_captured_null(full,null,capture)

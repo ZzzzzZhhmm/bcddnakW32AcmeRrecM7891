@@ -1,11 +1,13 @@
 """Read-only capture fixtures; actual model/branch qualification is separate."""
 from dataclasses import dataclass
+import hashlib
+import json
 from types import SimpleNamespace as NS
 import numpy as np
 import pytest
 
 from fastwam.research.query_capture import capture_online_replan,clone_inference_context,require_original_generation
-from fastwam.memory.manifest import sha256_array
+from fastwam.research.action_witness import seal_generated_action
 
 
 @dataclass
@@ -48,21 +50,22 @@ def test_capture_removes_wrappers_when_inference_raises():
     assert 'infer_action' not in vars(model) and '_resolve_action_source' not in vars(model)
 
 
-def sealed_query():
+def sealed_query(tmp_path):
     actions=np.zeros((32,14),dtype=np.float32)
     step=NS(step_sha256='bound',candidate_payload_sha256='retrieval',model_input_sha256='observation',derived_seed=17)
-    generation=dict(before_any_execution_of_this_chunk=True,bound_step_sha256='bound',
-        candidate_payload_sha256='retrieval',model_input_sha256='observation',derived_seed=17,
-        shape=[32,14],dtype='float32',array_sha256=sha256_array(actions))
-    return {'online_step':step,'action':actions.copy()},generation,actions
+    model=NS(infer_action=lambda **kwargs:{'action':actions})
+    with seal_generated_action(model,tmp_path/'original',{}):model.infer_action(online_step=step)
+    generation=json.loads((tmp_path/'original/generation.json').read_text())
+    file_sha=hashlib.sha256((tmp_path/'original/model_actions.npy').read_bytes()).hexdigest()
+    return {'online_step':step,'action':actions.copy()},generation,actions,file_sha
 
 
-def test_original_binding_checks_the_entire_unexecuted_H32_and_its_seal():
-    capture,generation,actions=sealed_query()
-    require_original_generation(capture,generation,actions)
+def test_original_binding_checks_the_entire_unexecuted_H32_and_its_seal(tmp_path):
+    capture,generation,actions,file_sha=sealed_query(tmp_path)
+    require_original_generation(capture,generation,actions,original_actions_sha256=file_sha)
     capture['action'][-1,-1]=np.nextafter(np.float32(0),np.float32(1))
     with pytest.raises(ValueError,match='H32 differs'):
-        require_original_generation(capture,generation,actions)
+        require_original_generation(capture,generation,actions,original_actions_sha256=file_sha)
 
 
 @pytest.mark.parametrize('key,value',[
@@ -70,12 +73,21 @@ def test_original_binding_checks_the_entire_unexecuted_H32_and_its_seal():
     ('model_input_sha256','other'),('derived_seed',18),
     ('before_any_execution_of_this_chunk',False),('array_sha256','other'),
     ('shape',[4,14]),('dtype','float64')])
-def test_original_binding_rejects_context_or_artifact_substitution(key,value):
-    capture,generation,actions=sealed_query();generation[key]=value
-    with pytest.raises(ValueError):require_original_generation(capture,generation,actions)
+def test_original_binding_rejects_context_or_artifact_substitution(tmp_path,key,value):
+    capture,generation,actions,file_sha=sealed_query(tmp_path);generation[key]=value
+    with pytest.raises(ValueError):require_original_generation(capture,generation,actions,original_actions_sha256=file_sha)
 
 
 @pytest.mark.parametrize('replacement',[np.zeros((4,14),dtype=np.float32),np.zeros((32,14),dtype=np.float64)])
-def test_original_binding_rejects_short_prefix_or_different_precision(replacement):
-    capture,generation,actions=sealed_query();capture['action']=replacement
-    with pytest.raises(ValueError,match='H32 differs'):require_original_generation(capture,generation,actions)
+def test_original_binding_rejects_short_prefix_or_different_precision(tmp_path,replacement):
+    capture,generation,actions,file_sha=sealed_query(tmp_path);capture['action']=replacement
+    with pytest.raises(ValueError,match='H32 differs'):require_original_generation(capture,generation,actions,original_actions_sha256=file_sha)
+
+
+def test_generation_contract_hashes_the_npy_file_including_its_header(tmp_path):
+    from fastwam.memory.manifest import sha256_array
+    capture,generation,actions,file_sha=sealed_query(tmp_path)
+    assert generation['array_sha256']==file_sha
+    assert file_sha!=sha256_array(actions)
+    with pytest.raises(ValueError,match='sealed metadata'):
+        require_original_generation(capture,generation,actions,original_actions_sha256=sha256_array(actions))

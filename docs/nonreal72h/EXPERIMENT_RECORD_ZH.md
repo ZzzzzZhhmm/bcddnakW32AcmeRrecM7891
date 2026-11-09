@@ -1075,3 +1075,11 @@ AFS剩余约89GiB（本轮观察），后续训练需先重新做空间准入。
 `f826c4c`已推送、CCI canonical保留自动control200台账后fast-forward；冻结source SHA `d0e50f7b198f5762dd2f46e927d2833f4d4d8bec7cdcb4252ee156f8bacf2ddc`。34项原生query/replica/branch/admission检查通过（19.74秒）。18:27:09 UTC以53,489MiB空闲显存准入source0 null封存v1，runner于18:27:41 UTC明确exit1：旧recovery入口只找`role_trials.jsonl`，但当前固定paired worker保存的是`pairs.jsonl`。失败发生在Full模型加载和事实执行之前，未生成null或分支真值，不算策略失败或候选标签0；完整failed runner原件保留于`rb_source0_nullseal_v1_job_logs/20261109T182711Z-a8065790`，spec文件SHA `d8003f5ffc3509405642de185856ecbe0f2e0ac73acba56a85b4dd4cd164f710`，runner规范化spec SHA `b4981dec7cfee92482f4d217307ae59cc6be532fb1208524ea05ac6ab4b4bdb4`。
 
 修复为复用resumable pair公共的两种已提交trial布局读取：优先role-trials，其次pairs；只采纳带最终换行的完整记录，原partial tail原样保留。此外正式source在加载策略前复核原result、官方完整trace、原始初始图像/drive-target和simulator/source绑定，未放松身份或轨迹要求。本机42项通过。后续以独立v2目录与冻结版本重试；本条保留v1失败身份，重试尚未取得科学结果。
+
+### 23.36 原生成witness的NPY文件哈希契约与v2工程停止
+
+paired布局修复`01fd751`已本机/GitHub/CCI对齐；冻结source `f0a11d72fb08b09d299f01ee0b59249c2aa2215e54866a6bf92a70114c4632d1`。50项原生检查通过（20.90秒）；source0真实durable Full原件准入通过、700命令trace和初始图像身份均核对。18:32:20 UTC以52,311MiB空闲显存准入null封存v2，spec文件SHA `3968403d3eedcabb6a33e694749fe077cd1af90714a50875c4227f91254b5825`，原件`rb_source0_nullseal_v2_job_logs/20261109T183222Z-1e882b96`。v2 launcher沿用V1收据名的元数据覆盖已依据首次启动tool输出和冻结源收据恢复；两版启动收据均保全，恢复过程`NULLSEAL_V1_LAUNCH_RECEIPT_RECOVERY.json`，failed v1 worker和退出原件从未改动。
+
+随后跨组件复核发现原`action_witness.generation.json`中`array_sha256`实际是**包含头部的完整model_actions.npy文件SHA**，不是`manifest.sha256_array`的dtype/shape/array-byte SHA。原生unit fixture此前手造metadata，未覆盖这个producer/consumer契约。已改为直接由原production action-witness生成测试文件，消费者显式接收并核对原NPY文件SHA，保持完整H32逐元素相等及输入/候选/seed约束；新增检查确保不能混用两种哈希。Windows48通过、1个Torch测试跳过。
+
+18:37:45 UTC已用v2冻结检查函数对真实原q0工件复现该契约错误（原NPY和metadata文件SHA均`afac084c743ef5b9e8c52b41c04b47b7a92306405eb22d8bd341f571f86ebdd5`），故向核对命令行和独立process group后的本次v2进程发送SIGINT，避免继续无效GPU采集；三路K32工作保持。停止原因是已验证工程错误、非策略结果，不据此赋策略失败或null标签。`NULLSEAL_V2_KNOWN_HASH_CONTRACT_STOP.json`保留操作证据，真实runner退出/已执行prefix须继续核实；原始失败和中断不删除。修复后应先对原6个query的实际generation工件做契约preflight，再以独立v3冻结目录重跑。

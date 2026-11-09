@@ -16,9 +16,8 @@ import numpy as np
 from .policy_state import deployed_policy_fingerprint
 
 
-def require_original_generation(capture, generation, original_actions):
+def require_original_generation(capture, generation, original_actions, *, original_actions_sha256):
     """Bind a reconstructed Full context to its original sealed H32 output."""
-    from fastwam.memory.manifest import sha256_array
     step=capture['online_step']
     pairs=(('bound_step_sha256','step_sha256'),('candidate_payload_sha256','candidate_payload_sha256'),
            ('model_input_sha256','model_input_sha256'),('derived_seed','derived_seed'))
@@ -30,7 +29,7 @@ def require_original_generation(capture, generation, original_actions):
     if expected.shape!=(32,14) or observed.shape!=expected.shape or expected.dtype!=observed.dtype or not np.array_equal(expected,observed):
         raise ValueError('reconstructed Full H32 differs from original sealed generation')
     if (not np.isfinite(expected).all() or generation.get('shape')!=list(expected.shape)
-            or generation.get('dtype')!=str(expected.dtype) or generation.get('array_sha256')!=sha256_array(expected)):
+            or generation.get('dtype')!=str(expected.dtype) or generation.get('array_sha256')!=original_actions_sha256):
         raise ValueError('original Full H32 artifact differs from its sealed metadata')
 
 
