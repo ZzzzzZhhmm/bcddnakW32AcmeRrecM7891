@@ -963,3 +963,13 @@ Full100本机自包含压缩CAS传输已完成：388个blob及1份manifest共389
 新增expert-admitted reset roster与角色级campaign：每次只执行一个固定role/case，完成后严格核对模型/core/协议/runtime、原步数、完整native轨迹及初始图片/qpos，再独立压缩并计算哈希；中断角色保持未知。ACP容器重启后读取已核验原件，仅补缺失角色；原始开始时间与总预算不重置。worker继承文件锁，阻止旧子进程未退出时重复提交；重复完整role须明确核销，不能按好成绩挑选。case0及CCI case1/2明确作为外部来源，ACP计划仅覆盖不重叠case3–9。roster按原seed流及expert准入产生，不看策略结果；所有新资格仍须真实运行，不以协议测试替代。
 
 CCI原生27项证据完整性、JSONL中断尾部、封存恢复、继承锁、持久时间预算、资源分配和合并检查通过（2.34秒）；Windows13项通过、1项POSIX锁检查仅在原生执行。导出JSON/CSV/LaTeX计数表，绘图程序用灰色保留pending；图表是已完成的逐条证据展示，不能将partial counts包装为总体收益或不劣。实际case0的独立validator报告为`RESUMABLE_ACTUAL_CASE0_VERIFICATION.json`。
+
+### 23.27 固定reset roster、明确标准配额错误与可续跑ACP实提交
+
+expert-only roster在原seed流340800000–340800009逐个通过，共10/10原官方专家规划准入；未读取Full/null成败。外部`S/rebuttal_20261109_acp/reset_roster_rb10_v1/roster.json` SHA `58044eb62baffec13b55fd1eb8e3d81096f73d579289dd1c6781f6ebcb11cfc3`，core和runtime前后哈希保持不变。这是reset准入证据，不能计为策略成功率。
+
+已冻结并原生验证角色级计划`resumable_rb_cases0003_0009_v1_plan.json` SHA `d8512a23021383385bab2014e2092b52d12495e1fbdd80e804c04f47216df249`，controller Git `df1df34d990b7b296d18fceb44d6748050072c99`、源码集合`75e24ed18de93c9dc577cbc2a7c5444d0e0eda4748291cdb096372ee450a299f`。ACP只拥有case3–9；case0和CCI正在执行的1/2为外部来源。总12h预算跨重启持久化，每角色3600秒、最多3次attempt；.5显存fraction仅为进程资源上限，不改推理参数。已输出真实计数JSON/CSV/LaTeX和SVG/PNG，并检查PNG：当前1/10完整pair、Full0/null0，其余9对pending；这是过程记录图，不是可主张收益的rebuttal结果图。
+
+本次标准资源提交直接捕获服务端429正文：code8、`MEMBER_QUOTA_EXCEEDED`，`workspace_aec2_total`剩余GPU0、请求1。故此前仅根据HTTP429写成“限流”的解释不充分；本次有明确**成员配额不足**依据，按作者要求转闲时。闲时创建返回200，任务`warm-rb-resume-20261109-e`，UID `e9c3736f61124ffebebef597abf524b0`，22:09:09 CST创建，集群02、1卡8核128GiB、最大重启2；镜像、AFS与冻结命令均已在详情页回读。14:15 UTC附近Worker仍等待中，AFS无运行心跳，**未声称GPU已运行**。原始响应字段和实际UI观察来源保存在外部`ACP_E_CREATION_RECEIPT.json`；旧失败、旧计划和case0完整原件保留。
+
+为处理23.19/23.24尚未解决的原始事实父状态问题，新增独立fresh-scene native replay资格入口：只执行既有完整Full source的记录命令，两次独立reset，每条before/after qpos、固定query的RGB必须逐元素等于原source，新采集的native物理bytes/驱动目标/task/controller/camera/RNG必须跨reset精确重复；不做物理unpack。opaque句柄仅做显式类型检查，不宣称隐藏状态已完整捕获。Windows3项与CCI原生26项包含单像素、dtype和单ULP篡改拒绝的检查通过（原生0.79秒）。**实际物理回放尚待启动，不能用这些检查宣称反事实机制已通过。**
