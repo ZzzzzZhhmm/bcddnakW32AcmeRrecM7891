@@ -1282,3 +1282,11 @@ pool0/1于23:19:05、pool2约23:27按原7200秒退出，均是已知wall-time，
 23:30:23 UTC以81,080MiB空闲显存、无其他GPU进程准入独占CCI v2，runner PID2211054、child2211066；冻结controller5b9ebd7/source56393c5a…、原plan/seed/case3/candidate-null与原起点/截止完全保持。spec文件SHA `8c2fa7bfd7a3f627252464a895120616bb2758aea949e6b9abdf321edc36c1eb`。仍只接收一个新完整role，actual worker3600秒、outer5400，不修改既有timeout后补造成功；v1旧失败与ACPe失败均保留。23:31:17该新attempt的固定原事实DINO资格再次通过，原policy尚在加载/执行准备，此处不预填完成或收益。
 
 当前所有fresh pool续跑都等待本次v2真实terminal；届时检查三个原窗口剩余、完整query/未知attempt与native lease，再用原Eb冻结spec续跑。这个独占安排是针对已知超时的资源调度修正，不能断言已经证明具体瓶颈或一定避免下一次超时。不要在v2活动时重新启动ACP f或同case/role；也不要把论文原稿与当前shared阶段对应关系的待核查问题当作更换样本/丢弃结果的理由。
+
+### 23.60 v2实际执行与原稿复核的可恢复交接
+
+23:44:19 UTC核验v2 runner2211054与child2211066均存在、心跳推进，完整replan记录到frame180；H100为32,983MiB使用、100%利用率，Full500 operator仍不存在。三路pool均是已知原wall-time退出（source2实际23:27:24），q48 terminal候选23/17/18，尚无完整后期query；当前明确held等待v2结束，不把这些排空时段重置为新12h窗口。v2四个`exact_feature_checks`于23:31:17通过，真实policy已进入闭环；没有新增完整role/pair或收益结论。
+
+23:46:14对同case3/null旧中断attempt与v2的q0/q8/q24/q48作只读重复性核对：四个查询的全部保存RGB、官方输入状态向量和完整H32模型动作均精确相同，最大动作差为0。官方文件名native_qpos在此是policy输入drive-target vector，不宣称已核对全部隐藏物理状态。`CASE3_RETRY_PREFIX_INTEGRITY_V1.json`记录两个原动作文件SHA；此为同一固定样本的prefix重复性，不能增加独立试验数。
+
+回读原最终33页PDF（备份SHA aa04f951…），确认原第18页已有factual效应项及candidate正则，第22页为九个task specialist，第30页结构检查单独标记v8-step300。当前回复的监督解释未把新增机制冒充原方法；历史v3 specialist也不能据此认定就是投稿所有表格的模型。另有受限74个大权重文件清点、8个未附attestation的基础/release/smoke文件，未确认新的原稿选点；原件`LARGE_WEIGHT_FILE_SCOPE_INVENTORY_V1.json`保留。后续继续按表格/DEV/eval bundle绑定核对，作者事实问题仍待答复。
