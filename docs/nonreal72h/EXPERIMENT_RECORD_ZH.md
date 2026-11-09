@@ -997,3 +997,23 @@ native replay v1于14:49:01 UTC由1800秒预算终止：runner `failed`、exit�
 在实际AFS上另做跨进程独占锁检查，竞争者确被阻止，释放后可获取，收据`AFS_CAMPAIGN_LEASE_QUALIFICATION.json`；这只验证ACP续跑租约的存储能力。ACP e在14:46 UTC详情仍启动中/实际规格乘数0，最后Worker事件为`insufficient resource: nvidia.com/gpu1`；不重复未知创建、不记为活跃GPU或SR失败。
 
 过程材料封存`closed_loop_evidence_progress_20261109_v1.tar.gz`：1,982,961 bytes，SHA `84a5fd63f5b7b0b585d7b45a20941340132eee0eae90c2fd89fcab68b2142228`，本机37项内部哈希核验。当前真实计数CSV/LaTeX、SVG/PNG、原相机序列和语义修正后的诊断JSON整理到`tmp/rebuttal/analysis/20261109_experiment_progress/`。这些是2/10固定配对的过程和诊断材料，不能作为未完成总体的收益结果；最终rebuttal图表须待相应固定cohort与直接机制实验完成后再据实提炼。
+
+
+### 自动采集：full matched seed3407 完成update200（训练证据）
+
+UTC 2026-11-09T16:38:17.097598+00:00；严格resume100→200，batch128、原30k scheduler与源集合`4efb8094729ba8771c7ec0d472c30ad8b585ef319e897edb566b12d3d5a81a14`。权重SHA `1fb035c41663752d72098196cc04f04ff03cefcfa7db623bc994142d14af0ac4`；逐字节TAR重建SHA `b2a7a0e2b0b4dd441a24e70f9bb6145ac49db3827321c890b672a60a0db035b6`、38599198720 bytes。原件与档案收据`/mnt/afs/task3_2/L202500276_lwz/projects/WARM_evaluations/rebuttal_20261109_acp/FULL_UPDATE200_ARCHIVE.json`。共100条有限loss/grad、更新101–200，优化器/随机数/数据游标由原完整状态续训；固定选择点仍3000。**仅训练执行和保全证据，无TEST配对性能、无正式baseline收益结论。**
+
+
+### 23.30 正式并行推进、完整RB/回放原件和11月13日稳定候选
+
+作者授权正式自动推进实验、回复、论文修订，并要求11月14日前稳定版本。已建立本对话每小时heartbeat `warm-rebuttal`，内部验收2026-11-13 23:00 CST，运行规则见`docs/rebuttal/AUTONOMOUS_REBUTTAL_RUNBOOK_ZH.md`，当前材料入口`tmp/rebuttal/planning/current_iteration.json`。定时轮次推进实质研究和写作；不把排队算GPU工作，不自动发布OpenReview或正式上传文稿。
+
+固定RB case1/2完整worker已结束：seed340800001/340800002，各Full/null700步，均success0/max_reward0；加case0共3/10完整pair、Full0/null0，余7pending。完整worker和runner证据`S/rebuttal_20261109_acp/rb_cases0001_0002_complete_worker_v1.tar.gz`，15,386,512 bytes，SHA `7e23e0bcd779ff98f535878c29ee3408ee20c8be7daaacf0eebb2217204dbd9f`。本机逐项校验2225文件通过。新子集不替换投稿SR，不支持性能优势或不劣结论。旧2/10过程图已经过时，后续展示必须以当前3/10计数重新生成。
+
+fresh-scene replay v2于15:33:04 UTC exit0：两遍各700条原命令、六个固定query（0/8/24/48/80/120）父状态跨遍哈希相同，1400行独立articulation qpos/qvel均有限，RGB和官方drive-target与原source精确一致。完整证据`native_replay_v2_complete_evidence_v1.tar.gz`，7,023,585 bytes，SHA `9f03c739f474fe3b7d543f5590dedfb59e7d00c82e321142c21fdcc6c0c49793`，本机24文件校验；收据`COMPLETED_RB_AND_REPLAY_LOCAL_VERIFICATION.json`。**仅工程回放资格，尚无反事实分支或修复收益。** 新增独立fresh-scene A-A-B-A入口，绑定原Full source0/q8的原封存raw/refined H32和执行prefix4，物理unpack及事实策略更新均为0；重复端点必须一致、B必须实际不同。TOPP/RPC拒绝保持invalid/unknown。Windows11项原始prefix、单ULP/像素拒绝、规划错误传播、状态拥有权与独立rubric检查通过；原生分支尚待验证，不先写通过。
+
+原训练v2误把正在运行的partial summary视作失败，已保留失败收据并以v3修正；没有改seed、source、配方或原14:28:44 UTC起3h截止。Full100→200训练和38,599,198,720 bytes状态档案已完成并逐字节校验，身份详见前一条自动采集记录。因原窗口不足再准入control，单列新的5400秒资源窗口、每训练3600秒上限；`CONTROL200_AMENDMENT_OPERATOR.json`保留该预算修订。control100→200于16:38:25 UTC准入，spec SHA `8ef19c44c5af7b965411f92d86c017f6ee7fb6601ddc8ae2d8aded02137a0e4e`、config SHA `bf4a235a5810fc2a535314e91d42382d415286f145c96d1b4d34c775f0377f02`。固定TEST选择仍3000；不把200工程段或当前适配prior称作已完成的ReCAP/WarmPrior公平性能比较。
+
+SenseCore会话过期由作者重新登录后恢复；16:32 UTC回读ACP e仍等待、0GPU、事件`FailedScheduling / insufficient resource: nvidia.com/gpu 1`，并非已运行或实验失败。原始UI收据`ACP_E_REAUTHENTICATED_STATE_20261110.json`，case3–9所有权保持，未重复创建。OpenReview实时回读仍为Bbqv/Hh4E/rkWY三位人工审稿，3/2/2、最后修改11月6日，逐条20项仍为当前回复依据；另有PAT LLM反馈单独保留，未算作第四审稿人。
+
+逐审稿人v3正文、20项问题—证据—修订映射及15个独立短回复块已完成内部首版：`tmp/rebuttal/responses/20261110_v3/`。revision v3从完整原LaTeX工程编译为35页、主文10页，保留全部原始数值表及9个有效图件；加强R2P/SOR有序操作、历史依赖、起始盘7/7/6和两顺序各10的呈现，新增真机任务结构表，保留录制观测成本证据。PDF SHA `ef9e6d55c7a24822b147ec392773c2a5c17ec7bfe9bbfbf79d6d34ee04545b4b`；干净29文件完整source ZIP SHA `120daf4e8d298e8181565a646d9c6f5f424add748c97d4d2ed91f1e303733304`。全35页渲染检查完成，无overfull、未定义引用、缺字；存在继承模板的Times斜体小型大写字体fallback warning，已记录。当前仍为`stable_release_ready=false`：直接修复、候选区分扩展、同信息最终对照、非空missing-skill和困难经验库证据尚未全部关闭，不能以文稿完工冒充科学闭环。
