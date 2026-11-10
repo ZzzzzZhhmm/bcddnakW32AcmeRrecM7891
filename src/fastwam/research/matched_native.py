@@ -334,7 +334,9 @@ def validate_native_isolations(isolations):
     """Require actual distinct private paths, not an asserted concurrency flag."""
     paths=[];ids=[]
     for item in isolations:
-        root=Path(item['writable_root']).resolve(strict=True);runtime=Path(item['runtime_root']).resolve(strict=True)
+        root=Path(item['writable_root']).resolve();runtime=Path(item['runtime_root']).resolve(strict=True)
+        if Path(item['writable_root']).is_symlink() or len(str(item['environment'].get('TMPDIR','')).encode())>100:raise ValueError('Unsafe or NVRTC-incompatible private temp root')
+        if Path(item['persistent_lease_path']).resolve()!=runtime.parent/'native-worker.lock':raise ValueError('Native worker lease must remain persistent beside its runtime')
         if item.get('ipc_kind')!='anonymous_multiprocessing_Pipe':raise ValueError('Unqualified planner IPC')
         if root==runtime or root.is_relative_to(runtime) or runtime.is_relative_to(root):raise ValueError('Writable/runtime roots overlap')
         if item.get('worker_id') in ids:raise ValueError('Duplicate native worker identity')
@@ -342,7 +344,7 @@ def validate_native_isolations(isolations):
         if set(item['environment'])!=set(NATIVE_PRIVATE_ENVIRONMENTS):raise ValueError('Incomplete private native environment')
         for value in item['environment'].values():
             p=Path(value)
-            if p.is_symlink() or not p.is_absolute() or not p.resolve(strict=True).is_relative_to(root):
+            if p.is_symlink() or not p.is_absolute() or not p.resolve().is_relative_to(root):
                 raise ValueError('Cache/temp/home path escapes the private worker')
         if any(p==q or p.is_relative_to(q) or q.is_relative_to(p) for p in (root,runtime) for q in paths):
             raise ValueError('Concurrent worker writable/runtime paths overlap')
@@ -357,7 +359,14 @@ def activate_native_isolation(plan):
     if runtime!=Path(item['runtime_root']).resolve(strict=True) or read_json(runtime/'MATCHED_WORKER_ISOLATION.json')!=item:
         raise ValueError('Actual worker runtime marker differs')
     if 'torch' in sys.modules:raise RuntimeError('Private caches must be selected before importing Torch')
-    fd=os.open(Path(item['writable_root'])/'native-worker.lock',os.O_CREAT|os.O_RDWR,0o600)
+    # CUDA/NVRTC needs a short container-local temp name. Scientific outputs and
+    # cross-node leases remain on AFS; host-local caches may be recreated.
+    root=Path(item['writable_root']);root.mkdir(parents=True,exist_ok=True)
+    owner=root/'WARM_NATIVE_CACHE_OWNER.json'
+    if owner.exists() and read_json(owner)!=item:raise ValueError('Existing short cache belongs to another worker')
+    if not owner.exists():atomic_json(owner,item)
+    for value in item['environment'].values():Path(value).mkdir(parents=True,exist_ok=True)
+    fd=os.open(item['persistent_lease_path'],os.O_CREAT|os.O_RDWR,0o600)
     try:fcntl.flock(fd,fcntl.LOCK_EX|fcntl.LOCK_NB)
     except BaseException:os.close(fd);raise
     os.environ.update(item['environment']);tempfile.tempdir=None

@@ -1879,3 +1879,7 @@ formal-only证明绑定追加后，19:56:28全46项检查通过（10.91s pytest/
 CCI新增qualify_rebuttal_matched_resets.py与逐worker独立HOME/cache/tmp/runtime准入；原规划器匿名Pipe静态核对，不冒充实测并发资格。每候选先保全专家结果，首50不以策略结果选择；每准入保留完整expert_info并两次精确初始RGB/API/物理/任务状态/指令，旧RB10强制前缀。任意重置或未知运行错误中止保留，不能换种子。正式worker在Torch导入前设置私有目录并持有独立lease，原推理/采样/配对数学和活动训练快照不改。
 
 20:27:32实现检查exit0：55项通过（11.10秒pytest/14.84秒总）；stdout SHA87d73f3c…、四实现文件SHA及完整argv在ITER12_RESET_IMPLEMENTATION_CHECK_V1.json/log双端Git外。初次人工pytest命令用了不存在的配置测试路径，0tests/命令exit1，未启动任何GPU或仿真，改用既有真实测试文件集合后通过。真实50-roster/并发reset尚待运行；不将静态检查写成新科学证据。协议见MATCHED_RESET_AND_ISOLATION_PROTOCOL_20261111_ZH.md，当前v12_addendum2/未变PDF保持，全部科学closure=false。
+
+20:33追加：首次真实运行在候选seed340800000的setup阶段终态exit1，尚无专家结果/策略推理/命令。两个curobo子进程均报告NVRTC临时目录名过长、error6，父进程ConnectionResetError属于下游表现。完整阶段/计划/runner/错误/启动意图等原件已归档matched_reset50_NVRTC_path_failure_v1.tar.gz，SHA559a6bc1…、manifest7ec6f98b…，本机/AFS均保留。不能记作专家拒绝或模型失败。
+
+20:34修复：每worker缓存/临时目录改用容器内独立短路径；科学输出和跨节点fcntl lease仍在AFS持久路径。激活时验证目录归属，禁止长TMPDIR及把lease搬到临时盘。57项检查exit0（11.45秒pytest/15.36秒总），stdout4ba0d57d…；原26360d70…快照与失败marker保持不改，新快照另冻。后续同一seed/顺序/原22:31:09UTC截止继续，不重置资源窗口。

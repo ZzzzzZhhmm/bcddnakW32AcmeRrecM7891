@@ -12,7 +12,7 @@ def isolation(tmp_path,name):
     root=tmp_path/name;runtime=root/'runtime';runtime.mkdir(parents=True);writable=root/'private';writable.mkdir()
     env={key:str(writable/key) for key in M.NATIVE_PRIVATE_ENVIRONMENTS}
     for value in env.values():Path(value).mkdir()
-    item=dict(worker_id=name,runtime_root=str(runtime),writable_root=str(writable),environment=env,ipc_kind='anonymous_multiprocessing_Pipe',read_only_asset_root='/fixed/assets')
+    item=dict(worker_id=name,runtime_root=str(runtime),writable_root=str(writable),environment=env,ipc_kind='anonymous_multiprocessing_Pipe',read_only_asset_root='/fixed/assets',persistent_lease_path=str(root/'native-worker.lock'))
     (runtime/'MATCHED_WORKER_ISOLATION.json').write_text(json.dumps(item))
     return item
 
@@ -63,3 +63,12 @@ def test_roster_failure_has_no_outcome_fallback():
     roster=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='roster')
     assert not any(isinstance(n,ast.Call) and isinstance(n.func,ast.Attribute) and n.func.attr in ('load_checkpoint','infer_action','_replan') for n in ast.walk(roster))
     assert 'reset does not reproduce' in ast.unparse(roster)
+
+
+def test_nvrtc_long_temp_root_is_rejected(tmp_path):
+    a=isolation(tmp_path,'a');a['environment']['TMPDIR']=str(Path(a['writable_root'])/('x'*110))
+    with pytest.raises(ValueError,match='NVRTC'):M.validate_native_isolations([a])
+
+def test_native_lease_cannot_move_to_ephemeral_cache(tmp_path):
+    a=isolation(tmp_path,'a');a['persistent_lease_path']=str(Path(a['writable_root'])/'lock')
+    with pytest.raises(ValueError,match='persistent'):M.validate_native_isolations([a])
