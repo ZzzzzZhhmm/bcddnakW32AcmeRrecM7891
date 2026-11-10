@@ -1346,3 +1346,13 @@ v4内部审阅包共52项、80,581,790 bytes，SHA `3d34361f3e92d8fdbbeffe159210
 q8/q48局部对照表JSON/Markdown/LaTeX已生成于`tmp/rebuttal/execution/20261110_iter3/same_parent_q8_q48_local_comparison_v1.*`。q8的raw/Full/null均0、依赖齐；q48的Full/null均0，原raw29与pool-final仍pending，不能填全repair/harm。两个query的Full/null实际physical-joint端点都不同，说明实际运动受到干预，但未观察到局部任务收益。两query仅一个source episode、均native stage0，重复Full不是独立样本；原闭环完整配对仍3，不制造总体修复率、置信区间或跨阶段主张。
 
 v4 research-patch1于00:49:43 AFS核验46项、7,079,858 bytes，archive SHA `ca06730ff406133399f6d6907bfdc955d4f20c91597231322d627c0f403b0ea7`；它是终态前的不可变快照。终态补充于01:00:09 AFS核验12项、3,117,044 bytes，SHA `382598a650bce349a17db674f729157e3d3bc28586448c1646fbb30aae7c176e`，manifest SHA `2dab1d74dbde849ce2778438666e5dda4962cfc0a7130002ce91f69ace1ebeae`，目录`writing_candidates/20261110_v4_q48_terminal_addendum`。已联动20项映射、内部README与一致性门槛；三位英文回复正文和35页论文/29文件LaTeX ZIP未改，PDF/source SHA再次核对保持，不为未修改文稿重复编译。没有把新局部0/0写成收益、没有对外发布，stable_release_ready=false。
+
+### 23.67 非空搜索域自然门控入口、原生检查与真实初始输入预检
+
+01:20:01 UTC三路原Eb仍实际运行，q48完整候选29/23/24，GPU25,996MiB/100%，Full500 operator未生成。01:20:39控制台安全只读核验仍要求IAM登录，保留原登录页与已有作者请求，不重复创建/停止任务。原选中source0/q48 raw rank29随后完成，独立局部标签0；此时仍缺原pool-final-anchor，不能提前宣告该query资格齐备。
+
+新增`collect_rebuttal_initial_gate.py`和`initial_gate.py`，固定读取三个原RB source的query0记录，在两个已封存的19,540事件搜索域分别构建真实Full policy。保留原生空初始history、原task标签与全部实际推理配置，不执行动作。保存actual alpha/g、合法row/event来源和原始probe；没有独立coverage真值时，g>0只称positive gate，不称false activation或任务失败。生产清理接口success=false不计SR。完整方法见`INITIAL_GATE_AVAILABILITY_DIAGNOSTIC_20261110_ZH.md`。
+
+以97e366a Linux快照为基础的precommit source前后均`f39b62fe75a48ae7e47a03876f7f11634d2478844d14614e3bbadb530b231263`，19项原生检查通过（2.00秒），覆盖原数组/未来字段拒绝、原生空history、强制/消融控制拒绝、eligible row越界、非法门值及hard rejection一致性，原repertoire搜索域检查同时通过。实际两条件的15项输入绑定与三个原首查询/数组均通过CPU data-only，policy未加载、执行命令0。
+
+补充计划`initial_gate_availability_v1.plan.json` SHA `de0cc273f540c71fa160e2f89726d584501f427011e3e2c9f43ad9f4165201ff`已在Git外冻结，原科学core5d7748e7…、原模型68c7f384…、四观测资格计划0df7b0f…绑定。预检与native19通过不是自然门值结果；后续从已提交冻结源码准入真实两条件推理，原200-pair主协议/候选样本/原资源窗口均不改。
