@@ -1,10 +1,10 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
-**当前接续（2026-11-10 07:34 UTC）：** case5 Full/null各完整700/0，两个outer均exit0，564+564项20867cb7…/e4eafa32…双端核验，固定RB现6/10完整、均0/0，余4pending不算失败；原08:31:04UTC截止保持。不可重跑case5或为完成cohort重置窗口。07:32:06原run BT12000/f77源码/config的native strict-loading资格已准入outer2268402，固定2400秒至08:12:06，原loader核验内容hash，不迁移v3到v8、不作DEV选点/推理/SR声明。先查`original_specialist_battery12000_native_load_v1/operator.json`和实际进程/exit，不与它争用GPU或重复提交。
+**当前接续（2026-11-10 08:03 UTC）：** 原BT12000/f77及PB12000/472两模型已native strict load完成exit0，实际完整权重hash加载前后与原attestation一致；两份9项原件1f9fddd6…/90071fee…双端核验。它们仅资格，0推理/0训练/DEV选点未知，不重跑。固定顺序Cover12000资格08:02:12准入outer2273018，原472 source4a…、2400秒至08:42:12，先查`original_specialist_cover12000_native_load_v1/operator.json`/runner/lease/exit，不与它竞争GPU；BRT14000是其后的资格项。
 
-唯一新ACP为`warm-full-trace200-500-20261110-a`，UIDbca26b54ec124eba8ec0de161543b42a，cluster01e_02闲时1GPU/22CPU230GiB，标准资源先实际拒绝成员GPU0。原parent200/source4efb…/strict validator/数学配方保持；新plan8d253020…于06:59冻结、绝对10:59:12UTC截止，启动至少须余7200秒，不可重置。07:35:56已读到ACP operator于07:27:33进入原训练entrypoint并生成runtime binding；尚无post-prepare快照或step201+更新，Full仍200，不重复创建。CCI BT原代际资格正在constructing_original_model，尚未通过strict load。正式observer archive7a0ce894…重新native-qualified；precommit8c…仅多15个local real配置，原文件未动、两身份分开，见台账23.83。
+ACP trace-v2 a已实际失败，07:37原样capture只见两差异：父false/highest，当前true/high；原strict validator拒绝、更新仍200，16项1140e326…保全，勿重提a。真实Torch2.7环境敏感性检查通过后，新precision-v3 planfb963b4a…仅export TORCH_ALLOW_TF32_CUBLAS_OVERRIDE=0恢复父记录；observer7a…/training4efb…/原validator/数学配方/父200不变，SAME原06:59→10:59:12UTC绝对截止（epoch1794308352），不重置，启动至少余7200秒。07:55标准实际GPU成员配额0拒绝后，07:57:24唯一闲时b创建，UID34bc101c7e26432785ac66b87a75ddd6、cluster02/1GPU22CPU230GiB/restarts0、确认镜像AFS，尚排队。先查`full_resume200_to500_precision_v3/operator.json`、实际runtime和201+metrics，不重复创建或把排队称新训练。
 
-原稿四run归属已确认，25份训练记录和四个末次权重元数据证明原代际v3/timing4；两个原source的event-effect监督相同、用event自身observed_effect，不能套用v8两项loss解释。优先读`SPECIALIST_SUPERVISION_BINDING_20261110_ZH.md`及`responses/20261110_v7_engineering_addendum2`。20项映射已联动W5替换候选/LaTeX片段，但尚未合入完整PDF，cohort代际绑定和原run机制补证仍是release gate。保留原稿数值、v7完整PDF和全部v8不利/未知结果；不再询问run归属，不按新结果挑选checkpoint，真机取证继续延期。
+原稿四run归属、25训练记录和四个v3/timing4元数据已绑定；原event-effect监督用各event自身observed_effect，不套用v8两项loss。读`SPECIALIST_SUPERVISION_BINDING_20261110_ZH.md`及`responses/20261110_v7_engineering_addendum2`的20项映射/W5替换候选/LaTeX片段；尚未合入完整PDF，cohort代际与原run机制补证仍是release gate。固定RB6/10完整均0/0、余4pending、原08:31UTC截止不变；不能为完成cohort重置窗口。保留全部不利/未知结果与原稿报告数值，不按新结果选点，真机新取证继续延期。
 
 **最终恢复锚点（2026-11-10 06:00 UTC）：** 唯一ACP测量c已05:47实际完成，UI确认成功，父200的10项静态环境全部匹配，16项原件0f249285…双端保全；不要再按后文旧等待状态重提c。它没有模型装载或训练更新，不能当作完整resume准入，旧cluster01e b的具体差异仍未回溯测得。下一步原样采集post-prepare数值runtime（分布式/DeepSpeed、TF32和确定性等）并保留严格validator；若安排新训练段须单独记录资源修订，不能重置旧窗口。
 

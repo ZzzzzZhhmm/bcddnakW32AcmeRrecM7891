@@ -21,3 +21,6 @@ v7完整PDF、LaTeX和回复保持不可变。新增`responses/20261110_v7_engin
 5. 监督描述与对应cohort绑定后，逐一更新W5、Bbqv W3/Q2、相关公式/附录，再完整编译revision并验收。既有v8全部六query/192候选/182完整/10未知、六组零局部标签和闭环负结果继续单独公开保留。
 
 原件根目录：`WARM_evaluations/rebuttal_20261109_acp`。34项档案SHA `0d56b4020f1da242ca99e172f63c3a813e544c75b6e76ce85c8a0150a6698960`、manifest `fd06676aa86c1f88d95fc1e1f05413a192cb33db06924d50d979b2183d761ab5`；四权重元数据/源码语义报告`AUTHOR_CONFIRMED_SPECIALIST_ARCHITECTURE_AND_EFFECT_SOURCE_V2.json` SHA `0f4806d2d5d8a89cc168163145d48be3686940b1762a71fc2a0e23925b47d822`。C盘/AFS均保全，metadata审计不等于原准确率复现。
+
+
+08:03 UTC接续：BT12000与PB12000已经分别用原f77/472 factory与原config完成strict loading，实际完整checkpoint SHA在加载前后重算并匹配原attestation，source前后不变。两份9项工程档案1f9fddd6…/90071fee…双端核验。这使“两份已核实可加载的原代际权重”从metadata候选变为实际加载事实；仍不确定原DEV点，仍无在线推理或任务收益。Cover原代际资格已独立有界准入，BRT按固定顺序随后处理。

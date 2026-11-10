@@ -16,3 +16,6 @@
 实际冻结与提交：正式Git archive source为7a0ce894…，与precommit8c…的差异仅15个未纳入Git的local real配置；518个共同source逐字节相同，原文件未改。正式source重新通过7项native测试与V4原entrypoint配置转交，model/update/runtime capture均0。完整父state/配方preflight于07:03:23 exit0。
 
 新plan8d253020…自06:59:12UTC至10:59:12UTC，deadline epoch1794308352，包含排队/训练/保全，不重置。07:04标准创建实际拒绝GPU成员配额0后，07:05:59唯一闲时任务warm-full-trace200-500-20261110-a创建，UIDbca26b54ec124eba8ec0de161543b42a，cluster01e_02、1GPU/22CPU230GiB、restarts0、确认镜像/AFS。07:26 Worker运行且有Host IP；原时点AFS operator尚无，更新0。任何后续修复不得复制未知job或沿用旧b输出，须核实实际trace/exit/原截止余量。
+
+
+后续已测：a的post-prepare只有TF32与FP32 matmul精度两字段不符父记录，原validator拒绝且更新0，16项失败原件1140e326…保全。实际Torch2.7敏感性实验表明export TORCH_ALLOW_TF32_CUBLAS_OVERRIDE=0可恢复highest/false；没有测得旧a该变量原值，因此根因仍作推断。新precision-v3 planfb963b4a…及独立输出沿用SAME绝对10:59:12UTC截止，所有数学配方、parent及原始比较保持；当前标准配额0再次实测后，07:57:24唯一闲时warm-full-precision200-500-20261110-b，UID34bc101c7e26432785ac66b87a75ddd6，已创建排队，实际resume尚未验证。

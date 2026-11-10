@@ -1541,3 +1541,18 @@ commit eb70b41已推送并离线同步CCI。首次Git archive的source checksum�
 07:35:56读取AFS原件：ACP新a的operator已于07:27:33实际进入running_training，冻结训练job于07:27:37启动，plan8d253020…、operator7a0ce894…、training4efb8094…和parent1fb035c4…均与事前绑定一致。runtime_trace/binding.json已产生，但尚无原post-prepare runtime快照或step201+的更新证据；因此原Full计数仍200，不能把operator状态当成resume通过。新绝对截止10:59:12UTC保持。
 
 同一时点CCI原BT12000资格的native process/runner存活，原f77模块路径已核对，config SHA4421db82…、attestation19c6b5fc…绑定；状态constructing_original_model，H100已有13,605MiB占用，尚未完成strict checkpoint load。它不含model inference或训练。固定08:12:06UTC上限保持，先查实际exit与内容hash后再决定兼容推理，不重复准入。AFS可用157,833,052,160 bytes；没有删除state/checkpoint或改动原real配置。
+
+
+### 23.86 原样测得ACP精度差异、完成两份原模型严格加载并冻结同窗口修复
+
+新a的原capture于07:37:24实测仅两字段不同：cuda_matmul_allow_tf32父false/当前true，float32_matmul_precision父highest/当前high。所有其他runtime字段比较一致；原strict validator拒绝，07:38:41 operator终态失败、step201+更新0。16项失败原件40,706 bytes，SHA `1140e326e8e275f42085fb19c90a9e868608253e12c3bcec9e5aca2f9c374324`，manifest07bbe459…，C盘/AFS逐项核验。不能反推更早旧b的具体差异，也未测得a容器该环境变量原值。
+
+实际Torch2.7.1+cu128子进程、CUDA隐藏的敏感性检查通过：TORCH_ALLOW_TF32_CUBLAS_OVERRIDE=1得到high/true，=0得到highest/false。这提供忠实恢复父记录的执行设置，非修改capture返回或放宽比较。变量作用与highest语义参见[PyTorch2.7 CUDA环境变量](https://docs.pytorch.org/docs/2.7/cuda_environment_variables.html)及[FP32矩阵精度](https://docs.pytorch.org/docs/2.7/generated/torch.set_float32_matmul_precision.html)。旧a的环境变量根因仍是推断，不冒充已测事实。
+
+新precision-v3 plan SHA `fb963b4af54e2dc7ced5824b9e7df846f51978ad4bc483bb104198cbae498263`，独立output/artifact，export上述变量0；原训练4efb…、observer7a…、parent200/full state、strict validator和final3000不变。沿用同一06:59→10:59:12UTC绝对窗口，epoch1794308352，排队/训练/保全都计入，未重置。07:54:08完整原parent/配方preflight exit0、0更新。07:55:54重新实测标准创建拒绝MEMBER_QUOTA_EXCEEDED/GPU0；随后07:57:24唯一闲时b创建，UID `34bc101c7e26432785ac66b87a75ddd6`，cluster02、1H100/22CPU230GiB、restarts0、确认镜像/AFS，07:57:47排队中。实际恢复和更新尚未证明，不重复未知任务；当前Full仍200。
+
+BT12000原f77/config strict load于07:39:54成功、runner07:39:58 exit0；完整权重SHA27c137d6…加载前后核实，source前后ff32342d…不变，6,776,526,408参数、peak13,576,688,640 bytes。9项原件31,530 bytes，SHA `1f9fddd66954e787c297c3ef28283067ada3ffaaf2a918fc473829d42bd0a25d`，manifestc26d7fa5…双端保全。
+
+固定顺序PB12000原472/config于07:48:20准入outer2270732，07:56:00严格加载成功、runner07:56:02 exit0；完整SHAa765d987…与source4a1d05cb…加载前后一致，同样0推理/0训练。9项31,526 bytes，SHA `90071fee953d99fa767dcabdb67415b375a262b2e216a10d97b7ba3481d717cb`，manifest619b3f1c…双端逐项核验。PB runner说明复制残留BT字样，实际绑定路径/config/source/attestation/weight均为PB；原收据保留，核验收据明确澄清，不重跑已成功模型。
+
+两份原模型资格不构成DEV选点、在线推理、任务成功率或修复收益。完成后按固定顺序08:02:12准入Cover12000原472/config资格，outer2273018、2400秒至08:42:12UTC，helper9e8d5dd6…、spec44d9dd55…。原RB campaign仍6完整0/0、4pending、08:31UTC原截止不变，BRT资格尚未执行。20项addendum2映射与W5实施边界同步；英文W5候选/LaTeX片段未合入PDF，原v7及所有数值保持。
