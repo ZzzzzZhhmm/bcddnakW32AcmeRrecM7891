@@ -1,5 +1,7 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**当前执行（2026-11-10 03:30 UTC）：** case3/Full已03:18:03完整700、exit0，564项原件b91731c1…已双端逐项核验；RB完整配对现4、均0/0，不再重跑此role。下一闭环固定role为case4/null，但当前优先按原source顺序补机制证据：source1事实700回放+六query null动作封存已03:25:02准入，outer2231994，截止04:55:02UTC、source84af4413…/controllerbc13308保持，spec dabcce45…。只封存原事实context/common Gaussian的null动作，不执行null物理分支、不新增独立SR。先核查真实进程/exit/summary，成功后验证原Full/action/输入资格并从原source1/q8和q48的完整pool补同父null；source2按固定次序后续补。原case4/null及campaign08:31截止不变，不与当前GPU任务竞争或重复已有role。
+
 **最新执行与文稿（2026-11-10 03:04 UTC）：** 三路Eb原冻结collector全部exit0，六个固定query终态，192 valid候选/182完整H32/10未知，六个centered主指标均不优于constant。新增source1/2档案1190项fc9115a1…双端核验，与source0的591项e6c8ca48…构成完整三source证据；旧未知/partial均保留。v6英文回复15块/20项与完整37页/10页主文PDF、29文件source ZIP已联动、干净重编译及视觉检查；取代v5成为当前审阅候选，尚未发布/达到实证release gate。case3/Full已02:51:17独占准入，outer2230608，原plan d8512a23…、worker3600/outer5400/08:31:04UTC campaign截止保持。先查真实进程/heartbeat/exit，不再重启已完成pool。
 
 AFS于02:49:25仅余73,464,709,120 bytes，仍不足原80GiB Full续训准入；当前有用GPU工作是case3/Full，训练没有新增update。ACP b的失败权威路径和日志见下一段/台账23.71；不要再次误读其他目录为operator无。优先核对case3真实终态、三source全部结果及原稿模型绑定；随后按原固定顺序补source1/2同父null（不是按结果替换样本）、实际coverage/自然missing-skill与同信息最终对照。真机新取证继续延期。

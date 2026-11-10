@@ -1415,6 +1415,16 @@ source2与source1的原q48分别于02:42:55和02:46:34 UTC完成，终态outer�
 
 v6替换v5中的“四query/仍采集”文字与表行，报告全部六query/182完整/10未知。三位英文回复仍15块/20项，原稿原表及九图保持，主文10页与v4逐页文本相同；完整37页工程与29文件ZIP独立干净重编译，37页文本一致。全部渲染、31/32新增表格视觉检查通过，无undefined/overfull，46原有font warnings保持。PDF SHA `b91620c380d4ec270e3ac54ec7e7d252481940f2a7fb2287d4298998ea25cdfd`，ZIP SHA `6137ce24f88cc3e1b2fbbd4a9146eb0f81ef269035dbe3344948e24742491250`。当前候选为responses/20261110_v6和revision/WARM_ICLR2027_v6；v5及更早候选完整保留。stable_release_ready=false，关键模型对应/直接机制/coverage/同信息最终性能未关闭，未发布或上传。
 
+### 23.74 第四完整固定配对与下一source同事实null封存准入
+
+case3/Full于03:18:03 UTC worker明确exit0，outer于03:18:10 exit0，完整700×14命令有限、官方700步success0；原seed340800003、checkpoint68c7f384…、controller source前后56393c5a…保持，四原事实DINO平台资格记录齐。与已完成case3/null700组成第四对，原case0–3的Full/null均0/0；其余六对pending及旧中断不计失败，不据此推翻原稿specialist结果或声称复现准确率。
+
+完整564项Full worker原件`case3_full_v3_complete700_worker_v1.tar.gz`（原AFS attempt内名verified_worker_evidence.tar.gz）为4,267,400 bytes，SHA `b91731c100bde4b9b6976db933d1c98f12f2686b25af0fb429c2516a9c9d4438`，manifest SHA `9c975c89c8d5987b5f158f25d899540de7e496b83d8a8fb0583132e6111467e2`，AFS及本机全部逐项核验。真实700 trace SHA `7d71de393b4ebefeae441a3b73f37860085402269560c753683726419b225485`，资格与终态见CASE3_FULL_V3_VERIFIED_COMPLETE_V1.json及本机验证件。原null完整564与旧497中断包不覆盖。
+
+确认三pool/新case3 outer均exit0，campaign lease空、单H100空闲81,080MiB后，03:25:02 UTC准入原固定source1（seed340800001）事实700回放与null动作封存，outer2231994，max5400秒、截止04:55:02 UTC。复用已提交controllerbc13308/source `84af4413e9c59934c34664c35bbfab86fb165f2604a2e01ffbf104f4f6716c3e`及原v5只读共享权重wrapper，实际新spec SHA `dabcce452a9309d3480761dd89b371651143446bb5d233da95f66af960924a22`。实际输入预检绑定原source1六份H32 generation、q8/q48封存pool哈希及初始query已核实Full精确重现；它只是data preflight，所有新query仍须实际replay/Full/context/Gaussian/RNG逐项严格通过。
+
+新输出`rb_source1_factual_nullseal_v1`，准入收据RB_SOURCE1_FACTUAL_NULLSEAL_V1_LAUNCH.json。选择source1是补齐原固定source顺序，不按结果更换/替代失败source；不执行null物理分支、不增独立任务样本，不提前声称已完成700回放/封存。成功后再以原完整source1/q8/q48做同父物理null；source2固定顺序后续补。下一闭环角色case4/null及原08:31UTC campaign窗口保持，避免和当前诊断同时争用GPU。
+
 
 ### 自动采集：fresh-scene K32 fixed-fresh-rearrange_blocks-e0000-q0048
 
