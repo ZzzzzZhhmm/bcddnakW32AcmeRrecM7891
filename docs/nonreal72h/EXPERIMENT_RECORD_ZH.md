@@ -1793,3 +1793,33 @@ ITER9_LIVE_V2在2026-11-10T16:47:24.590650UTC保存完整部分metrics/runner/�
 17:18:44最终3000同信息比较设计在新权重结果前冻结：RB/BT沿旧primary56b6ec9a…任务和首50个expert-admitted world seeds/340800000起始/2000上限，新Full/Pooled各100回合、共100对/200回合，原生700/1000；旧Full/null或missing-skill计划不被替换。共同evalsource87199cc6…、各自训练source4efb…/48ce…、固定final3000/seed3407，DEV不选点，3408/3409未完成须披露。统计为固定任务配对差及保守精确gain/harm边际界，未知不补0。设计SHA3484ad1477a868607a916638c631c80df25501db59dd82edbf6651c768238e33/3项manifest380b7d45…双端验证；部署到共同eval的affine-prefix边界修复diff明确保全，不假称部署bytes未变。6-worker/10固定分片/每分片12h/总120GPUh/统一36h且不晚于Nov12 18UTC只是有界资源设计，尚未准入或派发，时钟未启动。两final state/CAS、Full实际资格、typed合同、50-roster及可写路径并发隔离仍为准入要求。
 
 原q96固定输入同时已准备：原14k/seed0/query96/frame384/rank10、原source600/probe32均保持，collector eea5ac8e…、独立prefix audit271fadea…封存；未启动新phase或audit，不复用q48的192清单。17:07控制台通过浏览器既有已保存表单恢复登录，已实际读到三标准作业运行中及旧失败；认证字段和回调参数从本地浏览器记录移除，不进入科学原件或Git。实际q48仍在固定池运行，终态才计算总指标、保全后接q96。
+
+### 23.118 原q48完整固定池终态与独立同支持集指标
+
+原q48于17:41:50完成全部36分支，runner17:41:56 exit0；原sourceCf77/14k/seed0/query48/frame192/rank0/32valid不变，四Full anchor和全部fresh parent/RNG/DINO均精确。24个候选完整H32、8个TOPP invalid保持unknown：rank1/9/10/14/20/27/28/31，分别完成3/5/9/7/14/28/23/15步后拒绝。它们不补0、不补effect、不调换样本，不把branch终态当完整端点。
+
+同24支持集centered MSE：预测0.05504458575772138、query-constant0.030714170813867594、historical0.055092660063442836；absolute预测0.09047244380967434、historical0.09039570482394571，实际query requirement未捕获，constant absolute仍不可得。预测未优于constant；略低于historical不构成相对constant的优势，也不作当前状态修复/选择收益。原uniform mean四DINO delta descriptor保持，无缩放或事后拟合。两个原BRT状态来自同一source，K候选不作独立population样本。
+
+343完整原件49,475,789bytes归档SHA91d595a89706c07640c4515e45e67198562e17e5e2b5d13e7d35637c44f7e61f，manifest ae79b07c1e2eaff4d80cbac87ef495f47ebce41106b490f9597db8d4e14983d5；AFS/本机iter10逐成员核验，另用E[(prediction-truth)^2]减去candidate均值项的独立方差恒等式重算centered指标一致。所有原raw与q8/原稿另一个机制cohort保留，未替换原报告数值或重跑不利点，原q48 21:01UTC窗口没有延长。
+
+### 23.119 原q96独立384前缀通过；新标准ACP实际启动
+
+q48原件保全后，q96新8h phase于17:45:00.794514UTC开始，固定截止Nov11 01:45:00.794514UTC；原其它窗口均不变。原v1计划bd34293d…/独立冻结audit271fadea…在CCI两遍各384尝试17:59:42完成、runner exit0，逐步source API/每4步RGB、跨遍实测关节和最终parent/RNG全部相同。索引101与234的原TOPP拒绝均精确保留，不重试/抹去；192清单未复用。16完整原件归档4431cceb9cc487992d0d651c6cde48d6e796304051c5952556818b839e55d9d7，manifest53ebd857…、prefix manifest60539adc…已双端逐项核验，0新候选truth。
+
+同一phase下生成绑定384清单的v2计划dec144d8ae071d18d7809d1dbd55e1fc44d943ec0815457938db927c3d29ea1f、spec68fb5771…、shell acafe827…，原C/H/source600/14k/query96/rank10/seed0/H32/32候选保持。真实verified_prefix_manifest预检通过，shell语法通过；只对事实历史复现已核实拒绝，候选strict guard不变，先AABA再完整池。Source/controller与所有旧窗口未改变。
+
+18:02:18标准创建返回成功；唯一warm-brt-q96-effects-20261111-std，UID492eb35f0d98462db196a624cf492d5c、cluster01e_02/1GPU22CPU230GiB/restarts0，确认镜像ccr-zhicheng-02/lwz_wam:lwz-workspace-20261029145800及AFS afs-p3-01e:/→/mnt/afs当前用户读写。提交前按名查无旧任务，durable create intent已保存，无重复创建、无闲时回退。首次UI18:03:33仍显示排队，但实际18:03:04 runtime probe已产出、18:03:35 collector已开始，按实际runner/心跳登记活动，不依赖滞后UI。实测完整runtime hash2f3e5d29…与原合同完全相同，diff=[]、对象未改，显式override0保持。18:06:57正在anchor-a父状态重建，0封存分支/0独立端点/AABA未完成，不能算q96预测或修复结果。表单一次即时文本断言早于Ace重绘而失败，后续只读确认文本正确后才单次提交；不是失败GPU实验，也不据此重复创建。
+
+同一18:06:57快照Full更新1570（新1370）、pool858（新758），日志连续且loss/grad有限，durable父仍200/100、final3000尚未完成，原训练Nov11 12:29:56UTC截止保持；AFS116,668,485,632bytes可用，原件/checkpoint未删。正式100对设计仍未派发，明确Full/Pooled双checkpoint原生collector待实现/验证，旧Full/null程序不能静默充当新对照。
+
+### 23.120 v12联动原稿工程与回复，完整编译及视觉核验
+
+v12在原29源文件LaTeX工程中补充q48 Table23/page33及RB原生700口径，原q8 Table22和所有旧tabular/九图bytes保持。三份英文/15块/20项矩阵2091cceb…更新Bbqv W3/Q2、Hh4E W5及其修订位置；原q96前缀/ACP/runtime只作为工程证据绑定，不写候选结果。完整工程和独立干净ZIP两次编译，38页文本完全相同；主文10页与v11相同、refs第11页，所有38页contact及变化页32–38均逐页视觉检查，引用/overfull/匿名性通过，46条继承font warning不增。原AI使用说明保持真实，原33页与v11不改。
+
+PDF ed11dae1012a54a7a04bdb8450ffd9be9ca1a768b0eac7084ecc59d7ab9860d1、ZIP8955a7e9a994aebe345e01d63621c58c8be60ecbeae9d863f1d206dc03d9e464。95项本机审阅包d327dc924d16bed7988ab0630d714d0156571e72d02ffb7dbc8e0a06086271ec、manifestd6849ec4…已逐成员验证，AFS同步另记正式收据。最初v12拷贝后因两个reviewer的段落锚点不同停在写数字前，两个部分目录保留为prepare_attempt1；更正锚点后从完整v11重新生成，未改原件/数据，PDF操作标记只执行一次。未知和负结果全保留，全部实证closure=false，未发布OpenReview或正式上传。
+
+### 23.121 v12整包双端验收及最新实际活动
+
+18:14:32 AFS writing_candidates/20261111_v12全部95项再次逐成员核验：整包128,540,942bytes/SHA d327dc924d16bed7988ab0630d714d0156571e72d02ffb7dbc8e0a06086271ec、manifest d6849ec4f376ed82fe9d08d74308816b5c0d4c53a69dd55ac64071cf896292b4；PDF ed11dae1…、ZIP8955a7e9…、20矩阵2091cceb…保持。包中18:06的执行快照与后续live明确分时，不用封存包的旧进度重复启动任务。全部原q48/raw、RB口径、q96前缀与已有成本完整档案及核验包含在包中，其余历史经不可变v11/v10引用保留。
+
+18:18:30 ITER10_LIVE_V3：Full1621（201起1421新条）、pool908（101起808新条），连续且loss/grad有限、durable200/100不变；q96标准492eb35f…已完成1个Full anchor，正在anchor-aa父状态重建，AABA及独立候选端点尚未完成，不计新机制收益。真实runner running/exit null、心跳持续，完整actual encoder fingerprint与原合同相同。原q48已终态24/8不可重跑；所有原phase/training截止保持，AFS可用116,390,531,072bytes。正式100对仍只是冻结设计，新双checkpoint/Pooled原生collector列为下一独立实现项，不能误认为旧Full/null程序可直接运行该比较。

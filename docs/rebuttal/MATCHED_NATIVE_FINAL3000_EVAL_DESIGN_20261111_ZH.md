@@ -18,6 +18,8 @@
 
 正式准入仍需两final3000完整状态/逐字节checkpoint收据、明确typed contracts、Full实际原生资格、固定50-reset roster、各worker可写模拟器/planner/临时路径隔离及真实并发确定性检查。原native worker全局lease不得被准备阶段绕过。AFS须留足原训练state/CAS与有界新轨迹，不删历史原件。每回合保留初末图、全部H32生成/已执行动作状态、telemetry/源与输入hash和预定query证据，避免无界重复大tensor占满AFS。
 
+实现门槛另行明确：现有冻结`run_rebuttal_rmbench_pairs.py`只处理Full/candidate-null与单一checkpoint，不能直接充当新Full/Pooled比较入口。下一项独立工程工作是实现并验证明确双checkpoint/双factory、真正Pooled模式的原生collector与有界续跑收据。须在TEST前明确基础设施异常、可归因的策略无效输出和原生任务终止的分类；原因未知的失败不得补0，已观测的策略失败也不能通过换seed隐去。冻结设计本身不代表这个运行程序已完成。
+
 资源设计为最多6台单H100、10个task×10-case固定分片，每分片首次准入起最多12小时，总准入上限120GPU小时，统一phase最多36小时且不晚于Nov12 18:00UTC。标准优先；只有实际GPU配额拒绝后才闲时。排队、失败和重试都计入原分片/phase时钟，不因恢复重置。按既有吞吐估计约70–90有用GPU小时只是排期估计，不是测得完工保证。当前没有新增ACP评测任务或GPU时间消耗。
 
 该比较支持BB-W2、HH-W1/3的同信息机制价值问题，仍是shared-stage受控补充，不是具名ReCAP/MemoryWAM复现或原稿逐任务specialist准确率复现，也不等同另一个missing-skill的2pp非劣协议。

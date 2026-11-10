@@ -1,5 +1,17 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**最高优先级恢复锚点（2026-11-10T18:18:30.357400UTC）：** 当前候选v12：三份英文/15块/20项、38页/10主文PDF ed11dae1…/29源ZIP8955a7e9…，全工程与干净ZIP重建38页文本相同，32–38变化页逐页视觉验收、引用/匿名性/overfull通过。95项包d327dc92…/manifestd6849ec4…、20矩阵2091cceb…已双端逐项核验，AFS writing_candidates/20261111_v12，本机responses/20261111_v12。原33页、v11和旧结果全保留，未发布，stable_release_ready=false。
+
+原q48已经17:41:56 exit0，全36branch/32valid核销：24完整H32、8 TOPP unknown，四Full endpoint/effect精确。预测centered0.0550445858高于constant0.0307141708，historical0.0550926601；无预测优势、无BRT适用性/修复标签，343原件91d595a8…双端核验，另有独立方差恒等式重算。不要再按后面旧active段落重跑q48或抹去不利结果，不因其结果换掉已预定q96。
+
+q96新phase17:45:00→Nov11 01:45:00.794514UTC。两遍384前缀17:59:42已正常结束，source API/RGB/跨遍实测物理/最终RNG精确，索引101/234已观测TOPP拒绝保留；16原件4431cceb…双端核验，不能复用192清单。绑定v2计划dec144d8…、collector原H695/eea5ac8e…、原C f77/14k/query96/rank10/seed0/H32/32候选保持。标准ACP warm-brt-q96-effects-20261111-std、UID492eb35f0d98462db196a624cf492d5c已实际启动，完整runtime2f3e5d29…与原合同相同、diff=[]/对象未改。最新1个Full anchor封存，active anchor-aa，AABA未完成、独立候选端点0；先核查真实runner/heartbeat/退出，勿重复创建、提前算收益或遇无效rank后更换预定候选/放宽guard。
+
+另两标准训练原UID不变：Full95e49547…观察1621（新增1421/durable200）；poolc852e8e2…观察908（新增808/durable100），连续有限，final3000未完成，训练截止Nov11 12:29:56UTC不变。CCI当前无活动GPU worker，原native全局lease预期由ACP q96持有；开发或离线DEV可以继续，不能竞争native场景/输出。AFS约116.39GB，留足两个最终raw/CAS和有界新轨迹，不删历史checkpoint。
+
+**下一最高价值实现工作：** 在CCI实现并验证独立Full/Pooled双checkpoint、显式factory/schema的原生评测collector及已核销角色的有界续跑。旧run_rebuttal_rmbench_pairs.py仅Full/null，不能直接交给Pooled，不能把计划冻结说成运行程序已就绪。新正式设计3484ad14…事前固定RB/BT各50对、seed3407/final3000、100对200回合；旧v8/null剩余四对不由新结果补填。先用固定DEV及已保全Full200/pool100做工程资格，再两final3000严格状态/CAS与typed bundle准入、固定50-roster、worker可写路径隔离及初始common-noise核验。TEST前明确infra异常、可归因策略失效和原生终止分类，保留未知与真实失败。6单GPU/总120GPUh/10固定分片各12h/统一36h且不晚Nov12 18UTC只是有界设计，正式评测尚未派发。
+
+口径更正必须继续传递：原RB六对确达其native700上限，Full/null各0、四pending；不是低于RB上限的截短。62项审计de99e5ca…双端核验。原BRTsource600低于该任务3500是另一种有界来源。负/未知不丢，两个原BRT状态同一source、K不是独立policy样本。待q96known终态后立即全原件/同支持集分析；并优先推进原任务specialist的BT等完整原生轨迹及独立repair/withdrawal/非空missing-skill，避免只测新shared模型的性能地板。原DEV/cohort绑定、具名基线/模块成本仍开放。真机新增延期、不再索取素材；不自行发布或正式上传。
+
 **最高优先级恢复锚点（2026-11-10T16:47:24.590650UTC）：** v11三份英文/15块/20项、38页/主文10页PDF及29源文件ZIP完整+干净重编译、38页文字比对和变化页37/38视觉验收通过。新增同100DEV样本的嵌套retrieval阶段表Table26/page38，不增加效能结论。PDF1e11e07e…/ZIP8b851487…；47项包c62f1a87…已双端核验，路径writing_candidates/20261111_v11。本机回复responses/20261111_v11。原33页、v10及所有不利/未知结果保留，未发布。
 
 pool100原生DEV资格已经16:41:20 exit0、10/10固定PB前缀H32有限，真实历史/all-K/8+4条件路线完整，46原件136b665c…已双端核验；不要再按后面的旧pending/loading重跑。独立helper bcf94b7c…/source87199cc6…、真实Pooled构造器及source-only模式保持，无Full专用probe；生成动作未执行，无TEST或收益。旧字段/旧probe两次失败共51原件全部保留，原17:27:52UTC窗口不重置。26项v11工程增量b3428130…/20项matrix f68f902f…位于responses/20261111_v11_addendum1和AFS同名writing_candidates路径，论文和三回复bytes不变。94个共同源码静态核对保全，但不等于参数/性能数值相等。
