@@ -11,7 +11,16 @@ ROOT=Path(__file__).resolve().parents[1]
 sys.path[:0]=[str(ROOT),str(ROOT/'src')]
 
 
+def recorded_instruction(sample):
+    """The native BaseLerobotDataset exposes its current instruction as task."""
+    value=sample.get('task')
+    if not isinstance(value,str) or not value.strip():
+        raise ValueError('Native current task instruction unavailable')
+    return value
+
+
 def main():
+    global ROOT
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--plan',type=Path,required=True)
     parser.add_argument('--expected-plan-sha256',required=True)
@@ -25,6 +34,10 @@ def main():
     read=lambda p:json.loads(Path(p).read_text())
     if sha(args.plan)!=args.expected_plan_sha256:raise ValueError('Frozen DEV qualification plan differs')
     plan=read(args.plan)
+    ROOT=Path(plan['evaluation_code']).resolve(strict=True)
+    sys.path[:0]=[str(ROOT),str(ROOT/'src')]
+    if sha(Path(__file__))!=plan['collector_program_sha256']:
+        raise ValueError('Frozen collector helper differs')
     if (plan['schema']!='warm.rebuttal.pooled-native-dev-qualification.v1' or plan['task']!='press_button'
         or plan['query_frames']!=list(range(0,40,4)) or plan['checkpoint_update']!=100
         or plan['checkpoint_sha256']!='cbdfcef2432f2e2b99ddfc22a95dc16450df43979c094c85e3f7787faecfe5ec'):
@@ -36,6 +49,7 @@ def main():
     from scripts.nonreal_job import source_identity
     state=dict(status='binding',started_utc=datetime.datetime.now(datetime.timezone.utc).isoformat(),
         plan_sha256=args.expected_plan_sha256,checkpoint_update=100,checkpoint_sha256=plan['checkpoint_sha256'],
+        collector_program_sha256=sha(Path(__file__)),evaluation_source_sha256=plan['evaluation_source_sha256'],
         generated_commands_executed=0,task_success_measured=False,queries_complete=0,engineering_only=True)
     def save():atomic_json(out/'operator.json',state)
     def budget():
@@ -102,8 +116,7 @@ def main():
             commands=np.ascontiguousarray(sample['action']['default'].numpy(),dtype=np.float32)
             if raw.shape!=(14,) or commands.shape!=(4,14) or not np.isfinite(raw).all() or not np.isfinite(commands).all():
                 raise ValueError('Finite native current state and recorded prefix required')
-            text=sample['text']
-            if not isinstance(text,str) or not text:raise ValueError('Current DEV instruction unavailable')
+            text=recorded_instruction(sample)
             if instruction is None:instruction=text
             if instruction!=text:raise ValueError('DEV instruction changed')
             obs=dict(observation=cameras,joint_action=dict(vector=raw))

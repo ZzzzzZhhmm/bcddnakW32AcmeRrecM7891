@@ -17,3 +17,14 @@ def test_full_native_profile_keeps_its_original_constructor_and_losses():
         cfg=compose(config_name='sim_rmbench',overrides=['task=rmbench_warm_online_3cam384_full'])
     assert cfg.model._target_=='fastwam.runtime.create_warm_retrospection'
     assert all(cfg.model.retrospection[k]>0 for k in ('loss_retrieval','loss_effect','loss_gate','loss_adaptation'))
+
+
+def test_native_recorded_task_instruction_field():
+    from scripts.qualify_rebuttal_pooled_online import recorded_instruction
+    assert recorded_instruction({'task':'press the button'})=='press the button'
+
+def test_foreign_or_missing_instruction_field_is_rejected():
+    import pytest
+    from scripts.qualify_rebuttal_pooled_online import recorded_instruction
+    for sample in [{'text':'not the native field'},{'task':None},{'task':''}]:
+        with pytest.raises(ValueError,match='task instruction'):recorded_instruction(sample)

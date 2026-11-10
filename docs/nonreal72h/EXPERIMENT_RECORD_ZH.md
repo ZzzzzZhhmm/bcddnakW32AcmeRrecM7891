@@ -1741,3 +1741,17 @@ v10完整PDF7d5489a9…/ZIPa9099b1e…、三份15块/20项回复和原68项abd7c
 资格程序将走真实RMBenchWarmPolicy、严格typed checkpoint/合同/encoder/normalizer及生产采样器，读取实际all-K adapter输入、4个池化token和8+4条件token，并保存原始当前RGB/state、模型H32输出、真实历史mask、事件/高斯/输入hash及probe。proprio须与生产_normalize_state结果匹配；frame32/36须确有过去event history，不用零占位替代。只读wrapper原样返回原conditioning对象，结束恢复；真实policy资格仍待运行，不能把单元检查当作通过。
 
 原生新配置与Full保持检查、既有池化模型隔离/梯度/无future teacher等共12项CPU原生测试通过（20.67s），语法检查通过，0优化器更新/0物理命令。实现检查收据ITER9_NATIVE_POOL_IMPLEMENTATION_CHECK_V1.json，原件Git外iter9/AFS保留。实际评测代码将从已训练f9/source48ce6ba8…逐字节复制并仅叠加三个新增入口文件，独立冻结并证明原模型/所有既有源码bytes不改；新训练与原q48继续各自不可变快照，原窗口不变。
+
+### 23.111 原生DEV预检字段错误保留；修复仅采集器，不改模型与窗口
+
+635670b已提交推送并同步CCI。507个继承源码文件与f9训练源48ce6ba8…逐字节相同，叠加三个新入口后eval source87199cc6f815da5599fcb0ee9c0a9ffb67181f3750e34d16acc810f6218ffe80；冻结组合源码又通过12项检查（21.07s）。pool100严格在线bundle1746fb50…已生成，DEV资格原v1计划7b11a6af…在15:57:52冻结，绝对截止17:27:52UTC，不随后续修复重置。
+
+首个data-only runner于16:02:20 exit1；采集器错误读取sample['text']，而生产BaseLerobotDataset及原在线成本脚本使用sample['task']。失败发生在policy创建前，0推理/0更新/0物理命令；原root/runner/计划均保留。已在CCI修正原生task字段并加明确合同拒绝测试，共14项配置/池化原生检查通过（20.47s）。另把只读采集器与固定评测模型源码身份分开绑定：新不可变helper hash单独写入plan并自校验，仍从已封存87199cc6…加载所有原模型/配置和已验证bundle，不重建或修改模型数学、checkpoint或DEV样本。新attempt须新输出，同原17:27:52截止。
+
+### 23.112 已有100条DEV成本日志的完整阶段核算
+
+16:02重算完成：Full/FastWAM各120条含20 warmup，100个测量样本key逐项一致，5个PB DEV回合。每条Full外层同步计时包含pipeline_s，后者包含retrieval total，且retrieval total逐条不小于预处理、DINO、search、gather之和；非负有限核验通过。Full mean/median/p95=524.2668/530.0586/565.2201 ms，FastWAM=372.1158/366.3203/381.8307；原论文报告median/p95不变。完整嵌套retrieval mean/median/p95=39.1097/38.4370/43.6521 ms；其中图像预处理median9.2096、DINO5.9504、exact CPU bank search21.3363、gather0.1338ms。
+
+Full外层减去retrieval total的逐条剩余区间mean/median/p95=485.1571/488.1040/526.1863ms，只是其余完整重规划工作，包含当前观测处理、历史、source构造、采样和telemetry；不能称WARM机制模块的独立耗时，不能据此给出因果模块开销。均值可按所定义区间相加，median/p95不可相加。Full为原shared-stage3000权重68c7f384…，不是原specialist或新匹配训练；无新GPU benchmark/新SR/MemoryWAM计时。
+
+完整13项原始计时/telemetry/manifest/summary、逐query CSV、分析脚本与报告归档18faa5c1012db390f3041829b13d880a10cd4a11c092085c8dfe8d2029a9556c，manifest63121aa5…，AFS与本机iter9保存；本机逐成员复核另记。该证据可支撑BB-W5/Q4、HH-W2的明确retrieval阶段成本说明，不能替代尚缺的精确模块消融或MemoryWAM对照。
