@@ -1,5 +1,11 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**最高优先级恢复锚点（2026-11-10T18:37:45UTC）：** 当前回复与20项矩阵使用responses/20261111_v12_addendum1，15块/3份、matrix62fdfe7a…；44项增量包b384164b…已本机/AFS逐项核验。原v12 PDF ed11dae1…/29源ZIP8955a7e9…、38页/10主文和95项原审阅包d327dc92…不变，完整编译与视觉验收通过，stable_release_ready=false。当前工程终态不要求重编译未变PDF；原目录/原件不能覆写。
+
+**q96已终态，不再活动或等待重试：** 标准UID492eb35f…18:20:13实际exit1。两Full均26条成功后在index26遇同一TOPP拒绝，parent/RNG/物理端点与DINO/26条轨迹全部精确相同；不是端点复现漂移，通用assert文字包含H32有效性失败。H32效应不可得、AABA不合格，0候选端点/32未观测。36原件45f4f00c…双端完整核验，原query96/rank10/H32/14k/窗口均不变；不要重跑同一无效Full、缩H、换rank或放宽guard。两遍384前缀资格仍有效但不等于候选资格。全局native lease在已知退出后实测空闲。后文旧active状态仅是历史时点。
+
+**当前实际活动只有两路标准训练：** 18:32:03 Full95e49547…至1680（201起1480新条、durable200），poolc852e8e2…至966（101起866新条、durable100），连续有限，固定final3000/原Nov11 12:29:56UTC截止不变。AFS约116.38GB，保护所有完整state/raw/CAS。下一最高价值仍是CCI实现/验证显式factory/schema的Full/Pooled双checkpoint原生collector及可恢复角色收据，用固定DEV/Full200/pool100做工程准入，随后final3000的两任务100对正式比较；旧Full/null入口不能直接充当Pooled。可并行推进原预定BT specialist12000的在线资格/完整native source，不能声称已通过。保留全部原q8/q48负结果、q96未知、原稿数据及其它开放缺口；真机延期，不发布/正式上传。
+
 **最高优先级恢复锚点（2026-11-10T18:18:30.357400UTC）：** 当前候选v12：三份英文/15块/20项、38页/10主文PDF ed11dae1…/29源ZIP8955a7e9…，全工程与干净ZIP重建38页文本相同，32–38变化页逐页视觉验收、引用/匿名性/overfull通过。95项包d327dc92…/manifestd6849ec4…、20矩阵2091cceb…已双端逐项核验，AFS writing_candidates/20261111_v12，本机responses/20261111_v12。原33页、v11和旧结果全保留，未发布，stable_release_ready=false。
 
 原q48已经17:41:56 exit0，全36branch/32valid核销：24完整H32、8 TOPP unknown，四Full endpoint/effect精确。预测centered0.0550445858高于constant0.0307141708，historical0.0550926601；无预测优势、无BRT适用性/修复标签，343原件91d595a8…双端核验，另有独立方差恒等式重算。不要再按后面旧active段落重跑q48或抹去不利结果，不因其结果换掉已预定q96。

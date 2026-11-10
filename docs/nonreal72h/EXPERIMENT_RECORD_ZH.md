@@ -1823,3 +1823,17 @@ PDF ed11dae1012a54a7a04bdb8450ffd9be9ca1a768b0eac7084ecc59d7ab9860d1、ZIP8955a7
 18:14:32 AFS writing_candidates/20261111_v12全部95项再次逐成员核验：整包128,540,942bytes/SHA d327dc924d16bed7988ab0630d714d0156571e72d02ffb7dbc8e0a06086271ec、manifest d6849ec4f376ed82fe9d08d74308816b5c0d4c53a69dd55ac64071cf896292b4；PDF ed11dae1…、ZIP8955a7e9…、20矩阵2091cceb…保持。包中18:06的执行快照与后续live明确分时，不用封存包的旧进度重复启动任务。全部原q48/raw、RB口径、q96前缀与已有成本完整档案及核验包含在包中，其余历史经不可变v11/v10引用保留。
 
 18:18:30 ITER10_LIVE_V3：Full1621（201起1421新条）、pool908（101起808新条），连续且loss/grad有限、durable200/100不变；q96标准492eb35f…已完成1个Full anchor，正在anchor-aa父状态重建，AABA及独立候选端点尚未完成，不计新机制收益。真实runner running/exit null、心跳持续，完整actual encoder fingerprint与原合同相同。原q48已终态24/8不可重跑；所有原phase/training截止保持，AFS可用116,390,531,072bytes。正式100对仍只是冻结设计，新双checkpoint/Pooled原生collector列为下一独立实现项，不能误认为旧Full/null程序可直接运行该比较。
+
+### 23.122 原q96已知终态：完全相同的无效Full，不是端点复现漂移
+
+18:32实际复核发现q96标准UID492eb35f…已于18:20:13 runner exit1。两份sealed result均为invalid_branch：Full各完成26条命令，在index26（第27条）收到同一left TOPP参数化拒绝，H32未完成、observed_effect=null。两次parent/RNG、全部物理端点hash、26条commands.jsonl及parent/endpoint DINO文件逐字节相同。通用错误“Repeated Full endpoint/effect differs”同时检查complete_horizon，因此此处并不是观察到复现漂移；失败实因为原封存Full动作无法完成完整H32。operator计数停留1，实际有两份已封存无效anchor，二者须区分。
+
+未执行固定rank10或其余31候选，0候选端点、32未观测；AABA未通过，不能将部分端点当H32 truth或对其计算预测MSE。保留此前独立384前缀审计及其101/234拒绝，但该上下文资格不认证后续32条动作。不要缩短H、放宽guard、替换rank、重跑同一已知无效Full或重置Nov11 01:45UTC窗口；q8/q48不利结果、原稿机制表仍原样保留。全局native lease已实测空闲，此作业不得再被计作活动GPU任务。后续优先实现已冻结Full/Pooled双checkpoint原生collector，及预定互补任务BT的严格在线资格；不是用新样本替换此unknown。
+
+36项完整原件（含两个branch、stdout/exit、spec/plan、实际runtime与冻结collector）归档3,014,083bytes/SHA45f4f00c8d2ea6dcd5a094e1e5f3b1061ce9a6bef2f58d17c97949cb336dc069，manifest b4118e3920fd130a6dc5a7541dcdfbd2332f869ebab7ba887a773fc548706807，AFS与本机iter10逐成员验证；另独立核对两份commands/feature bytes及状态hash一致。原source Cf77/14k/query96/rank10/plan dec144d8…、collector/source b448aacb…前后不变，未改科学门槛或动作。
+
+### 23.123 v12回复增量1及时联动与双端保全
+
+新目录responses/20261111_v12_addendum1及AFS writing_candidates同名目录，保留3份/15块/20项；Bbqv W3/Q2、Hh4E W5和对应comment blocks明确q96已知完整H32效应不可得，撤去此前pending表述。20项matrix SHA62fdfe7abced92c586a71b8b86b9f2a851b104f13627eec1c07bb20a4ee475f3绑定q96失败原件，全部empirical closure=false。原v12 PDF/29源ZIP没有q96结果断言，bytes保持ed11dae1…/8955a7e9…，38页全工程与clean ZIP编译、视觉验收仍有效；原95项包不覆写。
+
+44项新增量包3,783,497bytes/SHA b384164babd70616730c70cb3ba121f5e726811b04423be16dd437ac4ac5f949、manifest d5d618c18c00d720311e74e32238541e12d8580195c5f245f931ebe43b92c14b于18:37:45在AFS逐成员验收，本机同样核验。包括全部回复/矩阵/一致性检查、q96完整失败档案及18:32 live原件，不把工程失败当新预测或修复数据。18:32:03 Full1680（新增1480）、pool966（新增866）均连续有限，durable父200/100、fixed3000及Nov11 12:29:56UTC截止保持，AFS116,379,942,912bytes。实际活动现为两路标准训练；final3000/正式100对/直接repair与missing-skill仍未完成，新增真机继续延期，未发布/上传。

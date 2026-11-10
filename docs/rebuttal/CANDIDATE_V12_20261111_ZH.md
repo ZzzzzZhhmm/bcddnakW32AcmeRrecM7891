@@ -9,3 +9,5 @@
 PDF SHAed11dae1012a54a7a04bdb8450ffd9be9ca1a768b0eac7084ecc59d7ab9860d1；source ZIP SHA8955a7e9a994aebe345e01d63621c58c8be60ecbeae9d863f1d206dc03d9e464。原33页与v11不改，真机新增延期。pool100原生10/10资格完成；Full/pool最终训练仍在运行，原q96已17:45准入独立384命令两遍审计、phase截止Nov11 01:45UTC，尚无新候选truth。直接修复/撤回、真实missing-skill、最终匹配性能及原DEV/cohort绑定仍未关闭。stable_release_ready=false；未发布OpenReview或正式上传。
 
 18:06执行增量：q96两遍384前缀17:59:42正常退出，索引101/234拒绝精确保留，16原件4431cceb…双端核验；新标准UID492eb35f0d98462db196a624cf492d5c已实际启动，runtime hash2f3e5d29…与原合同全字段相同，正在首个anchor父状态重建，AABA和32池尚未完成。原phase01:45UTC不变，未重复创建或回退闲时。正式同信息100对的独立Full/Pooled两checkpoint原生collector尚待实现/验证，不能把旧Full/null入口直接交给Pooled；当前设计冻结不等于运行程序已就绪。
+
+18:37终态增量1：q96实际18:20:13 exit1；两Full均在第27条命令遇相同TOPP拒绝，完整26条轨迹/parent/RNG/物理端点/DINO文件完全一致。属于完整H32资格失败，不是复现漂移；0候选端点/32未观测，不缩H、换rank或重跑。36原件45f4f00c…已双端核验，标准任务不再活动。最新三回复/15块/20矩阵转responses/20261111_v12_addendum1，matrix62fdfe7a…，44项包b384164b…双端验收。v12 PDF/源码ZIP及原95项包原样保留；论文没有q96结果断言，回复和矩阵已撤去pending表述，与论文数据范围一致。实际运行的是Full1680/pool966两路训练（18:32快照），final3000与新100对尚未完成，下一优先实现typed Full/Pooled原生collector。
