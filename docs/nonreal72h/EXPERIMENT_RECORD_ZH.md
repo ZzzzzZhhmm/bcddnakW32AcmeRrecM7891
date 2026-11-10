@@ -1308,3 +1308,13 @@ worker原件564项、3,940,722 bytes，archive SHA `a0f72a6340ffca2e026fdca71681
 v4内部审阅包共52项、80,581,790 bytes，SHA `3d34361f3e92d8fdbbeffe1592105e62d5fe3fcc9d52ba37f76833ebefe3a3fd`，manifest SHA `a433444538b681282224183859c2f68d81bbac708ce381c11ffc8558f2220b88`。本机与AFS逐项长度/SHA核验通过，AFS于2026-11-10 00:09:56 UTC完成；目录`rebuttal_20261109_acp/writing_candidates/20261110_v4`，本机归档`tmp/rebuttal/execution/20261110_iter2/warm_rebuttal_writing_candidate_v4_20261110.tar.gz`。包内包含三位英文回复/15个comment block、20项映射与内部门槛、35页PDF、29文件完整LaTeX ZIP、变更单、视觉QA、审计文档、564项完整null原件与497项旧中断原件包及验证收据；AFS再次独立核验ZIP内全部29文件。论文PDF e9f99e86…和source ZIP e4db2687…保持。未发布评论/上传投稿，stable_release_ready=false，不能把材料验收等同于决定性实证关闭。
 
 00:10:27 UTC复核三路实际runner均存在、各native lease持有、原source不变，控制台日志进入前缀物理执行，单H100使用24,485MiB、100%利用率；AFS Full500 operator仍无。q48仍分别23/17/18个完整候选，另各2个完整anchor；三个summary均只有q8完成。只读检查初稿误读不存在的`status`字段，派生计数标为unknown；原检查件保留，V2改按真实`endpoint_status`区分candidate/anchor，未更动任何科学原件/标签。以`FINAL_LIVE_HANDOFF_20261110_0010_V2.json`及其00:11:06校正收据为准。原窗口与下一个固定case3/Full不变；最新执行读取Git外current_iteration，52项候选包是00:08时点不可变快照。
+
+### 23.63 固定source0/q48同父null入口与实际输入预检
+
+00:15:35 UTC复核原三路PID/lease均活动、q48完整候选24/18/19，各另有2个完整Full anchor，GPU26,746MiB/100%；原窗口未改变。Full b的AFS operator仍无。00:17:06浏览器只读核查仍需IAM登录，原登录页保留，沿用已有作者登录请求、不重复创建任务。网页重定向期间一次只读body等待遇到null，随后改用安全hostname/attached-body核验，未执行资源变更或读取保存密码。
+
+新增后期query参数与显式`--allow-pending-pool-records`。它保留默认严格q8行为，仅允许在两个完整且父状态/端点/效应精确相同的初始Full anchor后并行执行封存null和post-null Full；原选中raw与pool-final-anchor仍为完整三角色query的必要依赖。source0/q48按原计划固定、原选择rank29，尚待原K32按顺序执行；不读取其结果后另选rank。缺失raw标为null、不填失败；已有terminal即使在pending模式也必须验哈希/身份，重复terminal不选择，任何parent/anchor差异停止。详见`SAME_PARENT_NULL_PIPELINING_20261110_ZH.md`。
+
+原生冻结测试快照`fresh_null_later_precommit_v1/code`以885dafb为基础，仅覆盖三项本轮源码/测试，source前后均`0f151abf603ed112ac9641c39b4bc22ece82055c4fee8c82556bac904cb6fa08`。13项原生测试全部通过（0.89秒），覆盖pending未知、严格默认、单调依赖完成、重复完成拒绝、query/parent/端点/文件损坏拒绝和既有fresh-pool路径。Windows当前Python无pytest，未称本机测试通过。
+
+00:23:45实际source0/q48预检明确exit0（15.627秒），严格核对原Full事实、frame192的原probe/generation、同Gaussian/null gate与封存输入、两个Full anchor及原DINO reader绑定；完整读原记录的preflight不加载policy/reader、不执行物理分支。收据`LATER_NULL_Q48_ACTUAL_PREFLIGHT_V1.json`和`LATER_NULL_NATIVE_TESTS_V1.json`保留在AFS；尚未把该入口、资格或pending raw写成实际null完成或新增收益。后续使用已提交冻结快照准入真实H32分支，原三路活动快照保持。

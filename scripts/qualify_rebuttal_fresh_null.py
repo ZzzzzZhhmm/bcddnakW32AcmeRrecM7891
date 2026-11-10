@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Execute a sealed null and repeated Full branch at the first fixed q8 parent.
+"""Execute sealed null and repeated Full branches at a prespecified parent.
 
 Reuses already verified original Raw/Full branches. Every new branch starts in
 an independently reset scene, replays the same original factual commands and
@@ -17,6 +17,10 @@ def main():
     for key in ('core-code','rmbench-runtime','source','plan','pool-query','null-query','output'):
         parser.add_argument('--'+key,type=Path,required=True)
     parser.add_argument('--preflight-only',action='store_true',help='Validate actual sealed artifacts on CPU, without a simulator or DINO load')
+    parser.add_argument('--episode-index',type=int,default=0)
+    parser.add_argument('--query-ordinal',type=int,default=8)
+    parser.add_argument('--allow-pending-pool-records',action='store_true',
+        help='Pipeline new null branches after two exact initial Full anchors; final pool anchor and selected raw remain explicit report dependencies')
     args=parser.parse_args();core=args.core_code.resolve(strict=True);runtime=args.rmbench_runtime.resolve(strict=True);out=args.output.resolve()
     if out.is_relative_to(ROOT) or out.is_relative_to(core):raise ValueError('evidence must stay outside source')
     out.mkdir(parents=True,exist_ok=False)
@@ -32,14 +36,17 @@ def main():
     from fastwam.research.sealed_null import require_null_binding,require_native_null_actions
     from fastwam.research.factual_effect_reader import FrozenFactualEffectReader
     from fastwam.research.fresh_pool import atomic_json,read_verified_branch,seal_branch
+    from fastwam.research.null_pool_dependencies import load_pool_dependencies
     from fastwam.research.fresh_branches import OfficialQposGuard
     from fastwam.research.branches import InvalidBranchExecution
     from fastwam.research.native_replay import native_parent,observation_arrays,require_observation,require_trace_step,state_hashes,physical_joint_state
     from fastwam.research.rmbench_outcomes import observe_task_progress,label_next_interaction
     from fastwam.research.evidence import append_record
-    episode,query=0,8;frame=query*4
+    episode,query=args.episode_index,args.query_ordinal;frame=query*4
     plan=read_json(args.plan);identity=read_json(args.source/'identity.json');task=identity['task']
-    if query not in plan['local_recovery']['query_replan_ordinals'] or task!='rearrange_blocks':raise ValueError('first fixed RB/q8 qualification only')
+    if (query not in plan['local_recovery']['query_replan_ordinals'] or task!='rearrange_blocks'
+            or not 0<=episode<plan['local_recovery']['source_episodes_per_task']
+            or plan['inference']['execution_prefix']!=4):raise ValueError('prespecified fixed RB query and original prefix required')
     bound=source_identity(core);sim=runtime_identity(runtime)
     rows=read_committed_trials(args.source)
     binding=dict(task=task,checkpoint_sha256=plan['checkpoint_sha256'],evidence_plan_sha256=file_sha(args.plan),
@@ -55,7 +62,7 @@ def main():
     for key,value in dict(task=task,episode_id=episode,seed=seed,checkpoint_sha256=plan['checkpoint_sha256'],
         core_source_sha256=bound['sha256'],runtime_source_sha256=sim['sha256']).items():
         if pool_identity.get(key)!=value:raise ValueError('existing pool identity differs: '+key)
-    if pool_seal['query_id']!=f'fixed-fresh-{task}-e0000-q0008' or pool_seal['source_generation_sha256']!=file_sha(gd/'model_actions.npy'):
+    if pool_seal['query_id']!=f'fixed-fresh-{task}-e{episode:04d}-q{query:04d}' or pool_seal['source_generation_sha256']!=file_sha(gd/'model_actions.npy'):
         raise ValueError('existing pool belongs to a different fixed generation')
     require_null_binding(null_seal,generation,checkpoint_sha256=plan['checkpoint_sha256'],plan_sha256=file_sha(args.plan),
         core_source_sha256=bound['sha256'],runtime_source_sha256=sim['sha256'],generation_file_sha256=file_sha(gd/'generation.json'),
@@ -65,7 +72,7 @@ def main():
     with np.load(pool/'sealed_native_actions.npz',allow_pickle=False) as data:refined=data['anchor-a'].copy()
     with np.load(null/'sealed_native_actions.npz',allow_pickle=False) as data:actions=require_native_null_actions({k:data[k] for k in data.files},refined)
     if not np.array_equal(refined[:4],trace['commands'][frame:frame+4]):raise ValueError('Full native prefix differs')
-    original_probe=case/'probes/e0000-f0032/proposal.npz'
+    original_probe=case/f'probes/e{episode:04d}-f{frame:04d}/proposal.npz'
     if file_sha(original_probe)!=pool_seal['source_probe_sha256']:raise ValueError('original candidate probe differs')
     with np.load(original_probe,allow_pickle=False) as data:selected=int(data['selected_index'].reshape(-1)[0])
     probes={}
@@ -79,28 +86,24 @@ def main():
     context=torch.load(null/'sealed_factual_context.pt',map_location='cpu',weights_only=True)
     non_tensor=read_json(null/'context_non_tensor_fields.json')
     if forbidden.intersection(context) or any(non_tensor.get(key) is not None for key in forbidden):raise ValueError('future/teacher data in sealed inference context')
-    def old_branch(name):
-        marker,=list((pool/name).glob('attempt-*/complete.json'))
-        row=read_verified_branch(marker.parent,query_id=pool_seal['query_id'],branch_id=name)
-        if row['sealed_query_sha256']!=file_sha(pool/'sealed_query.json'):raise ValueError('existing branch belongs to a different query seal')
-        return row,marker
-    anchor,anchor_marker=old_branch('anchor-a');raw,raw_marker=old_branch('rank-'+str(selected))
-    for name in ('anchor-a','anchor-aa','anchor-final'):
-        row,_=old_branch(name)
-        if row['endpoint_status']!='complete_horizon' or row['parent_hashes']!=anchor['parent_hashes'] or row['endpoint_hashes']!=anchor['endpoint_hashes']:
-            raise ValueError('existing exact Full anchors required for this qualification')
+    dependencies=load_pool_dependencies(pool,query_id=pool_seal['query_id'],selected_rank=selected,
+        allow_pending=args.allow_pending_pool_records)
+    anchor,raw=dependencies['anchor'],dependencies['raw']
     runtime_args=read_json(args.source/'full-runtime_args.json');contract=read_json(Path(identity['contract_path']))
     fixed=dict(task=task,episode_id=episode,seed=seed,query_ordinal=query,frame_index=frame,horizon=32,
         checkpoint_sha256=plan['checkpoint_sha256'],core_source_sha256=bound['sha256'],runtime_source_sha256=sim['sha256'],
         collector_source_sha256=source_identity(ROOT)['sha256'],pool_query=str(pool),null_query=str(null),
-        inputs=[dict(path=str(p),sha256=file_sha(p)) for p in (args.plan,args.source/'identity.json',pool/'sealed_query.json',null/'sealed_query.json',anchor_marker,raw_marker)],
-        raw_selected_rank=selected,original_raw_label=raw['independent_label']['applicable'],original_refined_label=anchor['independent_label']['applicable'],
+        inputs=[dict(path=str(p),sha256=file_sha(p)) for p in (args.plan,args.source/'identity.json',pool/'sealed_query.json',null/'sealed_query.json',*dependencies['markers'].values())],
+        raw_selected_rank=selected,original_raw_label=raw['independent_label']['applicable'] if raw else None,original_refined_label=anchor['independent_label']['applicable'],
+        pending_pool_dependencies_at_admission=dependencies['pending'],
+        allow_pending_pool_records=args.allow_pending_pool_records,
         physical_unpack=False,new_policy_generation=False,new_independent_policy_success_episode=False,
-        scope='One first fixed query: reused immutable Raw/Full evidence, new same-context null and exact post-null Full repeat. No aggregate efficacy claim.')
+        scope='One prespecified fixed query: immutable Full anchors, sealed same-context null and exact post-null Full repeat. Pending selected raw/final pool anchor remain unknown; no aggregate efficacy claim.')
     atomic_json(out/'identity.json',fixed);np.savez_compressed(out/'sealed_native_actions.npz',**actions)
     if args.preflight_only:
         atomic_json(out/'summary.json',dict(status='actual_input_contracts_admitted_only',physical_branches_executed=0,
-            full_policy_loaded=False,reader_loaded=False,scientific_efficacy_claim=False))
+            full_policy_loaded=False,reader_loaded=False,scientific_efficacy_claim=False,
+            pending_pool_dependencies=dependencies['pending']))
         print(json.dumps(dict(status='actual_input_contracts_admitted_only',output=str(out))),flush=True)
         return
     report=dict(status='running',new_branches=[],actual_null_executed=False,scientific_efficacy_claim=False)
@@ -169,8 +172,14 @@ def main():
             report['actual_null_executed']=True;atomic_json(out/'summary.json',report)
             env.close_env(clear_cache=True);env=None
             print(json.dumps(dict(stage='fresh_null_branch_complete',role=branch_id,status=status,steps=count)),flush=True)
-        report.update(status='qualified_one_fixed_query_shared_parent_null_contrast',post_null_Full_endpoint_exact=True,
-            reused_original_raw_label=raw['independent_label']['applicable'],reused_original_refined_label=anchor['independent_label']['applicable'])
+        final_dependencies=load_pool_dependencies(pool,query_id=pool_seal['query_id'],selected_rank=selected,
+            allow_pending=args.allow_pending_pool_records)
+        raw=final_dependencies['raw']
+        report.update(status=('qualified_one_fixed_query_shared_parent_null_contrast' if final_dependencies['complete']
+            else 'complete_fixed_null_branches_pending_pool_dependencies'),post_null_Full_endpoint_exact=True,
+            pending_pool_dependencies=final_dependencies['pending'],
+            reused_original_raw_label=raw['independent_label']['applicable'] if raw else None,
+            reused_original_refined_label=anchor['independent_label']['applicable'])
     except BaseException as exc:
         report.update(status='failed_or_interrupted',error=repr(exc),traceback=traceback.format_exc());raise
     finally:
