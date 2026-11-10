@@ -69,10 +69,18 @@ def load_config(path: Path) -> dict:
                     "embodiment": "robotwin_aloha_agilex", "camera_keys": ["cam_high", "cam_left_wrist", "cam_right_wrist"]}
     else:
         real = cfg["adapter"] == "piper_teleop"
+        # Both Piper profiles share TCP proprio and image layout. The joint
+        # profile reads recorded targets directly; it never derives actions
+        # from measured joint differences or subtracts TCP from joint targets.
+        piper_control = "base_delta_tcp_rotvec_plus_absolute_gripper_width_m"
+        if real:
+            from fastwam.real.preprocessing.contract import PIPER_JOINT_CONTROL_MODE
+            if profile["control_mode"] == PIPER_JOINT_CONTROL_MODE:
+                piper_control = PIPER_JOINT_CONTROL_MODE
         expected = {"action_dim": 7, "state_dim": 7 if real else 8, "image_layout": "horizontal_224",
                     "normalization": "min/max", "gripper_action_indices": [6], "gripper_state_indices": [6] if real else [6, 7],
                     "delta_action_mask": [True] * 6 + [False],
-                    "control_mode": "base_delta_tcp_rotvec_plus_absolute_gripper_width_m" if real else "libero_delta_eef_axis_angle_plus_gripper",
+                    "control_mode": piper_control if real else "libero_delta_eef_axis_angle_plus_gripper",
                     "embodiment": "piper_single_active_6dof" if real else "libero_panda",
                     "camera_keys": ["external", "wrist"] if real else ["image", "wrist_image"]}
     for key, value in expected.items():

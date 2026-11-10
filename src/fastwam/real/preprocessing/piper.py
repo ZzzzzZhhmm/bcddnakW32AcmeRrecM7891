@@ -1,4 +1,4 @@
-"""Convert recorded commanded TCP targets, never finite-difference measured actions."""
+"""Convert recorded TCP or joint targets; never finite-difference measured actions."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -7,6 +7,7 @@ from typing import Any, Mapping
 import numpy as np
 
 from fastwam.real.episodes import load_episode
+from fastwam.real.preprocessing.contract import PIPER_CONTROL_MODE, PIPER_JOINT_CONTROL_MODE
 from fastwam.preprocessing.contracts import PreparationError, RawEpisode, inside, required_text
 
 
@@ -40,8 +41,8 @@ class PiperTeleopAdapter:
         self.sessions: dict[str, str] = {}
         if (profile["action_dim"], profile["state_dim"]) != (7, 7):
             raise PreparationError("Piper single-active-arm profile requires action=7, state=7")
-        if profile["control_mode"] != "base_delta_tcp_rotvec_plus_absolute_gripper_width_m":
-            raise PreparationError("Piper profile requires base-frame Cartesian deltas and absolute width")
+        if profile["control_mode"] not in {PIPER_CONTROL_MODE, PIPER_JOINT_CONTROL_MODE}:
+            raise PreparationError("Piper profile requires a named TCP-delta or absolute-joint command mode")
         if profile["camera_keys"] != ["external", "wrist"]:
             raise PreparationError("Piper profile requires external then active-arm wrist camera")
         for name in ("calibration_id", "control_frame", "tcp_frame"):
@@ -86,9 +87,15 @@ class PiperTeleopAdapter:
             robot = obs["robot"]
             xyz, quat = robot["tcp_position_m"], robot["tcp_quaternion_xyzw"]
             states.append([*xyz, *quaternion_rotvec(quat), robot["gripper_width_m"]])
-            actions.append([*(np.array(command["tcp_position_m"]) - xyz),
-                            *base_rotation_delta(command["tcp_quaternion_xyzw"], quat),
-                            command["gripper_width_m"]])
+            if self.profile["control_mode"] == PIPER_JOINT_CONTROL_MODE:
+                joints = np.asarray(command.get("joint_target_rad"), dtype=np.float64)
+                if joints.shape != (6,) or not np.isfinite(joints).all():
+                    raise PreparationError("Joint mode requires six finite accepted command joint_target_rad values")
+                actions.append([*joints, command["gripper_width_m"]])
+            else:
+                actions.append([*(np.array(command["tcp_position_m"]) - xyz),
+                                *base_rotation_delta(command["tcp_quaternion_xyzw"], quat),
+                                command["gripper_width_m"]])
         images, files = {}, [root / name for name in ("episode.json", "observations.jsonl", "commands.jsonl", "outcome.json")]
         for camera in meta["camera_order"]:
             decoded = []
@@ -109,6 +116,11 @@ class PiperTeleopAdapter:
                        "terminal_observation": observations[-1],
                        "action_provenance": "accepted_command_target_relative_to_factual_tcp",
                        "rotation_composition": "R_command = Exp(delta_rotvec) @ R_observed"}
+        if self.profile["control_mode"] == PIPER_JOINT_CONTROL_MODE:
+            annotations.update(
+                action_provenance="accepted_joint_target_rad_plus_command_gripper_width_m",
+                rotation_composition="proprio remains tcp xyz+rotvec+width; action is absolute joint_target_rad plus gripper_width_m",
+            )
         episode = RawEpisode(meta["episode_id"], meta["task_id"], meta["instruction"], meta["split"],
                              np.asarray(states), np.asarray(actions), images, tuple(dict.fromkeys(files)), annotations)
         episode.validate(self.profile)

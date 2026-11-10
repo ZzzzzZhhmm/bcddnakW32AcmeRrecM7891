@@ -1,5 +1,9 @@
 # 真机合作方技术接入
 
+训练迁移到另一个不含 WARM memory 的 FastWAM 项目，请优先阅读
+[Piper 真机训练转移说明](WAM_TRANSFER_ZH.md)。它覆盖后期绝对关节目标 + TCP proprio
+接口，并提供不依赖 memory 的新任务预处理和训练配置入口。下文保留早期 TCP 接入约定。
+
 先阅读 [对外协作说明](PARTNER_HANDOFF_ZH.md) 或同名 Word 文件，再填写
 [设备回填模板](../../configs/real/partner_intake.template.json)。当前只确认对方有两台
 带夹爪的 Piper。所有采集、现场推理及真机执行由合作方负责；训练和模型交付由 WARM 团队负责。
