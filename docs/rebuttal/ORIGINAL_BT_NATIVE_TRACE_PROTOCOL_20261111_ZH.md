@@ -13,3 +13,7 @@
 2026-11-10 21:01：相关实现检查72项通过，包含原BRT旧协议保护、BT1000/root3407/task/run/seed反例、私有缓存与reset前缀恢复。0新原BT策略推理/命令；完整在线资格、事实轨迹与效能证据均未完成。源/验证/原件收据在 Git 外 iter12及AFS，不把此工程入口写成论文收益。
 
 21:11实际完整BT在线合同和静态projection/encoder运行环境资格已通过：manifest d52462a2…、projection0583a49a…、实际encoder2f3e5d29…精确。one-replan+四命令helper aa2e8e8e…已准备未派发，尚无原BT推理、物理动作或效能数据。
+
+2026-11-10 22:23UTC新增独立cohort-case0.v3：额外物理0诊断专家拒绝、0查询/命令且原件3c87ed5c…保留，不能把旧点替换后继续冒称同一实验。50-roster612cb5d1…在21:26已冻结、原BT全50注册b1be58f9…在21:43先于任一原BT模型输出；单独case0物理340800000于22:06:35通过一次推理/四条native资格，24原件74859159…/本机核验完整，0 TOPP错误、无SR。全50评测30GPUh上限只是prospective，尚未准入或派发。
+
+新schema严格绑定该roster、registration、case0及原BT12000/f77/root3407，不改变旧BRT或BT0行为。完整1000步事实采集为单独、至多90分钟阶段，在已知旧资格终态后准入，旧资格/roster/训练期限全部不动；全局native lease由外层持有至worker真正退出，源冻结且运行程序不访问Git远端。首三策略RGB/API输入、原H32输出、前四条API/实测物理/TOPP须精确复现成功资格，所有实际到达replan保存输入、event adapter、RNG、输出及before-branch-truth seal；主8/48/96和所有负/未知保留，不按结果换点。完整native1000或成功终态前不写episode结果，此单源即使完成也不估计总体SR、候选预测准确率或修复优势。81项相关检查通过，source93b1bb1c…，原模型数值和合同校验保持。

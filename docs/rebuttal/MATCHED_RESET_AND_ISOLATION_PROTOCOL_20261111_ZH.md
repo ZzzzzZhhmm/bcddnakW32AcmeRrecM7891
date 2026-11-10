@@ -21,3 +21,5 @@
 官方专家seed过滤核对：eval_policy.py SHA edff5aa9…在254–262行捕获专家阶段异常后递增seed。首次BT32号的精确grasp_actor→Action构造target_pose=None属于该源确定的几何失败；旧unknown原件不改，以独立恢复证明追加窄分类，其它基础设施/未知错误仍停止。完整RB18/BT14两reset前缀与全部退出档案9200d955…双端核验；显式恢复只复用已哈希原件，接续未完成reset，不重采已完成样本、不重置22:31UTC截止。
 
 实际并发资格程序按固定两个批次6+4运行十个分片runtime。每个probe两次初始化，在四条hold前加入ready barrier，验证所有scene在任一关闭前已同时存在，并核对不同planner endpoint inode。正式角色在首query前还必须比较roster的真实关节qpos/qvel；相同API drive target不足以替代该检查。77项工程检查通过，实际十worker资格仍须等完整50-rosters后执行，原22:31UTC期限不重置。
+
+2026-11-10 22:23UTC补记：两个任务各首50专家准入初态及200次独立reset已完整；892原件deae79ec…/本机全部数组核验。十worker真实资格6+4两批、20 reset/80 hold/初始化场景重叠/不同planner endpoint全部通过，143原件3f99eb0d…/资格2ad5c09e…双端核验。既有22:31UTC窗口未重置，不需要重采名单或重跑并发。source861004fa…保持。后续正式100对仍等两final3000完整state/CAS/typed bundles，且须显式绑定原严格DEV失败及单独external-input因果反馈资格，不把此工程结果写成策略效能。

@@ -1,5 +1,11 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**最高优先级恢复锚点（2026-11-10T22:23:42UTC）：** 100个固定专家准入初态/200次独立reset已完整（892原件deae79ec…）；十worker真实6+4场景并发、20 reset/80 hold与planner端点隔离全部通过（143原件3f99eb0d…、资格2ad5c09e…）。本机独立数组/物理/时间重叠全项核验；不要重采这些已完工程项目，formal环境source861004fa…不改。正式100对仍等待两final3000完整state/CAS/typed bundles，正式时钟尚未开始；原DEV严格全query候选池失败及单独因果反馈资格均保持。
+
+**当前两路标准ACP实际训练：** Full2679/Pooled2019连续有限、durable父200/100、fixed3000及Nov11 12:29:56UTC不变，AFS约114.99GB，保护最终raw/CAS预留。原BT12000/f77/root3407在预冻结cohort case0/seed340800000完成1次H32及4条实测native命令，0 TOPP错误，24原件74859159…/本机独立核验。额外物理0诊断专家拒绝3c87ed5c…/0查询命令仍保留，不算模型失败。单独cohort-case0.v3完整native1000事实源入口已81检查通过；实际是否启动/进度必须读Git外最新current_iteration.json与operator/runner，不按旧pending重复派发。全50原BT评测仅前注册、未准入；本单源不估计总体SR或修复收益。
+
+**文本主线：** 当前完整v12 PDF ed11dae1…/source ZIP8955a7e9…/38页10主文、三英文15块均不变；新responses/20261111_v12_addendum3只补工程来源至20项映射，是否双端封包以current_iteration.json最新验收为准。所有科学closure=false，stable_release_ready=false。关键仍是final100对性能、原模型同状态后果/修复/撤回与真正missing-skill，不以工程资格或性能地板替代。保留q8/q48不利结果/q96不可观测终态，不重跑同点或事后调指标。真机新增和录像审计延期；不发布OpenReview或上传正式稿。后文为历史时点。
+
 **最高优先级恢复锚点（2026-11-10T20:01:37UTC）：** 双checkpoint原生worker/campaign已实现，formal最终state/CAS与实际DEV声明门槛46项检查通过。两个PB435 DEV角色各十次真实推理exit0；当前图像/proprio/query key/实际Gaussian十对相同、初始K32相同。整体严格每query池相同检查仍exit1，frame12/20/24/28/32各一个后继候选不同；139原件6a98ce52…双端核验，五处全部用实际前序选择/接受/thread、不可变successor和精确排序双端独立重构。不重跑20次，不把旧严格失败改名成功。
 
 单独external-input资格与scope amendment fa089d4d…只关闭共同外部输入/随机性和可审计因果续接条件，不证明后续固定候选或效能。formal计划须显式选择matched_external_inputs_with_causal_selection_feedback、绑定修订及独立证明且在TEST前声明；初始K32、当前输入/随机性或不可解释差异仍阻止准入。严格pair函数、模型算法、原指标/样本/截止不改。新回复/矩阵在responses/20261111_v12_addendum2（15块/3份/20项，matrix4fb14257…）；完整v12 PDF/源ZIP与95项原包不变，论文A.3已描述后继候选，无新论文数字。新包收据以canonical最新为准。

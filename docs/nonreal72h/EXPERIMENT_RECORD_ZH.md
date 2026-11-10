@@ -1901,3 +1901,23 @@ CCI新增qualify_rebuttal_matched_resets.py与逐worker独立HOME/cache/tmp/runt
 21:16:06新77项检查通过（12.48秒pytest/16.98秒总），stdout16348ad4…；旧fixture漏task导致的1failed/74passed记录fb304c4b…保留，补齐测试输入后通过。实际六场景/十worker资格尚未派发，须两份50-roster完整/driver已退出/旧native lease释放后在原22:31UTC前执行；coordinator已准备并AST检查，不自动重复未知任务。
 
 原BT seed3407在线bundle已真实完整构建（manifest d52462a2…，online contract390a6825…）；21:11:20静态部署projection完全相同0583a49a…、原模型/weight/M1等全部校验通过，实际完整encoder runtime精确匹配原2f3e5d29…，0模型推理/命令。原native one-replan+四真实关节/TOPP资格helper aa2e8e8e…已准备未派发，绑定旧native TOPP observer49888e…，0新BT策略结果。旧builder head-key失败、seed17未准入bundle和全部旧原件保留。后续先one-replan资格再native1000源；没有复现原DEV或SR收益结论。v12_addendum2三回复/PDF/ZIP仍原bytes，科学closure全false。
+
+### 23.132 两任务首批50固定cohort与200次真实初始reset完整保全
+
+21:26:00两roster driver正常完成，runner随后exit0。RB候选0–49全部expert accepted；BT顺序检查128个候选，首50 accepted、75普通expert rejected、3条源确定的expert无抓取断言，最后seed340800127；全部拒绝/几何失败/原unknown及reconciliation保留，未用学习策略结果筛选。各50例每例2次独立setup，三策略相机+原生front_camera/API qpos/真实qpos与qvel/物体任务态/官方unseen instruction都一致；原RB10为精确前缀。原20:31→22:31UTC窗口不重置，0学习策略推理或SR。
+
+892项完整原件34,739,266B归档deae79ec…/manifest291b6bf2…双端核验；本机独立解码200份NPZ，重算dtype/shape/content hash并对比全RGB、API和JSON物理/任务/指令，200/200一致。RB roster SHA98cd867b…、BT612cb5d1…，局部18/14旧前缀只读复用有manifest证明，不因失败重算已完成样本。收据MATCHED_RESET50_BOTH_COMPLETE_ARCHIVE_V1及ITER12_ROSTERS_AND_BT_STATIC_LOCAL_VERIFICATION_V1。
+
+原BT在线合同/静态资格与全部准备失败也已38项归档80576cc1…/manifest f8187694…，双端逐项验证，正确root3407/未准入17均保全；0新BT推理/命令。21:28:44实际启动独立原生并发资格outer2407946，source861004fa…/commit e841521、77检查；首批6worker2407957–2407962。只做20次reset/80条hold的工程资格，最大6场景，原22:31UTC截止及900秒外层不变；尚未宣告通过或派发正式Full/Pooled TEST。新原件仍Git外，论文/回复无新增收益数字。
+
+### 23.133 十worker原生并发资格完整；原BT固定cohort case0完成实际首推理
+
+原22:31UTC窗口内，十个分片runtime以6+4两批完成20次独立reset、80条qpos hold。每批两次已初始化scene barrier、真实planner PID/匿名endpoint inode及全部物理/图像/API/任务/指令原件均完整；不是仅进程启动计数。143项3,549,573B归档3f99eb0d5fd3d2cf6d918e7e300c5d2900c8c25ff93a903784d6efbf2af1976e，manifest f8b88e65…，资格收据2ad5c09e…；本机逐项核对全部20 NPZ/80物理hold/真实时间重叠与12或8个独立endpoint。formal source861004fa…/548项保持。它只关闭初态与可写路径/场景并发资格，不证明策略成功或完整隐藏状态相等。
+
+额外BT物理seed0诊断21:38专家拒绝，0模型查询/0学习命令，37,913B归档3c87ed5c…；不计模型失败，不重跑/更换这个旧点。两任务固定50-roster已21:26独立于任何原BT策略输出冻结；21:43原BT全50点前注册b1be58f9…，固定case0..49升序，原DEV选点不明，30GPUh/至多2H100的全50运行仍仅prospective、未准入。原BT case0物理seed340800000沿用原22:16UTC资格期限，于22:06:35正常exit0：一次H32真实推理、四条真实native命令，0 TOPP错误，原f77/source ff32342d…/weight27c137d6…/root3407/DINO2f3e5d29…保持。24项568,505B完整归档74859159d1cdc01b69a2520ef1144001d4af4de61529b3004f1ed679f9ad1b5d，manifest e5c9baa7…，本机独立成员/数组/物理/指令与CPU无损动作导出核验收据ITER12_ORIGINAL_BT_CASE0_LOCAL_VERIFICATION_V1。
+
+原API数组float64、原policy factual_joint_state按既有源码转float32，审计分别核对完整raw哈希及精确原转换，不误宣称两个dtype字节相同。所有四原生相机/实际关节任务态由资格运行核对；本机独立再核对三策略RGB、float32 API输入、实际物理及指令。prefix末success=false只代表四步尚未成功，不能记作完整episode失败或SR0；独立候选标签0。
+
+新增独立cohort-case0.v3事实采集协议只接已冻结case0，完整BT官方1000命令或成功终止，首图像/首H32/前四API及实测物理/TOPP须精确匹配已成功资格。所有实际到达replan封存原输入、候选预测、原适配动作、RNG、输出，主探针仍预定8/48/96，未到达不换点。原BRT600和额外BT0协议不变；全50评测没有被此单源采集默示启动。22:16:29新81项检查通过（pytest12.22秒/总16.49秒），stdout6feab48b…，collector93b1bb1c…；没有改变原模型或任何原科学结果。
+
+22:23:42UTC实际标准Full2679/3000（新2479）、Pooled2019/3000（新1919），连续且loss/grad有限，durable父200/100、原Nov11 12:29:56UTC不变，AFS114,985,889,792B；两final完整state/CAS未齐。正式100 paired native TEST尚未派发。当前论文v12/PDF/ZIP和三份英文15块不因工程数据而增加收益数字，全部20科学closure=false。
