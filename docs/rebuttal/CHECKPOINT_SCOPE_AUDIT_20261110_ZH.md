@@ -2,6 +2,8 @@
 
 本核对保留作者指定的v8-step3000与全部冻结实验，不替换原稿结果，不按新测成绩换模型。作者此前指定该最新模型用于补实验；这一授权继续有效。当前需要进一步确定的是它与原稿逐任务评测配置的具体对应关系。
 
+**作者事实确认（2026-11-10）：原稿使用逐任务specialist。** 因此训练设置本身已确认，剩余待核对的是各任务实际选中的权重/原DEV记录与评测bundle，而非继续质疑原稿是否采用specialist。当前v8 shared-step3000的全部固定结果仍保留为独立诊断，不能据此评价原稿specialist准确率；正式补证应按已确认设置建立原始checkpoint绑定。不得用看到的分数挑选旧specialist，也不得把旧v3权重塞入v8 loader。
+
 ## 可直接复核的事实
 
 1. 原稿及当前revision的RMBench协议写明九个任务各训练一个specialist，详见`sec/appendices/b_experimental_details.tex`。

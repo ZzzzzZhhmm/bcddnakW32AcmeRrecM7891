@@ -1439,3 +1439,15 @@ fresh-pool:fixed-fresh-rearrange_blocks-e0002-q0048:a742f9188889244827f6ce930bf4
 ### 自动采集：fresh-scene K32 fixed-fresh-rearrange_blocks-e0001-q0048
 
 fresh-pool:fixed-fresh-rearrange_blocks-e0001-q0048:91e0ea3f20ca3008237c3dd6407d973a841bf602c692ebba864938ddbde40991；原K32有效候选32，完整H32端点32，完整refined重复支持True；原件`/mnt/afs/task3_2/L202500276_lwz/projects/WARM_evaluations/rebuttal_20261109_acp/rb_source1_fresh_K32_v1/q0048`，候选结果SHA `806acaff1d69fc33b450555e5584e4f29277df581ab34fe157c9c5254ec77917`，centered结果SHA `cc25f3e51efe4f5747134ae984b6dd929346d9537f419755dc0d3475bf01b0d5`。**仅固定source/query的直接候选效应数据；不替换原论文表格，不视作整个cohort或策略收益。**
+
+### 23.75 作者确认原稿specialist设置、source1两个同父query完整与source2接续
+
+作者本轮明确“原稿使用逐任务specialist”，并完成SenseCore重新登录。原稿训练设置已确认；各任务实际权重/DEV选点/bundle绑定继续查原记录，不按新测结果换模型。此前v8 shared-step3000的完整/不利/未知结果均以独立诊断身份保留，不能将其当原稿specialist准确率证据。控制台实际确认唯一Full b为失败、UID9c6000a4ce734a7bac717b2053197a1e、最大重启次数0，原训练更新仍200。独立环境测量只用于记录实际runtime字段，不会放宽严格resume准入。
+
+source1事实700回放与六原query的Full上下文/null动作封存完整exit0；逐数组核对commands/before/after与原700 trace的dtype、shape、值全部相同，六次自然Full/common-Gaussian的受控null gate均0。03:51:33严格实际输入预检的q8/q48均exit0，仅data/contracts，不执行物理。03:56:28准入两个独立query并行，reader各沿用0.12 CUDA fraction；每query3395秒上限，原source1 03:25起04:55截止未重置。source1/q8、q48 outer分别04:02:49和04:07:01明确exit0，collector source前后0f151abf…保持，科学core5d7748e7…及runtime a97e308c…未改。
+
+两query各新增null32与Fullrepeat32，共128个真实分支命令、448个事实前缀命令；原raw/final-anchor依赖齐备、每次原父/RNG/DINO精确、重复Full端点及效应精确。q8/q48的Raw/Full/null局部标签各为0/0/0，Full/null实际关节端点都不同。source1/q8原pool已知至少2个适用候选，故不能把这例失败一概归为经验库无可用技能；选中提案与生成改善仍待更强直接证据。当前与source0合计四个完整局部query、两个source episode，不将重复Full视为独立样本、不报告总体修复率或收益。
+
+source1事实回放/六封存、两query物理原件、三份终态runner及准入/实际预检等162项，档案`source1_complete_factual_seals_and_same_parent_q8_q48_v1.tar.gz`，13,428,763 bytes，SHA `30997de11619a85bb34cfe90be408aec561267a35aa2662aeb7c2185b8f76241`，manifest SHA `997fa9ee5a1751ec7181cd7d21d6e0e4a5cdbdcc1957e762f71f0fb6f1e579b2`。04:30:33本机全部162项逐项核验；AFS/C盘均保全，原件在Git外，收据SOURCE1_COMPLETE_FACTUAL_AND_NULL_QUERIES_ARCHIVE_V1.json及SOURCE1_COMPLETE_LOCAL_VERIFICATION_V1.json。
+
+两query真实terminal及lease/GPU空闲81,080MiB核实后，04:14:04按既定source顺序准入source2/seed340800002的事实700与六query封存，outer2234575，独立5400秒窗口至05:44:04 UTC，source84af4413…和原v5共享权重wrapper不变。spec SHA `719f26a50f9b56ded12c0757a2963f2cddeae85dd221240a1251faa5ef1dc133`；原有固定样本及其他窗口均未重置。此为准入，不提前记作完成或新增SR；成功后原source2/q8/q48严格同父物理对照，原闭环下一role仍case4/null、campaign08:31截止保持。

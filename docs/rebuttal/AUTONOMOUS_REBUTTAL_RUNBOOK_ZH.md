@@ -1,5 +1,9 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**作者最新确认与执行（2026-11-10约04:30 UTC）：** 原稿确为逐任务specialist；训练设置已确认，优先恢复各任务原始权重/DEV选点/评测bundle绑定，shared-stage结果独立保留而非原稿准确率复现。作者已重新登录，ACP控制台访问恢复；b当前确认为失败、重启次数0，不重提旧共享训练。将用轻量独立环境测量定位runtime字段差异，保持严格resume校验。
+
+source1事实700与六null动作封存完整exit0；q8/q48同父null32及Fullrepeat32也分别04:02:49/04:07:01 exit0，原父/RNG/DINO及Full端点精确，Raw/Full/null均0。162项完整原件30997de1…双端核验，当前共四个完整局部query、两个source，仍无修复收益。source2已04:14:04按原固定顺序准入事实回放/六query封存，outer2234575、截止05:44:04UTC、原source84af4413…不变；先核查真实状态，完成后以严格完整依赖模式做source2/q8/q48。原闭环case4/null及08:31UTC截止保持，原所有负结果/未知均保留。
+
 **当前执行（2026-11-10 03:30 UTC）：** case3/Full已03:18:03完整700、exit0，564项原件b91731c1…已双端逐项核验；RB完整配对现4、均0/0，不再重跑此role。下一闭环固定role为case4/null，但当前优先按原source顺序补机制证据：source1事实700回放+六query null动作封存已03:25:02准入，outer2231994，截止04:55:02UTC、source84af4413…/controllerbc13308保持，spec dabcce45…。只封存原事实context/common Gaussian的null动作，不执行null物理分支、不新增独立SR。先核查真实进程/exit/summary，成功后验证原Full/action/输入资格并从原source1/q8和q48的完整pool补同父null；source2按固定次序后续补。原case4/null及campaign08:31截止不变，不与当前GPU任务竞争或重复已有role。
 
 **最新执行与文稿（2026-11-10 03:04 UTC）：** 三路Eb原冻结collector全部exit0，六个固定query终态，192 valid候选/182完整H32/10未知，六个centered主指标均不优于constant。新增source1/2档案1190项fc9115a1…双端核验，与source0的591项e6c8ca48…构成完整三source证据；旧未知/partial均保留。v6英文回复15块/20项与完整37页/10页主文PDF、29文件source ZIP已联动、干净重编译及视觉检查；取代v5成为当前审阅候选，尚未发布/达到实证release gate。case3/Full已02:51:17独占准入，outer2230608，原plan d8512a23…、worker3600/outer5400/08:31:04UTC campaign截止保持。先查真实进程/heartbeat/exit，不再重启已完成pool。
