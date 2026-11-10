@@ -1,5 +1,9 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**当前接续（2026-11-10 06:30 UTC）：** case4/candidate_null已完整700/0、outerexit0，564项06be2013…双端核验，与Full形成第五对0/0；不要重跑case4。原next_role的case5/candidate_null于06:12:57准入outer2254260，原08:31:04UTC截止不变，仍未新增第六对。作者已确认BT v1、PB v2、Cover v1、BRT v1四目录属于原稿训练run；仅最终DEV step未确认，不再重复询问run归属或把其他BRT版本混入。保持原v8结果独立，不做结果驱动换模型。
+
+post-prepare原样runtime观察入口已在CCI实现，7项单元及实际旧训练entrypoint配置转交通过（模型/更新/capture均0）。新Full200→500只允许独立冻结的资源修订、两份源码与父attestation绑定、原strict validator及固定绝对截止，见FULL500_RUNTIME_TRACE_RESOURCE_AMENDMENT_20261110_ZH.md。先核对实际提交/原artifact收据，不以preflight当作训练成功。当前原稿权重/代际/DEV绑定与关键机制原任务补证仍是最高科学优先级，真机新增取证延期。
+
 **最终恢复锚点（2026-11-10 06:00 UTC）：** 唯一ACP测量c已05:47实际完成，UI确认成功，父200的10项静态环境全部匹配，16项原件0f249285…双端保全；不要再按后文旧等待状态重提c。它没有模型装载或训练更新，不能当作完整resume准入，旧cluster01e b的具体差异仍未回溯测得。下一步原样采集post-prepare数值runtime（分布式/DeepSpeed、TF32和确定性等）并保留严格validator；若安排新训练段须单独记录资源修订，不能重置旧窗口。
 
 v7的86项候选/29文件ZIP/八份外部原件已AFS核验，writing_candidates/20261110_v7，整包3ac01a89…；该不可变快照早于测量完成，新工程证据走addendum，PDF数值不变。CCI case4/candidate_null仍是当前唯一科学GPU角色（outer2249166），05:48:35进程/GPU98%/frame72/700、gate0已核实；Full已完整700/0，完整配对仍4，原08:31:04UTC截止不变。先查实际terminal/完整轨迹，不重复Full或提前计第五对。原稿specialist设置已确认，原权重/DEV与训练代际绑定仍是首要科学核对；不以旧v3候选替换v8，也不丢弃现有负结果。真机新取证延期。

@@ -1493,3 +1493,17 @@ Full实际terminal、进程退出与lease/GPU空闲81,080MiB核实后，冻结ne
 四份实际测量/日志、三个事前intent、实际标准配额拒绝/旧b终态/c终态收据、三个冻结源码和父attestation共16项，档案`acp_cluster02_static_environment_measurement_complete_v1.tar.gz`，11,572 bytes，SHA `0f2492853b000203af706359402bf0038446672b6b66bdaac7218ba0cf383853`，manifest SHA `f5761f19ee0b0d13271d5d8ac7428629222d84c966bd74755b1691e46adce23d`，AFS/C盘逐项保全。静态匹配不能代替post-prepare的分布式/DeepSpeed配置、TF32及确定性等数值字段和optimizer/scheduler/RNG完整校验。下一恢复步骤应原样记录这些实际字段再执行原严格比较，不删除字段、拟造parent或放宽校验；若需新训练资源段，先独立记录资源修订，保持旧b原失败、输出和窗口。
 
 v7候选已05:46:53在AFS核验86项文件、29文件完整source ZIP及八份外部原件档案：`writing_candidates/20261110_v7`，整包104,209,711 bytes，SHA `3ac01a8901c89a10eb1e69ee1329a164c5005415b0ef843a22f83b967fd4c417`，manifest SHA `08fafa9fd7596f6455a9985c301de7e8c386b17bd15ed337841cad374aead798`。此包为静态测量完成前的不可变交付快照；上述新工程证据单独作为addendum，不修改原v7 PDF、源码或科学数值。05:48:35 CCI candidate_null真实child仍存活/GPU98%，当前frame72/700、gate0；不是完整null或第五对。AFS该时点192,301,023,232 bytes可用，所有state/CAS未删。
+
+### 23.80 第五个固定RB配对完成与作者确认四个原稿训练run
+
+case4/candidate_null于06:03:26完整700、success0，outer06:03:33 exit0；原source前后56393c5a…不变。原verify_role与paired_rows/export核对两个角色初始相机/qpos/task/instruction身份一致，完整配对升为5/10、Full/null均0/0。其余五对pending不是失败，也不因本组结果换seed。564项原件3,931,831 bytes，SHA `06be2013e723b4f79a7d380189ad0f59b92e5172ed30b91454681e6a93aeedd4`，manifest SHA `9e6cf9d1cc8b176999a724c834ddc11b608bb322642c57b8f96ae1b50d7d6152`，06:19:49本机逐项核验，AFS/C盘保全。此为shared-step3000固定诊断，不是原稿specialist准确率。
+
+该角色terminal、旧进程退出、lease及GPU空闲核对后，按冻结next_role于06:12:57准入case5/candidate_null、seed340800005，outer2254260，source56393c5a…、worker3600/outer5400、原08:31:04UTC campaign总截止保持；spec SHA `15f787234ac1c39a7203a8cf907f855d62c547ad4f11cba412599c8e6fe65486`。没有提前增加第六对。CCI控制台读取运行中1/1、H10080GB/22CPU/230GiB及原SSH21276；未从pod累计运行时长推算下一容器重启，精确剩余仍未核实，保留有界执行与失败收据。
+
+作者新增确认四个目录确属原稿训练运行：BT v1、PB v2、Cover Blocks v1、Blocks Ranking v1。此归属已确认，DEV实际选中step仍未核实；不把最后可用权重当成原稿选点，也不擅自用BRT其他版本替换。此前v8负结果全部保留。进一步核对训练源码代际、权重与runtime完整绑定后，才冻结原run上的新补证协议。
+
+### 23.81 只观察不归一化的post-prepare runtime记录入口
+
+CCI新增`run_rebuttal_training_with_runtime_trace.py`，由Accelerate启动原训练entrypoint时原样转交原参数/配置，并仅记录原capture_training_runtime的返回对象及父200的逐字段差异；同一对象直接返回，原strict resume validator不替换、不删字段、不更改DS/TF32/确定性设置。不访问Git远端、不检查dirty、原训练source仍4efb8094…。记录目录排他创建，保留每次返回和原异常，不能从记录完成推断resume或更新成功。
+
+7项原生单元检查通过；实际旧entrypoint的配置转交preflight V3于06:29:22 exit0、模型/优化更新0、runtime capture调用0，仅证明真实配置与参数可转交，尚不是post-prepare实测。observer source当时8c08178c…与原训练source4efb8094…各自核对。前两次preflight在serialized runtime字段名和命名空间绑定处被检查拒绝，均未加载模型，失败日志保留；已修复并用原实际父attestation和原entrypoint验证，未静默覆盖。原Full b失败/窗口继续保留；下一ACP段须另行冻结资源修订并实际核对post-prepare结果，不以这些工程检查替代训练或科学证据。

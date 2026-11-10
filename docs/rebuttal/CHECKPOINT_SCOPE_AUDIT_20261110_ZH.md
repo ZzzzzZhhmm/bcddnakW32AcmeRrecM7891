@@ -1,5 +1,7 @@
 # 原稿、现用checkpoint与新增证据的范围核对
 
+**作者新增事实确认（2026-11-10 06:20 UTC）：** `WARM/runs/rmbench_official50_specialists`下的`battery_try-s3407-v1`、`press_button-s3407-v2`、`cover_blocks-s3407-v1`及`blocks_ranking_try-s3407-v1`确属原稿训练运行。不能继续把四个run的原稿归属写成未确认；具体DEV选中step尚无记录，最后可用step不自动等于原稿选点。其他BRT v2/v3/v4目录不在本次确认范围内。下一步逐一绑定该四run实际attestation、完整权重SHA、原源码、bank/normalizer/camera和评测bundle；不同代际训练语义仍独立核对，不能因归属确认而跳过。
+
 本核对保留作者指定的v8-step3000与全部冻结实验，不替换原稿结果，不按新测成绩换模型。作者此前指定该最新模型用于补实验；这一授权继续有效。当前需要进一步确定的是它与原稿逐任务评测配置的具体对应关系。
 
 **作者事实确认（2026-11-10）：原稿使用逐任务specialist。** 因此训练设置本身已确认，剩余待核对的是各任务实际选中的权重/原DEV记录与评测bundle，而非继续质疑原稿是否采用specialist。当前v8 shared-step3000的全部固定结果仍保留为独立诊断，不能据此评价原稿specialist准确率；正式补证应按已确认设置建立原始checkpoint绑定。不得用看到的分数挑选旧specialist，也不得把旧v3权重塞入v8 loader。
