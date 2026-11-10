@@ -20,6 +20,48 @@ import sys
 import traceback
 
 
+def verified_prefix_manifest(plan, source, frame):
+    """Bind a separately audited factual context;never classify candidate truth."""
+    path = plan.get('factual_prefix_manifest')
+    if path is None:
+        return None
+    path = Path(path)
+    digest = lambda p: hashlib.sha256(Path(p).read_bytes()).hexdigest()
+    if digest(path) != plan['factual_prefix_manifest_sha256']:
+        raise ValueError('Factual prefix manifest changed')
+    value = json.loads(path.read_text())
+    required = ('all_per_command_source_API_states_exact',
+                'all_replan_source_RGB_observations_exact',
+                'all_between_pass_measured_joint_states_exact',
+                'final_parent_rng_hashes_exact')
+    if (value['status'] != 'two_factual_prefix_replays_exact_to_source_observations_and_each_other'
+            or value['query'] != plan['query_replan'] or value['frame'] != frame
+            or value['commands_each_pass'] != frame or value['new_candidate_endpoints'] != 0
+            or value['query_plan_sha256'] != plan['factual_prefix_base_plan_sha256']
+            or any(value.get(k) is not True for k in required)
+            or value['source_trace_sha256'] != digest(source/'native_trace.jsonl')):
+        raise ValueError('Factual prefix identity or exactness evidence differs')
+    passes = value['pass_files']
+    if len(passes) != 2 or passes[0]['sha256'] != passes[1]['sha256']:
+        raise ValueError('Two byte-identical observed prefix passes required')
+    expected = {v['index']:v['error'] for v in value['prefix_errors']}
+    if len(expected) != len(value['prefix_errors']) or any(not 0 <= i < frame for i in expected):
+        raise ValueError('Duplicate or foreign factual-prefix rejection index')
+    source_rows = [json.loads(s) for s in (source/'native_trace.jsonl').read_text().splitlines()]
+    for item in passes:
+        if digest(item['path']) != item['sha256']:
+            raise ValueError('Factual-prefix raw replay changed')
+        rows = [json.loads(s) for s in Path(item['path']).read_text().splitlines()]
+        if len(rows) != frame:
+            raise ValueError('Incomplete factual-prefix replay')
+        for i,row in enumerate(rows):
+            if (row['index'] != i or row['error'] != expected.get(i)
+                    or row['guard_accepted'] != (i not in expected)
+                    or any(row[k] != source_rows[i][k] for k in ('command','before','after','take_action_cnt'))):
+                raise ValueError('Factual-prefix observed command or rejection differs')
+    return value
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--plan', required=True, type=Path)
@@ -95,6 +137,8 @@ def main():
         args = read(source/'runtime_args.json'); contract = read(args['warm_online_contract_path'])
         assert args['task_name'] == 'blocks_ranking_try'
         trace = [json.loads(s) for s in (source/'native_trace.jsonl').read_text().splitlines()]
+        prefix_manifest = verified_prefix_manifest(plan, source, frame)
+        expected_prefix_errors = {v['index']:v['error'] for v in prefix_manifest['prefix_errors']} if prefix_manifest else {}
         assert len(trace) == 600
         commands = np.asarray([r['command'] for r in trace], dtype=np.float32)
         before_trace = np.asarray([r['before'] for r in trace], dtype=np.float32)
@@ -188,14 +232,34 @@ def main():
                 instruction = str(np.random.choice(generate_episode_descriptions('blocks_ranking_try',[expert['info']],100)[0]['unseen']))
                 assert instruction == initial['instruction']; env.set_instruction(instruction=instruction)
                 require_source(source/'initial_observation.npz',env.get_obs())
+                observed_prefix_errors = []
                 with OfficialQposGuard(env) as guard:
                     for index,command in enumerate(commands[:frame]):
                         budget(); before = factual_joint_state(env.get_obs()).copy()
-                        assert guard.step(command)
+                        error = None
+                        try:
+                            assert guard.step(command)
+                        except InvalidBranchExecution as exc:
+                            error = str(exc)
+                            if error != expected_prefix_errors.get(index):
+                                raise
+                            observed_prefix_errors.append(dict(index=index,error=error))
+                        if error != expected_prefix_errors.get(index):
+                            raise RuntimeError('Expected factual-prefix rejection did not recur')
+                        assert env.take_action_cnt == trace[index]['take_action_cnt']
                         require_step(index,before,factual_joint_state(env.get_obs()))
+                        if prefix_manifest and (index+1)%4 == 0:
+                            require_source(source/f'replan-{(index+1)//4:04d}.npz',env.get_obs())
+                assert observed_prefix_errors == (prefix_manifest['prefix_errors'] if prefix_manifest else [])
+                atomic_json(attempt/'factual_prefix_audit.json',dict(command_attempts=frame,
+                    observed_rejections=observed_prefix_errors,
+                    manifest_sha256=plan.get('factual_prefix_manifest_sha256'),
+                    candidate_execution_validity_unchanged=True))
                 obs = env.get_obs(); require_source(source/f'replan-{query:04d}.npz',obs)
                 random.setstate(rng['python']); np.random.set_state(rng['numpy']); torch.set_rng_state(rng['torch_cpu']); torch.cuda.set_rng_state_all(rng['torch_cuda'])
                 parent = native_parent(env,obs); parent_hash = state_hashes(parent)
+                if prefix_manifest:
+                    assert parent_hash == prefix_manifest['parent_hashes'], 'Audited factual parent differs'
                 if records: assert parent_hash == records['anchor-a']['parent_hashes'], 'Fresh native parents differ'
                 before_feature = reader.encode(obs)
                 assert state_hashes(native_parent(env,env.get_obs())) == parent_hash, 'Teacher read changed parent'

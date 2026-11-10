@@ -1,5 +1,9 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**14:08 UTC之后恢复锚点：** pool100已exit0、真实typed checkpoint cbdfcef2…/完整state完成，V2无损CAS验证通过（raw TAR f132c9a5…、38.53GB，新增CAS13.53GB），路径POOL100_COMPLETE_ARCHIVE_V2/archive_receipt.json。旧V1只是归档校验误把冷启动null当0、未重训且失败保留。下一步用新明确pool角色操作器恢复100→3000，先核对任何未知创建/新plan，SAME master7526a475…/11月11日12:29:56UTC截止、共同配方不变；检查余量，原Full95e49547…仍活跃，不重提。
+
+原q48 prefix两遍已完整exit0，唯一index101拒绝，所有sourceAPI/RGB/跨遍物理与parent/RNG精确，15原件378d8a0c…双端核验。新的prefix绑定源981c5243…仅复现此显式事实失败，不放宽任何H32候选判定。真实清单预检+3篡改拒绝均通过，0新候选truth。q48新attempt必须显式plan修订并保持SAME21:01:03UTC，AABA认证后完整K32，长任务交ACP；旧v1失败b29ff2d1…不可覆盖。当前v10完整68项包abd7c31b…保留，原q8负结果/29完整3unknown在Table22，尚无新增预测/修复收益。真机新增仍延期。
+
 **13:19 UTC恢复优先级：** v10完整37页/10主文、29源码、三份15块/20项已联动验收；原q8负结果单列C.2.5/Table22，不替换原稿另一个cohort。PDF7d5489a9…/ZIPa9099b1e…，308原件ec533960…双端核验，未发布。q48 plan58b336f3…的首次资格已known failure（事实prefix TOPP，0branch/0truth），15原件b29ff2d1…保留，不重跑旧入口。当前唯一CCI worker为两遍prefix审计outer2320686，precommit271fadea…，同21:01UTC总截止、worker3600；13:19第一遍index102/1拒绝，还不能认证。先查该audit实际process/lease/operator/exit；严格核对源每步API/每4步RGB和跨遍真实物理，不把source600 attempts写成600有效动作，不能无清单吞掉prefix异常或放宽候选guard。
 
 两标准ACP Full95e49547…/poolf7f3df01…真实训练已更新（13:05 Full231，pool29），原父runtime差异消除；最终3000和正式比较未完成，durable Full仍200，pool待100完整state。先核对pool100是否终态并保全，再在同master7526a475…/11月11日12:29:56UTC截止下恢复100→3000；不要新建同一未知任务。真机新取证仍延期。

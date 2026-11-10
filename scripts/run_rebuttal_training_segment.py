@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Continue an attested immutable Full lineage and preserve its entire state.
+"""Continue attested immutable matched lineages and preserve their entire state.
 
 This operator never selects a TEST checkpoint, changes a scientific recipe,
 contacts a Git remote, deletes a prior artifact, or retries an unknown run.
@@ -60,6 +60,18 @@ def validate_metrics(rows, *, start, end):
         raise ValueError('nonfinite training metric')
 
 
+def validate_role_recipe(role, recipe):
+    """Keep Full and the independently trained all-K control distinct."""
+    targets = {'full':'fastwam.runtime.create_warm_retrospection',
+               'pooled_memory_prior':'fastwam.research.pooled_memory_prior.create_pooled_memory_prior'}
+    if role not in targets or recipe.get('model',{}).get('_target_') != targets[role]:
+        raise ValueError('Matched role contradicts the model constructor')
+    if role == 'pooled_memory_prior':
+        removed = ('loss_retrieval','loss_effect','loss_gate','loss_adaptation')
+        if any(recipe['model'].get('retrospection',{}).get(k) != 0.0 for k in removed):
+            raise ValueError('Pooled control must remove its declared mechanism losses')
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--plan', type=Path, required=True)
@@ -69,10 +81,13 @@ def main():
     if file_hash(args.plan) != args.expected_plan_sha256:
         raise ValueError('immutable segment plan differs')
     plan = read(args.plan)
-    if plan['schema'] != 'warm.rebuttal.full-training-segment.v1':
+    if plan['schema'] not in ('warm.rebuttal.full-training-segment.v1','warm.rebuttal.matched-training-segment.v1'):
         raise ValueError('unsupported plan')
-    if plan['selected_final_update'] != 3000 or plan['role'] != 'full':
-        raise ValueError('this operator only continues the original Full reference')
+    role = plan['role']
+    if plan['selected_final_update'] != 3000 or role not in ('full','pooled_memory_prior'):
+        raise ValueError('fixed3000 and a declared matched role required')
+    if plan['schema'] == 'warm.rebuttal.full-training-segment.v1' and role != 'full':
+        raise ValueError('Legacy Full plan cannot be relabeled as a control')
     code = Path(plan['training_code'])
     if source_identity(code)['sha256'] != plan['training_source_sha256']:
         raise ValueError('frozen training implementation differs')
@@ -98,6 +113,15 @@ def main():
         raise ValueError('parent checkpoint attestation differs')
     import yaml
     before = yaml.safe_load(Path(plan['base_config']).read_text())
+    validate_role_recipe(role, before)
+    if role == 'pooled_memory_prior':
+        preserved = read(plan['parent_archive_receipt'])
+        if (file_hash(plan['parent_archive_receipt']) != plan['parent_archive_receipt_sha256']
+                or preserved['status'] != 'verified_byte_exact_reconstruction'
+                or preserved['role'] != role or preserved['optimizer_updates'] != plan['start_update']
+                or preserved['checkpoint_sha256'] != plan['parent_checkpoint_sha256']
+                or preserved['source_sha256'] != plan['training_source_sha256']):
+            raise ValueError('Pooled parent is not independently preserved and attested')
     output = Path(plan['output'])
     after = segment_config(before, output=output, resume=parent,
                            start=plan['start_update'], end=plan['end_update'])
@@ -106,6 +130,8 @@ def main():
         raise FileExistsError('existing output or operator receipt: inspect it before any recovery')
     if shutil.disk_usage(output.parent.parent).free < plan['minimum_free_bytes']:
         raise OSError('insufficient AFS capacity; preserve prior states')
+    if shutil.disk_usage(Path(plan['scratch_root']).parent).free < plan.get('minimum_temporary_free_bytes',0):
+        raise OSError('insufficient temporary archive capacity;preserve checkpoints')
     if args.preflight_only:
         print(json.dumps(dict(status='attested_original_parent_and_recipe_admitted',
                               physical_training_updates=0, config_overrides=['output_dir', 'resume', 'run_steps', 'save_every'],
@@ -113,7 +139,7 @@ def main():
         return
 
     artifact.mkdir(parents=True, exist_ok=False)
-    state = dict(status='admitted', start_utc=datetime.datetime.now(datetime.timezone.utc).isoformat(),
+    state = dict(status='admitted', role=role, start_utc=datetime.datetime.now(datetime.timezone.utc).isoformat(),
                  selected_final_update=3000, formal_performance_eligible=False,
                  plan_sha256=args.expected_plan_sha256, operator_source_sha256=source_identity(ROOT)['sha256'],
                  training_source_sha256=plan['training_source_sha256'],
@@ -121,7 +147,7 @@ def main():
     state_path = artifact / 'operator.json'
     write(state_path, state)
     try:
-        config_path = artifact / 'full-segment-s3407.yaml'
+        config_path = artifact / (role+'-segment-s3407.yaml')
         config_path.write_text(yaml.safe_dump(after, sort_keys=False))
         spec = read(plan['template_spec'])
         argv = spec['argv']
@@ -129,8 +155,8 @@ def main():
         argv[argv.index('--config-name')+1] = config_path.stem
         argv = [('hydra.run.dir=' + str(artifact / 'hydra')) if s.startswith('hydra.run.dir=') else s for s in argv]
         spec.update(argv=argv, max_seconds=plan['max_training_seconds'],
-                    evidence_type='original_full_fullstate_resume_segment',
-                    claim='Continue original seed3407 and unchanged mathematical recipe toward fixed3000; no TEST performance claim.',
+                    evidence_type=role+'_attested_fullstate_resume_segment',
+                    claim='Continue matched '+role+' seed3407 and unchanged mathematical recipe toward fixed3000;no TEST performance claim.',
                     inputs=[dict(path=str(p), sha256=file_hash(p)) for p in (config_path, args.plan)], qualification=[])
         spec_path = artifact / 'training.job.json'
         spec_path.write_text(json.dumps(spec, indent=2) + '\n')
@@ -166,7 +192,7 @@ def main():
         write(state_path, state)
         scratch = Path(plan['scratch_root'])
         scratch.mkdir(parents=True, exist_ok=False)
-        archive = scratch / f'full_resume_update{end}_evidence.tar'
+        archive = scratch / f'{role}_resume_update{end}_evidence.tar'
         with tarfile.open(archive, 'w') as tar:
             tar.add(output, arcname='training')
             tar.add(config_path, arcname='config.yaml')
@@ -176,7 +202,7 @@ def main():
         loader.loader.exec_module(packer)
         manifest = packer.pack(archive, Path(plan['cas_store']), file_hash(archive))
         evidence = packer.verify(manifest)
-        evidence.update(role='full', optimizer_updates=end, start_update=plan['start_update'],
+        evidence.update(role=role, optimizer_updates=end, start_update=plan['start_update'],
                         parent_checkpoint_sha256=plan['parent_checkpoint_sha256'], checkpoint_sha256=attest['checkpoint_sha256'],
                         source_sha256=plan['training_source_sha256'], selected_final_update=3000, formal_performance_eligible=False)
         write(artifact/'archive_receipt.json', evidence)
@@ -187,7 +213,7 @@ def main():
         ledger = Path(plan['experiment_ledger'])
         with ledger.open('a') as stream:
             fcntl.flock(stream, fcntl.LOCK_EX)
-            stream.write('\n\n### Automatic collection: original Full matched seed3407 update' + str(end) + '\n\n' +
+            stream.write('\n\n### Automatic collection: matched '+role+' seed3407 update' + str(end) + '\n\n' +
                          'UTC ' + state['end_utc'] + '; full optimizer/scheduler/RNG/dataloader resume ' + str(plan['start_update']) +
                          ' to ' + str(end) + ', exactly ' + str(len(metrics)) + ' finite optimizer updates. Training source SHA `' +
                          plan['training_source_sha256'] + '`, checkpoint SHA `' + evidence['checkpoint_sha256'] +

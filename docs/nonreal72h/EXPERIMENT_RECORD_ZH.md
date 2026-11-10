@@ -1682,3 +1682,20 @@ v10完整29文件LaTeX和干净sourceZIP两次编译均37页/10主文，37页文
 13:19:40实际审计第一遍至index102，观测1次前缀拒绝，尚未完成两遍，不能提前认证或改候选入口。必须先核查真实终态、保全完整原件，再决定是否可以按明确expected prefix失败清单恢复同一query，原失败/截止/source均不覆盖。
 
 同时13:05:04两标准ACP真实连续metrics已可见：Full201–231共31新更新，pool1–29共29更新，心跳持续，Full父运行时differences=[]且原返回未改。Full的durable checkpoint仍200，pool尚无完成checkpoint，不把进行中updates当可恢复的新权重或最终公平性能。
+
+
+### 23.103 原q48两遍上下文审计完整；只绑定已观测的前缀拒绝
+
+审计13:25:05完成、原runner exit0：192个原实际命令尝试重放两遍；source每步API、每4步RGB、跨遍真实关节/速度及最终native父/RNG完全相同。两份原始pass文件SHA同为317cca9e…，唯一拒绝均在index101（第102条命令），并未重试/替换该命令。15完整原件1,576,946bytes，archive378d8a0c37a43263e3dc43daed291d538a23db414da7cf2155cbc5d0fdd71e87、manifest8d01ace1…双端逐项核验。没有新候选端点或修复标签，不追溯宣称原600 attempts均有效。
+
+Collector先在CCI实现显式verified_prefix_manifest绑定，再同步本机：只接纳已独立两遍认证且hash/query/frame/源trace/逐步源值完全一致的prefix清单；每次fresh分支须复现同index101、同异常字符串，逐命令API/计数、每4步RGB及完整parent hash均严格匹配。任何未列出的前缀异常、未再现的预期异常仍拒绝；H32候选的OfficialQposGuard和valid/early/unknown终态判定完全不变。新增factual_prefix_audit.json纳入每分支seal，原失败/源码/窗口保留。真实清单CPU预检通过，三种篡改身份均拒绝，0GPU/0新branch；原无清单路径仍严格拒绝所有prefix异常。新q48计划须另存明确修订ID，保持原13:01起算及SAME21:01:03UTC截止，长pool由ACP执行AABA后继续，不以修复重置窗口。
+
+额外只读向量诊断：原q8同29支持集predicted-minus-historical MSE1.4558982e-5，difference RMS0.0038156，相比historical RMS0.3114039；它只描述表征相近，未改原三项主MSE、GT或支持集，不是预测收益。相似的最终误差本身不当作向量相等证明。
+
+### 23.104 同信息pool100完整状态与无损备份通过；最终resume操作器完成
+
+Pool初始训练1–100连续有限loss/grad，runner13:26:25 exit0、source48ce6ba8…前后相同。真实权重元数据含独立warm.research.pooled-event-prior-with-recollection.v1，冷启动resume_step=null、lineage_kind=none、无Full parent；与Full200的released-base776475b2…、seed3407、effective batch128、maxsteps30000、BF16及train/dev source合同一致。checkpoint SHA cbdfcef2432f2e2b99ddfc22a95dc16450df43979c094c85e3f7787faecfe5ec。它是100步完整训练资格，不是最终3000或准确率证据。
+
+首版归档器错误预期冷启动resume_step=0，实际为null，因此在任何归档/新更新前停止；原失败和收据保留。V2按实际冷启动schema做精确检查，并增加与Full共同输入身份验证，未修改训练/数值validator或重训100步。23原件38,530,508,108bytes形成原始TAR38,530,570,240bytes，14:08已完成逐字节可重建验证，raw TAR SHA f132c9a5b5f917e9eb1a2a0c093811d0c1634c8b1211dadd43631f999ae4bb54。CAS增加13,525,627,917bytes，原checkpoint/完整optimizer/scheduler/RNG/dataloader状态、raw TAR、manifest及旧失败均保留。收据POOL100_COMPLETE_ARCHIVE_V2/archive_receipt.json；本机收到收据/inventory，完整CAS本机传输另记，不冒充已双端复制全部38.5GB。
+
+run_rebuttal_training_segment.py扩展明确Full/pooled_memory_prior两角色；构造器必须与角色一致，pool四项移除的机制loss必须为0，pool父状态必须已有独立verified-byte-exact收据并匹配source/checkpoint/update。原四项存储/恢复控制、固定final3000、原scheduler/batch/seed数学配方及strict实际resume validator保持。旧Full运行仍用冻结H7a，未被代码同步改动。原有segment检查与新角色/防混用/保留机制loss拒绝共7项native通过（0.80s）；首次测试因缺工作区PYTHONPATH在收集前失败，修正运行入口后通过，未改测试要求。新增tmp容量门槛与角色明确的归档/账目，后继仍须沿master7526a475…同11月11日12:29:56UTC截止；先核对实际AFS空间并为两个最终state及CAS留余量，不删除原件或重置预算。

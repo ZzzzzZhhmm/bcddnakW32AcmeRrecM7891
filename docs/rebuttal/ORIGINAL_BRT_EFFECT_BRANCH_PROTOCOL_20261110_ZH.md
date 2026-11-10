@@ -28,3 +28,8 @@ A-A-B-A通过后，按原valid rank顺序执行其余31候选，复用已完整�
 ## 12:51 UTC原q8终态与后继
 
 原q8完整29/32、3 TOPP unknown，预测centered0.0525203/constant0.0181195/historical0.0524970，不支持该状态预测优势；原件ec533960…全保留。不能用已有AABA资格替代科学结果，也不能因不利换掉后续预封存q48/q96。Generic入口严格使用三个原probe及rank28/0/10，新增qualify-only允许CCI先做四个native分支，长pool由ACP在同plan/seal及绝对截止下接续。每个新query父状态须独立重放验证，语法/CLI通过不等于新AABA或收益。原q8文件/计划/截止/模型不变，真机延期。
+
+
+## q48已审计的事实失败与后续执行边界
+
+新两遍审计确认：source192尝试可精确重现，index101的原生TOPP拒绝也确定性复现，全部源API/每4步RGB和跨遍实际物理一致。只对事实历史使用独立hash清单允许复现这一已记录失败；不移除/重试该命令，不将它标为有效。Collector读取两份完整pass、源trace/query/frame及final native parent，任何新异常或缺失的预期异常立即失败；H32反事实候选仍用原严格guard，invalid/early保持unknown。无清单的q8路径不变。新q48修订保留原失败、同source/rank0和21:01:03UTC截止，ACP必须先完成原AABA检查再全K32。该工程修复不提供预测或修复优势。
