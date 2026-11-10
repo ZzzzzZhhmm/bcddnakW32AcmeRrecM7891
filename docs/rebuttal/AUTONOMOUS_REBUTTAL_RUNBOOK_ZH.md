@@ -1,5 +1,9 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**最新恢复优先级（2026-11-10 00:04:31 UTC）：** case3/null已完整700步、success0、564项原件本机/AFS核验，Full仍缺，完整配对数仍3；三路原Eb fresh pool已00:01:31按原窗口恢复（runner2212837/2212838/2212839）。先核查这些实际进程/lease/结果，不重复旧null。下一个闭环角色case3/Full宜在pool完成或本次已知约02:01 UTC wall-time退出后独占执行，原worker3600秒与08:31:04 UTC总截止不变。ACP控制台00:04:31实际要求重新登录，作者已收到登录请求；Full b的AFS operator仍无，禁止据此重复创建。后文旧时点状态只作历史记录；current_iteration及末尾新锚点优先。
+
+v4内部审阅交付已于00:09:56 UTC在AFS核验52项：`writing_candidates/20261110_v4`，archive SHA3d34361f…；回复15块/20项，PDF35页/主文10页、完整source29文件，全部重编译/视觉检查通过。当前模型对应、后果预测/修复、自然missing-skill与同信息最终对照仍是关键门槛，未发布。00:10三路进程/lease与100%GPU核实，q48候选23/17/18，各另有2个anchor；以`FINAL_LIVE_HANDOFF_20261110_0010_V2.json`读取真实endpoint_status计数，不能将anchor或无status字段的派生unknown混入候选分母。
+
 内部验收时间：**2026-11-13 23:00 Asia/Shanghai**，早于作者要求的11月14日。正式讨论截止按作者邮件为11月19日19:59北京时间。每小时在本对话推进；本机和桌面应用须保持运行。该定时任务覆盖完整研究与写作流程，不是只轮询某个GPU任务。
 
 ## 恢复与并发规则

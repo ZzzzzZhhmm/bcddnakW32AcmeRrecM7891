@@ -1290,3 +1290,21 @@ pool0/1于23:19:05、pool2约23:27按原7200秒退出，均是已知wall-time，
 23:46:14对同case3/null旧中断attempt与v2的q0/q8/q24/q48作只读重复性核对：四个查询的全部保存RGB、官方输入状态向量和完整H32模型动作均精确相同，最大动作差为0。官方文件名native_qpos在此是policy输入drive-target vector，不宣称已核对全部隐藏物理状态。`CASE3_RETRY_PREFIX_INTEGRITY_V1.json`记录两个原动作文件SHA；此为同一固定样本的prefix重复性，不能增加独立试验数。
 
 回读原最终33页PDF（备份SHA aa04f951…），确认原第18页已有factual效应项及candidate正则，第22页为九个task specialist，第30页结构检查单独标记v8-step300。当前回复的监督解释未把新增机制冒充原方法；历史v3 specialist也不能据此认定就是投稿所有表格的模型。另有受限74个大权重文件清点、8个未附attestation的基础/release/smoke文件，未确认新的原稿选点；原件`LARGE_WEIGHT_FILE_SCOPE_INVENTORY_V1.json`保留。后续继续按表格/DEV/eval bundle绑定核对，作者事实问题仍待答复。
+
+### 23.61 固定case3/null完整700步、564项原件核验与三路原窗口续跑
+
+CCI独占v2的科学worker于2026-11-09 23:56:21 UTC明确exit0，外层于23:56:28 exit0；原case3、seed340800003、candidate-null完整执行700条命令，官方success=0、max_reward=0。重新调用原冻结controller的`owned_records/verify_role`，核对三个700×14有限commands/before/after数组、初始观测哈希、任务/seed/模型/科学core/计划身份、durable result与trial row一致。此次只是一个已知完整null角色；case3/Full尚未执行，完整RB配对仍3，不能记作第4对或产生Full-minus-null差值。
+
+worker原件564项、3,940,722 bytes，archive SHA `a0f72a6340ffca2e026fdca716815bb2d049e2dbb6bb8deb80c584887ff840de`。AFS原件位于`rebuttal_20261109_acp/resumable_rb_cases0003_0009_v1/attempts/0003-candidate_null-1c8ac648c9b14501a92d53b298140dc4/verified_worker_evidence.tar.gz`；本机`tmp/rebuttal/execution/20261110_iter2/case3_null_v2_complete700_worker_v1.tar.gz`已逐项核对所有564文件的长度和SHA。完整结果收据`CASE3_NULL_V2_VERIFIED_COMPLETE_V1.json`、本机核验`CASE3_NULL_V2_LOCAL_ARCHIVE_VERIFICATION_V1.json`保留。旧中断的497项档案、ACP工程失败、原事实重复性检查均保留，重试不增加独立样本数。
+
+原controller source前后均56393c5a…、原计划d8512a23…、模型68c7f384…、worker3600秒与campaign次日08:31:04 UTC截止保持；实际外层1563.054秒是本次单run耗时，不作为受控吞吐或方法速度优势。`partial_verified_invocation_limit`表示一次有界调用收到了1个新完整角色，不表示整个10对cohort完成。
+
+2026-11-10 00:01:31 UTC，确认v2两个PID消失、terminal exit0、native campaign lease空、H100空闲81,080MiB后，受保护V3续跑入口恢复source0/1/2原Eb collector/spec，runner PID2212837/2212838/2212839。每路先检查旧known wall-time exit、旧PID缺失与自身lease，逐路写入`FRESH_POOL_AFTER_EXCLUSIVE_V2_CONTINUATION_V3.json`，避免未知派发后重复。原12h起点和05:27:25/05:44:21 UTC截止未重置。00:03实际三个runner manifest均running，日志进入新的前缀物理执行；旧q48已完整候选23/17/18，尚未生成完整后期query。下一闭环角色严格为case3/Full，建议本次pool完成或原约02:01 UTC invocation已知到期后独占执行，不重复case3/null，不重新启动已停止f。
+
+00:04:31 UTC ACP控制台实际转至IAM登录，已保留原浏览器登录页并通知作者重新登录，未执行新创建/停止或读取保存密码。Full b最近可核实控制台状态仍是23:03的0GPU等待；00:03 AFS Full500 operator仍未生成，不能把旧queue观察表述为当前控制台已确认。CCI采集和写作不依赖本次重新登录。v4的20项映射、15块回复和内部门槛已更新为完整null/Full待定；公开英文回复未引入新的收益数字。
+
+### 23.62 v4完整候选包双端验收与当前计算交接
+
+v4内部审阅包共52项、80,581,790 bytes，SHA `3d34361f3e92d8fdbbeffe1592105e62d5fe3fcc9d52ba37f76833ebefe3a3fd`，manifest SHA `a433444538b681282224183859c2f68d81bbac708ce381c11ffc8558f2220b88`。本机与AFS逐项长度/SHA核验通过，AFS于2026-11-10 00:09:56 UTC完成；目录`rebuttal_20261109_acp/writing_candidates/20261110_v4`，本机归档`tmp/rebuttal/execution/20261110_iter2/warm_rebuttal_writing_candidate_v4_20261110.tar.gz`。包内包含三位英文回复/15个comment block、20项映射与内部门槛、35页PDF、29文件完整LaTeX ZIP、变更单、视觉QA、审计文档、564项完整null原件与497项旧中断原件包及验证收据；AFS再次独立核验ZIP内全部29文件。论文PDF e9f99e86…和source ZIP e4db2687…保持。未发布评论/上传投稿，stable_release_ready=false，不能把材料验收等同于决定性实证关闭。
+
+00:10:27 UTC复核三路实际runner均存在、各native lease持有、原source不变，控制台日志进入前缀物理执行，单H100使用24,485MiB、100%利用率；AFS Full500 operator仍无。q48仍分别23/17/18个完整候选，另各2个完整anchor；三个summary均只有q8完成。只读检查初稿误读不存在的`status`字段，派生计数标为unknown；原检查件保留，V2改按真实`endpoint_status`区分candidate/anchor，未更动任何科学原件/标签。以`FINAL_LIVE_HANDOFF_20261110_0010_V2.json`及其00:11:06校正收据为准。原窗口与下一个固定case3/Full不变；最新执行读取Git外current_iteration，52项候选包是00:08时点不可变快照。
