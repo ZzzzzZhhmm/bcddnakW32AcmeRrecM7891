@@ -1356,3 +1356,61 @@ v4 research-patch1于00:49:43 AFS核验46项、7,079,858 bytes，archive SHA `ca
 以97e366a Linux快照为基础的precommit source前后均`f39b62fe75a48ae7e47a03876f7f11634d2478844d14614e3bbadb530b231263`，19项原生检查通过（2.00秒），覆盖原数组/未来字段拒绝、原生空history、强制/消融控制拒绝、eligible row越界、非法门值及hard rejection一致性，原repertoire搜索域检查同时通过。实际两条件的15项输入绑定与三个原首查询/数组均通过CPU data-only，policy未加载、执行命令0。
 
 补充计划`initial_gate_availability_v1.plan.json` SHA `de0cc273f540c71fa160e2f89726d584501f427011e3e2c9f43ad9f4165201ff`已在Git外冻结，原科学core5d7748e7…、原模型68c7f384…、四观测资格计划0df7b0f…绑定。预检与native19通过不是自然门值结果；后续从已提交冻结源码准入真实两条件推理，原200-pair主协议/候选样本/原资源窗口均不改。
+
+### 23.68 source0固定q8/q48完整、后期后果误差与同父三角色核销
+
+原source0 K32主体于2026-11-10 01:48:32 UTC完成，outer于01:48:38明确exit0；原Eb collector source前后均`823404c10af58f90b932b406b0a4cc2a3632acb20b691841a8a82ac7b0c5cdad`，科学core5d7748e7…及runtime a97e308c…未变。q48全部32候选、三次Full anchor均完整H32并通过父状态/重复端点资格。选中raw rank29局部标签0、完整候选中正标签0，Full/null也各0。q48预测centered MSE `0.08068330443023085`，高于query-constant `0.07378675842267281`，低于historical `0.1179940894596835`；预测centered explained variance `-0.09346590302900348`。absolute MSE依次为predicted `0.16764043682731286`、constant `0.17177325838028487`、historical `0.15859240329098073`，不以另一指标替换预设主指标。前三个固定q8原有86个完整H32/10未知及其不利主结果均保留，不重采或拟合缩放。
+
+完整source0目录包含旧partial/unknown attempts及终态runner，共591项，归档`source0_complete_fixed_q8_q48_v1.tar.gz`，82,971,466 bytes，SHA `e6c8ca48577833f753a3b4d0efa7d086eac8631b5bd82a4ec57710882742e336`，manifest SHA `278eae51dcc1d2ade1be19f88d985d948f2944e6e9471c015bc81acf7572fd66`。02:05:48本机逐项长度/SHA核验通过，见`SOURCE0_COMPLETE_Q8_Q48_ARCHIVE_V1.json`与`SOURCE0_COMPLETE_Q8_Q48_LOCAL_VERIFICATION_V1.json`；原件均在Git外本机iter4和AFS保全。
+
+02:08:00再次以严格`allow_pending=False`核对q8/q48原选中raw及pool-final依赖，确认两个完整Raw/Full/null query，同父/RNG和post-null Full端点/效应精确；两query各三角色局部标签均0，Full/null实际关节端点均不同。`SAME_PARENT_Q8_Q48_COMPLETE_V2.json`与Markdown表记录全部读取原件SHA。旧q48 pending快照按原时点保留，不覆盖。两个query仅一个source episode、均native stage0，不能称总体修复优势、跨阶段覆盖或新增闭环配对SR。
+
+### 23.69 两个非空等规模搜索域的六次真实自然门控诊断完成
+
+实现提交`a92f5e0f930fedb4fd091b7453ae31454e976632`已推送核实并同步CCI；冻结`controller_a92f5e0/code` source `f39b62fe75a48ae7e47a03876f7f11634d2478844d14614e3bbadb530b231263`与19项原生测试/实际输入资格快照相同。01:42:40准入顺序operator2224398，clean和heldout分别于01:51:54与02:00:52完成exit0，collector source前后保持。采用作者指定shared-stage v8 update3000，checkpoint `68c7f3840921241df45a5b6997b772db3a69a31584644aa0e66929b841b845bf`；原科学core5d7748e7…、runtime a97e308c…、BF16/H32/prefix4/NFE10/K32不变，不称原稿task-specialist协议复现。
+
+三个固定source的原query0实际RGB/官方关节输入、原生空episode history、上下文/原DINO/派生seed/基Gaussian均逐对精确一致。两个搜索域各19,540个原bank事件，eligible行与原89,680-event bank未改。clean完全复现这三个原Full初始query的整份probe NPZ及H32生成动作SHA。移除六个block-family任务后，三个heldout topK的task计数分别为32个BT、32个BT、31个BT+1个PB，selected均BT；任务标签不能证明不存在可迁移的grasp/transport技能。
+
+| 固定source | Clean alpha=g | Heldout alpha=g | Heldout减Clean | 两条件valid K |
+|---:|---:|---:|---:|---:|
+| 0 | 0.1904296875 | 0.1943359375 | +0.00390625 | 32/32 |
+| 1 | 0.2197265625 | 0.1923828125 | -0.02734375 | 32/32 |
+| 2 | 0.2021484375 | 0.1904296875 | -0.01171875 | 32/32 |
+
+三者heldout自然有效门均未关闭，既定threshold0.15未调。它不能支持“移除task family即可靠回退”，也不能在尚无独立相关性标签时直接称false activation。执行命令0、独立coverage/局部applicability/SR标签均未测，production cleanup的success=false不计策略失败。本诊断是三个真实固定初始输入的availability response，不替代原200-pair主协议、非劣性或长时序可靠性实验。JSON/Markdown/LaTeX派生表`INITIAL_GATE_PAIRED_ANALYSIS_V1.json`、`initial_gate_paired_v1.*`包含全部原值，未拟合/选择阈值。
+
+终态原始probe、六query记录、两份真实exit0 runner、15项冻结输入、源码/19项检查/预检/encoder资格与准入共87项，档案`initial_gate_availability_two_conditions_terminal_v1.tar.gz`为3,695,916 bytes，SHA `ad2ba6b747e24aa389748422eca50307e0f2132ca849c4113a3dfb6320dcfeb1`，manifest SHA `a906bc33802e625e3c33ae356169cc2891bc24d6a71ac65d5854197bd02f8264`。02:05:48本机全部87项逐项核验通过；收据`INITIAL_GATE_TERMINAL_ARCHIVE_V1.json`与`INITIAL_GATE_TERMINAL_LOCAL_VERIFICATION_V1.json`。原件在Git外，旧首轮/partial/资格件均保留。
+
+### 23.70 两路已知wall-time安全接续，原窗口与固定样本保持
+
+02:01:37 UTC原source1/2 outer2212838/2212839均明确exit-15，reason wall_time_limit；不是策略失败。q48完整候选分别27/28，各另有两个完整Full anchor，summary尚未complete。核实两outer/collector实际不存在、两native lease空、闭环campaign lease空、自然gate operator已明确完成、单H100空闲81,080MiB后，于02:02:35以不变Eb source/spec仅恢复source1/2，PID2226496/2226497。`FRESH_POOL12_KNOWN_LIMIT_CONTINUATION_V4.json`保存prepared-before-dispatch意图、旧terminal哈希、两新PID与spec SHA。source0已完成未重复，原05:44:21 UTC总deadline未重置；本段仍7200秒上限，若先完成则不续跑。
+
+继续优先补齐这两个固定q48及原稿模型/协议对应，闭环下一个固定角色仍case3/Full、seed340800003与08:31:04 UTC campaign截止不变。任何独占Full准入前核查实际两pool进程/lease，不能只看GPU空闲或旧current_iteration。ACP当前仍沿用01:20:39已核实的IAM登录需求和唯一Full b的AFS operator缺失状态，不重复未知创建；未将排队写成活跃训练。新真机取证仍按作者要求延期。
+
+### 23.71 ACP b真实失败与权威路径更正；前置环境诊断保持严格恢复
+
+02:20:01 UTC发现先前若干AFS检查误读`full_resume200_500_v1/attempts/operator.json`；权威路径实际是`full_resume200_to500_v1/operator.json`。因此23.70及旧current_iteration中延用的“operator无/仍排队”不能作为当前判断。真实b UID9c6000a4ce734a7bac717b2053197a1e已于01:24:01启动，01:35:19 runner exit1、operator failed_or_interrupted。日志定位到formal resume状态验证：training_runtime_json与父step200不同，尚未装载续训state；新training_metrics和完成marker均无，step201+更新0。现存日志未列ACP实际子字段，不能推定仅平台/内核变化。原训练snapshot source前后4efb8094…完全一致，原父state/权重未改。
+
+15项真实failed operator/log/config、两项局部output、计划及父attestation已保全：档案`full500_b_resume_validation_failure_20261110_v1.tar.gz`，42,902 bytes，SHA `297839849a449a1c4a4521bf782db2db380e3d50bc3cc9b1bdcd1f960f56de52`，manifest SHA `818d343e3848f6e750314eb6e324e2e4465510b8c53e9ca69515dcc6e146ded7`。原始source、父step200与失败未覆盖，不能登记500或最终性能。02:27浏览器安全核查仍IAM登录，保留原登录页/已有请求，不重复未知提交。
+
+新增只读静态环境probe，模型/数据加载前记录真实Python/platform、Accelerate/DeepSpeed/Torch/CUDA/cuDNN和GPU数量/型号/算力；父attestation SHA严格绑定，差异逐项记录并exit2，没有忽略平台/GPU差异选项，不改原formal validator。8项原生检查通过0.14秒，precommit source前后`adbd844a03fba735ebc6252d8a153ccdd41e107108b973c7c6773163159993fc`。02:30:57实际CCI训练env对原父step200的10项静态事实全部匹配、probe exit0，无model/训练更新；静态匹配不等于live post-prepare数值及全state已验证。见TRAINING_ENV_PROBE_NATIVE_TESTS_V1.json、CCI_STEP200_STATIC_ENV_PROBE_V1.json；ACP实际差异仍待恢复访问后采集，不能写成已修复。
+
+本轮实测AFS可用79,612,583,936 bytes，低于原计划80GiB最低准入，故不启动Full200→500或新pooling训练，不降低既定存储门槛、不删除父state/CAS。原b的01:24起4h窗口不能通过重提交重置。继续有用的固定q48推理，完成后按原窗口接续case3/Full；资源/登录问题不影响已完成诊断与文稿工作。
+
+### 23.72 v5可审阅回复与完整LaTeX/PDF联动验收
+
+三位英文回复v5仍15个comment blocks/20项原意见，新增HH-W5的四query不利centered结果、BB-W3/Q2的两个同父局部0/0/0以及RK-Q2的三对自然gate原值；原task-specialist报告结果保持独立身份。所有20项的修订label/页码已按真实v5 aux刷新，未将已知负结果藏为“尚未测量”，未声称新收益、误激活率或非劣性。
+
+原完整LaTeX工程v5编译37页、主文10页；前10页逐页文本与v4精确相同，所有原数值表和9张图逐项保留。新增Appendix C.2.4位于31–32页，Table20记录4个终态query的118完整/10未知及三参考centered误差，Table21记录三对非空搜索域自然门值。全部37页渲染并检查contact sheet及两新增页，表格无裁切/重叠；无undefined引用/overfull，46项既有font warnings保持。PDF SHA `bd3ad11d86e7533c662c8993a555cffccbe7253b37ebe5c4c5d6c92880cd7dab`。
+
+完整29文件LaTeX ZIP SHA `00d2c61711fa70c231cbad81f22d0b899920ef5c7e07a7532482aa221f086538`，逐文件manifest核验、干净目录独立重编译，37页文本与交付PDF全部精确相同。路径`tmp/rebuttal/responses/20261110_v5`与`tmp/rebuttal/revision/WARM_ICLR2027_v5`；CONSISTENCY_CHECK.json保留未关闭的模型/直接机制/coverage/同信息最终性能门槛，stable_release_ready=false。v4完整保留，未发布OpenReview评论、未上传正式稿。后续新数据须以新补充/版本联动，不能覆盖此候选的已审阅身份。
+
+### 23.73 三source/六固定query全部终态、完整证据核验与v6联动
+
+source2与source1的原q48分别于02:42:55和02:46:34 UTC完成，终态outer均exit0、source前后Eb823404c1…相同，科学core5d7748e7…/runtime a97e308c…保持。03:00:37本机验证新增source1/2全目录和终态runner的1190项，包括全部旧partial/unknown attempts；archive `sources1_2_complete_fixed_q8_q48_v1.tar.gz`为164,629,579 bytes，SHA `fc9115a12d63d920402baf09cda6e378a9533c5fad7f765209c2622599b1afc9`，manifest SHA `b766b64dd58ffaf75111eb9b7b783cf04c90f2f8539573cdd161f8554c1d3da0`。source0的591项e6c8ca48…原包仍完整。传输时一份receipt在远端封包尚未完成而未找到，后来实际终态后补取；早取的archive最终长度/SHA与完整终态一致，全部1190项重验通过，不将缺收据当科学失败或接受未核验包。
+
+六query全部210个terminal branch收据逐项哈希核验，三次Full anchor的原父与端点/效应均精确重复；以`ALL6_FIXED_QUERY_FINAL_ANALYSIS_V1.json`为准，原定192个valid候选，182完整H32/10未知。新source1/q48 predicted/constant/historical centered MSE分别`0.06596692247155121 / 0.04580564611756849 / 0.10692277070395272`；source2/q48分别`0.09446030481532149 / 0.0822927004913579 / 0.13254460274544932`。至此六query的predicted主指标均高于constant，不以absolute MSE或事后校准替代。三source的六父状态均native stage0，不声称跨阶段覆盖或独立candidate样本数；原稿specialist结果保留原身份。
+
+02:49:25 GPU实际0MiB/81,080MiB空闲，三个pool/lease均明确terminal/free，AFS仅73,464,709,120 bytes。验证唯一原ACP f已知停止、自然gate及q48null结束、Full b真实failed、原campaign lease空及next_role恰为case3/full/seed340800003后，于02:51:17按原冻结controller5b9ebd7/source56393c5a…准入下一固定role，outer2230608。spec SHA `623f26451b8ac2f0abe2d9f2db35c2c59a8c05ee68e3d978aaae8e11faf821c7`；worker3600秒、outer5400秒、原08:31:04 UTC总截止不变，准备意图先于派发落盘。此为准入，不是完成第四对或新收益，原所有旧attempts保留。
+
+v6替换v5中的“四query/仍采集”文字与表行，报告全部六query/182完整/10未知。三位英文回复仍15块/20项，原稿原表及九图保持，主文10页与v4逐页文本相同；完整37页工程与29文件ZIP独立干净重编译，37页文本一致。全部渲染、31/32新增表格视觉检查通过，无undefined/overfull，46原有font warnings保持。PDF SHA `b91620c380d4ec270e3ac54ec7e7d252481940f2a7fb2287d4298998ea25cdfd`，ZIP SHA `6137ce24f88cc3e1b2fbbd4a9146eb0f81ef269035dbe3344948e24742491250`。当前候选为responses/20261110_v6和revision/WARM_ICLR2027_v6；v5及更早候选完整保留。stable_release_ready=false，关键模型对应/直接机制/coverage/同信息最终性能未关闭，未发布或上传。

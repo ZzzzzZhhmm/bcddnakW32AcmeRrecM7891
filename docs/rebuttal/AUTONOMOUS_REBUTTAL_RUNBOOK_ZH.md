@@ -1,5 +1,13 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**最新执行与文稿（2026-11-10 03:04 UTC）：** 三路Eb原冻结collector全部exit0，六个固定query终态，192 valid候选/182完整H32/10未知，六个centered主指标均不优于constant。新增source1/2档案1190项fc9115a1…双端核验，与source0的591项e6c8ca48…构成完整三source证据；旧未知/partial均保留。v6英文回复15块/20项与完整37页/10页主文PDF、29文件source ZIP已联动、干净重编译及视觉检查；取代v5成为当前审阅候选，尚未发布/达到实证release gate。case3/Full已02:51:17独占准入，outer2230608，原plan d8512a23…、worker3600/outer5400/08:31:04UTC campaign截止保持。先查真实进程/heartbeat/exit，不再重启已完成pool。
+
+AFS于02:49:25仅余73,464,709,120 bytes，仍不足原80GiB Full续训准入；当前有用GPU工作是case3/Full，训练没有新增update。ACP b的失败权威路径和日志见下一段/台账23.71；不要再次误读其他目录为operator无。优先核对case3真实终态、三source全部结果及原稿模型绑定；随后按原固定顺序补source1/2同父null（不是按结果替换样本）、实际coverage/自然missing-skill与同信息最终对照。真机新取证继续延期。
+
+**最高优先级恢复锚点（2026-11-10 02:31 UTC）：** source0固定q8/q48已完整exit0、591项原件双端核验；两个同父Raw/Full/null query均0，不再等待raw29/final anchor。前三q8加source0q48共118完整H32/10未知，四query的predicted centered主指标均不及constant。三对非空等规模bank自然gate推理全部完成，heldout门约0.190–0.194仍正，87项原件双端核验，不能称可靠回退/误激活率。当前v5回复15块/20项，完整PDF37页/主文10页、29文件ZIP已全工程/干净ZIP重编译及视觉验收；新增Appendix C.2.4公开保留这些单独作用域的不利/未知结果，尚未发布。source1/2原已知wall-time后02:02续跑PID2226496/2226497，原05:44UTC截止不变；必须核查真实终态后再独占下一个case3/Full。
+
+**ACP状态重要更正：** b已于01:24实际启动、01:35失败，权威路径`full_resume200_to500_v1/operator.json`，不是旧检查使用的`full_resume200_500_v1/attempts/operator.json`。失败为formal resume的training_runtime_json不一致，step201+更新0；15项原件SHA29783984…已保全。新静态环境probe原生8通过，实际CCI10项静态事实与父200匹配，但ACP具体差异仍缺，不放宽严格恢复校验。浏览器02:27仍需IAM登录；AFS可用约79.6GB，低于原80GiB准入，因此Full续训/新pooling未准入。详见TRAINING_ENVIRONMENT_RECOVERY_20261110_ZH.md。旧“operator无/仍排队”时点不能作为当前状态。
+
 **最新终态（2026-11-10 01:00 UTC）：** 新q48 null32/post-null Full32已于00:53:28 exit0，两标签0；完整父/RNG/DINO精确，Full端点/效应精确，35项终态档案c685d8c3…双端核验。勿重跑此q48任务。原raw29与pool-final仍pending，继续三路Eb固定K32；闭环完整配对仍3。q8/q48同父局部表已生成（单source、两个stage0状态，无新增收益/跨阶段主张）。v4终态补充12项已在AFS核验，`writing_candidates/20261110_v4_q48_terminal_addendum`，SHA382598a6…；原PDF/LaTeX与英文正文不变。下一步须完成原固定q48依赖，核对投稿模型/协议，同时准备基于既有三个固定source初始query的等规模非空bank自然gate诊断；该诊断不能替代原完整coverage/配对SR主协议。恢复后核查实际进程，不再按下文旧四路running状态重复派发。
 
 **最新前置（2026-11-10 00:34:58 UTC）：** 新source0/q48 null/post-null-Full实际任务已准入，outer2216810，冻结controller9c6fe8d/source0f151abf…，新query时限至01:57:21 UTC。正回放原192命令前缀，H32结果尚无；原选中raw29与pool-final仍为query依赖。原三路pool继续（q48完整候选25/19/20），GPU100%。下一个case3/Full仍固定不变，但其独占准入还须确认这个新q48 outer terminal，不能只看闭环campaign lease空。源码/native13测试与真实q48、默认q8输入资格、六query干预核对及非空等规模bank准备已在65项档案9046ea05…双端保全。实际缺失技能覆盖、自然gate、收益均未据此关闭。
