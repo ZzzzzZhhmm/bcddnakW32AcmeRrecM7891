@@ -1,0 +1,15 @@
+# @package _global_
+
+defaults:
+  - sim_rmbench
+  - _self_
+
+# Independently trained research control; never load Full weights here.
+model:
+  _target_: fastwam.research.pooled_memory_prior.create_pooled_memory_prior
+  retrospection:
+    loss_retrieval: 0.0
+    loss_effect: 0.0
+    loss_gate: 0.0
+    loss_adaptation: 0.0
+

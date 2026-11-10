@@ -1733,3 +1733,11 @@ v10完整PDF7d5489a9…/ZIPa9099b1e…、三份15块/20项回复和原68项abd7c
 15:21:21原q48 AABA通过，四次fresh parent/192尝试上下文精确，三次Full的完整H32物理端点与DINO效应完全相同；预封存原rank0的H32完整，且实际物理关节端点与Full不同。128次候选/anchor执行只含1个独立候选端点，独立policy样本0，适用性标签0。全32池正在同原21:01UTC截止下采集，不能将资格当预测或修复收益。
 
 15:27独立归档已完成的四个不可变branch及封存query、reader/原runtime证明与计划，未打包正在写的operator或未完成rank。43原件5,653,628bytes，archive SHA f470003175fe5c7e116b46dd94d7e5eef16b62ba8acc338f16118371242b644d，manifest SHA3579465f9a70599b03467fc7e419ca9efdbe92bdf355c44361d689b675ba639d；AFS与本机iter8逐项hash核验。原32预测/动作已在truth前封存，rank0不得重复计样本，后续负/未知结果保留。v10/27项工程增量包不覆写，此新收据单独关联canonical状态。
+
+### 23.110 同信息对照原生推理资格入口已实现；不混用Full构造器
+
+在CCI实现独立sim_rmbench_pooled_memory配置，只改为已独立训练的create_pooled_memory_prior及移除机制的四项loss=0，Full默认配置/模型路径保持。原生资格入口固定pool100 checkpoint cbdfcef2…，使用既有Press Button DEV最早episode435、frame0至36每4帧一次的10个记录前缀；未来观测在传入policy前丢弃，只在生成后向history登记真实记录的4条动作。它不加载仿真，不执行模型生成的命令，不用于TEST选点或收益估计。
+
+资格程序将走真实RMBenchWarmPolicy、严格typed checkpoint/合同/encoder/normalizer及生产采样器，读取实际all-K adapter输入、4个池化token和8+4条件token，并保存原始当前RGB/state、模型H32输出、真实历史mask、事件/高斯/输入hash及probe。proprio须与生产_normalize_state结果匹配；frame32/36须确有过去event history，不用零占位替代。只读wrapper原样返回原conditioning对象，结束恢复；真实policy资格仍待运行，不能把单元检查当作通过。
+
+原生新配置与Full保持检查、既有池化模型隔离/梯度/无future teacher等共12项CPU原生测试通过（20.67s），语法检查通过，0优化器更新/0物理命令。实现检查收据ITER9_NATIVE_POOL_IMPLEMENTATION_CHECK_V1.json，原件Git外iter9/AFS保留。实际评测代码将从已训练f9/source48ce6ba8…逐字节复制并仅叠加三个新增入口文件，独立冻结并证明原模型/所有既有源码bytes不改；新训练与原q48继续各自不可变快照，原窗口不变。

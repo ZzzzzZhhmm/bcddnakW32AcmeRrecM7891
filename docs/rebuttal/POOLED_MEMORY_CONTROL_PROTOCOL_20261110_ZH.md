@@ -45,6 +45,8 @@
 
 正式回合的native horizon由实际任务配置记录。原700-command有界诊断仅解释其原固定scope，不自动等于官方回合上限，不能将其0成功推广为完整原生任务失败；新比较须明确终止条件与双方共同的评测协议。此前负结果和未知均继续保留。
 
+原生资格实现进度：独立sim_rmbench_pooled_memory主配置使用真实PooledMemoryPrior构造器并保持四项已移除机制loss=0；新qualify_rebuttal_pooled_online入口固定pool100、既有PB DEV episode435/frame0–36十个前缀，走生产采样器和真实记录历史，保存当前输入/历史mask/all-K字段/12条件token/H32输出hash。无生成命令执行、无仿真或SR。12项原生配置/池化检查通过，实际policy加载与十前缀资格尚未执行；须读终态与完整轨迹后登记通过。原f9训练模型代码将逐字节保留，新入口文件单独叠加和哈希冻结。
+
 最终提交`f9f1090`的Linux Git快照source为`48ce6ba809788fc1c2c55b5303cc9617e2852050dd2bd8e104dc8192ee98e358`。预检快照其余464个文件仅CRLF/LF不同，全部源码经行尾规范化后相同，六个本轮实现/检查文件原始bytes相同；最终Git快照又独立通过45项原生检查（19.72秒）。原预检source5347088c…保留原身份，不混写成同一字节源码。
 
 已确认当前author recipe为shared-stage，而原稿RMBench使用逐任务specialist。新计划是共同shared阶段的研究对照，不称原稿逐任务协议的完全匹配复现，详见`CHECKPOINT_SCOPE_AUDIT_20261110_ZH.md`。旧Full b与固定v8任务的原窗口、模型身份和终态均保留；当前新phase及实际活动任务以文件头/canonical为准，不按结果改模型。
