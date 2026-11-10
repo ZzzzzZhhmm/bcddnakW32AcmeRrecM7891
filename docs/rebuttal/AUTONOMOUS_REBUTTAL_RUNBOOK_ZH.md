@@ -1,5 +1,12 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**最新恢复锚点（2026-11-10 10:06 UTC）：** v8已合入原specialist/event-own监督和shared-stage/common-query正则的scope澄清，主文/附录/Hh4E W5一致；15块/20项、29源文件、37页/10主文，完整+干净ZIP编译和修改页视觉验收，PDF1a3b9588…/ZIPf79409f9…。当前回复/矩阵均转`responses/20261110_v8`，旧v7和addendum2不可变。原稿所有数字与9图保留；原DEV、全部原机制cohort模型绑定及直接原模型收益仍未关闭，不发布。
+
+四个原稿run已原代际strict load实际完成：BT/PB/Cover12000、BRT14000，完整weight hash前后匹配、原source不变，DEV点未知。BRT原推理projection b8abf8f6…和DINOruntime2f3e5d29…精确匹配。一次原生replan资格v1漏图形环境、v2导入instruction模块错误，均0推理/0命令且原件保全；v2完整原策略实际加载成功。v3已10:04:18按原首seed0及原10:39:57UTC截止准入outer2289230、helper6b1b6670…，先读`original_brt_one_replan_v3/operator.json`/runner/exit/真实进程，不重跑未知状态，不以资格当性能，不重置窗口。v3仅改用官方generate_episode_instructions并前置原文件hash校验，原模型/数值合同不变。
+
+RB原08:31UTC窗口已单独核销：6完整700/700均0/0、4pending，原active字段陈旧且无进程，勿重置或补新role。ACP precision b已缺GPU停止、std2已限额停止、c未提交且取消，无新201+metrics，Full/control仍200、all-Kcontrol0。原500段10:59:12UTC窗口及7200秒启动门槛不变，08:59启动门槛已过，勿再用此plan创建。看`RB_ORIGINAL_CAMPAIGN_WINDOW_CLOSED_V1.json`、`ACP_ORIGINAL500_ATTEMPTS_CLOSED_V1.json`、台账23.88–23.91；11项bd9e2c08…原件双端核验。下一计算优先完成原模型实际推理，再同状态候选后果/Full-null直接执行；新训练需独立冻结适当资源段，不能把旧排队称为训练。新增真机取证继续延期。
+
+
 **当前接续（2026-11-10 08:03 UTC）：** 原BT12000/f77及PB12000/472两模型已native strict load完成exit0，实际完整权重hash加载前后与原attestation一致；两份9项原件1f9fddd6…/90071fee…双端核验。它们仅资格，0推理/0训练/DEV选点未知，不重跑。固定顺序Cover12000资格08:02:12准入outer2273018，原472 source4a…、2400秒至08:42:12，先查`original_specialist_cover12000_native_load_v1/operator.json`/runner/lease/exit，不与它竞争GPU；BRT14000是其后的资格项。
 
 ACP trace-v2 a已实际失败，07:37原样capture只见两差异：父false/highest，当前true/high；原strict validator拒绝、更新仍200，16项1140e326…保全，勿重提a。真实Torch2.7环境敏感性检查通过后，新precision-v3 planfb963b4a…仅export TORCH_ALLOW_TF32_CUBLAS_OVERRIDE=0恢复父记录；observer7a…/training4efb…/原validator/数学配方/父200不变，SAME原06:59→10:59:12UTC绝对截止（epoch1794308352），不重置，启动至少余7200秒。07:55标准实际GPU成员配额0拒绝后，07:57:24唯一闲时b创建，UID34bc101c7e26432785ac66b87a75ddd6、cluster02/1GPU22CPU230GiB/restarts0、确认镜像AFS，尚排队。先查`full_resume200_to500_precision_v3/operator.json`、实际runtime和201+metrics，不重复创建或把排队称新训练。

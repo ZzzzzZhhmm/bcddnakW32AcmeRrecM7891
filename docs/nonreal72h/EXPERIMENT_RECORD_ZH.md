@@ -1556,3 +1556,41 @@ BT12000原f77/config strict load于07:39:54成功、runner07:39:58 exit0；完�
 固定顺序PB12000原472/config于07:48:20准入outer2270732，07:56:00严格加载成功、runner07:56:02 exit0；完整SHAa765d987…与source4a1d05cb…加载前后一致，同样0推理/0训练。9项31,526 bytes，SHA `90071fee953d99fa767dcabdb67415b375a262b2e216a10d97b7ba3481d717cb`，manifest619b3f1c…双端逐项核验。PB runner说明复制残留BT字样，实际绑定路径/config/source/attestation/weight均为PB；原收据保留，核验收据明确澄清，不重跑已成功模型。
 
 两份原模型资格不构成DEV选点、在线推理、任务成功率或修复收益。完成后按固定顺序08:02:12准入Cover12000原472/config资格，outer2273018、2400秒至08:42:12UTC，helper9e8d5dd6…、spec44d9dd55…。原RB campaign仍6完整0/0、4pending、08:31UTC原截止不变，BRT资格尚未执行。20项addendum2映射与W5实施边界同步；英文W5候选/LaTeX片段未合入PDF，原v7及所有数值保持。
+
+
+### 23.87 Cover原模型严格加载完成与原campaign窗口结束
+
+08:26:31核对Cover12000原source472/config：实际08:09:53完成、runner08:09:56 exit0；原配置SHA20379996…、attestation8b2491ef…、完整权重SHA2b59a397…由原loader加载前后核实，source4a1d05cb…前后不变，0训练/0推理。9项31,557 bytes，archive SHA `5b1b8cf4da6bbe5a31b7825dc36adaca95c16e0d67cbae9080c7780281da3b17`，manifest `c016090e9fe65a080f9b7f6f6d1e3dd69008740be8f52d8ada71c1861b6e33ff`，本机/AFS逐项核验。原DEV点仍未知，加载资格不构成任务成功或机制收益。
+
+按固定四run顺序，旧Cover进程退出、完整收据和GPU可用核实后，08:29:57准入BRT14000/f77原源码/config资格，outer2277431，固定2400秒至09:09:57UTC，helper1f48faad…、spec3f414c03…，不迁移v8、不按新结果选点。原RB campaign的08:31:04UTC窗口独立保持；截至08:26核对6个完整配对均0/0、余4pending，窗口结束后不追加角色或重置。新BRT资格是独立工程任务，不续开原科学cohort。
+
+ACP b（UID34bc101c…）08:29:57 Worker仍等待、无Host/Pod，08:32事件明确FailedScheduling：insufficient nvidia.com/gpu1，已约34分钟；AFS operator与201+metrics仍无。没有新训练。将仅在确认等待状态及已停止终态、排除任何AFS启动产物后，按同一冻结plan/绝对10:59UTC窗口尝试其他允许集群；未知状态不复制，原排队失败与退出收据保留。
+
+
+### 23.88 四个原稿任务模型均已原代际严格加载；BRT原推理合同通过
+
+原BRT14000/f77资格08:29:59开始，08:37:47完成，outer exit0；完整权重SHA `515ecad0e9c428a0c005ce330ff7e5119bd032f86701e4700454b7d149569f40` 加载前后均与原attestation匹配。原f77 source `ff32342d286929ddc5904d55814c66e965269f6b749c1e1b6df1060aaef0b7fe` 不变，v3/timing4，不迁移v8。9项archive `7fbc3e8d7e00315a54516cf5c810dad204202ff79c78d7e355e631760c56a709`、manifest `062a223d3e24e6661ee601a63ca008c22c370fa70ec5765aa8f259ece35d3fa0` 本机/AFS逐项核验。连同BT12000/PB12000/Cover12000，现在固定四run均实际strict load完成；仍是工程资格，不是恢复原DEV选点、原准确率或机制收益。
+
+BRT已存在的compat bundle以原源码重新解析：全部20项asset路径可访问，静态训练/评测合同、seed协议、原权重与M1接口校验通过；实际推理projection SHA `b8abf8f6fbe764988e27bd6e9fb1556712db6ceec2ddcde72edb5aef84b5ec4d` 与历史精确一致，DINO runtime SHA `2f3e5d2979f2fbb3063da65d25a49d15fb4c3a19b52fcf329879fa87fbcb9e01` 也精确一致。没有数值合同豁免。Git身份仅来自完整hash核实的冻结原archive，未让eval依赖Git远端或dirty状态。
+
+### 23.89 原闭环窗口核销与ACP资源尝试终止
+
+原RB窗口2026-11-09 20:31:04至11-10 08:31:04 UTC现已结束，另建 `RB_ORIGINAL_CAMPAIGN_WINDOW_CLOSED_V1.json`，未改原campaign state。真实锁可取得、旧active_pid不在；原状态中的active字段仅是旧记录。固定case0–5共6个完整Full/null配对，各700命令，均0/0；case6–9保持4个pending，不能计失败，不能重置窗口续采或据局部0/0声称非劣。
+
+ACP precision-v3 b UID34bc101c7e26432785ac66b87a75ddd6 的实际FailedScheduling仅证明缺GPU，08:40:27确认已停止；原stop文案误带PVC/静态probe字样，派生记录明确不据此声称PVC故障。重新尝试标准资源std2 UID39706c72dd694c42b4175c560be877ab，08:48创建、08:50实际限额中且零分配实例，08:53:04确认已停止。不得把实例0误称本次测得的成员配额数值。后续c表单在目标闲时集群显示0可用卡，09:16:14取消，未提交、未创建job。标准/闲时均没有GPU执行。原06:59→10:59:12UTC资源段及7200秒启动余量保持；08:59启动门槛已过，不再用此plan创建任务或重置时钟。
+
+09:58:50 AFS实际核查precision-v3 operator目录及201+metrics仍无；Full/已有control仍200，all-K同信息control仍0。本轮已知ACP训练job均终态，无新update。11项窗口/终态原件archive `bd9e2c08709f322d404c8cb179fbd7a0a5aa1cd1ce28702cddd8928606a76b64`、manifest `7d657c6d95341874859ccf5bc522e164d36f9890a77368d03c48cf8d605350b9` 本机/AFS核验。后续若安排新的训练研究，须另冻身份、预算与窗口，不能伪装本段resume成功。
+
+### 23.90 原BRT完整在线策略资格：失败保全与同窗口修复
+
+09:39:57独立准入原BRT14000/f77的一次Full replan及四条native命令资格，固定采用原候选协议的首seed0，原绝对截止10:39:57UTC，非SR/修复率实验。v1因操作程序未带已验证图形环境，09:40:43在renderer初始化失败；0推理/0命令，保留原exit。v2仅恢复已有进程专用Vulkan/EGL库，09:45:46准入；固定seed专家初始化成功，原完整RMBenchWarmPolicy实际装载成功、权重/原数值合同/DINO均通过。随后10:01:03因操作程序instruction generator导入路径写错退出，0推理/0命令，不能称在线推理已通过。
+
+静态合同与第一次失败24项archive `24596772f73b144d037f58296965ff641a9a0086528d473747a3e7124a956a19`、manifest `d7bd2061e1a95a710b3704fc978d12e00fb9ec79be17954e0971d4e214f767e7`；v2失败13项archive `25ae8a3ab752a8e4b295934af80cca5bed30c9ec865fb89eb8fdbf5ee7f547b3`、manifest `ae7847d26811a395e9045698bd9e1b0017f256551f69c02cde8b1e27255a930a`，均双端逐项核验。修复v3改用原官方现有generate_episode_instructions模块，将该模块及BRT instruction template与原checkout逐文件hash校验前置，避免再次在昂贵加载后才发现导入错误；不改原模型数学、配置或样本。10:04:18准入outer2289230，helper `6b1b66701bc682359853d479d02fc9b465da95e924b23af311601138f9bd953a`，spec `74004d0885c37438ea7bb4f44da0b1fc713236bd5c091c84d3db9c4d3a74515f`，剩余2139秒、仍在原10:39:57UTC截止。先查实际operator/进程/exit，不提前把资格或执行中写成收益。
+
+### 23.91 v8主文、附录与20项回复已联动；完整工程验收
+
+`responses/20261110_v8`的15块英文正文覆盖20项意见；v8主文和Appendix A.4已合入原源码target澄清：四个已审计specialist以各event自身observed_effect为目标，shared-stage update3000的factual加公共query regularizer单独说明，不再将后者套用于前者。原事件目标输入同样可存在复制历史效果的退化，两个objective都不能单独保证当前状态反事实识别；候选预测与生成修复须依赖独立执行检验。Hh4E W5同步，原提交受控结果、shared-stage六query不利/未知及其各自范围完整保留。
+
+完整原LaTeX 29文件、干净ZIP独立重编译、37页逐页文本一致；主文仍10页，所有原数字表及9图字节保持。37页均render，全页contact及修改页6/19–25逐页视觉核查，无截断/重叠/表溢出、无未定义引用、无overfull，46条继承font warning不增。CCI没有pdflatex的一次工程build失败原件保持；正式两次成功编译在本机既有WSL TeX环境完成，不将远端失败写成通过。
+
+PDF `tmp/rebuttal/revision/WARM_ICLR2027_revision_v8.pdf` SHA `1a3b9588f41586cbb1df8545ce059da816c9bd44c6ae2c6a76f53781ed70eed1`；source ZIP `f79409f9d7c27007007ea345eee9de67d3b1e1de9492d39b3ce8db36e4f9fa10`。这关闭已发现的监督描述不一致，但原DEV/全部机制cohort代际绑定、原模型候选后果/修复、非空missing-skill与公平最终训练证据仍是release gate；本版未发布，不把工程资格记为新科学收益。原33页投稿与v7均保留。

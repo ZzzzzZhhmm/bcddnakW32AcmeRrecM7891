@@ -1,0 +1,9 @@
+# WARM rebuttal v8审阅候选
+
+v8修正四个已核对原specialist的event-own效果目标与shared-stage公共query正则的描述，将主文、附录A.4、Hh4E W5及全部20项问题映射联动。原稿核心机制、所有数字表及9图保持；两种目标都不被宣称为当前状态反事实真值，实证继续依靠独立候选执行。
+
+本机交付：`tmp/rebuttal/responses/20261110_v8`三份英文正文、15块可粘贴回复、20项矩阵；`tmp/rebuttal/revision/WARM_ICLR2027_v8`完整LaTeX工程，PDF `WARM_ICLR2027_revision_v8.pdf` SHA1a3b9588f41586cbb1df8545ce059da816c9bd44c6ae2c6a76f53781ed70eed1，source ZIP SHAf79409f9d7c27007007ea345eee9de67d3b1e1de9492d39b3ce8db36e4f9fa10。
+
+完整/干净ZIP两次编译共37页、主文10页、29源文件，37页文本逐页一致。所有页render、全页contact和修改6/19–25页逐页视觉验收通过。无未定义引用/overfull，继承font warnings46不增，匿名作者/metadata检查通过。`CONSISTENCY_CHECK.json`及`qa_v8/FINAL_VERIFICATION.json`保存验收；原33页投稿与v7不变。
+
+原四run strict loading、精确runtime合同和固定seed专家初始化目前是工程资格，不是新的后果预测或修复收益。独立保留shared-stage全部六query的不利/未知结果、六完整零闭环配对及四pending。原DEV选点、其他原机制cohort代际绑定、原模型直接机制收益、非空missing-skill与同信息最终训练对照仍未关闭，stable_release_ready=false。不得发布评论或上传正式修订。下一步按current_iteration恢复真实原模型进程，并根据完整原始结果继续迭代。

@@ -24,3 +24,8 @@ v7完整PDF、LaTeX和回复保持不可变。新增`responses/20261110_v7_engin
 
 
 08:03 UTC接续：BT12000与PB12000已经分别用原f77/472 factory与原config完成strict loading，实际完整checkpoint SHA在加载前后重算并匹配原attestation，source前后不变。两份9项工程档案1f9fddd6…/90071fee…双端核验。这使“两份已核实可加载的原代际权重”从metadata候选变为实际加载事实；仍不确定原DEV点，仍无在线推理或任务收益。Cover原代际资格已独立有界准入，BRT按固定顺序随后处理。
+
+
+10:06 UTC更新：四个原任务run的固定末次权重现在均已实际native strict load，完整checkpoint hash在加载前后匹配原attestation，不再仅是元数据候选。Cover/BRT新增9项档案分别5b1b8cf4…/7fbc3e8d…；原DEV点仍未知，不据新结果选点。BRT原完整在线RMBenchWarmPolicy亦实际加载成功，原runtime projection和DINO数值合同匹配；随后操作程序instruction导入错误退出，推理0，失败保全。原窗口v3修复仍须查实际终态。
+
+监督澄清已合入v8完整主文与Appendix A.4，以及Hh4E W5；不再只是一份LaTeX proposal。37页/10主文完整工程及干净ZIP编译、视觉检查通过，原表数值与9图保持。新段指出event目标也存在复制历史输入的退化，不能因不同候选target不同就声称反事实已识别。全部原机制cohort的代际/DEV绑定及原模型独立执行仍是实证gate。v7/旧addendum2保持不可变，当前20项映射转v8。
