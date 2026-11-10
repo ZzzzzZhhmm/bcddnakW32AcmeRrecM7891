@@ -28,3 +28,34 @@ def test_foreign_or_missing_instruction_field_is_rejected():
     from scripts.qualify_rebuttal_pooled_online import recorded_instruction
     for sample in [{'text':'not the native field'},{'task':None},{'task':''}]:
         with pytest.raises(ValueError,match='task instruction'):recorded_instruction(sample)
+
+
+def test_source_only_observer_delegates_without_legacy_probe_or_mode_change():
+    from dataclasses import dataclass
+    from types import SimpleNamespace
+    import torch
+    from scripts.qualify_rebuttal_pooled_online import capture_native_replan
+    @dataclass
+    class Context:
+        candidate_actions: torch.Tensor
+        target_action: object=None
+        target_effect: object=None
+        current_semantic_teacher: object=None
+        future_valid_mask: object=None
+        target_action_valid_mask: object=None
+    class Model:
+        mode='source_only_no_consequence'
+        def _resolve_action_source(self,**kw):
+            self.received=kw
+            return SimpleNamespace(source=kw['base_gaussian']+1,conditioning_tokens=torch.zeros(1,12,4))
+        def infer_action(self,**kw):
+            self._resolve_action_source(base_gaussian=kw['base_gaussian'],action_source_context=kw['context'])
+            self.original_output={'action':torch.zeros(32,14)}
+            return self.original_output
+    model=Model();policy=SimpleNamespace(model=model);gaussian=torch.randn(1,32,14);ctx=Context(torch.ones(1,32,32,14))
+    with capture_native_replan(policy) as captured:
+        value=model.infer_action(online_step='fixed',base_gaussian=gaussian,context=ctx)
+    assert value is model.original_output and model.received['base_gaussian'] is gaussian
+    assert torch.equal(captured['base_gaussian'],gaussian) and captured['source_calls']==1 and captured['infer_calls']==1
+    assert model.mode=='source_only_no_consequence' and not hasattr(model,'_warm_research_probe')
+    assert 'infer_action' not in vars(model) and '_resolve_action_source' not in vars(model)

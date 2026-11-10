@@ -1755,3 +1755,11 @@ v10完整PDF7d5489a9…/ZIPa9099b1e…、三份15块/20项回复和原68项abd7c
 Full外层减去retrieval total的逐条剩余区间mean/median/p95=485.1571/488.1040/526.1863ms，只是其余完整重规划工作，包含当前观测处理、历史、source构造、采样和telemetry；不能称WARM机制模块的独立耗时，不能据此给出因果模块开销。均值可按所定义区间相加，median/p95不可相加。Full为原shared-stage3000权重68c7f384…，不是原specialist或新匹配训练；无新GPU benchmark/新SR/MemoryWAM计时。
 
 完整13项原始计时/telemetry/manifest/summary、逐query CSV、分析脚本与报告归档18faa5c1012db390f3041829b13d880a10cd4a11c092085c8dfe8d2029a9556c，manifest63121aa5…，AFS与本机iter9保存；本机逐成员复核另记。该证据可支撑BB-W5/Q4、HH-W2的明确retrieval阶段成本说明，不能替代尚缺的精确模块消融或MemoryWAM对照。
+
+### 23.113 DEV数据10前缀通过；Full专用探针不适用于source-only对照
+
+字段修复后，原episode435/frame0–36十前缀全部通过，data-only runner16:10:02正常结束。20原件归档dd307f958312022ad17fd4ea30a88d21bedfc9ef604dcd582e78a73a0cc6d22a、manifest0068d979…，无policy加载、无生成命令执行。首个旧字段失败10原件f6b20267…亦保留。GPU-v2沿计划12cbbca9…在16:12独占CCI准入，仍同17:27:52UTC截止。
+
+GPU-v2已完成真实RMBenchWarmPolicy构造、严格pool100权重及独立schema检查，进入frame0生成后被旧research probe的Full-only guard拒绝；16:20:28 runner exit1，0完整replan/0生成动作输出/0物理命令。Video DiT prefill曾运行，不能写成0GPU执行。原因是独立对照正确使用source_only_no_consequence，而旧探针要求legacy full；不是切换对照算法到Full的理由。
+
+在CCI移除采集器对Full probe的启用，改用原样委派的只读infer/source观察器：直接记录传入base_gaussian、实际source、条件token与无未来teacher的context，返回原对象且还原包装；原source-only模式、模型文件、权重及数学路径保持。新增非Full观察器不启用legacy probe、委派一次和恢复属性的测试，共15项原生检查通过（21.59s）。新helper单独冻结、后继GPU新输出，保留原失败/数据与原17:27:52窗口，不把严格装载或单元测试写成完整十前缀资格。

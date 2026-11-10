@@ -5,6 +5,7 @@ Real policy inference, causal recorded history and independently trained weights
 no simulator, generated-command execution, TEST selection or efficacy estimate.
 """
 from pathlib import Path
+from contextlib import contextmanager
 import argparse,datetime,hashlib,json,os,sys,traceback
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -17,6 +18,38 @@ def recorded_instruction(sample):
     if not isinstance(value,str) or not value.strip():
         raise ValueError('Native current task instruction unavailable')
     return value
+
+
+@contextmanager
+def capture_native_replan(policy):
+    """Observe the actual source-only sampler without enabling Full probes."""
+    from fastwam.research.query_capture import clone_inference_context
+    import numpy as np
+    model=policy.model;old_infer=model.infer_action;old_source=model._resolve_action_source
+    had_infer='infer_action' in vars(model);had_source='_resolve_action_source' in vars(model)
+    record=dict(infer_calls=0,source_calls=0)
+    def source(*a,**kw):
+        record['source_calls']+=1
+        record['context']=clone_inference_context(kw['action_source_context'])
+        record['base_gaussian']=kw['base_gaussian'].detach().clone()
+        value=old_source(*a,**kw)
+        record['source']=value.source.detach().clone()
+        record['conditioning_tokens']=None if value.conditioning_tokens is None else value.conditioning_tokens.detach().clone()
+        return value
+    def infer(*a,**kw):
+        record['infer_calls']+=1;record['online_step']=kw['online_step']
+        value=old_infer(*a,**kw);action=value['action']
+        record['action']=action.detach().float().cpu().numpy().copy() if hasattr(action,'detach') else np.array(action,copy=True)
+        return value
+    model.infer_action=infer;model._resolve_action_source=source
+    try:
+        yield record
+        if record['infer_calls']!=1 or record['source_calls']!=1:raise RuntimeError('Exactly one actual native replan required')
+    finally:
+        if had_infer:model.infer_action=old_infer
+        else:del model.infer_action
+        if had_source:model._resolve_action_source=old_source
+        else:del model._resolve_action_source
 
 
 def main():
@@ -68,8 +101,7 @@ def main():
         from scripts.run_warm_rmbench_matrix import load_matrix,select_experiments
         from fastwam.datasets.lerobot.base_lerobot_dataset import BaseLerobotDataset
         from fastwam.memory.manifest import sha256_array
-        from fastwam.research.evidence import append_record,write_probe
-        from fastwam.research.query_capture import capture_online_replan
+        from fastwam.research.evidence import append_record
         from fastwam.research.pooled_memory_prior import PooledMemoryPriorFastWAM,POOLED_SCHEMA
         from experiments.rmbench.warm_policy.deploy_policy import RMBenchWarmPolicy,_normalize_state
         ba=builder.build_parser().parse_args(read(plan['bundle_args']))
@@ -134,7 +166,6 @@ def main():
         if not isinstance(policy.model,PooledMemoryPriorFastWAM):raise ValueError('Incorrect model constructor')
         if policy.checkpoint_sha256!=plan['checkpoint_sha256'] or policy.model._retrospection_state()['schema']!=POOLED_SCHEMA:
             raise ValueError('Typed trained pool100 checkpoint differs')
-        policy.model.configure_research_probe(capture=True,force_null=False)
         observed=[];conditioning=[]
         def tensor_info(v):
             return dict(shape=list(v.shape),dtype=str(v.dtype),sha256=sha256_array(v.detach().cpu().contiguous().view(torch.uint8).numpy()),
@@ -159,7 +190,7 @@ def main():
             def get_instruction(self):return instruction
         for frame,obs,commands in cached:
             budget();observed.clear();conditioning.clear();state.update(status='native_policy_replan',active_DEV_frame=frame);save()
-            with capture_online_replan(policy) as captured:policy._replan(obs,Instruction())
+            with capture_native_replan(policy) as captured:policy._replan(obs,Instruction())
             actions=np.asarray(captured['action']);step=captured['online_step'];context=captured['context']
             if actions.shape!=(32,14) or not np.isfinite(actions).all():raise ValueError('Native H32 output is invalid')
             if not observed or any(v['gist_tokens']['shape'][:2]!=[1,8] or v['candidate_valid_mask']['shape']!=[1,32] for v in observed):
@@ -170,13 +201,20 @@ def main():
                 raise ValueError('Actual sampler 8-history plus4-pooled condition route differs')
             expected=_normalize_state(obs['joint_action']['vector'],policy.processor).to(dtype=policy.model.torch_dtype,device=policy.model.device)
             if tensor_info(expected)['sha256']!=observed[0]['proprio']['sha256']:raise ValueError('Actual current proprio binding differs')
-            probe=write_probe(out/'probes',f'frame{frame:04d}',captured['probe'],dict(recorded_DEV_frame=frame,checkpoint_update=100,scope='engineering_only'))
+            from dataclasses import fields
+            payload={v.name:getattr(context,v.name).detach().cpu().clone() for v in fields(context) if torch.is_tensor(getattr(context,v.name))}
+            payload.update(base_gaussian=captured['base_gaussian'].detach().cpu().clone(),actual_source=captured['source'].detach().cpu().clone(),
+                actual_conditioning_tokens=captured['conditioning_tokens'].detach().cpu().clone())
+            path=out/f'native-source-frame{frame:04d}.pt';torch.save(payload,path)
+            probe=dict(path=str(path),sha256=sha(path),legacy_Full_probe_enabled=False,observers_return_objects_unmodified=True)
             np.save(out/f'actions-frame{frame:04d}.npy',actions,allow_pickle=False)
             row=dict(recorded_frame=frame,derived_seed=int(step.derived_seed),output_shape=list(actions.shape),output_sha256=sha256_array(actions),
                 model_input_sha256=step.model_input_sha256,proprio_sha256=step.proprio_sha256,candidate_payload_sha256=step.candidate_payload_sha256,
                 context_key_sha256=step.context_key_sha256,bank_rows=step.bank_rows.tolist(),valid_candidates=int(step.candidate_valid_mask.sum()),
                 episode_event_history_valid=int(context.episode_mask.sum()),episode_action_history_valid=int(context.episode_action_mask.sum()),
-                actual_adapter_calls=observed.copy(),actual_sampler_conditioning=conditioning.copy(),probe=probe,generated_commands_executed=0)
+                actual_adapter_calls=observed.copy(),actual_sampler_conditioning=conditioning.copy(),probe=probe,
+                base_gaussian_sha256=tensor_info(captured['base_gaussian'])['sha256'],actual_source_sha256=tensor_info(captured['source'])['sha256'],
+                legacy_Full_probe_enabled=False,generated_commands_executed=0)
             append_record(out/'queries.jsonl',row);rows.append(row)
             policy.queue.clear()
             for command in commands:
