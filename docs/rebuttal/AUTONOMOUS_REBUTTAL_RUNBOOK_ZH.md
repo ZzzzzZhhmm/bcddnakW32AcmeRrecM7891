@@ -1,5 +1,13 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**最高优先级恢复锚点（2026-11-10T15:23:53.744880+00:00）：** 当前v10三份回复/15块/20项、37页/10主文PDF7d5489a9…与29源码ZIP不变，原68项包abd7c31b…保持。另有工程增量1，27项包e07a6037…/manifest acc57600…已双端逐项核验，20项矩阵3081492e…位于responses/20261110_v10_addendum1与AFS writing_candidates/20261110_v10_addendum1。增量不改论文/回复/原q8负结果，也不声称实证闭环。
+
+三项实际活动：Full标准95e49547…（原v1输出/observer H7a，日志至849、新649更新，durable仍200）；pool标准c852e8e2…（新v2输出，plan fe595b17…、operator H523/source1b96f3b8…、模型原f9/source48ce6ba8…，父100，本次新20更新）；原q48标准96aea940…（新v3输出/plan a22a8fe8…、collector原H695）。原q48 AABA已通过，正在固定K32候选采集，此时4个封存分支/1个完整独立候选端点，还不能算完整32池。先查AFS真实runner/heartbeat/退出与封存收据，不重复创建。训练SAME Nov11 12:29:56UTC；q48 SAME Nov10 21:01:03UTC，不能重置。
+
+旧pool f31fd1c5…在创建输出前因JSON字符串/Path类型错误失败，8行实际ACP离线堆栈与CCI preflight保留，0更新。源523修复后13原生测试及真实父状态预检通过，模型/训练数学不改。旧q48-v2 UID25fdd1b8…因strict encoder runtime mismatch exit1，12项原件5097d7b9…完整保全；v3显式override0后的实际完整runtime hash与原合同2f3e5d29…完全相同，未改runtime对象或放宽reader。浏览器最后401会话提示不影响已启动任务；先用AFS核查，下一次需要创建时重建登录会话，不盲重提。
+
+下一高价值工作：确认pool真实101+更新和Full连续进度；q48完整固定32及末Full anchor完成后立即完整原件归档/同支持集MSE，再原q96。等待训练时先用pool100做明确typed原生推理/真实history和all-K输入资格，不能把训练完成等同在线policy能用，不能将pool交Full构造器。完整final3000及冻结匹配评测、自然missing-skill覆盖/闭环、同状态修复/撤回与MemoryWAM模块效率仍开放。原DEV选点/机制cohort绑定待作者答复。新增真机/视频审计延期，无需重复索取。stable_release_ready=false，禁止自行发布。
+
 **14:08 UTC之后恢复锚点：** pool100已exit0、真实typed checkpoint cbdfcef2…/完整state完成，V2无损CAS验证通过（raw TAR f132c9a5…、38.53GB，新增CAS13.53GB），路径POOL100_COMPLETE_ARCHIVE_V2/archive_receipt.json。旧V1只是归档校验误把冷启动null当0、未重训且失败保留。下一步用新明确pool角色操作器恢复100→3000，先核对任何未知创建/新plan，SAME master7526a475…/11月11日12:29:56UTC截止、共同配方不变；检查余量，原Full95e49547…仍活跃，不重提。
 
 原q48 prefix两遍已完整exit0，唯一index101拒绝，所有sourceAPI/RGB/跨遍物理与parent/RNG精确，15原件378d8a0c…双端核验。新的prefix绑定源981c5243…仅复现此显式事实失败，不放宽任何H32候选判定。真实清单预检+3篡改拒绝均通过，0新候选truth。q48新attempt必须显式plan修订并保持SAME21:01:03UTC，AABA认证后完整K32，长任务交ACP；旧v1失败b29ff2d1…不可覆盖。当前v10完整68项包abd7c31b…保留，原q8负结果/29完整3unknown在Table22，尚无新增预测/修复收益。真机新增仍延期。

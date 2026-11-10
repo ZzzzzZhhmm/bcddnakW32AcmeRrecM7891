@@ -5,3 +5,6 @@
 英文三份/15块/20项见tmp/rebuttal/responses/20261110_v10，完整29文件原LaTeX工程WARM_ICLR2027_v10及sourceZIP。PDF SHA7d5489a9ea85b25cbc87874904aea0f52a81dee2828439ef023399a14b90abca，sourceZIP SHAa9099b1e256f16001b74e3615d00db1594029ec14cfe32c8f90b5f5db1e86d57。完整/干净ZIP两次编译37页/10主文，37页文本一致；所有原实验tabular数值和9图保持，引用/overfull/匿名性检查通过，46条继承font warnings不增。37页render/contact及全部8个变化页单独视觉验收，新增Table22数值从独立原件核对。
 
 两项标准ACP实际训练已开始更新，最终3000及匹配评测尚未完成。原q48在事实前缀重放中遇到TOPP拒绝，未生成新branch端点；先归档失败并审计source执行上下文，不放宽候选有效性或换query。原DEV/其余cohort绑定、直接后果/修复、自然missing-skill与公平最终比较仍开放。v9及原33页投稿保持，stable_release_ready=false，未发布评论或正式上传；真机新增仍延期。
+
+
+工程增量1（2026-11-10T15:23:53.744880+00:00）：responses/20261110_v10_addendum1新增20项内部证据状态与矩阵，27项包e07a6037…已双端核验。只补prefix两遍、pool100训练/无损、实际ACP恢复/失败及部分进度，三份回复、原PDF和原v10包保持。当前Full至849、pool本次20新更新；q48AABA已通过，正在固定K32候选采集。这些不提供已完成最终比较或机制增益的结论。最新可恢复状态以canonical current_iteration为准。

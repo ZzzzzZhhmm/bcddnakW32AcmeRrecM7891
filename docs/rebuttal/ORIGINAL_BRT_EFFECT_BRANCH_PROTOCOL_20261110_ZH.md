@@ -33,3 +33,8 @@ A-A-B-A通过后，按原valid rank顺序执行其余31候选，复用已完整�
 ## q48已审计的事实失败与后续执行边界
 
 新两遍审计确认：source192尝试可精确重现，index101的原生TOPP拒绝也确定性复现，全部源API/每4步RGB和跨遍实际物理一致。只对事实历史使用独立hash清单允许复现这一已记录失败；不移除/重试该命令，不将它标为有效。Collector读取两份完整pass、源trace/query/frame及final native parent，任何新异常或缺失的预期异常立即失败；H32反事实候选仍用原严格guard，invalid/early保持unknown。无清单的q8路径不变。新q48修订保留原失败、同source/rank0和21:01:03UTC截止，ACP必须先完成原AABA检查再全K32。该工程修复不提供预测或修复优势。
+
+
+## ACP同原runtime继续q48（2026-11-10T15:23:53.744880+00:00）
+
+新v3/plan a22a8fe8…/标准UID96aea940…绑定原manifest278dd78e…，不改source/rank/seed/H32或21:01UTC绝对截止。前一ACP-v2 strict runtime失败0端点、12原件5097d7b9…已保全。显式override0后的完整实际encoder运行环境hash与原合同2f3e5d29…完全相同，runtime对象未修改，不能假定旧未记录变量。当前AABA已通过，正在固定K32候选采集，4个封存分支/1个完整独立候选端点，未完成完整pool；partial/unknown不能补0或换rank。原q96仍预封存，需其frame384独立上下文审计与完整resource准入，不混用q48的192清单。
