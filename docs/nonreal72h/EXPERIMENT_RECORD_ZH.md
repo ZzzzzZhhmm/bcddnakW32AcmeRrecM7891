@@ -1644,3 +1644,24 @@ Appendix A.1明确四个已审计原specialist的四token均匀变化均值，sh
 完整原LaTeX29文件两次编译（完整项目/干净sourceZIP）通过，37页文本逐页相同、主文10页，所有37页render、全页contact及14/15/16/19/20/21/22/23/24/28/29/31/32/37页单独视觉核查，无截断/公式表格重叠、无undefined references/overfull，46条继承font warnings不增，匿名性检查通过。PDF SHA34922f9629c65cb647fa84eae981bada4493e629bf592dd8f4374037043b4c39，sourceZIP SHA2f926f3ebb0415a813a2b5cf2399c510b0828a2d0b5c7773851edd22e52557ac。位置tmp/rebuttal/revision/WARM_ICLR2027_revision_v9.pdf及同名_source.zip，英文三份/15块见responses/20261110_v9。
 
 这关闭已确认的实现描述差异，不关闭原模型后果精度/修复、自然missing-skill、同信息最终训练及其他机制cohort/原DEV绑定。原33页投稿、v8及所有旧原件保持。stable_release_ready=false，未发布/正式上传；新增真机仍延期。
+
+
+### 23.98 原BRT q8候选池完整核销：当前未观察到后果预测优势
+
+原独立planbc42f951…及13:45:00UTC截止不变，36分支于12:41:27结束、runner12:41:33 exit0。固定32个valid候选全部有终态：29完整H32、rank2/19/25各在11命令后被官方left_mplib_planner的TOPP参数化拒绝，三者保留unknown，没有补效果、补零或替换候选。四个Full anchors端点/效果完全一致，全部36个native父状态/RNG/DINO精确；原模型sourceff32342d…及H7a0ce894…前后不变，BRT14k权重515ecad0…、原四token均匀delta均值保持。
+
+同一29候选支持集的centered MSE：predicted0.05252027541650059、query-constant0.018119498131784893、historical0.05249698324368055；predicted explained variance -1.898550226640686。Absolute MSE：predicted0.09574487815571375、historical0.095704683241209；原实际query r_t未捕获，constant absolute仍null。独立从端点DINO和源prediction/historical数组复算相同。该固定状态不支持后果预测优势；不能把已通过AABA写成精度/修复收益。32个候选并非32个独立query，BRT适用性全部unsupported/unknown；不推断总体SR、repair或原DEV精度，不以此替换原稿另一个已报告机制cohort。
+
+308项完整终态原件42,565,564 bytes，archive ec533960e2bcd22a73032d41436561b1324cb21f219a3d12eadadb0edf930343，manifest f8e531ffa3ebdeab47f504d47f70729f443243a73231c076aa5be6ece2ca8104，AFS/本机逐项核验。路径rebuttal_20261109_acp/original_brt_q8_pool_complete_archive_v1.tar.gz及本机iter8；三条失败、全部预测和端点保留。后继仍按原q48/q96顺序，不因q8不利而换state/rank或拟合尺度。
+
+### 23.99 同信息最终训练独立阶段与两项标准ACP实际启动
+
+原precision-v3窗口已关且全部attempt核销，没有重置。新master7526a475…于12:29:56UTC冻结24h至11月11日12:29:56UTC，固定seed3407/batch128/scheduler30000/final3000；Full从原200完整状态直达3000，pool从共同base独立开始原定100更新资格，再在同截止内接3000。Full原数学配置仅允许output/resume/run_steps/save_every四项存储/恢复控制变化，原preflight实际通过（0新更新）；pool复制已冻结100-step配置，只改新output，source48ce6ba8…保持。新增pool启动空间/source gate在首次提交前另存v2，command8669d7ca…，旧v1未派发，master截止/数学配方不变。
+
+当前标准资源实际申请成功，因此未转闲时：Full warm-full-final3000-20261110-std，UID95e495471308439c9da281d2c4fd5b92，12:37:51创建；pool warm-pool100-final3000-20261110-std，UIDf7f3df01f8b84b1eabd2ea8e558fd433，12:45:35创建。两项均cluster02、1GPU/22CPU230GiB、重启0，已确认私有镜像和AFS。12:51:42实际AFS runner均running、有PID52/55的持续heartbeat，Full runtime capture与父记录differences=[]且返回对象未修改，关闭了此前已实测的两项精度差异；完整恢复和优化器更新仍需按实际新metrics确认，此时Full201+和pool更新均0，不能按UI运行中写训练已完成。
+
+新Full plan cab8f8f9…、pool spec ed4dabc1…、pool config7350ea58…、master和原始UI/runner/runtime均Git外保全。原Full/action-onlycontrol200和旧失败保持；新shared-stage对照不冒充原逐任务specialist复现。实际状态后续读canonical current_iteration及新phase事件文件，不按旧running或无输出快照重复提交。资源/存储与后继资格详见MATCHED_FINAL3000_RESOURCE_PHASE_20261110_ZH.md。
+
+### 23.100 后续原固定query采集入口与短资格模式
+
+先在CCI实现，再同步本机：collector严格支持原预封存q8/q48/q96，对应固定rank28/0/10及真实frame32/192/384。每个query均读取其自身probe、Full chunk、pre-forward RNG和源前缀/下一replan观测，仍用原模型/reader/均匀delta均值；不将q8父资格推广为后续状态已通过。新增qualify-only在四分支AABA完整通过后停止，保留同一plan/seal给ACP接续完整pool；短CCI资格与长ACP计算分开，不重置绝对deadline或绕过任何原验证。CLI --help及语法/路径检查通过只算工程资格，新的真实AABA须独立完成。原q8冻结collector1b0a5ee和308原件不变。

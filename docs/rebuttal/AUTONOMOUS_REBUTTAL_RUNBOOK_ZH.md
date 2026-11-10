@@ -1,5 +1,9 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**12:51 UTC最新事实：** 原q8 K32已12:41:33 exit0，29完整/3 TOPP unknown，四Full精确；308原件ec533960…双端核验。centered预测0.0525203，高于constant0.0181195且接近historical0.0524970，明确未观察到优势；勿重跑/换样/重缩放。后继仍原q48/q96并各自认证native父。新generic collector先CCI实现/CLI验证；qualify-only可短段执行AABA，长pool交ACP同plan接续，实际launch读canonical状态，别将方案当运行。
+
+新24h同信息训练phase7526a475…截止11月11日12:29:56UTC，与旧窗口分开。标准Full95e49547…及poolf7f3df01…均已创建/真实runner心跳。12:51 Full运行时diff=[]但新201+metrics仍0，pool更新0；两者实际做初始化/恢复，勿重提或写最终训练完成。原Full/action-onlycontrol200不变、pool新身份；先查连续metrics/退出/完整state，再pool100→3000同截止。v9完整61项审阅包83022d60…保留，下一稿须纳入原q8负结果并联动回复。真机新取证仍延期。
+
 **12:10 UTC恢复锚点：** 原BRT q8 fresh A-A-B-A已11:52:42通过，44原件d2d1fa74…双端核验。唯一活动原K32 pool：original_brt_q8_fresh_pool_v1，outer2302544，planbc42f951…，固定13:45:00UTC截止，勿重置或重复。12:10实际15sealed branch，12候选尝试中11完整/1invalid；invalid保留unknown，BRT适用性仍全部unknown。原效果GT必须用四token delta均值，不能套用shared加权投影；v9完整37页/10主文PDF、29文件sourceZIP和15块/20项已验收，当前正文/矩阵responses/20261110_v9。此时未计算pool终态MSE/收益，AABA只算工程资格。原600来源已完整，不重跑；旧ACP窗口已关、没有活跃训练。原全部负结果与unknown保持。
 
 **11:08 UTC原事实来源终态：** source600已11:03:44 exit0，600命令/150replan，q8/48/96各32valid，共96 sealed候选预测/动作；484原件476575ef…双端核验。不要按后文或旧快照的loading状态重启/重跑。600是事实采集上限，flag=false不构成恢复的原benchmark最终失败，原DEV仍未知；96预测不等于独立端点。原native API前四向量匹配不等于完整measured physics已恢复。下一实际工作为q8/rank28与Full的fresh A-A-B-A及全部K32后果执行，先读`ORIGINAL_BRT_EFFECT_BRANCH_PROTOCOL_20261110_ZH.md`；BRT的applicability rubric及pack/unpack尚未认证，unsupported不可填0。后继资源段明确另冻/修订，不重置任何旧窗口。v8公开草稿/37页PDF仍是当前候选，没有新增机制收益主张。

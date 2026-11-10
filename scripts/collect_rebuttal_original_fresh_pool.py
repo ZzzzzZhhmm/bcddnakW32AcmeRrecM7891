@@ -1,4 +1,4 @@
-"""Collect original-specialist q8 effects after exact fresh-scene A-A-B-A.
+"""Collect presealed original-specialist query effects after fresh A-A-B-A.
 
 Model source, descriptor, candidates, source trajectory and physical seed are
 frozen before any branch truth. No policy is loaded or updated here. Unsupported
@@ -25,6 +25,7 @@ def main():
     parser.add_argument('--plan', required=True, type=Path)
     parser.add_argument('--expected-plan-sha256', required=True)
     parser.add_argument('--resume-known-terminal', action='store_true')
+    parser.add_argument('--qualify-only', action='store_true', help='Stop after the fixed four-branch A-A-B-A;retain the same sealed plan for the later pool')
     cli = parser.parse_args()
     import fcntl
     sha = lambda p: hashlib.sha256(Path(p).read_bytes()).hexdigest()
@@ -34,7 +35,9 @@ def main():
     plan = read(cli.plan)
     os.environ.update(HF_HUB_OFFLINE='1',TRANSFORMERS_OFFLINE='1',HF_DATASETS_OFFLINE='1',DIFFSYNTH_SKIP_DOWNLOAD='true',DIFFSYNTH_MODEL_BASE_PATH=plan['model_root'],TOKENIZERS_PARALLELISM='false')
     assert plan['schema'] == 'warm.original-specialist-fresh-pool.v1'
-    assert plan['query_replan'] == 8 and plan['selected_rank'] == 28
+    query = int(plan['query_replan']); selected = int(plan['selected_rank']); frame = query * 4
+    assert query in (8,48,96) and selected == {8:28,48:0,96:10}[query]
+    query_id = f'original-brt-seed0-q{query}'
     C, H, runtime, source, out = [Path(plan[k]) for k in (
         'original_source', 'reference_controller', 'rmbench_runtime',
         'factual_source', 'output')]
@@ -78,7 +81,7 @@ def main():
         assert Path(sys.modules[module].__file__).resolve().is_relative_to(C)
     assert sha(C/'src/fastwam/models/warm/retrospection_model.py') == plan['original_model_module_sha256']
     operator = dict(status='binding', started_utc=stamp(), plan_sha256=cli.expected_plan_sha256,
-        descriptor='original_uniform_mean_DINO_delta_v1', query=8, selected_rank=28,
+        descriptor='original_uniform_mean_DINO_delta_v1', query=query, selected_rank=selected,
         complete_branches=0, independent_candidate_endpoints=0, applicability_labels=0,
         source_checkpoint_sha256=plan['checkpoint_sha256'], new_efficacy_claimed=False)
     def save():
@@ -96,21 +99,21 @@ def main():
         commands = np.asarray([r['command'] for r in trace], dtype=np.float32)
         before_trace = np.asarray([r['before'] for r in trace], dtype=np.float32)
         after_trace = np.asarray([r['after'] for r in trace], dtype=np.float32)
-        probe = source/'probes/q0008'
+        probe = source/f'probes/q{query:04d}'
         event = torch.load(probe/'event_adapter.pt', map_location='cpu', weights_only=False)
         model = torch.load(probe/'model_output.pt', map_location='cpu', weights_only=False)
         valid = event['candidate_valid_mask'].numpy()[0]
-        assert valid.shape == (32,) and valid.dtype == np.bool_ and valid[28]
-        assert model['warm_retrospection']['selected_candidate_index'] == 28
+        assert valid.shape == (32,) and valid.dtype == np.bool_ and valid[selected]
+        assert model['warm_retrospection']['selected_candidate_index'] == selected
         adapted = event['adapted_action_mean'].float().numpy()[0]
         predicted = event['predicted_effect'].float().numpy()[0]
         assert adapted.shape == (32,32,14) and predicted.shape == (32,768)
         normalizer = RobotwinQposZScore.from_dataset_stats(read(args['dataset_stats_path']))
-        refined = decode_branch_actions(normalizer, np.load(source/'generations/q0008/model_actions.npy', allow_pickle=False))
-        assert np.array_equal(refined[:4], commands[32:36])
+        refined = decode_branch_actions(normalizer, np.load(source/f'generations/q{query:04d}/model_actions.npy', allow_pickle=False))
+        assert np.array_equal(refined[:4], commands[frame:frame+4])
         native = {f'rank-{r}': decode_branch_actions(normalizer, adapted[r]) for r in np.flatnonzero(valid)}
-        order = ['anchor-a','anchor-aa','rank-28','anchor-qual-final']
-        order += [f'rank-{r}' for r in np.flatnonzero(valid) if r != 28]
+        order = ['anchor-a','anchor-aa',f'rank-{selected}','anchor-qual-final']
+        order += [f'rank-{r}' for r in np.flatnonzero(valid) if r != selected]
         order += ['anchor-pool-final']
         actions = {name: refined if name.startswith('anchor-') else native[name] for name in order}
         # Exact source bank is checked before any new physical truth.
@@ -129,10 +132,10 @@ def main():
             pre = loaded['effect_pre'][rows].copy(); post = loaded['effect_post'][rows].copy()
         historical = _mean_effect(torch.from_numpy(post-pre)).float().numpy()
         assert historical.shape == (32,768)
-        seal = dict(query=8, frame=32, source_plan_sha256=plan['factual_source_plan_sha256'],
+        seal = dict(query=query, frame=frame, source_plan_sha256=plan['factual_source_plan_sha256'],
             checkpoint_sha256=plan['checkpoint_sha256'], descriptor='original_uniform_mean_DINO_delta_v1',
-            before_any_new_branch_truth=True, selected_rank=28, original_valid_ranks=np.flatnonzero(valid).tolist(),
-            branch_order=order, source_inputs=plan['inputs'], expected_source_observation=str(source/'replan-0008.npz'),
+            before_any_new_branch_truth=True, selected_rank=selected, original_valid_ranks=np.flatnonzero(valid).tolist(),
+            branch_order=order, source_inputs=plan['inputs'], expected_source_observation=str(source/f'replan-{query:04d}.npz'),
             action_hashes={k:sha256_array(v) for k,v in actions.items()},
             predicted_sha256=sha256_array(predicted), historical_sha256=sha256_array(historical),
             required_effect_available=False, unsupported_applicability_is_unknown=True,
@@ -173,7 +176,7 @@ def main():
             completed = list(root.glob('attempt-*/complete.json'))
             assert len(completed) <= 1, 'Do not choose among duplicate terminal branches'
             if completed:
-                row = read_verified_branch(completed[0].parent,query_id='original-brt-seed0-q8',branch_id=name)
+                row = read_verified_branch(completed[0].parent,query_id=query_id,branch_id=name)
                 assert row['sealed_query_sha256'] == sha(out/'sealed_query.json')
             else:
                 attempt = root/f'attempt-{len(list(root.glob("attempt-*")))+1:03d}'; attempt.mkdir()
@@ -186,11 +189,11 @@ def main():
                 assert instruction == initial['instruction']; env.set_instruction(instruction=instruction)
                 require_source(source/'initial_observation.npz',env.get_obs())
                 with OfficialQposGuard(env) as guard:
-                    for index,command in enumerate(commands[:32]):
+                    for index,command in enumerate(commands[:frame]):
                         budget(); before = factual_joint_state(env.get_obs()).copy()
                         assert guard.step(command)
                         require_step(index,before,factual_joint_state(env.get_obs()))
-                obs = env.get_obs(); require_source(source/'replan-0008.npz',obs)
+                obs = env.get_obs(); require_source(source/f'replan-{query:04d}.npz',obs)
                 random.setstate(rng['python']); np.random.set_state(rng['numpy']); torch.set_rng_state(rng['torch_cpu']); torch.cuda.set_rng_state_all(rng['torch_cuda'])
                 parent = native_parent(env,obs); parent_hash = state_hashes(parent)
                 if records: assert parent_hash == records['anchor-a']['parent_hashes'], 'Fresh native parents differ'
@@ -212,15 +215,15 @@ def main():
                             return [{k:v.tolist() if hasattr(v,'tolist') else v for k,v in item.items()} for item in value]
                         stream.write(json.dumps(dict(index=index,command=command.tolist(),physical_before=plain(physical_before),physical_after=plain(physical_after)))+'\n')
                         if name.startswith('anchor-') and index<4:
-                            require_step(32+index,native_api_before,factual_joint_state(env.get_obs()))
-                        if name.startswith('anchor-') and index==3: require_source(source/'replan-0009.npz',env.get_obs())
+                            require_step(frame+index,native_api_before,factual_joint_state(env.get_obs()))
+                        if name.startswith('anchor-') and index==3: require_source(source/f'replan-{query+1:04d}.npz',env.get_obs())
                         if env.eval_success and count<32: status='early_success'; break
                 endpoint=native_parent(env,env.get_obs()); endpoint_hash=state_hashes(endpoint)
                 after_feature=reader.encode(env.get_obs())
                 assert state_hashes(native_parent(env,env.get_obs())) == endpoint_hash, 'Teacher read changed endpoint'
                 effect=_mean_effect(torch.from_numpy(after_feature-before_feature)[None])[0].numpy() if status=='complete_horizon' else None
                 (attempt/'endpoint.pickle').write_bytes(pickle.dumps(endpoint,protocol=4)); np.save(attempt/'endpoint_dino_spatial.npy',after_feature,allow_pickle=False)
-                row=dict(query_id='original-brt-seed0-q8',branch_id=name,parent_recreated=True,parent_hashes=parent_hash,endpoint_hashes=endpoint_hash,
+                row=dict(query_id=query_id,branch_id=name,parent_recreated=True,parent_hashes=parent_hash,endpoint_hashes=endpoint_hash,
                     executed_steps=count,endpoint_status=status,error=error,observed_effect=effect.tolist() if effect is not None else None,
                     independent_label=dict(applicable=None,label_provenance='BRT rubric not yet qualified;unknown preserved'),
                     endpoint_native_success=bool(env.eval_success),sealed_query_sha256=sha(out/'sealed_query.json'))
@@ -234,10 +237,14 @@ def main():
                 for key,role in zip(order[:4],('refined','refined','raw','refined')):
                     item=records[key]; proof.append(dict(role=role,valid=item['endpoint_status']=='complete_horizon',commands=item['executed_steps'],parent_hashes=item['parent_hashes'],endpoint_hashes=item['endpoint_hashes']))
                 require_repeated_endpoints(proof)
-                atomic_json(out/'AABA_qualification.json',dict(status='qualified_original_BRT_fresh_q8_AABA',selected_rank=28,branches=order[:4],independent_policy_samples=0,candidate_truth_only=True,no_physical_unpack=True,utc=stamp()))
+                atomic_json(out/'AABA_qualification.json',dict(status=f'qualified_original_BRT_fresh_q{query}_AABA',selected_rank=selected,branches=order[:4],independent_policy_samples=0,candidate_truth_only=True,no_physical_unpack=True,utc=stamp()))
+            if name=='anchor-qual-final' and cli.qualify_only:
+                assert identity.source_digest(C)==plan['original_source_sha256'] and identity.source_digest(H)==plan['reference_controller_sha256']
+                operator.update(status='qualified_original_query_AABA_pool_pending',complete_branches=len(records),completed_branches=list(records),independent_candidate_endpoints=1,ended_utc=stamp(),full_pool_pending=True)
+                save(); print(json.dumps(operator),flush=True); return
             operator.update(status='collecting_fixed_pool',complete_branches=len(records),independent_candidate_endpoints=sum(k.startswith('rank-') and r['endpoint_status']=='complete_horizon' for k,r in records.items()),completed_branches=list(records)); save()
             print(json.dumps(dict(branch=name,status=row['endpoint_status'],steps=row['executed_steps'],completed=len(records))),flush=True)
-        assembled=dict(task='blocks_ranking_try',cohort='original_fixed14k_seed0_q8',descriptor='uniform_mean_DINO_delta',required_effect_available=False,candidates=[])
+        assembled=dict(task='blocks_ranking_try',cohort=f'original_fixed14k_seed0_q{query}',descriptor='uniform_mean_DINO_delta',required_effect_available=False,candidates=[])
         for rank in np.flatnonzero(valid):
             row=records[f'rank-{rank}']; assembled['candidates'].append(dict(candidate_id=f'rank-{rank}',valid=True,horizon=32,predicted_effect=predicted[rank].tolist(),historical_effect=historical[rank].tolist(),observed_effect=row['observed_effect'],endpoint_status=row['endpoint_status'],executed_steps=row['executed_steps'],applicable=None))
         metrics=centered_effect_metrics(assembled)
@@ -245,7 +252,7 @@ def main():
             metrics['references']['constant_query']['absolute_mse']=None
             metrics['references']['constant_query']['absolute_mse_unavailable_reason']='Actual query requirement not captured;only the centered constant reference is identified.'
         atomic_json(out/'candidate_effects.json',assembled); atomic_json(out/'centered_effects.json',metrics)
-        operator.update(status='complete_original_fixed_q8_pool',ended_utc=stamp(),complete_candidate_endpoints=metrics['complete_endpoints'],unknown_candidate_endpoints=metrics['valid_candidates']-metrics['complete_endpoints'],original_source_sha256_after=identity.source_digest(C),reference_controller_sha256_after=identity.source_digest(H))
+        operator.update(status='complete_original_fixed_query_pool',ended_utc=stamp(),complete_candidate_endpoints=metrics['complete_endpoints'],unknown_candidate_endpoints=metrics['valid_candidates']-metrics['complete_endpoints'],original_source_sha256_after=identity.source_digest(C),reference_controller_sha256_after=identity.source_digest(H))
         assert operator['original_source_sha256_after']==plan['original_source_sha256'] and operator['reference_controller_sha256_after']==plan['reference_controller_sha256']
         save(); print(json.dumps(dict(operator=operator,metrics=metrics)),flush=True)
     except BaseException as exc:

@@ -1,0 +1,15 @@
+# 同信息最终训练：11月10日独立资源阶段
+
+旧Full500的precision-v3资源截止为11月10日10:59:12UTC，已确认b/std2停止、c未创建，201+更新为0。所有旧窗口、失败与状态保留。新阶段12:29:56UTC独立冻结，至11月11日12:29:56UTC共24小时，含排队、准备、计算及保全；最多两台单GPU，预留上限48GPU小时，预计有用计算约24GPU小时。不能在修复或后继段中重置该截止。
+
+目标仍是seed3407、有效batch128、原30000-update scheduler、固定最终update3000的shared-stage补充对照，不替代原稿逐任务specialist准确率。Full沿原200完整optimizer/scheduler/RNG/dataloader状态直达3000；all-K池化对照从共同released base独立初始化，先完成原定100更新的实际训练/状态资格，然后在相同截止内恢复至3000。旧action-only control200保持原消融身份，不加载为新的pool100，也不以100或未完成训练作最终性能比较。
+
+原Full最后25个更新的日志吞吐对应13.6137秒/更新（范围13.5818–13.6517），仅用来估算排期。Full首次启动须至少剩余64800秒；训练runner最多64800秒，外层受绝对截止限制。原TF32=false/highest环境由已验证的TORCH_ALLOW_TF32_CUBLAS_OVERRIDE=0恢复，strict runtime validator完全保留；静态preflight通过不等于实际恢复或新优化器更新。
+
+Full训练source4efb8094…、observer H7a0ce894…不改；pool使用已提交f9f1090/source48ce6ba8…，45项检查及实际记录模块资格保留，完整policy/optimizer资格仍以新训练结果为准。相同当前输入、因果历史、K32动作/前态/效果/context/timing/phase与mask、同数据顺序/归一化/种子及共同action/video/bridge/gist训练项；pool没有后果预测、学习排序/效用门及动作残差机制。它不是官方ReCAP等方法复现，也不声称等参数或等延迟。
+
+初始AFS可用173,498,982,400 bytes。Full仅保存最终3000一次完整state；pool保存100资格和最终3000，避免新增无界中间state。保留全部旧原件与checkpoint；每次准入重新检查空间，Full原80GiB门槛不放宽。Full沿原byte-exact CAS归档，pool100须逐更新、完整状态/初始身份/schema与原始证据归档验收后才能接后继段。不因worktree dirty失败、无Git远端访问；运行账目先写Git外事件文件，作者端随后同步主实验台账。
+
+冻结master plan `matched_final3000_phase20261110_v1.plan.json` SHA7526a4750f9efde61c6b3a1b85838c4a195992ed4be8685144790364066a8190，Full200→3000 plan SHAcab8f8f9b8971f3cd7f268d3d4486c4e32b973285df49b35f53b42d9506f3b63，pool100 spec SHAed4dabc1e2aa21e723fbdab95f65bf357391f791467dd11aaaae89662fe02641，pool config SHA7350ea580a04865a412c2ccdbce1d1a29986098e2c9e7ce14658fe61a0278223，均在AFS rebuttal_20261109_acp及本机iter8保全。
+
+ACP使用已确认镜像ccr-zhicheng-02/lwz_wam:lwz-workspace-20261029145800、afs-p3-01e的/挂至/mnt/afs、当前用户读写，1GPU/22vCPU/230GiB、重启0；先标准，只有实际确认GPU成员配额不足才回退闲时。任务名/UID、实际调度/进程/心跳/退出/连续metrics须单独记录，不将表单准备或排队登记为活跃训练。此文件为冻结方案，实际创建/更新数以canonical current_iteration及原始收据为准。
