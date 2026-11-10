@@ -1,5 +1,13 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**最高优先级恢复锚点（2026-11-10T16:47:24.590650UTC）：** v11三份英文/15块/20项、38页/主文10页PDF及29源文件ZIP完整+干净重编译、38页文字比对和变化页37/38视觉验收通过。新增同100DEV样本的嵌套retrieval阶段表Table26/page38，不增加效能结论。PDF1e11e07e…/ZIP8b851487…；47项包c62f1a87…已双端核验，路径writing_candidates/20261111_v11。本机回复responses/20261111_v11。原33页、v10及所有不利/未知结果保留，未发布。
+
+pool100原生DEV资格已经16:41:20 exit0、10/10固定PB前缀H32有限，真实历史/all-K/8+4条件路线完整，46原件136b665c…已双端核验；不要再按后面的旧pending/loading重跑。独立helper bcf94b7c…/source87199cc6…、真实Pooled构造器及source-only模式保持，无Full专用probe；生成动作未执行，无TEST或收益。旧字段/旧probe两次失败共51原件全部保留，原17:27:52UTC窗口不重置。26项v11工程增量b3428130…/20项matrix f68f902f…位于responses/20261111_v11_addendum1和AFS同名writing_candidates路径，论文和三回复bytes不变。94个共同源码静态核对保全，但不等于参数/性能数值相等。
+
+三个ACP仍是原唯一活动：Full95e49547…观察1219（新增1019、durable200）；poolc852e8e2…观察500（新增400、durable100），metrics连续有限，最终3000尚未完成。原q48 UID96aea940…/v3 a22a8fe8…AABA已通过，active rank20、23sealed branch/16完整独立端点，完整32池及末Full anchor仍待完成。先读ITER9_LIVE_V2及实际operator/runner/exit，不把branch数量当有效候选数。原训练Nov11 12:29:56UTC、q48 Nov10 21:01:03UTC截止保持，AFS约116.83GB可用，留足两个final raw/CAS且不删旧原件。CCI当前仅开发/操作，无活动GPU worker；native物理全局lease仍由ACP q48持有。
+
+下一步最高价值：q48完整固定32+末anchor终态后立即双端全原件归档/同支持集主MSE，保留负/未知；原q96/frame384须独立前缀审计及明确资源准入，不能复用192清单。继续两条固定3000训练及严格完整state/CAS保全，再冻结匹配原生TEST/效率；nativepool100已通过不构成性能。直接同状态修复/撤回、自然missing-skill、原DEV/cohort绑定、MemoryWAM/独立模块成本仍是实证缺口。真机新增/原视频审计延期，不再索取。stable_release_ready=false，不自行发布或正式上传。
+
 **最高优先级恢复锚点（2026-11-10T15:23:53.744880+00:00）：** 当前v10三份回复/15块/20项、37页/10主文PDF7d5489a9…与29源码ZIP不变，原68项包abd7c31b…保持。另有工程增量1，27项包e07a6037…/manifest acc57600…已双端逐项核验，20项矩阵3081492e…位于responses/20261110_v10_addendum1与AFS writing_candidates/20261110_v10_addendum1。增量不改论文/回复/原q8负结果，也不声称实证闭环。
 
 三项实际活动：Full标准95e49547…（原v1输出/observer H7a，日志至849、新649更新，durable仍200）；pool标准c852e8e2…（新v2输出，plan fe595b17…、operator H523/source1b96f3b8…、模型原f9/source48ce6ba8…，父100，本次新20更新）；原q48标准96aea940…（新v3输出/plan a22a8fe8…、collector原H695）。原q48 AABA已通过，正在固定K32候选采集，此时4个封存分支/1个完整独立候选端点，还不能算完整32池。先查AFS真实runner/heartbeat/退出与封存收据，不重复创建。训练SAME Nov11 12:29:56UTC；q48 SAME Nov10 21:01:03UTC，不能重置。

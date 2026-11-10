@@ -1763,3 +1763,23 @@ Full外层减去retrieval total的逐条剩余区间mean/median/p95=485.1571/488
 GPU-v2已完成真实RMBenchWarmPolicy构造、严格pool100权重及独立schema检查，进入frame0生成后被旧research probe的Full-only guard拒绝；16:20:28 runner exit1，0完整replan/0生成动作输出/0物理命令。Video DiT prefill曾运行，不能写成0GPU执行。原因是独立对照正确使用source_only_no_consequence，而旧探针要求legacy full；不是切换对照算法到Full的理由。
 
 在CCI移除采集器对Full probe的启用，改用原样委派的只读infer/source观察器：直接记录传入base_gaussian、实际source、条件token与无未来teacher的context，返回原对象且还原包装；原source-only模式、模型文件、权重及数学路径保持。新增非Full观察器不启用legacy probe、委派一次和恢复属性的测试，共15项原生检查通过（21.59s）。新helper单独冻结、后继GPU新输出，保留原失败/数据与原17:27:52窗口，不把严格装载或单元测试写成完整十前缀资格。
+
+### 23.114 独立池化对照真实原生推理资格完整通过
+
+16:32:49新v3按原窗口准入，16:41:20结束、runner exit0。计划d5fc0ddea3d4bfd4152f1326a9ed424107cb3d3c2c2fd34cb3d6ad1ec7cca3b6、只读helper bcf94b7c1d3ec21def3d21547254a0322fde60d11592cac9079e6d23ac7271bb，模型评测树87199cc6…逐字节保持，训练树48ce6ba8…/pool100权重cbdfcef2…不变；原截止17:27:52.091012UTC未重置。十个固定PB DEV episode435/frame0、4至36，全部实际RMBenchWarmPolicy重规划H32输出有限，每次32个有效候选。真实历史观察token mask计数0/4/8/12/16/20/24/24/24/24、动作历史mask计数0/1/2/3/4/5/6/7/8/8；这是有效token/history slot数，不是已完成技能数。实际8-history+4-pooled条件路径、当前proprio和原生source/高斯/context保存且逐query绑定，无Full专用probe、无零历史替代、无未来teacher。
+
+46项完整原件归档136b665c8a6f1cd3417cd9b9c18046851378ea88c2057c7fc411fe50d5e450ea，manifest ef6766379fe156995973f1c8cc084e127a44ea7df07a70fdf386900a09ec01c6，AFS/本机iter9逐项核验。之前data-only失败10项f6b20267…、十前缀成功20项dd307f95…及GPU旧probe失败21项89c123981dbe2dc6e9c9c6ddc2fbd3e94509cc8c37fe026ad0b6ed94faddd497亦共51项双端核验；原失败不被成功覆盖。该完整新实验只关闭工程集成资格：0生成命令执行、0仿真、0成功率/修复/最终3000 TEST或新计时结果，不能据此声明同信息效能优势。
+
+另在MATCHED_SHARED_SOURCE_AUDIT_V1保存94个共同model/memory/dataset Python文件的双端byte hash及换行规范化hash：93项内容相同，唯一共同模型差异是source_only条件下的输入钩子和adapter参数字典组装。原Full工作快照4efb…未修改，memory/dataset内容均相同；大量原byte差异为CRLF/LF，不假称byte-exact。该静态检查不等于训练权重、参数量、延迟或数值推理相等。池化adapter及损失差异仍按原预定协议明确保留。
+
+### 23.115 v11完整论文/回复与计时证据联动验收
+
+原100条DEV成本13项归档18faa5c1…全部成员已在本机独立核验，见COST_PHASE_ACCOUNTING_LOCAL_VERIFICATION_V1.json；没有新增GPU计时或替换原稿数值。三份英文/15块/20项及新增检索分阶段表联动到Appendix C.4/page37、Table26/page38。原LaTeX工程29源文件（ZIP另含SOURCE_FILE_MANIFEST.json），完整编译与独立干净ZIP重建的38页文本完全相同，十页主文与v10相同，参考文献第11页开始；14个原tabular、九图bytes和所有既有不利/未知结果保留。全部38页contact及变化页37/38单页视觉验收，引用、overfull、匿名性通过，46条继承font warning未增加。修正QA中继承的all37标签为实际验证的all38，不改PDF/ZIP；初次包校验误把29源文件加manifest的ZIP当29总成员，在任何包创建前拒绝，随后按29源manifest逐项验证。
+
+PDF SHA1e11e07ec4de5f71a91cf6b6e201c7eb84473449586d73a5d9f64e1df72941ef、ZIP SHA8b8514877535651baea584a98d94b442e700f9ee082c00412857caf2bc402dd1。47项不可变v11包c62f1a87ab8013e4a1e66843abbdcc05e8d7f3db433177807ffa48685dd0aac5，manifest4a02c6f75d13c00371908984a6ca604464e4f62b0b1601ae8ae5167ef8d35809，AFS writing_candidates/20261111_v11与本机iter9全部成员核验。包冻结早于16:41原生资格终态，后者以独立26项工程增量b3428130ed2fdad6bfb70d90f9c2a39aac4206288c88c931ddc94b31e5d1dfbe、manifestcf10a912…及时补入20项映射f68f902f0512fd8fc82b8db5d529501bb522231aaed27b9613380eeb9d8d7100，双端逐项核验；v11论文/回复bytes保持。全部实证closure仍false，未发布OpenReview或正式上传。
+
+### 23.116 同信息最终训练与原q48部分进度（16:47 UTC）
+
+ITER9_LIVE_V2在2026-11-10T16:47:24.590650UTC保存完整部分metrics/runner/事件：Full标准95e49547…新增201–1219共1019条，pool标准c852e8e2…新增101–500共400条；都连续且loss/grad有限，durable父仍200/100，没有final3000完整state/TEST结果。原q48标准96aea940…仍活跃，正在rank20，有23个封存branch、16个完整独立候选端点；branch终态包含unknown，不能将23当23个有效端点。AABA已通过，完整固定32池及末Full anchor尚未完成，不提前计算总体MSE或适用性/修复收益。
+
+原同信息master截止Nov11 12:29:56.020552UTC、原q48截止Nov10 21:01:03.764554UTC保持，未新建或重复任何ACP任务。AFS可用116,830,027,776bytes，未删除原数据/checkpoint/state或重置资源窗口。后继先查实际进程/heartbeat/exit/完整收据，q48终态后完整保全并同支持集分析，再为原q96/frame384做独立前缀审计；192清单不可复用。原DEV/机制cohort绑定、直接修复/撤回、自然missing-skill与最终匹配性能仍开放，真机新增继续延期。
