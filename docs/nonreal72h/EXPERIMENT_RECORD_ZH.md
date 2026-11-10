@@ -1507,3 +1507,37 @@ case4/candidate_null于06:03:26完整700、success0，outer06:03:33 exit0；原s
 CCI新增`run_rebuttal_training_with_runtime_trace.py`，由Accelerate启动原训练entrypoint时原样转交原参数/配置，并仅记录原capture_training_runtime的返回对象及父200的逐字段差异；同一对象直接返回，原strict resume validator不替换、不删字段、不更改DS/TF32/确定性设置。不访问Git远端、不检查dirty、原训练source仍4efb8094…。记录目录排他创建，保留每次返回和原异常，不能从记录完成推断resume或更新成功。
 
 7项原生单元检查通过；实际旧entrypoint的配置转交preflight V3于06:29:22 exit0、模型/优化更新0、runtime capture调用0，仅证明真实配置与参数可转交，尚不是post-prepare实测。observer source当时8c08178c…与原训练source4efb8094…各自核对。前两次preflight在serialized runtime字段名和命名空间绑定处被检查拒绝，均未加载模型，失败日志保留；已修复并用原实际父attestation和原entrypoint验证，未静默覆盖。原Full b失败/窗口继续保留；下一ACP段须另行冻结资源修订并实际核对post-prepare结果，不以这些工程检查替代训练或科学证据。
+
+
+### 23.82 case5两个完整角色与第六个固定RB配对
+
+case5/seed340800005的candidate_null于06:38:42完整700/0、outer06:38:49 exit0。564项原件3,936,882 bytes，SHA `20867cb7651da3d400ca4e5dafac7fa18ad594800defcfff82151f10d7eeda66`，manifest `adbabc31de695029cc578ea2c8602ca3bcf2f5d756744b6e66112e40ac15d172`；07:08:34本机逐项通过，AFS/C盘保全。
+
+下一原固定Full角色的旧95分钟余量检查在任何job/spec创建前拒绝。保留该拒绝，改用新invocation的4500秒outer加300秒保全余量，原worker3600、模型/seed和原08:31:04UTC campaign截止不变；06:58:08准入outer2263051，spec `eab38391a62de0efb2453b36b12abb11694fa6ad40e2441173fa53e2b507e89b`。此为缩短资源调用上限，不修改科学协议或重置原窗口。
+
+Full于07:25:58完整700/0、outer07:26:04 exit0，source前后56393c5a…一致。原export再次核对配对reset/camera/qpos/task/instruction身份，第六个完整配对形成，6/10均0/0；其余4对pending不是失败。564项原件4,177,130 bytes，SHA `e4eafa32c55bbe80f37cfe2243bb59e78f5eb21731cd6d442b013a96f622c905`，manifest `8c440f2daf30eaa09464615b13e0a1cb5823b711d1d75989bd5a6fa88031119d`，07:33:17本机逐项核验。原shared checkpoint68c7f384…保持，不是原稿specialist准确率或新增收益。不得为完成10对重置12h原窗口；继续角色需真实余量满足原worker和保全要求。
+
+### 23.83 observer正式冻结校验与新ACP独立attempt
+
+commit eb70b41已推送并离线同步CCI。首次Git archive的source checksum与precommit live checksum不一致，被断言阻止；后续prepare同样在产生plan前拒绝，没有GPU执行。差异审计证明518个共同source文件逐字节一致，仅Git archive缺少15个本机real runtime配置；原配置未删改。两份checksum分别保留：live8c08178c…、正式archive `7a0ce8943818b02a7ee493fc3b6d666ba6b55b5362df7ab5f3a6be4c760000ae`。差异报告c0371bb6…、source archive f107c16c…；不把两个身份归一化。正式冻结source重新通过7项native tests与真实旧entrypoint配置转交V4，06:57:29 exit0、model/update/runtime capture均0。
+
+新独立Full200→500 plan SHA `8d2530207aeb4fee4736c7c2374dd8acf5347761f03dcc8298144682422be2b3`，06:59:12准备，绝对截止10:59:12UTC（epoch1794308352），包含排队、准备、训练和保全；启动timeout只用该截止的剩余秒数，不重置旧b或新窗口。原训练source4efb8094…、父200完整optimizer/scheduler/RNG和parent SHA不变，最终3000/原数学配方保持。实际冻结operator的完整父state/input/配置preflight于07:03:23 exit0，0更新，AFS可用158,984,925,184 bytes；它不是post-prepare或resume成功。
+
+07:04:42标准资源创建实际HTTP429 `MEMBER_QUOTA_EXCEEDED`，成员GPU剩余0、未创建任务，正文已保全。其后才按规则回退闲时，07:05:59唯一新任务`warm-full-trace200-500-20261110-a`，UID `bca26b54ec124eba8ec0de161543b42a`，cluster01e_02、1H10080GB/22CPU/230GiB、restarts0、确认镜像/AFS及固定绝对timeout。07:26:36 Worker有Host/Pod IP且显示运行中；同一时点AFS operator尚无，不能称训练已产生更新。保留唯一UID、不复制未知任务。原Full/control仍200，all-K control0，旧b失败与窗口不变。收据与命令、两个事前intent、source/native preflight均在Git外，当前ACP进展必须以新operator、runtime trace、metric和exit读取。
+
+### 23.84 原稿四run的25份训练记录、v3元数据与W5核对门槛
+
+作者已明确四目录属于原稿训练。07:08保全34项小型原件：BT6份及BRT7份training attestation全部绑定f77c633，PB6份及Cover6份全部绑定47277e5，各run配置hash一致。档案22,015 bytes，SHA `0d56b4020f1da242ca99e172f63c3a813e544c75b6e76ce85c8a0150a6698960`，manifest `fd06676aa86c1f88d95fc1e1f05413a192cb33db06924d50d979b2183d761ab5`，C盘34项逐项通过。原DEV选点仍未知，未重算25个大权重的内容hash，不以末次step代替原选点。
+
+四个末次权重12000/12000/12000/14000的CPU FakeTensor/mmap元数据均为retrospection v3/timing4。两份原冻结retrospection_model.py完全相同，SHA d89796cc…；effect loss实际使用各event自身observed_effect，当前示范target用于requirement/排序/gate等，与v8的current factual加candidate regularizer不同。报告`AUTHOR_CONFIRMED_SPECIALIST_ARCHITECTURE_AND_EFFECT_SOURCE_V2.json` SHA `0f4806d2d5d8a89cc168163145d48be3686940b1762a71fc2a0e23925b47d822`已双端保全；V1元数据脚本的st_size调用错误在任何报告/模型推理前退出，原失败记录保留，V2仅读属性修正。
+
+此发现直接关系HH-W5，不能将v8训练解释写成四个原稿run的实际loss。已形成`SPECIALIST_SUPERVISION_BINDING_20261110_ZH.md`，新增第二addendum维持20/20映射、英文W5替换候选及LaTeX澄清片段。它们尚未合入完整PDF，原v7/原33页投稿/全部报告数值保持；W5的各机制cohort模型代际绑定及后续完整编译为明确release gate，不把公式存在当作历史权重执行该loss的证明。不据此抛弃v8负结果或推断原稿准确率失效。
+
+为独立推进原run兼容性，case5Full终态、旧进程退出与GPU空闲核实后，07:32:06准入BT12000原f77源码/config的native constructor及strict model loading资格，outer2268402，固定2400秒至08:12:06UTC，helper SHA3312ad6d…、spec SHA4bd41088…。只加载原配置/原v3权重，不迁移v8，不运行Git远端/dirty门槛，不改变模型数学；原loader核对实际checkpoint完整hash及严格state，0训练/0推理/0任务成功率。末次12000仅为预先固定的工程资格点，非原稿DEV点。当前仅准入，不提前写成加载通过；下一步查实际operator、完整stdout/stderr、exit和source。
+
+
+### 23.85 两条实际原生路径的启动核查
+
+07:35:56读取AFS原件：ACP新a的operator已于07:27:33实际进入running_training，冻结训练job于07:27:37启动，plan8d253020…、operator7a0ce894…、training4efb8094…和parent1fb035c4…均与事前绑定一致。runtime_trace/binding.json已产生，但尚无原post-prepare runtime快照或step201+的更新证据；因此原Full计数仍200，不能把operator状态当成resume通过。新绝对截止10:59:12UTC保持。
+
+同一时点CCI原BT12000资格的native process/runner存活，原f77模块路径已核对，config SHA4421db82…、attestation19c6b5fc…绑定；状态constructing_original_model，H100已有13,605MiB占用，尚未完成strict checkpoint load。它不含model inference或训练。固定08:12:06UTC上限保持，先查实际exit与内容hash后再决定兼容推理，不重复准入。AFS可用157,833,052,160 bytes；没有删除state/checkpoint或改动原real配置。

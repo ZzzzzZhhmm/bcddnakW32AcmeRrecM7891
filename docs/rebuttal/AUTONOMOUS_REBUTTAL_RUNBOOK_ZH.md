@@ -1,8 +1,10 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
-**当前接续（2026-11-10 06:30 UTC）：** case4/candidate_null已完整700/0、outerexit0，564项06be2013…双端核验，与Full形成第五对0/0；不要重跑case4。原next_role的case5/candidate_null于06:12:57准入outer2254260，原08:31:04UTC截止不变，仍未新增第六对。作者已确认BT v1、PB v2、Cover v1、BRT v1四目录属于原稿训练run；仅最终DEV step未确认，不再重复询问run归属或把其他BRT版本混入。保持原v8结果独立，不做结果驱动换模型。
+**当前接续（2026-11-10 07:34 UTC）：** case5 Full/null各完整700/0，两个outer均exit0，564+564项20867cb7…/e4eafa32…双端核验，固定RB现6/10完整、均0/0，余4pending不算失败；原08:31:04UTC截止保持。不可重跑case5或为完成cohort重置窗口。07:32:06原run BT12000/f77源码/config的native strict-loading资格已准入outer2268402，固定2400秒至08:12:06，原loader核验内容hash，不迁移v3到v8、不作DEV选点/推理/SR声明。先查`original_specialist_battery12000_native_load_v1/operator.json`和实际进程/exit，不与它争用GPU或重复提交。
 
-post-prepare原样runtime观察入口已在CCI实现，7项单元及实际旧训练entrypoint配置转交通过（模型/更新/capture均0）。新Full200→500只允许独立冻结的资源修订、两份源码与父attestation绑定、原strict validator及固定绝对截止，见FULL500_RUNTIME_TRACE_RESOURCE_AMENDMENT_20261110_ZH.md。先核对实际提交/原artifact收据，不以preflight当作训练成功。当前原稿权重/代际/DEV绑定与关键机制原任务补证仍是最高科学优先级，真机新增取证延期。
+唯一新ACP为`warm-full-trace200-500-20261110-a`，UIDbca26b54ec124eba8ec0de161543b42a，cluster01e_02闲时1GPU/22CPU230GiB，标准资源先实际拒绝成员GPU0。原parent200/source4efb…/strict validator/数学配方保持；新plan8d253020…于06:59冻结、绝对10:59:12UTC截止，启动至少须余7200秒，不可重置。07:35:56已读到ACP operator于07:27:33进入原训练entrypoint并生成runtime binding；尚无post-prepare快照或step201+更新，Full仍200，不重复创建。CCI BT原代际资格正在constructing_original_model，尚未通过strict load。正式observer archive7a0ce894…重新native-qualified；precommit8c…仅多15个local real配置，原文件未动、两身份分开，见台账23.83。
+
+原稿四run归属已确认，25份训练记录和四个末次权重元数据证明原代际v3/timing4；两个原source的event-effect监督相同、用event自身observed_effect，不能套用v8两项loss解释。优先读`SPECIALIST_SUPERVISION_BINDING_20261110_ZH.md`及`responses/20261110_v7_engineering_addendum2`。20项映射已联动W5替换候选/LaTeX片段，但尚未合入完整PDF，cohort代际绑定和原run机制补证仍是release gate。保留原稿数值、v7完整PDF和全部v8不利/未知结果；不再询问run归属，不按新结果挑选checkpoint，真机取证继续延期。
 
 **最终恢复锚点（2026-11-10 06:00 UTC）：** 唯一ACP测量c已05:47实际完成，UI确认成功，父200的10项静态环境全部匹配，16项原件0f249285…双端保全；不要再按后文旧等待状态重提c。它没有模型装载或训练更新，不能当作完整resume准入，旧cluster01e b的具体差异仍未回溯测得。下一步原样采集post-prepare数值runtime（分布式/DeepSpeed、TF32和确定性等）并保留严格validator；若安排新训练段须单独记录资源修订，不能重置旧窗口。
 

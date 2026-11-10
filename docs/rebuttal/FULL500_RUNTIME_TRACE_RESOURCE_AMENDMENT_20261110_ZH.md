@@ -11,3 +11,8 @@
 新output、artifact和临时归档路径排他创建。只在全局500保存一次checkpoint，原eval_every500和数学配置不变；沿原80GiB AFS空间门槛，禁止删除原state/CAS腾挪。最终必须核对201–500连续有限metrics、父子权重/全状态链、原source前后一致及逐字节可重建档案；达到这些条件也只报告训练执行/保全，正式比较仍需固定3000与匹配评测。
 
 当前cluster02已实际测得10项静态字段与父200一致，但它不能回溯定位旧cluster01 b的差异，也不构成上述post-prepare或完整恢复准入。新runtime观测若不一致，应记录精确事实、修复执行设置使其忠实于原配方；不得放宽数值校验。实验台账及根current_iteration.json记录实际提交UID、窗口、结果和恢复状态。
+
+
+实际冻结与提交：正式Git archive source为7a0ce894…，与precommit8c…的差异仅15个未纳入Git的local real配置；518个共同source逐字节相同，原文件未改。正式source重新通过7项native测试与V4原entrypoint配置转交，model/update/runtime capture均0。完整父state/配方preflight于07:03:23 exit0。
+
+新plan8d253020…自06:59:12UTC至10:59:12UTC，deadline epoch1794308352，包含排队/训练/保全，不重置。07:04标准创建实际拒绝GPU成员配额0后，07:05:59唯一闲时任务warm-full-trace200-500-20261110-a创建，UIDbca26b54ec124eba8ec0de161543b42a，cluster01e_02、1GPU/22CPU230GiB、restarts0、确认镜像/AFS。07:26 Worker运行且有Host IP；原时点AFS operator尚无，更新0。任何后续修复不得复制未知job或沿用旧b输出，须核实实际trace/exit/原截止余量。

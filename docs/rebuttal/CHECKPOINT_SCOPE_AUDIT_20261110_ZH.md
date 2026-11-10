@@ -1,5 +1,7 @@
 # 原稿、现用checkpoint与新增证据的范围核对
 
+**新增源码与元数据绑定（2026-11-10 07:34 UTC）：** 四个已确认原稿run的25份training attestation全部按run绑定f77c633或47277e5；四个末次权重元数据均v3/timing4。两份原retrospection模型文件相同，event-effect loss使用各event自己的observed_effect，不能以当前v8的两项loss解释这些run。完整证据、W5影响与原代际资格顺序见`SPECIALIST_SUPERVISION_BINDING_20261110_ZH.md`。DEV选点仍未核实；没有按新结果换点或迁移结构。原稿归属已确认，后文“历史候选”仅表示最终选点/具体cohort尚未绑定，不能继续写四个run归属未知。
+
 **作者新增事实确认（2026-11-10 06:20 UTC）：** `WARM/runs/rmbench_official50_specialists`下的`battery_try-s3407-v1`、`press_button-s3407-v2`、`cover_blocks-s3407-v1`及`blocks_ranking_try-s3407-v1`确属原稿训练运行。不能继续把四个run的原稿归属写成未确认；具体DEV选中step尚无记录，最后可用step不自动等于原稿选点。其他BRT v2/v3/v4目录不在本次确认范围内。下一步逐一绑定该四run实际attestation、完整权重SHA、原源码、bank/normalizer/camera和评测bundle；不同代际训练语义仍独立核对，不能因归属确认而跳过。
 
 本核对保留作者指定的v8-step3000与全部冻结实验，不替换原稿结果，不按新测成绩换模型。作者此前指定该最新模型用于补实验；这一授权继续有效。当前需要进一步确定的是它与原稿逐任务评测配置的具体对应关系。
