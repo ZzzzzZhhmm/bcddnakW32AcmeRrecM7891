@@ -323,3 +323,42 @@ def next_request(records,case_ids,*,known_terminal_attempts=()):
             row=accepted.get((index,role))
             if row is None:return index,role
     return None
+
+
+NATIVE_PRIVATE_ENVIRONMENTS=('TMPDIR','TMP','TEMP','HOME','XDG_CACHE_HOME','TORCH_EXTENSIONS_DIR',
+    'PYTORCH_KERNEL_CACHE_PATH','CUDA_CACHE_PATH','TRITON_CACHE_DIR','NUMBA_CACHE_DIR','MPLCONFIGDIR',
+    '__GL_SHADER_DISK_CACHE_PATH')
+
+
+def validate_native_isolations(isolations):
+    """Require actual distinct private paths, not an asserted concurrency flag."""
+    paths=[];ids=[]
+    for item in isolations:
+        root=Path(item['writable_root']).resolve(strict=True);runtime=Path(item['runtime_root']).resolve(strict=True)
+        if item.get('ipc_kind')!='anonymous_multiprocessing_Pipe':raise ValueError('Unqualified planner IPC')
+        if root==runtime or root.is_relative_to(runtime) or runtime.is_relative_to(root):raise ValueError('Writable/runtime roots overlap')
+        if item.get('worker_id') in ids:raise ValueError('Duplicate native worker identity')
+        ids.append(item['worker_id'])
+        if set(item['environment'])!=set(NATIVE_PRIVATE_ENVIRONMENTS):raise ValueError('Incomplete private native environment')
+        for value in item['environment'].values():
+            p=Path(value)
+            if p.is_symlink() or not p.is_absolute() or not p.resolve(strict=True).is_relative_to(root):
+                raise ValueError('Cache/temp/home path escapes the private worker')
+        if any(p==q or p.is_relative_to(q) or q.is_relative_to(p) for p in (root,runtime) for q in paths):
+            raise ValueError('Concurrent worker writable/runtime paths overlap')
+        paths.extend((root,runtime))
+    return True
+
+
+def activate_native_isolation(plan):
+    import fcntl,os,sys,tempfile
+    item=plan['runtime_isolation'];validate_native_isolations([item])
+    runtime=Path(plan['native_runtime']).resolve(strict=True)
+    if runtime!=Path(item['runtime_root']).resolve(strict=True) or read_json(runtime/'MATCHED_WORKER_ISOLATION.json')!=item:
+        raise ValueError('Actual worker runtime marker differs')
+    if 'torch' in sys.modules:raise RuntimeError('Private caches must be selected before importing Torch')
+    fd=os.open(Path(item['writable_root'])/'native-worker.lock',os.O_CREAT|os.O_RDWR,0o600)
+    try:fcntl.flock(fd,fcntl.LOCK_EX|fcntl.LOCK_NB)
+    except BaseException:os.close(fd);raise
+    os.environ.update(item['environment']);tempfile.tempdir=None
+    return fd

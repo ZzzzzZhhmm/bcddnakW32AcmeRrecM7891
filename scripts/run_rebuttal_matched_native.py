@@ -182,6 +182,7 @@ def main():
     if M.file_sha(cli.plan)!=cli.expected_plan_sha256:raise ValueError('Frozen matched plan differs')
     plan=M.validate_plan(M.read_json(cli.plan));M.require_deadline(plan)
     if (plan['phase']=='recorded_dev' and cli.case_id!=0) or (plan['phase']=='formal' and cli.case_id not in plan['case_ids']):raise ValueError('Unplanned role/case')
+    native_lease=M.activate_native_isolation(plan) if plan['phase']=='formal' else None
     core,source_identity=install_core(plan);M.verify_inputs(plan)
     out=cli.output.resolve();controller=HELPER.resolve()
     if out.is_relative_to(core) or out.is_relative_to(controller):raise ValueError('Raw evidence must be outside both source trees')

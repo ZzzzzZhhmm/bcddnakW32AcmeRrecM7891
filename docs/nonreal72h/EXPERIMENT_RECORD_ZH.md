@@ -1871,3 +1871,11 @@ Pooled19:41:00 exit0完成十前缀/H32有限/K32有效/真实history，38原件
 原3484ad14正式设计要求共同初始输入/随机性、bank与信息预算，后续保留各方法自己的因果状态；额外DEV工程断言把续接选择状态也强制相同，范围更强。19:55:11冻结MATCHED_DEV_SCOPE_AMENDMENT_V3.json/SHA fa089d4d0bfb0753de4ecc9e52c05ddb8d398de20ce498441693091abd1ee6ca，明确旧失败不改名成功。单独的MATCHED_EXTERNAL_INPUT_QUALIFICATION_V3只确认十次共同当前输入/query key/Gaussian、初始K32及全部可重构续接差异，不证明后续固定候选相同、独立机制隔离或最终效能。Formal计划须显式选择该范围、绑定修订和独立证明，且修订早于首次TEST准入；任何无法解释的差异仍拒绝。最终3000完整state/CAS、50-roster、真实并发和所有科学主指标/算法/样本/截止保持。
 
 formal-only证明绑定追加后，19:56:28全46项检查通过（10.91s pytest/14.72s总），stdout SHA c1fdfb7c…；严格pair函数和两worker/模型推理不改。最新回复增量2/15块/20矩阵4fb14257…明确中间权重、因果续接差异及final performance pending。v12 PDFed11dae1…/ZIP8955a7e9…不改，A.3已有后继续接机制，无新增论文数字。20:01:37实际Full2075（新1875）/pool1370（新1270）连续有限、durable200/100、原Nov11 12:29:56UTC截止保持，AFS116,093,566,976bytes。CCI两角色均终态，不记活动GPU；新包双端验收另记，全部科学closure=false，未发布/上传，真机新增延期。
+
+### 23.129 首批50专家准入reset与真实工作进程隔离入口
+
+2026-11-10T20:21:28UTC实际ACP：Full95e49547…至2160（201起1960条），Pooledc852e8e2…至1462（101起1362条），均连续且loss/grad有限，durable父200/100、final3000及Nov11 12:29:56UTC截止不变。CCI H100空闲、旧native全局lease实测可用，AFS115,177,086,976B。完整metrics字节（含可能未完尾行）、runner/events和LIVE在Git外P/ITER12_LIVE_V1及本机iter12；只算部分执行，不算最终模型或性能。
+
+CCI新增qualify_rebuttal_matched_resets.py与逐worker独立HOME/cache/tmp/runtime准入；原规划器匿名Pipe静态核对，不冒充实测并发资格。每候选先保全专家结果，首50不以策略结果选择；每准入保留完整expert_info并两次精确初始RGB/API/物理/任务状态/指令，旧RB10强制前缀。任意重置或未知运行错误中止保留，不能换种子。正式worker在Torch导入前设置私有目录并持有独立lease，原推理/采样/配对数学和活动训练快照不改。
+
+20:27:32实现检查exit0：55项通过（11.10秒pytest/14.84秒总）；stdout SHA87d73f3c…、四实现文件SHA及完整argv在ITER12_RESET_IMPLEMENTATION_CHECK_V1.json/log双端Git外。初次人工pytest命令用了不存在的配置测试路径，0tests/命令exit1，未启动任何GPU或仿真，改用既有真实测试文件集合后通过。真实50-roster/并发reset尚待运行；不将静态检查写成新科学证据。协议见MATCHED_RESET_AND_ISOLATION_PROTOCOL_20261111_ZH.md，当前v12_addendum2/未变PDF保持，全部科学closure=false。
