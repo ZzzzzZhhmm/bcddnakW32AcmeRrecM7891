@@ -1,5 +1,8 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**10:26 UTC资格终态更新：** 原BRT14000/sourcef77的one-replan v3已10:19:34完整1推理/4native命令、10:19:40 outer exit0。20原件0780ca6a…双端核验，不再按后面的旧loading状态重复跑；原模型/数值合同/source完全保持，尚无独立候选truth或收益。v8已AFS核验76项，整包824984d7…，该包早于资格终态、不可覆盖。新增固定事实来源协议见`ORIGINAL_SPECIALIST_TRACE_PROTOCOL_20261110_ZH.md`：BRT14k、首seed0、cap600、query8/48/96、首观测/首生成/前4物理命令须精确匹配资格；最多90分钟独立新窗口、不重置任何旧窗口，先查根current_iteration的实际准入/终态，勿将计划当执行。程序先CCI实现/解析，再同步提交，原数据均Git外。
+
+
 **最新恢复锚点（2026-11-10 10:06 UTC）：** v8已合入原specialist/event-own监督和shared-stage/common-query正则的scope澄清，主文/附录/Hh4E W5一致；15块/20项、29源文件、37页/10主文，完整+干净ZIP编译和修改页视觉验收，PDF1a3b9588…/ZIPf79409f9…。当前回复/矩阵均转`responses/20261110_v8`，旧v7和addendum2不可变。原稿所有数字与9图保留；原DEV、全部原机制cohort模型绑定及直接原模型收益仍未关闭，不发布。
 
 四个原稿run已原代际strict load实际完成：BT/PB/Cover12000、BRT14000，完整weight hash前后匹配、原source不变，DEV点未知。BRT原推理projection b8abf8f6…和DINOruntime2f3e5d29…精确匹配。一次原生replan资格v1漏图形环境、v2导入instruction模块错误，均0推理/0命令且原件保全；v2完整原策略实际加载成功。v3已10:04:18按原首seed0及原10:39:57UTC截止准入outer2289230、helper6b1b6670…，先读`original_brt_one_replan_v3/operator.json`/runner/exit/真实进程，不重跑未知状态，不以资格当性能，不重置窗口。v3仅改用官方generate_episode_instructions并前置原文件hash校验，原模型/数值合同不变。

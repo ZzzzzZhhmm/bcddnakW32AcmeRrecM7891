@@ -1594,3 +1594,18 @@ ACP precision-v3 b UID34bc101c7e26432785ac66b87a75ddd6 的实际FailedScheduling
 完整原LaTeX 29文件、干净ZIP独立重编译、37页逐页文本一致；主文仍10页，所有原数字表及9图字节保持。37页均render，全页contact及修改页6/19–25逐页视觉核查，无截断/重叠/表溢出、无未定义引用、无overfull，46条继承font warning不增。CCI没有pdflatex的一次工程build失败原件保持；正式两次成功编译在本机既有WSL TeX环境完成，不将远端失败写成通过。
 
 PDF `tmp/rebuttal/revision/WARM_ICLR2027_revision_v8.pdf` SHA `1a3b9588f41586cbb1df8545ce059da816c9bd44c6ae2c6a76f53781ed70eed1`；source ZIP `f79409f9d7c27007007ea345eee9de67d3b1e1de9492d39b3ce8db36e4f9fa10`。这关闭已发现的监督描述不一致，但原DEV/全部机制cohort代际绑定、原模型候选后果/修复、非空missing-skill与公平最终训练证据仍是release gate；本版未发布，不把工程资格记为新科学收益。原33页投稿与v7均保留。
+
+
+### 23.92 原BRT一次Full推理与四条native命令资格完成
+
+v3在原10:39:57UTC截止内于10:19:34完成，runner10:19:40 exit0：原f77/source ff32342d…、BRT14000完整权重515ecad0…、原projection b8abf8f6…及DINO runtime2f3e5d29…均保留，固定首seed0专家初始化通过。完整原RMBenchWarmPolicy执行1次Full推理和4条native qpos命令，action有限，event hook只观察且返回未改，source前后完全一致；峰值PyTorch allocated 25,354,637,824 bytes。原始候选动作、32候选效果预测、实际模型输出、初始相机/qpos、四命令前后qpos、telemetry及退出均封存。20项archive `0780ca6afe147af3b3dc3d217b7dc63dda02d9de6c694eaf6f69ab904fe7f80a`、manifest `e26a0e839e7f1a1ef89576f26c6196b0bb7173f4cb643d0f259bea3a3b56124d` 双端逐项核验。
+
+这是实际在线资格通过，原先两次失败保留；不是完整episode或独立候选后果评测，candidate labels=0、SR eligible=false、DEV选点仍未知。门值/预测差异/有限动作不证明候选预测正确、修复收益或评分提升。当前v8 PDF/回复无需新增性能数值。
+
+v8不可变候选包10:22:22已在AFS核验76项、29文件source ZIP、15回复块/20意见和5份本轮新完整原件；整包SHA `824984d7e481de651a1055e7fb043ef40a5c6b4360298340682eacd48cb70ec4`、manifest `90bed9b8160c78af8cf740f5ae5cb8049d3ac9d952732b270a8f8904c86489b2`。8份旧大原件明确继承v7既有核验，未在GPU加载时重新bulk扫描。新资格终态在候选包之后，因此另建补充记录，不能覆盖包内旧观察。
+
+### 23.93 原模型固定事实轨迹采集协议与实现
+
+完成原生资格后，独立设计BRT14000/f77首seed0的事实轨迹来源：最多600条native命令，固定replan8/48/96（frame32/192/384）封存全部原候选payload、adapted action、predicted effect、Full action、采样RNG和原始观测，全部在任何新增branch truth前写出。未到达的query保持not reached，不换state，不将query序号称为语义阶段。该来源只有一个原seed，不扩写成独立多seed或原稿DEV准确率复现。
+
+新增`scripts/collect_rebuttal_original_specialist_trace.py`先在CCI实现并运行CLI解析检查，再回传本机。沿用已实际通过的原模型构造、原合同和官方instruction模块；记录每个真实native command及前后qpos、全部生成action和结束收据。第一观测、第一生成和首四条物理轨迹必须与刚完成资格完全一致；失败则保留并拒绝推广，不放宽原数值合同。源模型/validator不改，collector无Git网络/dirty gate。原单次资格已完成；新事实来源使用独立冻结的新资源段，至多90分钟，绝不重置旧RB/Full500或单次资格窗口。具体计划、绝对截止与实际准入收据在Git外，工程/事实采集不预先声称修复或后果预测收益。
