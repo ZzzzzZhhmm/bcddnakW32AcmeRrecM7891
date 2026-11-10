@@ -12,3 +12,14 @@
 - rmbench_outcomes.observe_task_progress/label_next_interaction当前只定义RB/BT，BRT会拒绝。未建立独立BRT适用性rubric前，标签必须unknown；不能把该异常静默当0或把DINO预测误差当成功/修复标签。候选后果的直接MSE证据与任务适用性证据分开。
 
 第一步固定q8、模型原选中raw与Full H32的A-A-B-A。Raw rank由已封存模型选择决定，不能看分支结果后调换。合格后按原valid mask/rank顺序执行全部K32，再固定q48/96；任何未到达/中断/无效保持未知。branch source在输出读取前封存，实际新资源段单独冻结，不重置原RB、Full500、one-replan或600采集窗口。
+
+
+## 11月10日11:26 UTC补充核对与新执行协议
+
+静态预检发现原f77模型不存在当前shared-stage的_spatial_effect_summary；原文件228行_mean_effect(tokens)直接对四token取均值，candidate observed_effect与demonstration target都走此函数。原四audited run的retrospection_model.py字节一致，因此后续原模型GT/历史参照必须使用原均匀delta均值，不能混用0.05 pre-state加变化能量权重的另一版本描述。第一次静态import失败保留，改用原函数后，namespace、原processor/M1/stats文件hash及DINO runtime2f3e5d29…均通过；尚未加载teacher或执行branch。
+
+新增collector固定原BRT/sourcef77/step14000/seed0/q8/frame32，不按结果换点。先顺序Full、Full、model-selected raw rank28、Full，要求四父状态/RNG/原DINO特征精确、三个Full物理端点/效果精确、Raw物理端点确实不同；每次从新scene重放真实32命令，无物理unpack，不动现有BT/RB白名单。限定端点H32，source Full前四原生API向量及下一replan图像也必须匹配。额外RNG协议明确为每个物理parent恢复封存的source pre-forward RNG，不宣称源forward后的未保存RNG已经恢复。
+
+A-A-B-A通过后，按原valid rank顺序执行其余31候选，复用已完整封存的rank28为同一候选而非重复样本，末尾再Full anchor。共36 branches、32 distinct candidates。所有动作、预测和历史Ei在新truth前封存；历史Ei按原event ID/bank row从完整hash核实的原bank取得。GT是原frozen DINO变化的_mean_effect。centered比较使用同一完整H32支持；任意query-constant中心化后为0，但未保存实际r_t，不报告伪造的query-only absolute MSE。BRT applicability继续unknown，early/invalid/incomplete不补0、不补效果。
+
+新单卡资源段至多2小时，先在CCI实现/CLI检查并同步提交，再从唯一不可变文件运行；独立新plan/绝对截止，不重置先前窗口。每branch保存前后物理关节坐标与速度、native parent、DINO端点和独立终态收据；重复Full不增加独立样本数。进程失联先核销原runner/lease；已sealed终态分支只读复用，partial/失败attempt保留，续跑须原固定输入和原绝对截止。

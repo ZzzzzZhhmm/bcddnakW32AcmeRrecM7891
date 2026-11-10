@@ -1620,3 +1620,10 @@ v8不可变候选包10:22:22已在AFS核验76项、29文件source ZIP、15回复
 484项完整原件33,014,782 bytes，archive `476575ef0fb65711ee3b0cd80b9c51bbd7afdb759874dd149e307aa26050cb09`、manifest `50324c02c3a89ad2ccf1d66e55932e070d6b8350ee897375ecc737d8e3fc7193` 已AFS/本机逐项核验，含全部600实际命令/前后API向量、150生成和观测、三份pre-truth probes、原始模型输出/采样RNG、config/source绑定和runner退出。不得把96 sealed predictions写成96 independently executed endpoints。
 
 后继优先原q8/model-selected raw rank28与Full的fresh-scene A-A-B-A，再原K32全部候选的H32物理端点/冻结M1效果。BRT尚不在现有BT/RB的pack/unpack白名单或独立applicability rubric中，不能删除白名单或把unsupported标签当0；先通过原生fresh-replay资格。Reader/原namespace/partial CPU snapshot的实现入口和限制已整理到 `ORIGINAL_BRT_EFFECT_BRANCH_PROTOCOL_20261110_ZH.md`。v8 PDF/英文正文及数值不变，原稿/新负结果/未知均保留，当前主要缺口仍是独立后果与同状态生成对照的真实收益、非空missing-skill及公平最终训练。
+
+
+### 23.95 原效果投影与独立后果采集器预检
+
+2026-11-10 11:26:37 UTC，原C/f77 namespace下读取_mean_effect(tokens)=tokens.mean(dim=-2)，原observed_effect与target_effect均用其处理delta tokens。原四run model模块d89796cc…一致。当前shared-stage的_spatial_effect_summary在原C中不存在，首次错误import在任何teacher/physics执行前失败并保留；不能把该加权目标带入原specialist的新GT。V2静态预检确认memory/model/policy_core来自原C、research reader来自冻结H7a，四项M1/processor/stats/camera hash及实际DINO runtime2f3e5d29…精确匹配，0teacher装载/0branch/0新结果。
+
+新增collect_rebuttal_original_fresh_pool.py先在CCI实现及--help检查，再回传本机。固定q8/rank28与Full的fresh-scene A-A-B-A，通过后原K32 rank顺序；32 distinct候选、36含Full复核的branch，均H32。原DINO均匀变化均值作GT；历史参照由原bank及完整文件hash/Event ID绑定，源预测/动作先封存。实际r_t未恢复，query-constant仅用于centered参照，absolute栏留空；BRT独立适用性未认证继续unknown。旧原件/负结果/未知全部保持，没有把预检和实现当新机制收益。新资源段与准入另行冻结，所有旧截止不变。
