@@ -1,5 +1,7 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**12:10 UTC恢复锚点：** 原BRT q8 fresh A-A-B-A已11:52:42通过，44原件d2d1fa74…双端核验。唯一活动原K32 pool：original_brt_q8_fresh_pool_v1，outer2302544，planbc42f951…，固定13:45:00UTC截止，勿重置或重复。12:10实际15sealed branch，12候选尝试中11完整/1invalid；invalid保留unknown，BRT适用性仍全部unknown。原效果GT必须用四token delta均值，不能套用shared加权投影；v9完整37页/10主文PDF、29文件sourceZIP和15块/20项已验收，当前正文/矩阵responses/20261110_v9。此时未计算pool终态MSE/收益，AABA只算工程资格。原600来源已完整，不重跑；旧ACP窗口已关、没有活跃训练。原全部负结果与unknown保持。
+
 **11:08 UTC原事实来源终态：** source600已11:03:44 exit0，600命令/150replan，q8/48/96各32valid，共96 sealed候选预测/动作；484原件476575ef…双端核验。不要按后文或旧快照的loading状态重启/重跑。600是事实采集上限，flag=false不构成恢复的原benchmark最终失败，原DEV仍未知；96预测不等于独立端点。原native API前四向量匹配不等于完整measured physics已恢复。下一实际工作为q8/rank28与Full的fresh A-A-B-A及全部K32后果执行，先读`ORIGINAL_BRT_EFFECT_BRANCH_PROTOCOL_20261110_ZH.md`；BRT的applicability rubric及pack/unpack尚未认证，unsupported不可填0。后继资源段明确另冻/修订，不重置任何旧窗口。v8公开草稿/37页PDF仍是当前候选，没有新增机制收益主张。
 
 

@@ -1627,3 +1627,20 @@ v8不可变候选包10:22:22已在AFS核验76项、29文件source ZIP、15回复
 2026-11-10 11:26:37 UTC，原C/f77 namespace下读取_mean_effect(tokens)=tokens.mean(dim=-2)，原observed_effect与target_effect均用其处理delta tokens。原四run model模块d89796cc…一致。当前shared-stage的_spatial_effect_summary在原C中不存在，首次错误import在任何teacher/physics执行前失败并保留；不能把该加权目标带入原specialist的新GT。V2静态预检确认memory/model/policy_core来自原C、research reader来自冻结H7a，四项M1/processor/stats/camera hash及实际DINO runtime2f3e5d29…精确匹配，0teacher装载/0branch/0新结果。
 
 新增collect_rebuttal_original_fresh_pool.py先在CCI实现及--help检查，再回传本机。固定q8/rank28与Full的fresh-scene A-A-B-A，通过后原K32 rank顺序；32 distinct候选、36含Full复核的branch，均H32。原DINO均匀变化均值作GT；历史参照由原bank及完整文件hash/Event ID绑定，源预测/动作先封存。实际r_t未恢复，query-constant仅用于centered参照，absolute栏留空；BRT独立适用性未认证继续unknown。旧原件/负结果/未知全部保持，没有把预检和实现当新机制收益。新资源段与准入另行冻结，所有旧截止不变。
+
+
+### 23.96 原BRT q8同父A-A-B-A完成，原件双端核验
+
+独立新plan bc42f951…于11:45:00UTC准入，截止13:45:00UTC（7200秒）冻结，所有旧窗口不变。Collector1b0a5ee/LF b36d04eb…、原模型f77/source ff32342d…、BRT14000权重515ecad0…及原bank46783/manifest2f57ccfe…在truth前绑定。A-A-B-A于11:52:42完成：固定q8/frame32、原选中raw28，四分支各32命令；完整native父状态、RNG及DINO特征精确一致，三个Full端点及效果完全一致，raw28物理端点不同。使用原_mean_effect的均匀delta均值，未用shared-stage加权/pre-state函数、未做物理unpack、无新policy采样或训练。
+
+首四分支及pre-truth封存、reader/config/plan/source收据共44原件，archive d2d1fa74e2d1fc7950208218f26c6ca96c72a02e1b9555bc3dd944c9a2473f48、manifest6af8cbbc1ab97a0408b56b89b2d56a97049e9fe5bc32fc497cc9bf7005b2a8bb，12:07后AFS/本机全部逐项核验。位置rebuttal_20261109_acp/original_brt_q8_aaba_qualified_archive_v1.tar.gz及本机execution/20261110_iter8。只证明该固定状态下执行/测量资格，1个候选独立端点、0个适用性标签；没有推断后果预测精度、提案修复或总体SR。
+
+12:10:00实际两进程/worker lease持有，已封存15分支，其中12个候选尝试含11完整H32、1 invalid；按原rank顺序继续K32。invalid保留为unknown，不替换、不补零、不按结果重排。不在pool终态前写MSE或收益。BRT rubric未认证，全部applicability仍unknown。完整模型来源与窗口见固定plan/launch，原DEV选点仍未知。
+
+### 23.97 v9效果投影范围、回复和完整PDF联动验收
+
+Appendix A.1明确四个已审计原specialist的四token均匀变化均值，shared-stage weighted/pre-state描述单独列出；A.4、notation locator、C.2.4与Hh4E W5一致，Bbqv W3不再把尚缺的闭环比较描述为当前活跃研究。原实验数字表、九图及主文十页保持，所有不利/未知补充记录保留。20项映射含AABA工程证据，未将其升级为准确率或修复优势。
+
+完整原LaTeX29文件两次编译（完整项目/干净sourceZIP）通过，37页文本逐页相同、主文10页，所有37页render、全页contact及14/15/16/19/20/21/22/23/24/28/29/31/32/37页单独视觉核查，无截断/公式表格重叠、无undefined references/overfull，46条继承font warnings不增，匿名性检查通过。PDF SHA34922f9629c65cb647fa84eae981bada4493e629bf592dd8f4374037043b4c39，sourceZIP SHA2f926f3ebb0415a813a2b5cf2399c510b0828a2d0b5c7773851edd22e52557ac。位置tmp/rebuttal/revision/WARM_ICLR2027_revision_v9.pdf及同名_source.zip，英文三份/15块见responses/20261110_v9。
+
+这关闭已确认的实现描述差异，不关闭原模型后果精度/修复、自然missing-skill、同信息最终训练及其他机制cohort/原DEV绑定。原33页投稿、v8及所有旧原件保持。stable_release_ready=false，未发布/正式上传；新增真机仍延期。
