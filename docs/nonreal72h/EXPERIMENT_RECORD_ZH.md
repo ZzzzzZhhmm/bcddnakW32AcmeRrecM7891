@@ -1451,3 +1451,29 @@ source1事实700回放与六原query的Full上下文/null动作封存完整exit0
 source1事实回放/六封存、两query物理原件、三份终态runner及准入/实际预检等162项，档案`source1_complete_factual_seals_and_same_parent_q8_q48_v1.tar.gz`，13,428,763 bytes，SHA `30997de11619a85bb34cfe90be408aec561267a35aa2662aeb7c2185b8f76241`，manifest SHA `997fa9ee5a1751ec7181cd7d21d6e0e4a5cdbdcc1957e762f71f0fb6f1e579b2`。04:30:33本机全部162项逐项核验；AFS/C盘均保全，原件在Git外，收据SOURCE1_COMPLETE_FACTUAL_AND_NULL_QUERIES_ARCHIVE_V1.json及SOURCE1_COMPLETE_LOCAL_VERIFICATION_V1.json。
 
 两query真实terminal及lease/GPU空闲81,080MiB核实后，04:14:04按既定source顺序准入source2/seed340800002的事实700与六query封存，outer2234575，独立5400秒窗口至05:44:04 UTC，source84af4413…和原v5共享权重wrapper不变。spec SHA `719f26a50f9b56ded12c0757a2963f2cddeae85dd221240a1251faa5ef1dc133`；原有固定样本及其他窗口均未重置。此为准入，不提前记作完成或新增SR；成功后原source2/q8/q48严格同父物理对照，原闭环下一role仍case4/null、campaign08:31截止保持。
+
+### 23.76 六个固定同父对照完整、适用性复核与ACP真实配额回退
+
+source2事实700回放/六query封存完整exit0后，04:53:19严格完整pool依赖的实际输入预检两项exit0；04:53:48并行准入原source2/q8与q48，分别outer2241721/2241722，每项2897秒，原source2截止05:44:04 UTC未重置。两项实际终态exit0，q48于05:04:10退出；各新增null32与Fullrepeat32，原父/RNG/DINO及重复Full端点/效应精确，Full/null实际关节端点不同。Raw/Full/null局部标签仍均0。source2原700 trace逐数组dtype/shape/值精确、六共同Gaussian及null gate0亦已核验。161项原件档案`source2_complete_factual_seals_and_same_parent_q8_q48_v1.tar.gz`，13,375,317 bytes，SHA `c480b29f04cb827ad89ef2e0eb9004e93121eb53202e758890e1a890874afc5d`，manifest SHA `e24bbf69fc3c9d8358f97f2b9d894dd9568f9abe448e42adcbf92dad1854d589`；05:06:06本机161项逐项通过，AFS/C盘双端保全。
+
+目前三个原固定source的q8/q48共六个完整同父Raw/Full/null query，18个主要角色标签均0，重复Full仅作精确性检查，不计独立样本。它们属于作者此前指定的v8 shared-step3000独立诊断，不能替代已确认逐任务specialist的原稿准确率，也未给出修复收益或总体修复率。
+
+05:04:45另逐一重验原六pool的192个候选分支complete收据与原父状态，独立适用标签按source0/q8、0/q48、1/q8、1/q48、2/q8、2/q48依次为“适用/不适用/未知”：0/28/4、0/32/0、2/27/3、0/32/0、0/29/3、0/32/0。source1/q8的rank9、rank10确有适用动作，而原选中raw31/Full/null仍均0。因此不能把全部失败归因于没有可用候选；另外三份完整q48 pool无适用端点的结论仅限原K32与该H32标签，不证明整个经验库缺少技能。原10个unknown保留，不用任务名称代替适用标签。原件`ALL6_FIXED_POOL_APPLICABILITY_AUDIT_V1.json`，其候选原件已包含在此前591/1190项完整档案内；这次是既有证据重验，不新增采样/物理分支。
+
+ACP登录恢复后，两次标准资源创建尝试均未生成任务；第二次保全了服务端HTTP429正文：`MEMBER_QUOTA_EXCEEDED`，两允许集群合并成员GPU配额剩余0。第一次未知导航后按完整显示名前缀查询“暂无数据”，再等待后重试，未复制未知活动任务。当前配额实证满足回退条件，05:00:34成功创建闲时轻量测量`warm-env-measure-20261110-b`，UID `0d255c27be8e45108cd226b509b75f78`，cluster01e、1GPU/8CPU/128GiB、重启0、timeout900，镜像/AFS沿已确认设置。05:07:53控制台仍启动中、实际GPU0，测量目录尚无，不能写作运行完成。标准拒绝收据SHA `2bdae6f2132e2a137a5d2e40cda39eb060fb925432665adae96160552e4e5e16`及创建/详情收据、先于提交冻结的两个intent均在Git外保全。
+
+新环境测量operator已在CCI实际通过并以`a77686039e047c78a5ff84b0e68ae9260f4d199a`英文提交、推送核实、CCI离线同步。冻结source `2836b318b023f66cdfc5aae45c57c4cc38017fee1345987f104aa36a761626a2`，内部严格probe仍`adbd844a…`。它保留probe原始exit0/2及具体差异；ACP成功只表示环境事实采集完成，永不据此准许resume，不加载模型、不产生优化更新。Full旧b仍200，无新训练准入；原父与失败/窗口均保留。
+
+历史BRT step14000合同确实完整绑定f77c633、权重SHA515ecad0…、原bank/normalizer和seed。但对应formal100-v2在compute_device NameError处失败，v3在Sapien导入前失败，均不能恢复原稿成绩或DEV选点。八份合同/失败原件保全为`HISTORICAL_OFFICIAL50_CONTRACTS_AND_FAILURES_V1.json`。原训练设置已由作者确认，仍需每个最终specialist选点的具体绑定；不把旧v3候选装进v8。
+
+**固定顺序更正：** 原记录写“下一case4/null”不准确。05:07实际调用冻结campaign的`next_role`返回case4/Full（seed340800004）；错误null准入在断言处停止，未生成job/spec或执行GPU。随后严格按真实冻结顺序05:07:56独占准入case4/Full，outer2245022、worker3600/outer5400、原08:31:04UTC campaign总截止保持，source56393c5a…、spec SHA `ace52b811163f6044289025d8becbfe2ea5fbc7ecebee19f6f76cd353434960a`。这项仍在运行，不提前增加完整配对数。原始顺序、全部失败和unknown均保留。
+
+### 23.77 v7回复/完整论文联动验收与ACP跨集群调度核销
+
+三位审稿人20项意见、三份英文正文和15个可粘贴评论块已更新为`responses/20261110_v7`。原工程完整编译及干净29文件ZIP独立重编译通过，37页逐页文字一致、主文10页；全部页面渲染，更新31/32页和全篇联系图已目视检查，无undefined references/overfull，原数值表及9图保留。PDF SHA `644a488694d6ebc7245c40677476ca2c646f782d046e6f9582c5ab9043316056`；source ZIP SHA `1758da6f2a44d5e9b9dc0ea31a76a6bd5be0caa28fd27141bacb9014c0ec4551`。Table20新增原候选池独立适用数；六个同父对照/18个零标签以及“有适用候选仍未改善”的范围同步至Appendix C.2.4和Bbqv W3/Q2。原稿RMBench specialist设置不推广成未核实的每个机制cohort模型绑定。原33页投稿及v4–v6保持，尚未达到实证stable release gate，未发布或上传。
+
+六query组合报告`SAME_PARENT_ALL6_LOCAL_CONTRASTS_V1.json` SHA `b070afa662e34dbbc4fda5546b608dc201e4596d7a33d4c2d736875fc257d1dd`，05:11:58再次重验原parent/RNG/DINO、12个新物理分支收据及Full重复端点，另输出CSV/Markdown/LaTeX表。独立适用复核报告SHA `c72a9e90c2b690ddec6ee71b828462c4c7e8a9688db124e5dce8ae584a6c3eb3`。这些均为Git外既有原件的复核/整理，不增独立episode或重新抽样。
+
+环境测量b一直未获GPU，worker事件显示FailedScheduling（nvidia.com/gpu不足及曾有PVC未绑定），不能当作实际模型运行。停止请求与停止中阶段保留，05:22:56确认为已停止，UID0d255c27…；AFS测量目录仍无。仅在确认终态后，以先于创建冻结的cluster02 intent将同一静态测量转投另一允许闲时集群，05:24:59唯一c成功创建，UID `23bd904f9f3741b8b98e1821800d5ed1`，1GPU/8CPU/128GiB、重启0、原timeout900/镜像/AFS/排他输出目录不变。05:29:32仍启动中、任务规格*0，具体ACP runtime子字段未测得；不重提未知c、不将调度状态记作工程或科学成功。b终态停止收据SHA `4eb544a193cd723b7822f0c8b2339050be5b84db766c70b3dcee2e362fa78846`及c创建/身份收据已双端保存。整个过程没有延长/重置旧Full训练b的窗口或修改训练数值校验。
+
+05:28:24现场核查case4/Full实际child2245058存活，campaign心跳持续、GPU100%、用32,967MiB，原source56393c5a…与08:31:04UTC截止保持；完整配对仍4，不提前算case4。该时点AFS可用224,506,974,208 bytes，已超过原80GiB空间门槛，先前容量不足只是历史观察，本轮没有删除任何state/CAS。当前训练恢复的ACP差异、时限和原specialist绑定仍需分别关闭。完整快照在`ITER5_LIVE_CAPTURE_V1.json`，原件Git外保全。

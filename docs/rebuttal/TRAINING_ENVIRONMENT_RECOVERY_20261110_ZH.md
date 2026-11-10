@@ -1,5 +1,9 @@
 # Full step200续训失败：真实状态、静态环境诊断与恢复边界
 
+**最新状态（2026-11-10 05:30 UTC）：** 作者重新登录后已确认旧训练b失败，重启0，更新仍200。严格probe未放宽；新增独立measurement operator只把“静态数据采集完成”与“resume准入”分开，CCI实际preflight通过并以a776860提交/推送/冻结。标准创建实际HTTP429 MEMBER_QUOTA_EXCEEDED、成员GPU0后才切闲时。环境测量b因GPU/PVC排队未执行，已05:22:56确认终态停止；随后唯一c（warm-env-measure-20261110-c，UID23bd904f9f3741b8b98e1821800d5ed1）在cluster01e_02创建、重启0/timeout900，05:29仍GPU0启动中。排他输出目录ACP_ENVIRONMENT_MEASUREMENT_V1尚无，因此ACP具体子字段仍未测得，不能称修复完成。旧b的原窗口不重置，任何新资源段须独立记录。
+
+05:28 AFS可用224,506,974,208 bytes，已超过80GiB空间准入，旧容量不足不作为当前障碍；本轮未删除state/CAS。作者确认原稿逐任务specialist，当前shared-stage训练/诊断继续独立归档，不冒充原稿准确率或擅自迁移旧v3权重。
+
 ACP唯一任务`warm-full-resume200-500-20261110-b`，UID `9c6000a4ce734a7bac717b2053197a1e`，已于2026-11-10 01:24:01 UTC实际执行训练入口，01:35:19以exit1失败。不能沿用旧0GPU排队状态。权威产物根是`WARM_evaluations/rebuttal_20261109_acp/full_resume200_to500_v1`；先前某些absence检查读成`full_resume200_500_v1/attempts/operator.json`，因此失效，已在台账更正。
 
 失败发生在父step200完整state哈希校验后、正式resume装载前：`TrainingAttestationError: resume parent contradicts the live training recipe/runtime: training_runtime_json`。没有新的training_metrics、完成marker或step201+结果，不能登记500更新成功。旧训练source前后均4efb8094…，父权重/optimizer/scheduler/RNG及失败attempt均保留。15项失败原件档案SHA `297839849a449a1c4a4521bf782db2db380e3d50bc3cc9b1bdcd1f960f56de52`，Git外iter4/AFS双端保全。

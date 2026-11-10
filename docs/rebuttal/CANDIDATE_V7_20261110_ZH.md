@@ -1,0 +1,13 @@
+# WARM rebuttal v7 内部审阅锚点
+
+三位审稿人的20项weakness/question已对应三份英文Markdown正文和15个可粘贴评论块。当前本机候选为`tmp/rebuttal/responses/20261110_v7`，修订完整LaTeX为`tmp/rebuttal/revision/WARM_ICLR2027_v7`。没有发布OpenReview评论或上传正式PDF。
+
+完整PDF37页，主文10页；SHA `644a488694d6ebc7245c40677476ca2c646f782d046e6f9582c5ab9043316056`。29文件源码ZIP的SHA `1758da6f2a44d5e9b9dc0ea31a76a6bd5be0caa28fd27141bacb9014c0ec4551`。原工程全量编译、干净ZIP独立重编译、37页文字逐页一致、全部渲染、更新31/32页与全篇联系图视觉检查通过；主文前10页与v4逐页文字一致，原数值表和9幅有效图保留，无undefined references或overfull。46条既有字体替代提示不变。原33页最终投稿及v4–v6候选保留。
+
+本版新增内容位于Appendix C.2.4：三个固定source各q8/q48的同父Raw/Full/null局部对照全部完整，18个主要角色标签均0，所有重复Full端点/效应精确、Full/null实际关节端点不同；它证明干预真实，没有新修复收益。既有六固定pool的192候选已逐收据重验：source1/q8含两个适用候选，而原选中提案/Full/null仍0；三份完整q48 pool均无适用端点。Table20新增独立适用候选数，保留六个不利centered主指标及10个未知。K32作用域不能代替全bank技能覆盖。三对非空family-holdout自然gate仍正的结果继续保留。
+
+作者确认原稿RMBench使用逐任务specialist。新shared-step3000数据单独使用，不评价原稿specialist准确率，不丢弃其负结果。具体原权重/DEV绑定与不同代际训练语义仍需核对；历史完整合同不是成功原评测。真机新增取证按作者要求延期，原稿结果/已核实协议保留。
+
+当前尚未通过实证稳定版门槛。优先关闭原specialist权重绑定、跨后续任务阶段的后果/修复与撤回证据、同信息最终对照、非空自然missing-skill覆盖及配对任务表现。现有待验证部分不写成完成，不能用静态工程通过代替科学效果。
+
+实际运行以根`tmp/rebuttal/planning/current_iteration.json`和AFS真实进程/收据为准；本文是候选版本说明，不作为重复提交依据。CCI当前按真实冻结next_role运行case4/Full，原campaign截止08:31:04 UTC，未重置；ACP标准成员GPU实际剩余0后才回退闲时，测量任务只采集环境、永不据此准许训练resume。遇到排队/停止/失败须先核销已有UID及AFS输出，不重复未知创建。
