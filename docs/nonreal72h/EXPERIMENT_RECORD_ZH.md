@@ -1921,3 +1921,11 @@ CCI新增qualify_rebuttal_matched_resets.py与逐worker独立HOME/cache/tmp/runt
 新增独立cohort-case0.v3事实采集协议只接已冻结case0，完整BT官方1000命令或成功终止，首图像/首H32/前四API及实测物理/TOPP须精确匹配已成功资格。所有实际到达replan封存原输入、候选预测、原适配动作、RNG、输出，主探针仍预定8/48/96，未到达不换点。原BRT600和额外BT0协议不变；全50评测没有被此单源采集默示启动。22:16:29新81项检查通过（pytest12.22秒/总16.49秒），stdout6feab48b…，collector93b1bb1c…；没有改变原模型或任何原科学结果。
 
 22:23:42UTC实际标准Full2679/3000（新2479）、Pooled2019/3000（新1919），连续且loss/grad有限，durable父200/100、原Nov11 12:29:56UTC不变，AFS114,985,889,792B；两final完整state/CAS未齐。正式100 paired native TEST尚未派发。当前论文v12/PDF/ZIP和三份英文15块不因工程数据而增加收益数字，全部20科学closure=false。
+
+### 23.134 原BT完整native1000事实源已启动；增量3双端封包验收
+
+22:27:39UTC在已知旧资格成功终态后独立准入单源case0，原f77/BT12000/root3407/physical340800000/H32/prefix4/NFE10/K32不改。collector75eb6f53…/source5729f876…/548文件、81检查；新plan9d479fa7…，本阶段单一90分钟至23:57:39.628419UTC，外层5370秒。旧one-replan22:16、roster22:31与训练Nov11 12:29:56截止均保持，并非失败重试或重置旧窗口。flock持有原native全局lease至worker真正退出，保护共用runtime；formal隔离source861004fa…及两训练活动快照均不变。全50原BT评测未派发。
+
+22:32:20UTC实际runner2414197及flock/collector子进程存在，全局lease实测占用，CCI 4442MiB；状态loading_original_full_policy，0新查询/0完整native命令，不能写成完整回合或新性能。两标准ACP Full2715（新2515）/Pooled2058（新1958）连续有限，完整final3000尚未完成，AFS114,859,044,864B，保护108.407GB最终raw/CAS预留。真实metrics/runner/事件/进程/lease在Git外ITER12_LIVE_V7保存；不新建或重复未知任务。
+
+内部responses/20261111_v12_addendum3更新20项问题—主张—证据—回复—修订位置映射，matrix0e18d942771cbacd99f95f6435a23a64d506560416e53a054b3a71063ec461a0。三英文/15块和v12 PDF ed11dae1…、原LaTeX ZIP8955a7e9…完全不变，无新效能数字，无需重编译未变PDF。78项51,732,691B增量包SHA9dcbfd6dbcebb087ab71a199ff651c2545de504285ca3031e4356cf3c4027074、manifest796870b6…包含8个完整原件档案及独立核验/源/协议；本机全成员与AFS writing_candidates/20261111_v12_addendum3逐项解包/落盘校验均完成。全部20科学closure=false、stable_release_ready=false，未发布OpenReview或正式上传。下一优先核销完整原BT源后按固定8/48/96进行原模型同状态后果/修复/撤回独立执行，及两final3000完整state/CAS与typed bundles后100对正式native比较；真实missing-skill和原DEV绑定仍开放，真机新增延期。

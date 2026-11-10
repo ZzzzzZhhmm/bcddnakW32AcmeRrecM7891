@@ -1,5 +1,9 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**最新执行锚点（2026-11-10T22:32:20UTC）：** 原BT case0完整native1000事实源已22:27:39实际启动，outer2414197/flock/collector、plan9d479fa7…、source5729f876…/commit75eb6f53…；全局native lease实测持有，loading_original_full_policy，0新查询/命令。本阶段单一截止23:57:39.628419UTC，不能复制启动或重置；先读operator/runner/完整trace/实际进程，失败先封存，成功也须完整归档核验再分析。全50原BT评测仍未派发。全50-roster/十worker资格已完成，不重跑。
+
+两标准ACP Full2715/Pooled2058连续有限、完整final3000待齐，原Nov11 12:29:56UTC截止保持，AFS114.86GB须保护108.407GB最终raw/CAS预留。内部增量3 responses/20261111_v12_addendum3、matrix0e18d942…、78项包9dcbfd6d…/manifest796870b6…已双端全成员验收，AFS writing_candidates/20261111_v12_addendum3。三英文15块/v12 PDF38页10主文/ZIP完全不变、全部20科学closure=false，不发布或正式上传。既有q8/q48不利、q96不可观测与原稿所有数字保留；后续重点是原BT固定探针同状态直接证据和两final3000的正式100对，不将工程资格写作效能。
+
 **最高优先级恢复锚点（2026-11-10T22:23:42UTC）：** 100个固定专家准入初态/200次独立reset已完整（892原件deae79ec…）；十worker真实6+4场景并发、20 reset/80 hold与planner端点隔离全部通过（143原件3f99eb0d…、资格2ad5c09e…）。本机独立数组/物理/时间重叠全项核验；不要重采这些已完工程项目，formal环境source861004fa…不改。正式100对仍等待两final3000完整state/CAS/typed bundles，正式时钟尚未开始；原DEV严格全query候选池失败及单独因果反馈资格均保持。
 
 **当前两路标准ACP实际训练：** Full2679/Pooled2019连续有限、durable父200/100、fixed3000及Nov11 12:29:56UTC不变，AFS约114.99GB，保护最终raw/CAS预留。原BT12000/f77/root3407在预冻结cohort case0/seed340800000完成1次H32及4条实测native命令，0 TOPP错误，24原件74859159…/本机独立核验。额外物理0诊断专家拒绝3c87ed5c…/0查询命令仍保留，不算模型失败。单独cohort-case0.v3完整native1000事实源入口已81检查通过；实际是否启动/进度必须读Git外最新current_iteration.json与operator/runner，不按旧pending重复派发。全50原BT评测仅前注册、未准入；本单源不估计总体SR或修复收益。
