@@ -1,5 +1,9 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**最终恢复锚点（2026-11-10 06:00 UTC）：** 唯一ACP测量c已05:47实际完成，UI确认成功，父200的10项静态环境全部匹配，16项原件0f249285…双端保全；不要再按后文旧等待状态重提c。它没有模型装载或训练更新，不能当作完整resume准入，旧cluster01e b的具体差异仍未回溯测得。下一步原样采集post-prepare数值runtime（分布式/DeepSpeed、TF32和确定性等）并保留严格validator；若安排新训练段须单独记录资源修订，不能重置旧窗口。
+
+v7的86项候选/29文件ZIP/八份外部原件已AFS核验，writing_candidates/20261110_v7，整包3ac01a89…；该不可变快照早于测量完成，新工程证据走addendum，PDF数值不变。CCI case4/candidate_null仍是当前唯一科学GPU角色（outer2249166），05:48:35进程/GPU98%/frame72/700、gate0已核实；Full已完整700/0，完整配对仍4，原08:31:04UTC截止不变。先查实际terminal/完整轨迹，不重复Full或提前计第五对。原稿specialist设置已确认，原权重/DEV与训练代际绑定仍是首要科学核对；不以旧v3候选替换v8，也不丢弃现有负结果。真机新取证延期。
+
 **最新实际执行（2026-11-10 05:40 UTC）：** case4/Full已05:33:36完整700、success0，outerexit0，564项原件1b4f903b…双端核验；不是第五个完整配对。原next_role的counterpart为candidate_null（不是API字符串null），已05:37:15在lease/GPU空闲核实后准入outer2249166，source56393c5a…、worker3600/outer5400、原08:31:04UTC截止保持。先核查真实进程/心跳/exit，不再重跑Full，不提前记录null或第五对完成。ACP c于05:39仍缺GPU等待，唯一UID23bd904f…/cluster01e_02保持，未测得环境，无新训练；不复制。v7已编译验收，完整/不利/未知证据保留，实际最新执行读取current_iteration与台账23.78。
 
 **当前候选与资源（2026-11-10 05:30 UTC）：** v7三份英文/15块/20项映射和完整37页/主文10页PDF已全工程编译、干净ZIP重编译及视觉验收，见`CANDIDATE_V7_20261110_ZH.md`。六个同父query已全部完整且均无局部改善，不能再等待/重跑这些封存。原稿逐任务specialist设置已确认，具体原权重/DEV绑定和代际训练语义仍待核对；不要把历史v3直接当最终投稿模型。case4/Full outer2245022、child2245058于05:28真实活跃/GPU100%，原08:31截止不变。新canonical state优先于后面的旧PID记录。

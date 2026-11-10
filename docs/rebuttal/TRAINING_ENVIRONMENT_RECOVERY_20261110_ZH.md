@@ -1,5 +1,7 @@
 # Full step200续训失败：真实状态、静态环境诊断与恢复边界
 
+**最新实测（2026-11-10 05:55 UTC）：** c在cluster01e_02于05:47:25–05:47:37实际完成，控制台成功、重启0。严格静态probe exit0，10字段与父200全部匹配，实际H10080GB/SM90、Torch2.7.1+cu128、CUDA12.8、Accelerate1.12.0、DeepSpeed0.18.5和原平台一致。16项原件0f249285…已保全。它不装载模型、不训练、不准许resume；这个新节点的静态匹配不能回溯定位旧cluster01e b的差异。优先原样记录post-prepare完整数值runtime并执行原严格validator，保留DS/TF32/确定性等真实差异，不能删字段或放宽校验。旧b已知失败/200更新及原窗口不变；后续资源段须独立修订记录。下方排队状态是较早观察。
+
 **最新状态（2026-11-10 05:30 UTC）：** 作者重新登录后已确认旧训练b失败，重启0，更新仍200。严格probe未放宽；新增独立measurement operator只把“静态数据采集完成”与“resume准入”分开，CCI实际preflight通过并以a776860提交/推送/冻结。标准创建实际HTTP429 MEMBER_QUOTA_EXCEEDED、成员GPU0后才切闲时。环境测量b因GPU/PVC排队未执行，已05:22:56确认终态停止；随后唯一c（warm-env-measure-20261110-c，UID23bd904f9f3741b8b98e1821800d5ed1）在cluster01e_02创建、重启0/timeout900，05:29仍GPU0启动中。排他输出目录ACP_ENVIRONMENT_MEASUREMENT_V1尚无，因此ACP具体子字段仍未测得，不能称修复完成。旧b的原窗口不重置，任何新资源段须独立记录。
 
 05:28 AFS可用224,506,974,208 bytes，已超过80GiB空间准入，旧容量不足不作为当前障碍；本轮未删除state/CAS。作者确认原稿逐任务specialist，当前shared-stage训练/诊断继续独立归档，不冒充原稿准确率或擅自迁移旧v3权重。

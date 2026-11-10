@@ -1485,3 +1485,11 @@ case4/seed340800004的Full角色于05:33:36完整700、success0，outer05:33:43 
 Full实际terminal、进程退出与lease/GPU空闲81,080MiB核实后，冻结next_role返回case4/candidate_null。此前pre-admission将API角色误写为null的断言已阻止提交，未生成错误job或GPU执行；保留原检查脚本。05:37:15正确准入该原固定counterpart，outer2249166，worker3600/outer5400，原08:31:04UTC campaign总截止不变；spec SHA `b67d1301c59f3152bb24118ad67e3b27ffd5a84280bf00675ede518d09c6645e`，source56393c5a…与shared checkpoint68c7f384…不变。新角色只记进行中，尚无新配对结论。原件收据`CASE4_FULL_V1_VERIFIED_COMPLETE_V1.json`、本机核验和`CCI_FIXED_CASE4_NULL_V1_LAUNCH.json`均在Git外。
 
 05:39:13 ACP c的唯一worker仍等待、无Host IP，事件明确为cluster01e_02缺1张GPU。它尚未运行静态测量；保留该UID继续排队，不再复制未知活动任务，也不把创建成功记成算力或实验成功。
+
+### 23.79 ACP c实际完成静态测量，父200的10字段匹配
+
+唯一c于05:47:25实际启动，05:47:37完成measurement receipt；05:54:59控制台确认成功、UID23bd904f…、重启0。严格probe exit0、differences为空，Python3.10.20、Linux5.14.0-284.25.1.el9_2/glibc2.35、Accelerate1.12.0、DeepSpeed0.18.5、Torch2.7.1+cu128/CUDA12.8、cuDNN90701、CUDA可用、单张H10080GB/SM90等10项静态字段与原Full父200完全一致。没有模型装载、优化更新或resume准入；不回溯推断此前cluster01e旧b的具体runtime差异。
+
+四份实际测量/日志、三个事前intent、实际标准配额拒绝/旧b终态/c终态收据、三个冻结源码和父attestation共16项，档案`acp_cluster02_static_environment_measurement_complete_v1.tar.gz`，11,572 bytes，SHA `0f2492853b000203af706359402bf0038446672b6b66bdaac7218ba0cf383853`，manifest SHA `f5761f19ee0b0d13271d5d8ac7428629222d84c966bd74755b1691e46adce23d`，AFS/C盘逐项保全。静态匹配不能代替post-prepare的分布式/DeepSpeed配置、TF32及确定性等数值字段和optimizer/scheduler/RNG完整校验。下一恢复步骤应原样记录这些实际字段再执行原严格比较，不删除字段、拟造parent或放宽校验；若需新训练资源段，先独立记录资源修订，保持旧b原失败、输出和窗口。
+
+v7候选已05:46:53在AFS核验86项文件、29文件完整source ZIP及八份外部原件档案：`writing_candidates/20261110_v7`，整包104,209,711 bytes，SHA `3ac01a8901c89a10eb1e69ee1329a164c5005415b0ef843a22f83b967fd4c417`，manifest SHA `08fafa9fd7596f6455a9985c301de7e8c386b17bd15ed337841cad374aead798`。此包为静态测量完成前的不可变交付快照；上述新工程证据单独作为addendum，不修改原v7 PDF、源码或科学数值。05:48:35 CCI candidate_null真实child仍存活/GPU98%，当前frame72/700、gate0；不是完整null或第五对。AFS该时点192,301,023,232 bytes可用，所有state/CAS未删。
