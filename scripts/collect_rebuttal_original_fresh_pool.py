@@ -20,6 +20,65 @@ import sys
 import traceback
 
 
+
+BT_POOL_SCHEMA='warm.original-BT-fixed-cohort-fresh-pool.v1'
+
+
+def validate_original_pool_plan(plan):
+    query=int(plan['query_replan']);selected=int(plan['selected_rank'])
+    if plan['schema']=='warm.original-specialist-fresh-pool.v1':
+        if query not in (8,48,96) or selected!={8:28,48:0,96:10}[query]:
+            raise ValueError('Original BRT query/rank protocol differs')
+        return dict(task='blocks_ranking_try',physical_seed=0,is_BT=False)
+    if plan['schema']!=BT_POOL_SCHEMA:
+        raise ValueError('Unknown original-specialist branch protocol')
+    expected=dict(task_name='battery_try',physical_seed=340800000,root_seed=3407,
+        cohort_case_id=0,checkpoint_step=12000,horizon=32,execution_prefix=4,
+        checkpoint_sha256='27c137d689007b38f6204d3dd12bb038550b1e58403506d7a9894bd6fcd43a9f',
+        roster_sha256='612cb5d1728b2bebef7c09ee61bd50933c64821be31e1df0a7aa475b61d666b8',
+        factual_source_plan_sha256='9d479fa7d1dedcc120edff3e38561d84c46d8214a649a436d004ecbbce72aec1')
+    if any(plan.get(k)!=v for k,v in expected.items()) or query not in (8,48,96) or not 0<=selected<32:
+        raise ValueError('Original BT fixed cohort/checkpoint/query binding differs')
+    if plan.get('next_interaction_rubric')!='warm.rmbench.physical-next-interaction.v1':
+        raise ValueError('Independent BT physical-outcome rubric must be declared before branch truth')
+    return dict(task='battery_try',physical_seed=340800000,is_BT=True)
+
+
+def validate_BT_factual_source(operator,trace,plan):
+    required=dict(status='complete_fixed_original_factual_episode',candidate_seed=340800000,
+        cohort_case_id=0,source_sha256='ff32342d286929ddc5904d55814c66e965269f6b749c1e1b6df1060aaef0b7fe',
+        source_sha256_after='ff32342d286929ddc5904d55814c66e965269f6b749c1e1b6df1060aaef0b7fe',
+        checkpoint_sha256='27c137d689007b38f6204d3dd12bb038550b1e58403506d7a9894bd6fcd43a9f',
+        initial_observation_exact_to_qualification=True,first_replan_exact_to_qualification=True,model_updates=0)
+    if any(operator.get(k)!=v for k,v in required.items()):raise ValueError('Original BT factual source is not qualified and complete')
+    count=operator['native_commands']
+    if len(trace)!=count or not 0<count<=1000 or (count!=1000 and not operator.get('success_flag')):
+        raise ValueError('Only an official BT native-limit or success-terminated source is complete')
+    frame=plan['query_replan']*4
+    if count<frame+4:raise ValueError('Fixed original BT query does not have its full executed prefix;no replacement')
+    if [r['index'] for r in trace]!=list(range(count)) or any(r['take_action_cnt']!=r['index']+1 for r in trace):
+        raise ValueError('Original BT trace is incomplete or its native counters differ')
+    if not plan.get('factual_prefix_manifest') and any(r.get('observed_TOPP_errors') for r in trace[:frame]):
+        raise ValueError('Original BT factual prefix requires a separately verified two-pass rejection audit')
+
+
+def plain_physical_state(value):
+    return [{k:v.tolist() if hasattr(v,'tolist') else v for k,v in item.items()} for item in value]
+
+
+def paired_BT_repair_summary(records,selected):
+    full=records['anchor-a'];raw=records[f'rank-{selected}']
+    a,b=raw['independent_label']['applicable'],full['independent_label']['applicable']
+    return dict(scope='One fixed source state;dependent candidate outcomes,not population success rate',
+        selected_rank=selected,independent_source_states=1,raw_label=a,refined_label=b,
+        raw_endpoint_status=raw['endpoint_status'],refined_endpoint_status=full['endpoint_status'],
+        paired_known=a is not None and b is not None,
+        repaired=(a==0 and b==1) if a is not None and b is not None else None,
+        harmed=(a==1 and b==0) if a is not None and b is not None else None,
+        next_interaction_rubric='warm.rmbench.physical-next-interaction.v1',
+        automatic_withdrawal_causal_comparison_available=False,population_effect_estimated=False)
+
+
 def verified_prefix_manifest(plan, source, frame):
     """Bind a separately audited factual context;never classify candidate truth."""
     path = plan.get('factual_prefix_manifest')
@@ -76,10 +135,9 @@ def main():
     assert sha(cli.plan) == cli.expected_plan_sha256
     plan = read(cli.plan)
     os.environ.update(HF_HUB_OFFLINE='1',TRANSFORMERS_OFFLINE='1',HF_DATASETS_OFFLINE='1',DIFFSYNTH_SKIP_DOWNLOAD='true',DIFFSYNTH_MODEL_BASE_PATH=plan['model_root'],TOKENIZERS_PARALLELISM='false')
-    assert plan['schema'] == 'warm.original-specialist-fresh-pool.v1'
+    protocol=validate_original_pool_plan(plan);task=protocol['task'];physical_seed=protocol['physical_seed'];is_BT=protocol['is_BT']
     query = int(plan['query_replan']); selected = int(plan['selected_rank']); frame = query * 4
-    assert query in (8,48,96) and selected == {8:28,48:0,96:10}[query]
-    query_id = f'original-brt-seed0-q{query}'
+    query_id = f'original-bt-cohort-case0-q{query}' if is_BT else f'original-brt-seed0-q{query}'
     C, H, runtime, source, out = [Path(plan[k]) for k in (
         'original_source', 'reference_controller', 'rmbench_runtime',
         'factual_source', 'output')]
@@ -112,6 +170,7 @@ def main():
     from fastwam.research.fresh_pool import atomic_json, read_verified_branch, seal_branch
     from fastwam.research.native_replay import native_parent, state_hashes, physical_joint_state, require_observation
     from fastwam.research.branches import InvalidBranchExecution
+    from fastwam.research.rmbench_outcomes import observe_task_progress,label_next_interaction
     spec = importlib.util.spec_from_file_location('frozen_source_identity', H/'scripts/run_rebuttal_training_with_runtime_trace.py')
     identity = importlib.util.module_from_spec(spec); spec.loader.exec_module(identity)
     spec = importlib.util.spec_from_file_location('frozen_native_setup', H/'scripts/qualify_rebuttal_rmbench_task.py')
@@ -133,13 +192,15 @@ def main():
         for row in plan['inputs']:
             assert sha(row['path']) == row['sha256'], row['path']
         full = read(source/'operator.json')
-        assert full['status'] == 'complete_fixed_original_factual_episode' and full['native_commands'] == 600
+        assert full['status'] == 'complete_fixed_original_factual_episode'
+        if not is_BT:assert full['native_commands']==600
         args = read(source/'runtime_args.json'); contract = read(args['warm_online_contract_path'])
-        assert args['task_name'] == 'blocks_ranking_try'
+        assert args['task_name'] == task
         trace = [json.loads(s) for s in (source/'native_trace.jsonl').read_text().splitlines()]
         prefix_manifest = verified_prefix_manifest(plan, source, frame)
         expected_prefix_errors = {v['index']:v['error'] for v in prefix_manifest['prefix_errors']} if prefix_manifest else {}
-        assert len(trace) == 600
+        if is_BT:validate_BT_factual_source(full,trace,plan)
+        else:assert len(trace)==600
         commands = np.asarray([r['command'] for r in trace], dtype=np.float32)
         before_trace = np.asarray([r['before'] for r in trace], dtype=np.float32)
         after_trace = np.asarray([r['after'] for r in trace], dtype=np.float32)
@@ -182,8 +243,10 @@ def main():
             branch_order=order, source_inputs=plan['inputs'], expected_source_observation=str(source/f'replan-{query:04d}.npz'),
             action_hashes={k:sha256_array(v) for k,v in actions.items()},
             predicted_sha256=sha256_array(predicted), historical_sha256=sha256_array(historical),
-            required_effect_available=False, unsupported_applicability_is_unknown=True,
+            required_effect_available=False, unsupported_applicability_is_unknown=not is_BT,
+            independent_BT_rubric=plan.get('next_interaction_rubric') if is_BT else None,
             rng_protocol='Restore the sealed source pre-forward Python/NumPy/Torch RNG at each query parent;no physical unpack.')
+        if not is_BT:seal.pop('independent_BT_rubric',None)
         if (out/'sealed_query.json').exists():
             assert read(out/'sealed_query.json') == seal
             with np.load(out/'sealed_arrays.npz', allow_pickle=False) as saved:
@@ -202,8 +265,8 @@ def main():
         sys.path[:0] = [str(runtime), str(runtime/'description/utils'), asset_plan['curobo_source']]
         os.chdir(runtime)
         from generate_episode_instructions import generate_episode_descriptions
-        cls = getattr(importlib.import_module('envs.blocks_ranking_try'), 'blocks_ranking_try')
-        cfg = setup.resolved_config(runtime,'blocks_ranking_try',0)
+        cls = getattr(importlib.import_module('envs.'+task),task)
+        cfg = setup.resolved_config(runtime,task,physical_seed)
         assert cfg == read(source/'native_config.json')
         expert = read(source/'expert_setup_metadata.json'); initial = read(source/'initial_identity.json')
         rng = pickle.loads((probe/'sampling_rng_before.pkl').read_bytes())
@@ -226,16 +289,20 @@ def main():
                 attempt = root/f'attempt-{len(list(root.glob("attempt-*")))+1:03d}'; attempt.mkdir()
                 atomic_json(attempt/'attempt.json', dict(branch=name,pid=os.getpid(),utc=stamp()))
                 operator.update(status='recreating_fixed_parent',active_branch=name); save()
-                random.seed(0); np.random.seed(0); torch.manual_seed(0); torch.cuda.manual_seed_all(0)
+                random.seed(physical_seed); np.random.seed(physical_seed); torch.manual_seed(physical_seed); torch.cuda.manual_seed_all(physical_seed)
                 env = cls(); env.setup_demo(**cfg)
                 assert type(env.scene.physx_system).__name__ == 'PhysxCpuSystem' and not env.eval_video_path and not env.save_data and not env.render_freq
-                instruction = str(np.random.choice(generate_episode_descriptions('blocks_ranking_try',[expert['info']],100)[0]['unseen']))
+                instruction = str(np.random.choice(generate_episode_descriptions(task,[expert['info']],100)[0]['unseen']))
                 assert instruction == initial['instruction']; env.set_instruction(instruction=instruction)
                 require_source(source/'initial_observation.npz',env.get_obs())
-                observed_prefix_errors = []
+                observed_prefix_errors = [];seen_combinations=[];prefix_rows=[]
+                if is_BT:
+                    initial_progress=observe_task_progress(env)
+                    if all(initial_progress['in_slots']):seen_combinations.append(initial_progress['combination'])
                 with OfficialQposGuard(env) as guard:
                     for index,command in enumerate(commands[:frame]):
                         budget(); before = factual_joint_state(env.get_obs()).copy()
+                        measured_before=plain_physical_state(physical_joint_state(env)) if is_BT else None
                         error = None
                         try:
                             assert guard.step(command)
@@ -248,13 +315,22 @@ def main():
                             raise RuntimeError('Expected factual-prefix rejection did not recur')
                         assert env.take_action_cnt == trace[index]['take_action_cnt']
                         require_step(index,before,factual_joint_state(env.get_obs()))
-                        if prefix_manifest and (index+1)%4 == 0:
+                        if is_BT:
+                            measured_after=plain_physical_state(physical_joint_state(env))
+                            assert measured_before==trace[index]['physical_before'] and measured_after==trace[index]['physical_after'],'Original BT measured factual prefix differs'
+                            progress=observe_task_progress(env)
+                            if all(progress['in_slots']) and progress['combination'] not in seen_combinations:seen_combinations.append(progress['combination'])
+                            prefix_rows.append(dict(index=index,command=command.tolist(),before=before.tolist(),after=factual_joint_state(env.get_obs()).tolist(),physical_before=measured_before,physical_after=measured_after,task_progress=progress,error=error))
+                        if (prefix_manifest or is_BT) and (index+1)%4 == 0:
                             require_source(source/f'replan-{(index+1)//4:04d}.npz',env.get_obs())
                 assert observed_prefix_errors == (prefix_manifest['prefix_errors'] if prefix_manifest else [])
                 atomic_json(attempt/'factual_prefix_audit.json',dict(command_attempts=frame,
                     observed_rejections=observed_prefix_errors,
                     manifest_sha256=plan.get('factual_prefix_manifest_sha256'),
                     candidate_execution_validity_unchanged=True))
+                if is_BT:
+                    with (attempt/'BT_factual_prefix_trace.jsonl').open('x') as stream:
+                        for row in prefix_rows:stream.write(json.dumps(row)+'\n')
                 obs = env.get_obs(); require_source(source/f'replan-{query:04d}.npz',obs)
                 random.setstate(rng['python']); np.random.set_state(rng['numpy']); torch.set_rng_state(rng['torch_cpu']); torch.cuda.set_rng_state_all(rng['torch_cuda'])
                 parent = native_parent(env,obs); parent_hash = state_hashes(parent)
@@ -266,6 +342,8 @@ def main():
                 if records: assert np.array_equal(before_feature,np.load(out/'parent_dino_spatial.npy',allow_pickle=False))
                 else: np.save(out/'parent_dino_spatial.npy',before_feature,allow_pickle=False)
                 (attempt/'parent.pickle').write_bytes(pickle.dumps(parent,protocol=4)); np.save(attempt/'parent_dino_spatial.npy',before_feature,allow_pickle=False)
+                parent_progress=observe_task_progress(env) if is_BT else None
+                if is_BT:assert state_hashes(native_parent(env,env.get_obs()))==parent_hash,'Independent task reader changed the parent'
                 count=0; status='complete_horizon'; error=None
                 operator['status']='executing_sealed_branch'; save()
                 with (attempt/'commands.jsonl').open('x',buffering=1) as stream, OfficialQposGuard(env) as guard:
@@ -289,8 +367,12 @@ def main():
                 (attempt/'endpoint.pickle').write_bytes(pickle.dumps(endpoint,protocol=4)); np.save(attempt/'endpoint_dino_spatial.npy',after_feature,allow_pickle=False)
                 row=dict(query_id=query_id,branch_id=name,parent_recreated=True,parent_hashes=parent_hash,endpoint_hashes=endpoint_hash,
                     executed_steps=count,endpoint_status=status,error=error,observed_effect=effect.tolist() if effect is not None else None,
-                    independent_label=dict(applicable=None,label_provenance='BRT rubric not yet qualified;unknown preserved'),
+                    independent_label=label_next_interaction(parent_progress,observe_task_progress(env),valid_branch=status!='invalid_branch',seen_combinations=seen_combinations) if is_BT else dict(applicable=None,label_provenance='BRT rubric not yet qualified;unknown preserved'),
+                    BT_parent_progress=parent_progress,BT_seen_combinations_before_query=seen_combinations if is_BT else None,BT_endpoint_progress=observe_task_progress(env) if is_BT else None,
                     endpoint_native_success=bool(env.eval_success),sealed_query_sha256=sha(out/'sealed_query.json'))
+                if not is_BT:
+                    for k in ('BT_parent_progress','BT_seen_combinations_before_query','BT_endpoint_progress'):row.pop(k,None)
+                if is_BT:assert state_hashes(native_parent(env,env.get_obs()))==endpoint_hash,'Independent task reader changed the endpoint'
                 seal_branch(attempt,row); row=read_verified_branch(attempt,query_id=row['query_id'],branch_id=name)
                 env.close_env(clear_cache=True); env=None
             records[name]=row
@@ -301,21 +383,24 @@ def main():
                 for key,role in zip(order[:4],('refined','refined','raw','refined')):
                     item=records[key]; proof.append(dict(role=role,valid=item['endpoint_status']=='complete_horizon',commands=item['executed_steps'],parent_hashes=item['parent_hashes'],endpoint_hashes=item['endpoint_hashes']))
                 require_repeated_endpoints(proof)
-                atomic_json(out/'AABA_qualification.json',dict(status=f'qualified_original_BRT_fresh_q{query}_AABA',selected_rank=selected,branches=order[:4],independent_policy_samples=0,candidate_truth_only=True,no_physical_unpack=True,utc=stamp()))
+                atomic_json(out/'AABA_qualification.json',dict(status=f'qualified_original_BT_cohort_case0_fresh_q{query}_AABA' if is_BT else f'qualified_original_BRT_fresh_q{query}_AABA',selected_rank=selected,branches=order[:4],independent_policy_samples=0,candidate_truth_only=True,no_physical_unpack=True,utc=stamp()))
+            if name=='anchor-qual-final' and is_BT:
+                atomic_json(out/'selected_raw_refined_BT_contrast.json',paired_BT_repair_summary(records,selected))
             if name=='anchor-qual-final' and cli.qualify_only:
                 assert identity.source_digest(C)==plan['original_source_sha256'] and identity.source_digest(H)==plan['reference_controller_sha256']
                 operator.update(status='qualified_original_query_AABA_pool_pending',complete_branches=len(records),completed_branches=list(records),independent_candidate_endpoints=1,ended_utc=stamp(),full_pool_pending=True)
                 save(); print(json.dumps(operator),flush=True); return
             operator.update(status='collecting_fixed_pool',complete_branches=len(records),independent_candidate_endpoints=sum(k.startswith('rank-') and r['endpoint_status']=='complete_horizon' for k,r in records.items()),completed_branches=list(records)); save()
             print(json.dumps(dict(branch=name,status=row['endpoint_status'],steps=row['executed_steps'],completed=len(records))),flush=True)
-        assembled=dict(task='blocks_ranking_try',cohort=f'original_fixed14k_seed0_q{query}',descriptor='uniform_mean_DINO_delta',required_effect_available=False,candidates=[])
+        assembled=dict(task=task,cohort=f'original_BT12000_cohort_case0_q{query}' if is_BT else f'original_fixed14k_seed0_q{query}',descriptor='uniform_mean_DINO_delta',required_effect_available=False,candidates=[])
         for rank in np.flatnonzero(valid):
-            row=records[f'rank-{rank}']; assembled['candidates'].append(dict(candidate_id=f'rank-{rank}',valid=True,horizon=32,predicted_effect=predicted[rank].tolist(),historical_effect=historical[rank].tolist(),observed_effect=row['observed_effect'],endpoint_status=row['endpoint_status'],executed_steps=row['executed_steps'],applicable=None))
+            row=records[f'rank-{rank}']; assembled['candidates'].append(dict(candidate_id=f'rank-{rank}',valid=True,horizon=32,predicted_effect=predicted[rank].tolist(),historical_effect=historical[rank].tolist(),observed_effect=row['observed_effect'],endpoint_status=row['endpoint_status'],executed_steps=row['executed_steps'],applicable=row['independent_label']['applicable'] if is_BT else None))
         metrics=centered_effect_metrics(assembled)
         if 'constant_query' in metrics['references']:
             metrics['references']['constant_query']['absolute_mse']=None
             metrics['references']['constant_query']['absolute_mse_unavailable_reason']='Actual query requirement not captured;only the centered constant reference is identified.'
         atomic_json(out/'candidate_effects.json',assembled); atomic_json(out/'centered_effects.json',metrics)
+        if is_BT:assert json.loads((out/'selected_raw_refined_BT_contrast.json').read_text())==paired_BT_repair_summary(records,selected)
         operator.update(status='complete_original_fixed_query_pool',ended_utc=stamp(),complete_candidate_endpoints=metrics['complete_endpoints'],unknown_candidate_endpoints=metrics['valid_candidates']-metrics['complete_endpoints'],original_source_sha256_after=identity.source_digest(C),reference_controller_sha256_after=identity.source_digest(H))
         assert operator['original_source_sha256_after']==plan['original_source_sha256'] and operator['reference_controller_sha256_after']==plan['reference_controller_sha256']
         save(); print(json.dumps(dict(operator=operator,metrics=metrics)),flush=True)

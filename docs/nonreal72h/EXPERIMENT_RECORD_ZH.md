@@ -1929,3 +1929,11 @@ CCI新增qualify_rebuttal_matched_resets.py与逐worker独立HOME/cache/tmp/runt
 22:32:20UTC实际runner2414197及flock/collector子进程存在，全局lease实测占用，CCI 4442MiB；状态loading_original_full_policy，0新查询/0完整native命令，不能写成完整回合或新性能。两标准ACP Full2715（新2515）/Pooled2058（新1958）连续有限，完整final3000尚未完成，AFS114,859,044,864B，保护108.407GB最终raw/CAS预留。真实metrics/runner/事件/进程/lease在Git外ITER12_LIVE_V7保存；不新建或重复未知任务。
 
 内部responses/20261111_v12_addendum3更新20项问题—主张—证据—回复—修订位置映射，matrix0e18d942771cbacd99f95f6435a23a64d506560416e53a054b3a71063ec461a0。三英文/15块和v12 PDF ed11dae1…、原LaTeX ZIP8955a7e9…完全不变，无新效能数字，无需重编译未变PDF。78项51,732,691B增量包SHA9dcbfd6dbcebb087ab71a199ff651c2545de504285ca3031e4356cf3c4027074、manifest796870b6…包含8个完整原件档案及独立核验/源/协议；本机全成员与AFS writing_candidates/20261111_v12_addendum3逐项解包/落盘校验均完成。全部20科学closure=false、stable_release_ready=false，未发布OpenReview或正式上传。下一优先核销完整原BT源后按固定8/48/96进行原模型同状态后果/修复/撤回独立执行，及两final3000完整state/CAS与typed bundles后100对正式native比较；真实missing-skill和原DEV绑定仍开放，真机新增延期。
+
+### 23.135 原BT固定状态独立后果/修复入口，保持旧BRT协议
+
+2026-11-10T22:44:35UTC在CCI完成独立BT schema与新测试，相关54项通过（pytest11.63秒/总15.96秒），stdout fed2a9ade236d77451e2a8678e64a912db72c81e31929048a0aa2b2a5b82564b；collector64e88773…/tests7696138d…，0新独立物理branch或模型推理。旧BRT8/48/96固定rank与seal/result键保留；新BT强绑定原12000/f77/root3407/已冻结case0/原事实计划9d479fa7…，主query仍8/48/96，rank只能取其原封存输出，不按新结果挑选。
+
+增加新建场景重放中的逐步API及实测物理核对、原RGB前缀、完整parent/RNG/DINO、原H32 AABA与独立BT next-interaction标签，实际前缀保存已有在槽极性组合，原隐藏正确答案不用于标签或policy。标签读取前后检查状态不变；raw/Full repair与harm及unknown分开。原f77_uniform_mean_DINO_delta投影保持，候选数不是独立episode数，不能估总体SR或替代原19% cohort。事实前缀拒绝需另有两遍审计，不能静默吞错。
+
+22:45:53UTC CPU只读核验（0模型新推理/0物理）：事实源已89条命令/23个replan，q8预truth seal完整、原selected rank4/32有效、gate0.8984375，q48/96当时尚未到达。完整H32/首次4条实测前缀已精确匹配旧资格；源仍运行，尚无完整1000终态或新增后果/修复结果。原候选预测、adapter、采样RNG、infer kwargs和输出hash在ITER13_BT_PRIMARY_SEAL_INVENTORY_V1.json。原f77没有新shared模型的configure_research_probe接口，同状态零影响撤回仍为开放项，不套用新接口或绕过bound capability。完整协议见ORIGINAL_BT_SAME_STATE_PROTOCOL_20261111_ZH.md。
