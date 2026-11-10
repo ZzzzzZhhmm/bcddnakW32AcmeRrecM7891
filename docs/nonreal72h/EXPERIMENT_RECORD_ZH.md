@@ -1783,3 +1783,13 @@ PDF SHA1e11e07ec4de5f71a91cf6b6e201c7eb84473449586d73a5d9f64e1df72941ef、ZIP SH
 ITER9_LIVE_V2在2026-11-10T16:47:24.590650UTC保存完整部分metrics/runner/事件：Full标准95e49547…新增201–1219共1019条，pool标准c852e8e2…新增101–500共400条；都连续且loss/grad有限，durable父仍200/100，没有final3000完整state/TEST结果。原q48标准96aea940…仍活跃，正在rank20，有23个封存branch、16个完整独立候选端点；branch终态包含unknown，不能将23当23个有效端点。AABA已通过，完整固定32池及末Full anchor尚未完成，不提前计算总体MSE或适用性/修复收益。
 
 原同信息master截止Nov11 12:29:56.020552UTC、原q48截止Nov10 21:01:03.764554UTC保持，未新建或重复任何ACP任务。AFS可用116,830,027,776bytes，未删除原数据/checkpoint/state或重置资源窗口。后继先查实际进程/heartbeat/exit/完整收据，q48终态后完整保全并同支持集分析，再为原q96/frame384做独立前缀审计；192清单不可复用。原DEV/机制cohort绑定、直接修复/撤回、自然missing-skill与最终匹配性能仍开放，真机新增继续延期。
+
+### 23.117 原生回合上限口径核正；最终同信息评测设计事前冻结
+
+17:14重新核对冻结runtime的_eval_step_limit.yml、原实际worker和十二份700×14完整qpos轨迹、175 replan进度及result：原RB六对都达其原生上限700，task成功0/0，另四对pending。不是因低于RB上限的command cap截短。之前把这些完整RB回合概括为“有界700/非完整native”不准确，现明确更正；原BRT source600才是低于其3500上限的另一种有界来源。没有重跑、改变任何成功数、原seed、未知或checkpoint；shared-stage/部分10对cohort、非原稿specialist复现及不构成效能/非劣的边界保持。原policy未保存每个内部planner错误，完整官方回合也不等于每条命令都获得独立物理有效性认证。
+
+62项原始metadata/完整轨迹/源配置证据归档de99e5cab44a2c612c0fc383933dec1cbec27d16abd2b95eab343aef162a529c，manifest3bbf2eeb1d4b63d79efc87cb7a8cd2fa069cd85b56d84ab20cb658b90938e346；AFS与本机iter10逐成员验证，保留原closure与早先档案。此审计只改证据口径，0新policy命令/0新结果。
+
+17:18:44最终3000同信息比较设计在新权重结果前冻结：RB/BT沿旧primary56b6ec9a…任务和首50个expert-admitted world seeds/340800000起始/2000上限，新Full/Pooled各100回合、共100对/200回合，原生700/1000；旧Full/null或missing-skill计划不被替换。共同evalsource87199cc6…、各自训练source4efb…/48ce…、固定final3000/seed3407，DEV不选点，3408/3409未完成须披露。统计为固定任务配对差及保守精确gain/harm边际界，未知不补0。设计SHA3484ad1477a868607a916638c631c80df25501db59dd82edbf6651c768238e33/3项manifest380b7d45…双端验证；部署到共同eval的affine-prefix边界修复diff明确保全，不假称部署bytes未变。6-worker/10固定分片/每分片12h/总120GPUh/统一36h且不晚于Nov12 18UTC只是有界资源设计，尚未准入或派发，时钟未启动。两final state/CAS、Full实际资格、typed合同、50-roster及可写路径并发隔离仍为准入要求。
+
+原q96固定输入同时已准备：原14k/seed0/query96/frame384/rank10、原source600/probe32均保持，collector eea5ac8e…、独立prefix audit271fadea…封存；未启动新phase或audit，不复用q48的192清单。17:07控制台通过浏览器既有已保存表单恢复登录，已实际读到三标准作业运行中及旧失败；认证字段和回调参数从本地浏览器记录移除，不进入科学原件或Git。实际q48仍在固定池运行，终态才计算总指标、保全后接q96。
