@@ -8,17 +8,34 @@ and raw checkpoints stay outside Git. A failed fixed seed is never replaced.
 from pathlib import Path
 import argparse,dataclasses,datetime,hashlib,importlib,importlib.util,json,os,pickle,sys,traceback
 
+
+TRACE_PROTOCOLS={
+ 'warm.original-specialist-factual-trace.v1':('blocks_ranking_try','blocks_ranking_try-s3407-v1',14000,600),
+ 'warm.original-specialist-factual-trace.native-BT.v2':('battery_try','battery_try-s3407-v1',12000,1000),
+}
+
+def validate_trace_plan(plan):
+ if plan.get('schema') not in TRACE_PROTOCOLS:raise ValueError('Unknown original factual trace protocol')
+ task,run,step,cap=TRACE_PROTOCOLS[plan['schema']]
+ if (plan.get('physical_seed')!=0 or plan.get('max_native_commands')!=cap or plan.get('capture_replans')!=[8,48,96]
+     or plan.get('qualified_original_run')!=run or plan.get('checkpoint_step')!=step):
+  raise ValueError('Original fixed task/checkpoint/seed/horizon/probes differ')
+ if plan['schema'].endswith('native-BT.v2') and (plan.get('task_name')!=task or plan.get('root_seed')!=3407):raise ValueError('Native BT task binding is required')
+ return task
+
+def physical_joint_values(env):
+ return [dict(name=art.name,qpos=art.get_qpos().tolist(),qvel=art.get_qvel().tolist()) for art in env.scene.get_all_articulations()]
+
+
 def main():
  parser=argparse.ArgumentParser(description=__doc__)
  parser.add_argument('--plan',required=True,type=Path)
  parser.add_argument('--expected-plan-sha256',required=True)
  cli=parser.parse_args();assert hashlib.sha256(cli.plan.read_bytes()).hexdigest()==cli.expected_plan_sha256
- plan=json.loads(cli.plan.read_text());assert plan['schema']=='warm.original-specialist-factual-trace.v1'
+ plan=json.loads(cli.plan.read_text());expected_task=validate_trace_plan(plan)
  P=Path(plan['evidence_root']);C=Path(plan['original_source']);H=Path(plan['reference_controller'])
  CORE_SHA=plan['original_source_sha256'];COMMIT=plan['original_source_commit'];SIM_SHA=plan['simulator_source_sha256']
  out=Path(plan['output']);assert out.parent==P and not out.exists();out.mkdir()
- assert plan['physical_seed']==0 and plan['max_native_commands']==600 and plan['capture_replans']==[8,48,96]
- assert plan['qualified_original_run']=='blocks_ranking_try-s3407-v1' and plan['checkpoint_step']==14000
  qualification=Path(plan['qualification_root']);qualified_operator=json.loads((qualification/'operator.json').read_text())
  assert qualified_operator['status']=='complete_one_original_replan_four_native_commands'
  assert hashlib.sha256((qualification/'operator.json').read_bytes()).hexdigest()==plan['qualification_operator_sha256']
@@ -27,15 +44,17 @@ def main():
 
  stamp=lambda:datetime.datetime.now(datetime.timezone.utc).isoformat()
  sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
- state=dict(status='binding',started_utc=stamp(),scope=plan['claim'],plan_sha256=cli.expected_plan_sha256,planned_commands=600,planned_probe_replans=plan['capture_replans'],inference_queries=0,native_commands=0,model_updates=0)
+ state=dict(status='binding',started_utc=stamp(),scope=plan['claim'],plan_sha256=cli.expected_plan_sha256,planned_commands=plan['max_native_commands'],planned_probe_replans=plan['capture_replans'],inference_queries=0,native_commands=0,model_updates=0)
  def save():
   state['updated_utc']=stamp();t=out/'operator.json.partial';t.write_text(json.dumps(state,indent=2)+'\n');t.replace(out/'operator.json')
- save();env=None;policy=None;children_before=set();hook=None;old_git=None
+ save();env=None;policy=None;children_before=set();hook=None;old_git=None;topp_observer=None
  try:
   spec=importlib.util.spec_from_file_location('stdlib_identity',H/'scripts/run_rebuttal_training_with_runtime_trace.py');identity=importlib.util.module_from_spec(spec);spec.loader.exec_module(identity)
   assert identity.source_digest(C)==CORE_SHA and identity.source_digest(H)=='7a0ce8943818b02a7ee493fc3b6d666ba6b55b5362df7ab5f3a6be4c760000ae'
   preflight=Path(plan['runtime_preflight']);qualified=json.loads((preflight/'execution.json').read_text());assert qualified['static_contracts_passed'] and qualified['encoder_runtime_matches']
   args=json.loads((preflight/'runtime_args.json').read_text());args['warm_telemetry_path']=str(out/'full-telemetry.jsonl')
+  assert args['task_name']==expected_task
+  if plan['schema'].endswith('native-BT.v2') and args['seed']!=3407:raise ValueError('Original BT fixed evaluation root seed differs')
   (out/'runtime_args.json').write_text(json.dumps(args,indent=2)+'\n')
   asset_plan=json.loads((P/'resumable_rb_cases0003_0009_v1_plan.json').read_text());runtime=Path(plan['rmbench_runtime'])
   os.environ.update(HF_HUB_OFFLINE='1',HF_DATASETS_OFFLINE='1',TRANSFORMERS_OFFLINE='1',DIFFSYNTH_SKIP_DOWNLOAD='true',DIFFSYNTH_MODEL_BASE_PATH=asset_plan['model_root'],WANDB_MODE='disabled',WARM_IMMUTABLE_ASSET_HASH_CACHE='1',TOKENIZERS_PARALLELISM='false',PYTHONDONTWRITEBYTECODE='1',PYTHONNOUSERSITE='1',OMP_NUM_THREADS='4',MKL_NUM_THREADS='4',OPENBLAS_NUM_THREADS='4')
@@ -56,7 +75,7 @@ def main():
   legacy._git_identity=frozen_identity
   os.chdir(runtime);sys.path[:0]=[str(runtime),str(runtime/'description/utils')]
   from generate_episode_instructions import generate_episode_descriptions
-  instruction_files=[Path('description/utils/generate_episode_instructions.py'),Path('description/task_instruction/blocks_ranking_try.json')]
+  instruction_files=[Path('description/utils/generate_episode_instructions.py'),Path('description/task_instruction')/(expected_task+'.json')]
   for relative in instruction_files:assert sha(runtime/relative)==sha(official/relative),str(relative)
   state['instruction_source_sha256']={str(f):sha(runtime/f) for f in instruction_files}
   protocol=np.load(args['warm_initial_states_path'],allow_pickle=False);assert protocol.dtype.kind in 'iu' and protocol.size>0
@@ -67,6 +86,7 @@ def main():
   state['status']='fixed_seed_expert_setup_only';save();print('stage=fixed_seed_expert_setup_only',flush=True)
   random.seed(physical_seed);np.random.seed(physical_seed);torch.manual_seed(physical_seed);torch.cuda.manual_seed_all(physical_seed)
   env.setup_demo(**cfg);expert_info=env.play_once()
+  if plan['schema'].endswith('native-BT.v2') and env.step_lim!=1000:raise ValueError('Original BT native horizon differs')
   accepted=bool(env.plan_success and env.check_success());state['fixed_expert_setup_accepted']=accepted
   (out/'expert_setup_metadata.json').write_text(json.dumps(expert_info,indent=2,default=lambda x:x.tolist() if hasattr(x,'tolist') else str(x))+'\n');save()
   env.close_env()
@@ -125,6 +145,13 @@ def main():
   state['status']='collecting_fixed_original_factual_episode';save()
   with np.load(qualification/'native_prefix_qpos.npz',allow_pickle=False) as previous:
    prefix_before=previous['before'].copy();prefix_after=previous['after'].copy()
+  qualified_physical=None
+  if plan['schema'].endswith('native-BT.v2'):
+   qualified_physical=json.loads((qualification/'native_prefix_physical.json').read_text())
+   observer_source=Path(plan['native_TOPP_observer_source'])
+   assert sha(observer_source)==plan['native_TOPP_observer_source_sha256']=='49888eb2854b29d6f5f384e394aaf91847dd9ebfdf9e89f6bc51fb1f8152dd4d'
+   native_spec=importlib.util.spec_from_file_location('bound_native_TOPP_observer',observer_source);native_module=importlib.util.module_from_spec(native_spec);native_spec.loader.exec_module(native_module)
+   topp_observer=native_module.TOPPObserver(env);topp_observer.__enter__()
   command_capture=[];original_take_action=env.take_action
   def command_observer(command,*a,**kw):
    assert kw.get('action_type')=='qpos'
@@ -136,23 +163,35 @@ def main():
    for index in range(plan['max_native_commands']):
     if datetime.datetime.now(datetime.timezone.utc)>=deadline:raise TimeoutError('Original factual-trace resource window expired;do not reset or replace seed')
     frame_now=index;obs=env.get_obs();before=legacy.factual_joint_state(obs).copy()
+    physical_before=physical_joint_values(env) if plan['schema'].endswith('native-BT.v2') else None
     if not policy.queue:
      np.savez_compressed(out/f'replan-{index//4:04d}.npz',**legacy.factual_cameras(obs),native_qpos=before)
      policy._replan(obs,env)
+    prior_native_count=int(env.take_action_cnt)
+    if topp_observer is not None:topp_observer.errors.clear()
     policy.step(env,obs);after=legacy.factual_joint_state(env.get_obs()).copy()
+    if plan['schema'].endswith('native-BT.v2') and env.take_action_cnt!=prior_native_count+1:raise RuntimeError('Official native command counter did not advance once')
     assert len(command_capture)==index+1
     row=dict(index=index,command=command_capture[-1].tolist(),command_dtype=str(command_capture[-1].dtype),before=before.tolist(),after=after.tolist(),eval_success=bool(env.eval_success),take_action_cnt=int(env.take_action_cnt))
+    if physical_before is not None:
+     row.update(physical_before=physical_before,physical_after=physical_joint_values(env),observed_TOPP_errors=topp_observer.errors.copy())
+     if index<4:
+      reference=qualified_physical[index]
+      if row['physical_before']!=reference['physical_before'] or row['physical_after']!=reference['physical_after'] or row['observed_TOPP_errors']!=reference['observed_TOPP_errors']:
+       raise RuntimeError('First four measured native commands differ from BT qualification')
     stream.write(json.dumps(row)+'\n');stream.flush()
     state['native_commands']+=1
     if index<4:assert np.array_equal(before,prefix_before[index]) and np.array_equal(after,prefix_after[index]),'Qualified native prefix changed'
     state.update(last_frame=index,captured_probe_replans=sorted(captured),success_flag=bool(env.eval_success));save()
     if env.eval_success:break
-  state.update(status='complete_fixed_original_factual_episode',source_sha256_after=identity.source_digest(C),ended_utc=stamp(),success_flag=bool(env.eval_success),termination='native_success' if env.eval_success else 'fixed_600_command_cap',probe_status={str(q):'sealed_before_execution' if q in captured else 'not_reached_no_replacement' for q in sorted(capture_queries)},independent_candidate_labels=0,independent_source_episodes=1,original_DEV_selected_step='unverified',original_accuracy_reproduction=False)
+  if plan['schema'].endswith('native-BT.v2') and not env.eval_success and env.take_action_cnt!=env.step_lim:raise RuntimeError('Incomplete native BT trajectory;outcome remains unknown')
+  state.update(status='complete_fixed_original_factual_episode',source_sha256_after=identity.source_digest(C),ended_utc=stamp(),success_flag=bool(env.eval_success),termination='native_success' if env.eval_success else ('official_native_1000_limit' if plan['schema'].endswith('native-BT.v2') else 'fixed_600_command_cap'),probe_status={str(q):'sealed_before_execution' if q in captured else 'not_reached_no_replacement' for q in sorted(capture_queries)},independent_candidate_labels=0,independent_source_episodes=1,original_DEV_selected_step='unverified',original_accuracy_reproduction=False)
   assert state['source_sha256_after']==CORE_SHA
   save();print(json.dumps(state),flush=True)
  except BaseException as exc:
   state.update(status='failed_or_interrupted',error=repr(exc),traceback=traceback.format_exc(),ended_utc=stamp());save();print(json.dumps(state),flush=True);raise
  finally:
+  if topp_observer is not None:topp_observer.__exit__(None,None,None)
   if hook is not None:hook.remove()
   if policy is not None:
    try:policy.close()

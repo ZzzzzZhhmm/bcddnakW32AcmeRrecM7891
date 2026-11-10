@@ -17,3 +17,5 @@
 实际NVRTC检查补充：过长AFS TMPDIR在首次setup触发编译error6，0专家结果，全部原件559a6bc1…保留。缓存/临时目录因此改为每worker独立的短容器本地目录，可在新节点重建；runtime、输出和跨节点lease继续存AFS。目录归属/长度和persistent lease门槛经57项检查通过。原v1路径声明及失败不能覆盖，新路径必须另冻并实际资格；原两小时窗口保持。
 
 官方完整观测包含额外front_camera。策略仍只消费原三相机，但reset审计按实际static_camera_name与双腕精确校验并保全所有RGB，不将额外相机丢弃。短缓存后首专家已accepted；旧三相机schema错误终态及原件e80a5e53…保留，59项反例/回归通过。两个任务的名单采集可作为并发隔离工程资格在不同私有runtime同时运行；这不是正式策略TEST，也不提前宣告并发资格通过。
+
+官方专家seed过滤核对：eval_policy.py SHA edff5aa9…在254–262行捕获专家阶段异常后递增seed。首次BT32号的精确grasp_actor→Action构造target_pose=None属于该源确定的几何失败；旧unknown原件不改，以独立恢复证明追加窄分类，其它基础设施/未知错误仍停止。完整RB18/BT14两reset前缀与全部退出档案9200d955…双端核验；显式恢复只复用已哈希原件，接续未完成reset，不重采已完成样本、不重置22:31UTC截止。

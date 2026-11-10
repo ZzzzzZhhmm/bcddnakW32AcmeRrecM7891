@@ -1885,3 +1885,11 @@ CCI新增qualify_rebuttal_matched_resets.py与逐worker独立HOME/cache/tmp/runt
 20:34修复：每worker缓存/临时目录改用容器内独立短路径；科学输出和跨节点fcntl lease仍在AFS持久路径。激活时验证目录归属，禁止长TMPDIR及把lease搬到临时盘。57项检查exit0（11.45秒pytest/15.36秒总），stdout4ba0d57d…；原26360d70…快照与失败marker保持不改，新快照另冻。后续同一seed/顺序/原22:31:09UTC截止继续，不重置资源窗口。
 
 20:40追加：短路径v2确已完成官方专家首seed340800000（accepted），NVRTC问题消失；随后新入口把原生完整观测误限成三策略相机，遗漏官方aloha额外front_camera，初始schema检查终态exit1、0策略推理/命令。完整原件e80a5e53…/manifest ffb26628…双端保留，不改称expert失败；旧首种子与原22:31:09UTC期限保持。修复按实际静态相机清单精确核对并保存front_camera，仍强制三策略相机、14维有限qpos和全部有限图像；新59项检查通过（11.28秒pytest/15.21秒总），stdout453f060a…，补充真实官方四相机结构的正反例。原native worker本就保存全部RGB，未改模型/相机配置或删除任一原件。两个任务可在不同private runtime中作为隔离工程资格并行采集，任何异常保留；正式策略TEST仍须完整并发资格。
+
+### 23.130 保全18/14个完整reset前缀；原专家几何拒绝与原BT完整原生入口
+
+20:52:26 reset-v4 runner终态exit1：BT候选seed340800032/offset32在官方play_once→grasp_actor→Action.__init__出现target_pose=None断言；RB被联动SIGTERM，exit-15。此时RB18、BT14项两reset完整，另RBseed340800018专家已accepted但reset未完成；全部原始unknown标记、拒绝、图像/API/真实物理/指令、日志与退出已封存9200d955…/manifest ccab3a1c…，11,074,711B，双端逐项验证。不能从0重采这32项或丢弃断言。官方eval_policy.py SHA edff5aa9…第254–262行确实在专家阶段异常后递增seed；源码不可变的这条“无几何抓取”堆栈可按官方专家拒绝处理，不是模型或基础设施失败。原unknown记录不修改，新恢复证明单独绑定其原hash及此窄分类。CUDA/OOM、setup和其它未知异常继续中止，不泛化吞掉所有Exception。
+
+新入口只在已检查终态/完整raw manifest/原生source hash和显式resume proof相符时复制并复用候选前缀；已完成专家/两reset只读取原件，不重算；RB18号直接接续未完成reset，BT32号保留原错误并追加reconciliation后按原顺序继续。原20:31→22:31UTC窗口不变，first50/2000/旧RB10前缀不变，0学习策略结果用于准入。v3并行driver另有换行SyntaxError（0worker/0物理），v4使用独立文件并AST后启动；旧失败工件全保留。
+
+原BT12000/source f77新增独立native1000事实轨迹协议，保护旧BRT14000/600行为。BT要求root3407/physical0、task/run/step/cap/probes匹配，首四条真实关节/API/TOPP必须精确匹配one-replan资格。原builder v1 metadata head键失败0策略，v2默认矩阵生成root17合同也0策略且不准入；v3显式matrix3407（SHA be10e580…）正在重建，不覆盖seed17原件。原权重/模型/M1/encoder/bank/normalizer校验保持，原DEV未知。21:01:49整套72项通过（12.38秒pytest/17.17秒总），stdout554538a5…；0新BT推理/命令。协议见ORIGINAL_BT_NATIVE_TRACE_PROTOCOL_20261111_ZH.md，不能把工程与队列当原模型成功/修复或正式TEST。

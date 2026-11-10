@@ -93,3 +93,26 @@ def test_missing_official_front_camera_is_not_silently_dropped(tmp_path,monkeypa
     cameras={k:dict(rgb=np.zeros((2,3,3),dtype=np.uint8)) for k in ('head_camera','left_camera','right_camera')}
     env=types.SimpleNamespace(cameras=types.SimpleNamespace(static_camera_name=['head_camera','front_camera']),set_instruction=lambda **_:None,get_obs=lambda:dict(observation=cameras,joint_action=dict(vector=np.zeros(14,dtype=np.float32))))
     with pytest.raises(ValueError,match='inventory differs'):Q.observe_initial(env,'rearrange_blocks',dict(expert_info={'info':{}}),tmp_path/'none.npz')
+
+
+def test_only_pinned_geometric_expert_exception_is_a_rejection():
+    detail=dict(stage='play_once',error_type='AssertionError',error_message='target_pose cannot be None for move action.',frames=[dict(name='grasp_actor',filename='/fixed/envs/_base_task.py'),dict(name='__init__',filename='/fixed/envs/utils/action.py')])
+    assert Q.known_expert_geometry_rejection(detail)
+    for key,value in [('stage','setup'),('error_type','RuntimeError'),('error_message','CUDA out of memory')]:
+        bad=copy.deepcopy(detail);bad[key]=value;assert not Q.known_expert_geometry_rejection(bad)
+    bad=copy.deepcopy(detail);bad['frames'][-1]['filename']='/model/action.py';assert not Q.known_expert_geometry_rejection(bad)
+
+def test_unknown_uninspected_reset_exit_cannot_resume(tmp_path):
+    source=tmp_path/'old';source.mkdir();out=tmp_path/'new';out.mkdir()
+    proof=dict(schema='warm.rebuttal.reset-resume-reconciliation.v1',source_root=str(source),task='battery_try',native_source_sha256='sim',known_exit=None,original_window_reset=False,policy_outcomes_used=False)
+    path=tmp_path/'proof.json';path.write_text(json.dumps(proof))
+    plan=dict(task='battery_try',runtime_source_sha256='sim',resume_proof=dict(path=str(path),sha256=M.file_sha(path)))
+    with pytest.raises(ValueError,match='uninspected'):Q.prepare_resume(plan,out)
+
+def test_resume_requires_raw_prefix_hashes(tmp_path):
+    source=tmp_path/'old';(source/'candidates').mkdir(parents=True);(source/'candidates/a').write_text('original')
+    out=tmp_path/'new';out.mkdir()
+    proof=dict(schema='warm.rebuttal.reset-resume-reconciliation.v1',source_root=str(source),task='battery_try',native_source_sha256='sim',known_exit=1,original_window_reset=False,policy_outcomes_used=False,source_manifest={'candidates/a':dict(sha256='changed')})
+    path=tmp_path/'proof.json';path.write_text(json.dumps(proof))
+    plan=dict(task='battery_try',runtime_source_sha256='sim',resume_proof=dict(path=str(path),sha256=M.file_sha(path)))
+    with pytest.raises(ValueError,match='prefix changed'):Q.prepare_resume(plan,out)

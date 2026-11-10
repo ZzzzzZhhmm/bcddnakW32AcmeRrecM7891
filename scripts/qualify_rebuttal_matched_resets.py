@@ -126,44 +126,100 @@ def reset_once(env,plan,entry,out,index,resolved_config,hold=False):
     return result
 
 
+def known_expert_geometry_rejection(detail):
+    return (detail.get('stage')=='play_once' and detail.get('error_type')=='AssertionError'
+        and detail.get('error_message')=='target_pose cannot be None for move action.'
+        and any(x['name']=='grasp_actor' and x['filename'].endswith('/envs/_base_task.py') for x in detail.get('frames',[]))
+        and bool(detail.get('frames')) and detail['frames'][-1]['name']=='__init__'
+        and detail['frames'][-1]['filename'].endswith('/envs/utils/action.py'))
+
+
+def prepare_resume(plan,out):
+    import shutil
+    ref=plan.get('resume_proof')
+    if ref is None:return {}
+    if M.file_sha(ref['path'])!=ref['sha256']:raise ValueError('Inspected reset resume proof changed')
+    proof=M.read_json(ref['path']);source=Path(proof['source_root']).resolve(strict=True)
+    if (proof.get('schema')!='warm.rebuttal.reset-resume-reconciliation.v1' or proof['task']!=plan['task']
+        or proof['native_source_sha256']!=plan['runtime_source_sha256'] or proof['known_exit'] not in (1,-15)
+        or proof['original_window_reset'] is not False or proof['policy_outcomes_used'] is not False):
+        raise ValueError('Unknown/uninspected reset exit must not be resumed')
+    for name,record in proof['source_manifest'].items():
+        file=source/name
+        if not file.resolve(strict=True).is_relative_to(source) or M.file_sha(file)!=record['sha256']:raise ValueError('Archived reset prefix changed')
+    shutil.copytree(source/'candidates',out/'candidates')
+    for name,record in proof['source_manifest'].items():
+        if M.file_sha(out/name)!=record['sha256']:raise ValueError('Reset prefix copy differs')
+    M.atomic_json(out/'resume_proof.json',proof)
+    return proof.get('admission_overrides',{})
+
+
 def roster(plan,out,resolved_config):
     from envs.utils.create_actor import UnStableError
     env=getattr(importlib.import_module('envs.'+plan['task']),plan['task'])();entries=[]
     old=M.read_json(plan['legacy_prefix'])['entries'] if plan['task']=='rearrange_blocks' else []
+    overrides=prepare_resume(plan,out)
     for offset in range(2000):
         require_window(plan);seed=340800000+offset;episode=len(entries)
-        case=out/'candidates'/f'{offset:04d}';case.mkdir(parents=True,exist_ok=False)
+        case=out/'candidates'/f'{offset:04d}';existing=(case/'expert_result.json').exists()
         row=dict(seed=seed,candidate_offset=offset,episode_id_if_admitted=episode,status='expert_started',utc=datetime.datetime.now(datetime.timezone.utc).isoformat())
-        M.atomic_json(case/'started.json',row)
-        config=resolved_config(Path(plan['native_runtime']),plan['task'],seed);config['now_ep_num']=episode
-        try:
-            seed_all(seed);env.setup_demo(**config);info=plain(env.play_once());env.close_env()
-            ok=bool(env.plan_success and env.check_success())
-            row.update(status='accepted' if ok else 'expert_rejected',expert_info=info,plan_success=bool(env.plan_success))
-        except UnStableError as exc:
-            row.update(status='unstable_seed',error=repr(exc));ok=False;env.close_env(clear_cache=True)
-        except BaseException as exc:
-            row.update(status='unknown_runtime',error=repr(exc),traceback=traceback.format_exc());M.atomic_json(case/'expert_result.json',row);raise
-        M.atomic_json(case/'expert_result.json',row)
+        if existing:
+            row=M.read_json(case/'expert_result.json')
+            if row['seed']!=seed or row['episode_id_if_admitted']!=episode:raise ValueError('Preserved seed/episode order differs')
+            if row['status']=='unknown_runtime':
+                override=overrides.get(str(offset))
+                if (override is None or override['raw_expert_result_sha256']!=M.file_sha(case/'expert_result.json')
+                    or override['status']!='expert_rejected_undefined_grasp'):raise RuntimeError('Unresolved expert runtime failure retained;do not skip')
+                row=row|dict(status=override['status'],reconciliation=override)
+                M.atomic_json(case/'expert_result_reconciled.json',row)
+            if row['status'] not in ('accepted','expert_rejected','unstable_seed','expert_rejected_undefined_grasp'):raise ValueError('Unknown preserved admission status')
+            ok=row['status']=='accepted';info=row.get('expert_info')
+        else:
+            case.mkdir(parents=True,exist_ok=False);M.atomic_json(case/'started.json',row)
+            config=resolved_config(Path(plan['native_runtime']),plan['task'],seed);config['now_ep_num']=episode;stage='setup'
+            try:
+                seed_all(seed);env.setup_demo(**config);stage='play_once';info=plain(env.play_once());stage='close';env.close_env()
+                ok=bool(env.plan_success and env.check_success());row.update(status='accepted' if ok else 'expert_rejected',expert_info=info,plan_success=bool(env.plan_success))
+            except UnStableError as exc:
+                row.update(status='unstable_seed',error=repr(exc));ok=False;env.close_env(clear_cache=True)
+            except BaseException as exc:
+                detail=dict(stage=stage,error_type=type(exc).__name__,error_message=str(exc),frames=[dict(filename=x.filename,name=x.name,lineno=x.lineno) for x in traceback.extract_tb(exc.__traceback__)])
+                row.update(status='unknown_runtime',error=repr(exc),traceback=traceback.format_exc(),failure_detail=detail)
+                if known_expert_geometry_rejection(detail):
+                    row['status']='expert_rejected_undefined_grasp';ok=False;env.close_env(clear_cache=True)
+                else:M.atomic_json(case/'expert_result.json',row);raise
+            M.atomic_json(case/'expert_result.json',row)
         if ok:
-            entry=dict(episode_id=episode,seed=seed,expert_info=info)
-            validate_prefix(entries+[entry],old)
-            first=reset_once(env,plan,entry,case,0,resolved_config);second=reset_once(env,plan,entry,case,1,resolved_config)
+            entry=dict(episode_id=episode,seed=seed,expert_info=info);validate_prefix(entries+[entry],old)
+            rows=[]
+            for index in range(2):
+                record=case/f'reset-{index}.json';image=case/f'initial-{index}.npz'
+                if record.exists():
+                    if not image.exists():raise ValueError('Preserved complete reset lacks its raw image')
+                    value=M.read_json(record)
+                else:
+                    if image.exists():image.rename(case/f'interrupted_initial-{index}.npz')
+                    value=reset_once(env,plan,entry,case,index,resolved_config)
+                rows.append(value)
+            first,second=rows
             if first['initial_identity']!=second['initial_identity'] or first['physical_initial']!=second['physical_initial']:
                 raise ValueError('Expert-admitted initial reset does not reproduce;retain this seed and diagnose without substitution')
             entry.update(initial_identity=first['initial_identity'],physical_initial=first['physical_initial'],two_resets_exact=True,candidate_offset=offset)
-            entries.append(entry);M.atomic_json(case/'admitted_entry.json',entry)
+            if (case/'admitted_entry.json').exists():
+                if M.read_json(case/'admitted_entry.json')!=entry:raise ValueError('Preserved complete reset entry differs')
+            else:M.atomic_json(case/'admitted_entry.json',entry)
+            entries.append(entry)
         with (out/'admission.jsonl').open('ab') as stream:
             stream.write((json.dumps(row,sort_keys=True,allow_nan=False)+'\n').encode());stream.flush();os.fsync(stream.fileno())
-        M.atomic_json(out/'progress.json',dict(status='expert_admission',accepted=len(entries),candidate_offset=offset,seed=seed,last_status=row['status']))
-        print(json.dumps(dict(stage='expert_admission',task=plan['task'],seed=seed,status=row['status'],accepted=len(entries))),flush=True)
+        M.atomic_json(out/'progress.json',dict(status='expert_admission',accepted=len(entries),candidate_offset=offset,seed=seed,last_status=row['status'],prior_completed_candidate_reused=existing))
+        print(json.dumps(dict(stage='expert_admission',task=plan['task'],seed=seed,status=row['status'],accepted=len(entries),reused_preserved_expert=existing)),flush=True)
         if len(entries)==50:break
     if len(entries)!=50:raise RuntimeError('Original 2000-candidate seed budget exhausted')
     validate_prefix(entries,old)
     final=dict(schema='warm.rebuttal.matched-reset-roster.v1',status='qualified_first50_expert_admitted_reset_roster',task=plan['task'],entries=entries,
         seed_start=340800000,candidate_limit=2000,runtime_source_sha256=plan['runtime_source_sha256'],evaluation_source_sha256=plan['evaluation_source_sha256'],
         plan_sha256=M.file_sha(plan['_path']),legacy_prefix_sha256=M.file_sha(plan['legacy_prefix']) if old else None,two_initial_resets_exact_per_entry=True,
-        policy_loaded=False,policy_outcomes_used_for_admission=False,scope='Outcome-independent reset qualification, not task success-rate or model competence evidence.')
+        resume_proof=plan.get('resume_proof'),policy_loaded=False,policy_outcomes_used_for_admission=False,scope='Outcome-independent reset qualification, not task success-rate or model competence evidence.')
     M.atomic_json(out/'roster.json',final)
 
 
