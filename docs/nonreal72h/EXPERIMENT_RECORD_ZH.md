@@ -1609,3 +1609,14 @@ v8不可变候选包10:22:22已在AFS核验76项、29文件source ZIP、15回复
 完成原生资格后，独立设计BRT14000/f77首seed0的事实轨迹来源：最多600条native命令，固定replan8/48/96（frame32/192/384）封存全部原候选payload、adapted action、predicted effect、Full action、采样RNG和原始观测，全部在任何新增branch truth前写出。未到达的query保持not reached，不换state，不将query序号称为语义阶段。该来源只有一个原seed，不扩写成独立多seed或原稿DEV准确率复现。
 
 新增`scripts/collect_rebuttal_original_specialist_trace.py`先在CCI实现并运行CLI解析检查，再回传本机。沿用已实际通过的原模型构造、原合同和官方instruction模块；记录每个真实native command及前后qpos、全部生成action和结束收据。第一观测、第一生成和首四条物理轨迹必须与刚完成资格完全一致；失败则保留并拒绝推广，不放宽原数值合同。源模型/validator不改，collector无Git网络/dirty gate。原单次资格已完成；新事实来源使用独立冻结的新资源段，至多90分钟，绝不重置旧RB/Full500或单次资格窗口。具体计划、绝对截止与实际准入收据在Git外，工程/事实采集不预先声称修复或后果预测收益。
+
+
+### 23.94 原BRT事实来源600命令完成并保全三个固定query
+
+独立plan79a70972…于10:37:25准入，原90分钟截止12:07:25保持；来源于11:03:44 outer exit0。完整执行预定600条native命令、150次Full replan，固定q8/q48/q96（frame32/192/384）全部在新branch truth前封存。三个query各32 valid候选，共96项adapted action/predicted effect，768维且有限；原模型选择rank28/0/10，gate0.9375/0.94921875/0.95703125。这些是模型输出与执行计数，不是候选正确性、适用性或修复收益。独立候选端点和适用性标签目前均0。
+
+首原始观测和第一Full生成与已通过资格精确一致，首四条命令的原生API向量匹配；明确这些向量中的12个arm项是drive targets、另含gripper读数，不等于已封存完整measured physics/joint轨迹。Source前后ff32342d…、权重515ecad0…与collector LF SHA dfd9d6af…保持。600是冻结的事实采集上限，原console显示3500不用于恢复原稿协议；600时native success flag=false，不能计作整个benchmark的最终失败或将本段当原稿SR复现，亦不能改动采集上限补成一个成功样本。
+
+484项完整原件33,014,782 bytes，archive `476575ef0fb65711ee3b0cd80b9c51bbd7afdb759874dd149e307aa26050cb09`、manifest `50324c02c3a89ad2ccf1d66e55932e070d6b8350ee897375ecc737d8e3fc7193` 已AFS/本机逐项核验，含全部600实际命令/前后API向量、150生成和观测、三份pre-truth probes、原始模型输出/采样RNG、config/source绑定和runner退出。不得把96 sealed predictions写成96 independently executed endpoints。
+
+后继优先原q8/model-selected raw rank28与Full的fresh-scene A-A-B-A，再原K32全部候选的H32物理端点/冻结M1效果。BRT尚不在现有BT/RB的pack/unpack白名单或独立applicability rubric中，不能删除白名单或把unsupported标签当0；先通过原生fresh-replay资格。Reader/原namespace/partial CPU snapshot的实现入口和限制已整理到 `ORIGINAL_BRT_EFFECT_BRANCH_PROTOCOL_20261110_ZH.md`。v8 PDF/英文正文及数值不变，原稿/新负结果/未知均保留，当前主要缺口仍是独立后果与同状态生成对照的真实收益、非空missing-skill及公平最终训练。

@@ -1,5 +1,8 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**11:08 UTC原事实来源终态：** source600已11:03:44 exit0，600命令/150replan，q8/48/96各32valid，共96 sealed候选预测/动作；484原件476575ef…双端核验。不要按后文或旧快照的loading状态重启/重跑。600是事实采集上限，flag=false不构成恢复的原benchmark最终失败，原DEV仍未知；96预测不等于独立端点。原native API前四向量匹配不等于完整measured physics已恢复。下一实际工作为q8/rank28与Full的fresh A-A-B-A及全部K32后果执行，先读`ORIGINAL_BRT_EFFECT_BRANCH_PROTOCOL_20261110_ZH.md`；BRT的applicability rubric及pack/unpack尚未认证，unsupported不可填0。后继资源段明确另冻/修订，不重置任何旧窗口。v8公开草稿/37页PDF仍是当前候选，没有新增机制收益主张。
+
+
 **10:26 UTC资格终态更新：** 原BRT14000/sourcef77的one-replan v3已10:19:34完整1推理/4native命令、10:19:40 outer exit0。20原件0780ca6a…双端核验，不再按后面的旧loading状态重复跑；原模型/数值合同/source完全保持，尚无独立候选truth或收益。v8已AFS核验76项，整包824984d7…，该包早于资格终态、不可覆盖。新增固定事实来源协议见`ORIGINAL_SPECIALIST_TRACE_PROTOCOL_20261110_ZH.md`：BRT14k、首seed0、cap600、query8/48/96、首观测/首生成/前4物理命令须精确匹配资格；最多90分钟独立新窗口、不重置任何旧窗口，先查根current_iteration的实际准入/终态，勿将计划当执行。程序先CCI实现/解析，再同步提交，原数据均Git外。
 
 
