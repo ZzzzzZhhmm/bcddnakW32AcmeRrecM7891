@@ -73,7 +73,11 @@ def observe_initial(env,task,entry,output):
     env.set_instruction(instruction=instruction);obs=env.get_obs()
     arrays={k:np.asarray(v['rgb']) for k,v in obs['observation'].items() if 'rgb' in v}
     arrays['native_qpos']=np.asarray(obs['joint_action']['vector'])
-    if set(arrays)!={'head_camera','left_camera','right_camera','native_qpos'}:raise ValueError('Official initial camera/state schema differs')
+    expected={'native_qpos','left_camera','right_camera'}|set(env.cameras.static_camera_name)
+    if set(arrays)!=expected or not {'head_camera','left_camera','right_camera'}.issubset(arrays):
+        raise ValueError('Official initial camera/state inventory differs: '+repr((sorted(arrays),sorted(expected))))
+    if arrays['native_qpos'].shape!=(14,) or not all(np.isfinite(v).all() for v in arrays.values()):
+        raise ValueError('Nonfinite or incorrectly shaped initial native state')
     with output.open('xb') as stream:np.savez_compressed(stream,**arrays)
     return dict(observation_arrays={k:sha256_array(v) for k,v in arrays.items()},task_state=task_values(env),instruction=instruction)
 

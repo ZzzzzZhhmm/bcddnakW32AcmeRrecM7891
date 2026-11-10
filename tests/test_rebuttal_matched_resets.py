@@ -72,3 +72,24 @@ def test_nvrtc_long_temp_root_is_rejected(tmp_path):
 def test_native_lease_cannot_move_to_ephemeral_cache(tmp_path):
     a=isolation(tmp_path,'a');a['persistent_lease_path']=str(Path(a['writable_root'])/'lock')
     with pytest.raises(ValueError,match='persistent'):M.validate_native_isolations([a])
+
+
+def test_official_auxiliary_front_camera_is_preserved(tmp_path,monkeypatch):
+    import numpy as np,sys,types
+    generator=types.ModuleType('generate_episode_instructions')
+    generator.generate_episode_descriptions=lambda *_:[{'unseen':['fixed prompt']}]
+    monkeypatch.setitem(sys.modules,'generate_episode_instructions',generator)
+    monkeypatch.setattr(Q,'task_values',lambda _:dict(fixed=1))
+    cameras={k:dict(rgb=np.full((2,3,3),i,dtype=np.uint8)) for i,k in enumerate(('head_camera','left_camera','right_camera','front_camera'))}
+    env=types.SimpleNamespace(cameras=types.SimpleNamespace(static_camera_name=['head_camera','front_camera']),set_instruction=lambda **_:None,get_obs=lambda:dict(observation=cameras,joint_action=dict(vector=np.zeros(14,dtype=np.float32))))
+    result=Q.observe_initial(env,'rearrange_blocks',dict(expert_info={'info':{}}),tmp_path/'initial.npz')
+    assert set(result['observation_arrays'])==set(cameras)|{'native_qpos'}
+    with np.load(tmp_path/'initial.npz',allow_pickle=False) as raw:assert np.array_equal(raw['front_camera'],cameras['front_camera']['rgb'])
+
+def test_missing_official_front_camera_is_not_silently_dropped(tmp_path,monkeypatch):
+    import numpy as np,sys,types
+    generator=types.ModuleType('generate_episode_instructions');generator.generate_episode_descriptions=lambda *_:[{'unseen':['fixed']}]
+    monkeypatch.setitem(sys.modules,'generate_episode_instructions',generator)
+    cameras={k:dict(rgb=np.zeros((2,3,3),dtype=np.uint8)) for k in ('head_camera','left_camera','right_camera')}
+    env=types.SimpleNamespace(cameras=types.SimpleNamespace(static_camera_name=['head_camera','front_camera']),set_instruction=lambda **_:None,get_obs=lambda:dict(observation=cameras,joint_action=dict(vector=np.zeros(14,dtype=np.float32))))
+    with pytest.raises(ValueError,match='inventory differs'):Q.observe_initial(env,'rearrange_blocks',dict(expert_info={'info':{}}),tmp_path/'none.npz')

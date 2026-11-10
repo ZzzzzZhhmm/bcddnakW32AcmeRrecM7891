@@ -1883,3 +1883,5 @@ CCI新增qualify_rebuttal_matched_resets.py与逐worker独立HOME/cache/tmp/runt
 20:33追加：首次真实运行在候选seed340800000的setup阶段终态exit1，尚无专家结果/策略推理/命令。两个curobo子进程均报告NVRTC临时目录名过长、error6，父进程ConnectionResetError属于下游表现。完整阶段/计划/runner/错误/启动意图等原件已归档matched_reset50_NVRTC_path_failure_v1.tar.gz，SHA559a6bc1…、manifest7ec6f98b…，本机/AFS均保留。不能记作专家拒绝或模型失败。
 
 20:34修复：每worker缓存/临时目录改用容器内独立短路径；科学输出和跨节点fcntl lease仍在AFS持久路径。激活时验证目录归属，禁止长TMPDIR及把lease搬到临时盘。57项检查exit0（11.45秒pytest/15.36秒总），stdout4ba0d57d…；原26360d70…快照与失败marker保持不改，新快照另冻。后续同一seed/顺序/原22:31:09UTC截止继续，不重置资源窗口。
+
+20:40追加：短路径v2确已完成官方专家首seed340800000（accepted），NVRTC问题消失；随后新入口把原生完整观测误限成三策略相机，遗漏官方aloha额外front_camera，初始schema检查终态exit1、0策略推理/命令。完整原件e80a5e53…/manifest ffb26628…双端保留，不改称expert失败；旧首种子与原22:31:09UTC期限保持。修复按实际静态相机清单精确核对并保存front_camera，仍强制三策略相机、14维有限qpos和全部有限图像；新59项检查通过（11.28秒pytest/15.21秒总），stdout453f060a…，补充真实官方四相机结构的正反例。原native worker本就保存全部RGB，未改模型/相机配置或删除任一原件。两个任务可在不同private runtime中作为隔离工程资格并行采集，任何异常保留；正式策略TEST仍须完整并发资格。
