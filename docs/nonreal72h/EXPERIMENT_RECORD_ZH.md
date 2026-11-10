@@ -1843,3 +1843,11 @@ PDF ed11dae1012a54a7a04bdb8450ffd9be9ca1a768b0eac7084ecc59d7ab9860d1、ZIP8955a7
 19:00:52实现检查exit0，35项通过（10.64s pytest/14.35s总），四新文件AST通过；包含typed Full/Pooled factory/schema、固定final3000门槛、独立attestation、初始实际Gaussian/图像/状态配对、未知不补0、重复结果拒绝、已知终态续跑、原生两种合法H32输出布局、源包装还原/未来teacher拒绝、TOPP原异常语义、旧池化配置和lease/档案生命周期。完整stdout SHA21364e13…及四源文件hash在Git外ITER11_MATCHED_IMPLEMENTATION_CHECK_V1.json/log，未修改任何旧model/deployment或活动训练快照。新入口为run_rebuttal_matched_native.py、run_rebuttal_matched_campaign.py与matched_native.py，具体准入见新COLLECTOR文档。
 
 recorded_dev阶段只允许固定PB DEV episode435十个前缀、Full200/Pooled100，作为新双入口共同namespace/实际Gaussian集成资格；这不同于已完成的旧pool100单角色资格，不重置旧窗口，也不重复计算科学样本。formal阶段只允许fixed3000及事前100对设计，真实并发路径/50-roster和最终完整state等前置门槛仍待核验。当前0新GPU推理/0仿真/0正式TEST，不把35工程检查写成同信息机制优势。18:44:14实际训练Full1734（新增1534）、pool1018（新增918）连续有限，原Nov11 12:29:56UTC截止不变，q96保持18:20终态且不重跑。
+
+### 23.125 双入口DEV准备失败保全和严格formal最终状态准入
+
+bce3f54已推送并在CCI无远端Git访问方式同步，545文件controller source74fb3d19a77c46a36ffbc0ae13021cda47fc57b64ffa004bcd080ea6ae851a11冻结；共同科学source87199cc6…保持。新双角色DEV phase于19:07:04.827513UTC启动，固定截止20:37:04.827513UTC，包含合同准备/失败/恢复；与旧已完成pool100单角色资格及所有训练/原query窗口分别记账。Full200和pool100两套同namespace合同均已完整生成。
+
+19:16:07准备进程exit1、0策略推理/0物理命令：采集器用裸SHA256(text)比对了生产带warm.rmbench.instruction.v1域前缀的digest，严格断言触发。15项程序/失败状态/完整两合同与构建日志归档8012b0547d2323102c707dbae7653bde8400a8d5f71a3fe31b1720bbbf9ee56a，manifest698e004d…，AFS及本机逐项核验。恢复helper使用生产_text_digest保持精确相等，不改指令、DEV样本、权重、合同或模型，不重建已完成bundles；新v2输出与失败v1并存，原20:37截止不变。GPU双角色资格尚未通过，不提前计新查询或性能。
+
+另在canonical增加正式准入硬检查：两角色各自3000完整state/byte-exact archive证明与实际双DEV十query配对收据必须匹配common model source及角色checkpoint，静态/单角色检查或中间状态不能代替。19:17:31本轮最终40项原生检查通过（10.78s pytest/14.43s总），stdout SHA78014335…、四源hash在ITER11_MATCHED_IMPLEMENTATION_CHECK_V2.json/log。该formal-only门槛改动不改变正在准备的旧74fb冻结DEV代码、模型推理或任何已测结果。

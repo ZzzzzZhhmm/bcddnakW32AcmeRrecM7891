@@ -93,6 +93,26 @@ def validate_training_attestation(binding,attestation):
         or attestation.get('root_seed')!=3407):
         raise ValueError('Checkpoint lineage/update differs from its explicit role')
 
+def verify_formal_prerequisites(plan,training,dev):
+    """Engineering integration never substitutes for complete final training."""
+    if plan['phase']!='formal':raise ValueError('Formal prerequisites requested for a different phase')
+    if (dev.get('status')!='complete_actual_dual_role_DEV_matching'
+        or dev.get('evaluation_source_sha256')!=plan['evaluation_source_sha256']
+        or dev.get('actual_noise_pairs_verified')!=10 or dev.get('simulator_loaded') is not False
+        or dev.get('generated_commands_executed')!=0 or dev.get('role_types_verified') is not True):
+        raise ValueError('Actual two-role DEV input/noise/history qualification is required')
+    for role in ROLES:
+        row=training[role];binding=plan['roles'][role]
+        if (row.get('schema')!='warm.rebuttal.final-training-evidence.v1'
+            or row.get('status')!='verified_complete_final_state_and_checkpoint'
+            or row.get('role')!=role or row.get('actual_global_step')!=3000
+            or row.get('checkpoint_sha256')!=binding['checkpoint_sha256']
+            or row.get('training_source_sha256')!=binding['training_source_sha256']
+            or row.get('all_state_files_verified') is not True
+            or row.get('byte_exact_state_archive_verified') is not True
+            or not row.get('raw_state_manifest_sha256') or not row.get('byte_exact_state_archive_sha256')):
+            raise ValueError('Complete byte-exact final training evidence required: '+role)
+
 def verify_inputs(plan):
     validate_plan(plan)
     for item in plan['inputs']:
@@ -103,6 +123,14 @@ def verify_inputs(plan):
         if file_sha(b['training_attestation'])!=b['training_attestation_sha256']:raise ValueError('Training attestation changed')
         validate_training_attestation(b,read_json(b['training_attestation']))
     if plan['phase']=='formal':
+        training={}
+        for role in ROLES:
+            ref=plan['roles'][role]['complete_training_state_receipt']
+            if file_sha(ref['path'])!=ref['sha256']:raise ValueError('Final training state receipt changed')
+            training[role]=read_json(ref['path'])
+        ref=plan['dual_role_DEV_qualification']
+        if file_sha(ref['path'])!=ref['sha256']:raise ValueError('Actual two-role DEV receipt changed')
+        verify_formal_prerequisites(plan,training,read_json(ref['path']))
         q=plan['native_concurrency_qualification']
         if file_sha(q['path'])!=q['sha256']:raise ValueError('Native concurrency qualification receipt changed')
         receipt=read_json(q['path'])

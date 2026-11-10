@@ -7,7 +7,7 @@ import pytest
 import torch
 from fastwam.research.matched_native import (
     DESIGN_SHA256,INFERENCE,ROLE_TYPES,validate_plan,validate_training_attestation,
-    require_deadline,pair_receipts,next_request,capture_replan,PolicyOutputError,invalid_action_proof,file_sha,
+    require_deadline,pair_receipts,next_request,capture_replan,PolicyOutputError,invalid_action_proof,file_sha,verify_formal_prerequisites,
 )
 
 def plan(phase='recorded_dev'):
@@ -174,3 +174,25 @@ def test_verified_result_rejects_foreign_weights_and_unknown_zero_label(tmp_path
     assert verified_result(tmp_path,p,'fixed',0,'full')['success'] is None
     row['checkpoint_sha256']='pooled_memory_prior';(tmp_path/'result.json').write_text(json.dumps(row))
     with pytest.raises(ValueError,match='typed role'):verified_result(tmp_path,p,'fixed',0,'full')
+
+def formal_receipts():
+    p=plan('formal');p['evaluation_source_sha256']='common'
+    dev=dict(status='complete_actual_dual_role_DEV_matching',evaluation_source_sha256='common',actual_noise_pairs_verified=10,
+        simulator_loaded=False,generated_commands_executed=0,role_types_verified=True)
+    training={}
+    for role in ROLE_TYPES:
+        p['roles'][role]['training_source_sha256']=role+'-training'
+        training[role]=dict(schema='warm.rebuttal.final-training-evidence.v1',status='verified_complete_final_state_and_checkpoint',
+            role=role,actual_global_step=3000,checkpoint_sha256=role,training_source_sha256=role+'-training',
+            all_state_files_verified=True,byte_exact_state_archive_verified=True,raw_state_manifest_sha256='raw',byte_exact_state_archive_sha256='archive')
+    return p,training,dev
+
+@pytest.mark.parametrize('field,value',[('actual_global_step',200),('all_state_files_verified',False),('byte_exact_state_archive_verified',False),('checkpoint_sha256','foreign')])
+def test_final_weight_name_or_partial_training_does_not_admit_formal_TEST(field,value):
+    p,t,d=formal_receipts();verify_formal_prerequisites(p,t,d)
+    t['full'][field]=value
+    with pytest.raises(ValueError,match='final training evidence'):verify_formal_prerequisites(p,t,d)
+
+def test_single_role_or_static_DEV_check_does_not_admit_formal_TEST():
+    p,t,d=formal_receipts();d['actual_noise_pairs_verified']=0
+    with pytest.raises(ValueError,match='two-role DEV'):verify_formal_prerequisites(p,t,d)
