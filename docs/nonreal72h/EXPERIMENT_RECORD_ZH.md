@@ -1837,3 +1837,9 @@ PDF ed11dae1012a54a7a04bdb8450ffd9be9ca1a768b0eac7084ecc59d7ab9860d1、ZIP8955a7
 新目录responses/20261111_v12_addendum1及AFS writing_candidates同名目录，保留3份/15块/20项；Bbqv W3/Q2、Hh4E W5和对应comment blocks明确q96已知完整H32效应不可得，撤去此前pending表述。20项matrix SHA62fdfe7abced92c586a71b8b86b9f2a851b104f13627eec1c07bb20a4ee475f3绑定q96失败原件，全部empirical closure=false。原v12 PDF/29源ZIP没有q96结果断言，bytes保持ed11dae1…/8955a7e9…，38页全工程与clean ZIP编译、视觉验收仍有效；原95项包不覆写。
 
 44项新增量包3,783,497bytes/SHA b384164babd70616730c70cb3ba121f5e726811b04423be16dd437ac4ac5f949、manifest d5d618c18c00d720311e74e32238541e12d8580195c5f245f931ebe43b92c14b于18:37:45在AFS逐成员验收，本机同样核验。包括全部回复/矩阵/一致性检查、q96完整失败档案及18:32 live原件，不把工程失败当新预测或修复数据。18:32:03 Full1680（新增1480）、pool966（新增866）均连续有限，durable父200/100、fixed3000及Nov11 12:29:56UTC截止保持，AFS116,379,942,912bytes。实际活动现为两路标准训练；final3000/正式100对/直接repair与missing-skill仍未完成，新增真机继续延期，未发布/上传。
+
+### 23.124 显式双checkpoint原生collector和有界campaign在CCI实现
+
+19:00:52实现检查exit0，35项通过（10.64s pytest/14.35s总），四新文件AST通过；包含typed Full/Pooled factory/schema、固定final3000门槛、独立attestation、初始实际Gaussian/图像/状态配对、未知不补0、重复结果拒绝、已知终态续跑、原生两种合法H32输出布局、源包装还原/未来teacher拒绝、TOPP原异常语义、旧池化配置和lease/档案生命周期。完整stdout SHA21364e13…及四源文件hash在Git外ITER11_MATCHED_IMPLEMENTATION_CHECK_V1.json/log，未修改任何旧model/deployment或活动训练快照。新入口为run_rebuttal_matched_native.py、run_rebuttal_matched_campaign.py与matched_native.py，具体准入见新COLLECTOR文档。
+
+recorded_dev阶段只允许固定PB DEV episode435十个前缀、Full200/Pooled100，作为新双入口共同namespace/实际Gaussian集成资格；这不同于已完成的旧pool100单角色资格，不重置旧窗口，也不重复计算科学样本。formal阶段只允许fixed3000及事前100对设计，真实并发路径/50-roster和最终完整state等前置门槛仍待核验。当前0新GPU推理/0仿真/0正式TEST，不把35工程检查写成同信息机制优势。18:44:14实际训练Full1734（新增1534）、pool1018（新增918）连续有限，原Nov11 12:29:56UTC截止不变，q96保持18:20终态且不重跑。
