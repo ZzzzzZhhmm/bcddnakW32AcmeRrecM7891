@@ -11,3 +11,5 @@
 后续同状态修复/撤回与后果验证仍须独立 fresh-parent/RNG/DINO 和重复 Full 端点资格，并采用原四个 DINO delta token 的均匀均值。沿用 BT/RB 已定义的事实进度 rubric；独立候选执行和语义标签尚未采集时不能填收益。与 fixed50 shared-stage Full/Pooled 实验、旧 v8诊断和原稿表格分开记录。
 
 2026-11-10 21:01：相关实现检查72项通过，包含原BRT旧协议保护、BT1000/root3407/task/run/seed反例、私有缓存与reset前缀恢复。0新原BT策略推理/命令；完整在线资格、事实轨迹与效能证据均未完成。源/验证/原件收据在 Git 外 iter12及AFS，不把此工程入口写成论文收益。
+
+21:11实际完整BT在线合同和静态projection/encoder运行环境资格已通过：manifest d52462a2…、projection0583a49a…、实际encoder2f3e5d29…精确。one-replan+四命令helper aa2e8e8e…已准备未派发，尚无原BT推理、物理动作或效能数据。

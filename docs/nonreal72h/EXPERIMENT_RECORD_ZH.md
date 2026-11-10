@@ -1893,3 +1893,11 @@ CCI新增qualify_rebuttal_matched_resets.py与逐worker独立HOME/cache/tmp/runt
 新入口只在已检查终态/完整raw manifest/原生source hash和显式resume proof相符时复制并复用候选前缀；已完成专家/两reset只读取原件，不重算；RB18号直接接续未完成reset，BT32号保留原错误并追加reconciliation后按原顺序继续。原20:31→22:31UTC窗口不变，first50/2000/旧RB10前缀不变，0学习策略结果用于准入。v3并行driver另有换行SyntaxError（0worker/0物理），v4使用独立文件并AST后启动；旧失败工件全保留。
 
 原BT12000/source f77新增独立native1000事实轨迹协议，保护旧BRT14000/600行为。BT要求root3407/physical0、task/run/step/cap/probes匹配，首四条真实关节/API/TOPP必须精确匹配one-replan资格。原builder v1 metadata head键失败0策略，v2默认矩阵生成root17合同也0策略且不准入；v3显式matrix3407（SHA be10e580…）正在重建，不覆盖seed17原件。原权重/模型/M1/encoder/bank/normalizer校验保持，原DEV未知。21:01:49整套72项通过（12.38秒pytest/17.17秒总），stdout554538a5…；0新BT推理/命令。协议见ORIGINAL_BT_NATIVE_TRACE_PROTOCOL_20261111_ZH.md，不能把工程与队列当原模型成功/修复或正式TEST。
+
+### 23.131 六场景真实初始化barrier、实测物理首态与原BT在线合同资格
+
+21:13:54实测resume-v5源845108f2…仍在原窗口正常新增：RB37/50、BT26/50；此前18/14前缀只读复用，后续真实专家与双reset新增，未重算已完样本、未改seed顺序。为后续10个固定分片，新增probe-only barrier：至多六个真实已初始化scene全部ready后才运行四条hold，并保存实际匿名planner endpoint inode/PID、RGB/任务/物理首态和跨两reset轨迹；不把六个进程启动当成六scene真实共存。正式Full/Pooled入口另强制实际关节qpos/qvel等于roster，不能仅依赖API drive targets相同。模型/推理/采样/严格配对不改，旧实际DEV20次不重跑。
+
+21:16:06新77项检查通过（12.48秒pytest/16.98秒总），stdout16348ad4…；旧fixture漏task导致的1failed/74passed记录fb304c4b…保留，补齐测试输入后通过。实际六场景/十worker资格尚未派发，须两份50-roster完整/driver已退出/旧native lease释放后在原22:31UTC前执行；coordinator已准备并AST检查，不自动重复未知任务。
+
+原BT seed3407在线bundle已真实完整构建（manifest d52462a2…，online contract390a6825…）；21:11:20静态部署projection完全相同0583a49a…、原模型/weight/M1等全部校验通过，实际完整encoder runtime精确匹配原2f3e5d29…，0模型推理/命令。原native one-replan+四真实关节/TOPP资格helper aa2e8e8e…已准备未派发，绑定旧native TOPP observer49888e…，0新BT策略结果。旧builder head-key失败、seed17未准入bundle和全部旧原件保留。后续先one-replan资格再native1000源；没有复现原DEV或SR收益结论。v12_addendum2三回复/PDF/ZIP仍原bytes，科学closure全false。

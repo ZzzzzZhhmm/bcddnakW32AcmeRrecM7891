@@ -119,7 +119,9 @@ def execute_native(plan,policy,out,result,budget,case_id):
         text=str(np.random.choice(generate_episode_descriptions(plan['task'],[entry['expert_info']['info']],100)[0]['unseen']))
         env.set_instruction(instruction=text);obs=env.get_obs()
         identity=dict(observation_arrays=save_observation(out/'initial_observation.npz',obs),task_state=task_values(env),instruction=text)
-        if identity!=entry['initial_identity']:raise ValueError('Fresh policy reset differs from the fixed expert-admitted roster')
+        measured=[{k:v.tolist() if hasattr(v,'tolist') else v for k,v in row.items()} for row in physical_joint_state(env)]
+        M.require_initial_native_identity(entry,identity,measured)
+        result['initial_measured_physical']=measured
         result['seed']=entry['seed'];result['initial_identity']=identity
         M.atomic_json(out/'initial_identity.json',identity)
         with (out/'physical_commands.jsonl').open('x',encoding='utf-8',buffering=1) as stream,TOPPObserver(env) as observer:

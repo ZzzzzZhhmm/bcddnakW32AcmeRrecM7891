@@ -116,3 +116,33 @@ def test_resume_requires_raw_prefix_hashes(tmp_path):
     path=tmp_path/'proof.json';path.write_text(json.dumps(proof))
     plan=dict(task='battery_try',runtime_source_sha256='sim',resume_proof=dict(path=str(path),sha256=M.file_sha(path)))
     with pytest.raises(ValueError,match='prefix changed'):Q.prepare_resume(plan,out)
+
+
+def test_actual_initialized_native_barrier_records_all_workers(tmp_path,monkeypatch):
+    parent=tmp_path/'batch';parent.mkdir();barrier=parent/'barrier';barrier.mkdir()
+    M.atomic_json(barrier/'0-b.json',dict(worker_id='b',pid=2,reset_index=0))
+    monkeypatch.setattr(Q,'require_window',lambda _:None)
+    plan=dict(mode='probe',task='rearrange_blocks',runtime_isolation=dict(worker_id='a'),barrier_parent=str(parent),concurrency_barrier=dict(directory=str(barrier),worker_ids=['a','b'],timeout_seconds=1))
+    result=Q.wait_native_probe_barrier(plan,0,dict(initial='fixed'))
+    assert result['simultaneously_initialized_native_scenes']==2 and set(result['ready_records'])=={'a','b'}
+    with pytest.raises(RuntimeError,match='prior native barrier'):Q.wait_native_probe_barrier(plan,0,{})
+
+def test_native_barrier_cannot_be_used_to_select_expert_seeds(tmp_path):
+    with pytest.raises(ValueError,match='only an isolation'):Q.wait_native_probe_barrier(dict(mode='roster',concurrency_barrier={}),0,{})
+
+def test_native_barrier_rejects_undeclared_worker(tmp_path):
+    barrier=tmp_path/'barrier';barrier.mkdir()
+    plan=dict(mode='probe',runtime_isolation=dict(worker_id='different'),concurrency_barrier=dict(directory=str(barrier),worker_ids=['a','b'],timeout_seconds=1))
+    with pytest.raises(ValueError,match='Unplanned'):Q.wait_native_probe_barrier(plan,0,{})
+
+
+def test_equal_drive_targets_do_not_hide_different_initial_native_physics():
+    identity=dict(observation_arrays={'native_qpos':'drive-targets'},task_state={'stage':0},instruction='fixed')
+    physical=[dict(name='robot',qpos=[0.1],qvel=[0.0])]
+    entry=dict(initial_identity=identity,physical_initial=physical)
+    M.require_initial_native_identity(entry,identity,physical)
+    with pytest.raises(ValueError,match='measured native joints'):
+        M.require_initial_native_identity(entry,identity,[dict(name='robot',qpos=[0.1],qvel=[0.01])])
+
+def test_initial_native_physics_without_roster_proof_cannot_pass():
+    with pytest.raises(KeyError):M.require_initial_native_identity(dict(initial_identity={}),{},[])

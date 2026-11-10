@@ -104,6 +104,33 @@ def python_write_audit(allowed):
     return observed
 
 
+
+def wait_native_probe_barrier(plan,index,identity):
+    barrier=plan.get('concurrency_barrier')
+    if barrier is None:return None
+    if plan['mode']!='probe':raise ValueError('Native barrier is only an isolation qualification,never expert admission or policy TEST')
+    names=barrier['worker_ids'];worker=plan['runtime_isolation']['worker_id'];root=Path(barrier['directory']).resolve(strict=True)
+    if worker not in names or len(names)!=len(set(names)) or not 2<=len(names)<=6:raise ValueError('Unplanned native concurrency cohort')
+    if not 0<barrier['timeout_seconds']<=300:raise ValueError('Bounded native barrier wait required')
+    if not root.is_relative_to(Path(plan['barrier_parent']).resolve(strict=True)):raise ValueError('Barrier path escapes its declared batch')
+    now=datetime.datetime.now(datetime.timezone.utc).isoformat()
+    payload=dict(worker_id=worker,pid=os.getpid(),reset_index=index,task=plan['task'],utc=now,initial_identity=identity)
+    ready=root/f'{index}-{worker}.json'
+    if ready.exists():raise RuntimeError('Unknown prior native barrier attempt;do not overwrite or duplicate it')
+    M.atomic_json(ready,payload);start=time.monotonic()
+    while True:
+        require_window(plan);rows=[]
+        for name in names:
+            path=root/f'{index}-{name}.json'
+            if not path.exists():break
+            row=M.read_json(path)
+            if row['worker_id']!=name or row['reset_index']!=index:raise ValueError('Native barrier contains a foreign worker')
+            rows.append(row)
+        if len(rows)==len(names):return dict(ready_utc=now,all_ready_observed_utc=datetime.datetime.now(datetime.timezone.utc).isoformat(),ready_records={name:M.file_sha(root/f'{index}-{name}.json') for name in names},simultaneously_initialized_native_scenes=len(names))
+        if time.monotonic()-start>=barrier['timeout_seconds']:raise TimeoutError('Actual initialized native scenes did not meet at the barrier')
+        time.sleep(.1)
+
+
 def reset_once(env,plan,entry,out,index,resolved_config,hold=False):
     import numpy as np
     from fastwam.research.native_replay import physical_joint_state
@@ -112,9 +139,10 @@ def reset_once(env,plan,entry,out,index,resolved_config,hold=False):
     if env.step_lim!={'rearrange_blocks':700,'battery_try':1000}[plan['task']]:raise ValueError('Official native horizon changed')
     identity=observe_initial(env,plan['task'],entry,out/f'initial-{index}.npz')
     result=dict(initial_identity=identity,physical_initial=plain(physical_joint_state(env)),pid=os.getpid(),
-        planner_ipc=dict(kind='anonymous_multiprocessing_Pipe',left_fd=env.robot.left_conn.fileno(),right_fd=env.robot.right_conn.fileno(),left_process=env.robot.left_proc.pid,right_process=env.robot.right_proc.pid),
+        planner_ipc=dict(kind='anonymous_multiprocessing_Pipe',left_fd=env.robot.left_conn.fileno(),right_fd=env.robot.right_conn.fileno(),left_process=env.robot.left_proc.pid,right_process=env.robot.right_proc.pid,left_endpoint_inode=os.fstat(env.robot.left_conn.fileno()).st_ino,right_endpoint_inode=os.fstat(env.robot.right_conn.fileno()).st_ino),
         started_utc=datetime.datetime.now(datetime.timezone.utc).isoformat())
     if hold:
+        result['concurrency_barrier']=wait_native_probe_barrier(plan,index,identity)
         commands=[];state=np.asarray(env.get_obs()['joint_action']['vector']).copy()
         for i in range(4):
             before=plain(physical_joint_state(env));previous=int(env.take_action_cnt)
@@ -247,7 +275,7 @@ def main():
     lease=M.activate_native_isolation(plan)
     out.mkdir(parents=True,exist_ok=False);started=datetime.datetime.now(datetime.timezone.utc).isoformat()
     M.atomic_json(out/'operator.json',dict(status='running',pid=os.getpid(),started_utc=started,plan_sha256=a.expected_plan_sha256))
-    writes=python_write_audit([out,plan['runtime_isolation']['writable_root'],str(Path(plan['native_runtime'])/'data'),str(Path(plan['native_runtime'])/'camera_images')])
+    writes=python_write_audit([out,plan['runtime_isolation']['writable_root'],str(Path(plan['native_runtime'])/'data'),str(Path(plan['native_runtime'])/'camera_images')]+([plan['concurrency_barrier']['directory']] if plan.get('concurrency_barrier') is not None else []))
     try:
         resolved_config,runtime_identity=load_native(plan)
         (roster if plan['mode']=='roster' else probe)(plan|{'_path':str(a.plan)},out,resolved_config)

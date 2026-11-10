@@ -371,3 +371,8 @@ def activate_native_isolation(plan):
     except BaseException:os.close(fd);raise
     os.environ.update(item['environment']);tempfile.tempdir=None
     return fd
+
+
+def require_initial_native_identity(entry,identity,physical):
+    if identity!=entry['initial_identity']:raise ValueError('Fresh policy reset differs from the fixed expert-admitted roster')
+    if physical!=entry['physical_initial']:raise ValueError('Initial measured native joints differ despite matching API drive targets')
