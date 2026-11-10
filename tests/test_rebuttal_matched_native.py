@@ -196,3 +196,27 @@ def test_final_weight_name_or_partial_training_does_not_admit_formal_TEST(field,
 def test_single_role_or_static_DEV_check_does_not_admit_formal_TEST():
     p,t,d=formal_receipts();d['actual_noise_pairs_verified']=0
     with pytest.raises(ValueError,match='two-role DEV'):verify_formal_prerequisites(p,t,d)
+
+def causal_scope_receipts():
+    p,t,d=formal_receipts()
+    p.update(DEV_qualification_scope='matched_external_inputs_with_causal_selection_feedback',DEV_scope_amendment=dict(sha256='explicit-amendment'))
+    d.update(schema='warm.rebuttal.matched-external-input-qualification.v1',status='qualified_current_inputs_noise_and_causal_retrieval_feedback',
+        qualification_scope=p['DEV_qualification_scope'],scope_amendment_sha256='explicit-amendment',current_input_proprio_and_query_keys_exact=True,
+        initial_candidate_pool_exact=True,all_later_retrieval_differences_causally_reconstructed=True,common_top31_at_differing_queries_exact=True,
+        strict_all_query_candidate_equality_passed=False,raw_evidence_archive_sha256='preserved-failure',independent_reconstruction_proof_sha256='independent-proof')
+    return p,t,d
+
+def test_causal_selection_feedback_scope_requires_explicit_formal_plan_opt_in():
+    p,t,d=causal_scope_receipts();verify_formal_prerequisites(p,t,d)
+    p.pop('DEV_qualification_scope')
+    with pytest.raises(ValueError,match='two-role DEV'):verify_formal_prerequisites(p,t,d)
+
+@pytest.mark.parametrize('field,value',[('initial_candidate_pool_exact',False),('current_input_proprio_and_query_keys_exact',False),
+    ('all_later_retrieval_differences_causally_reconstructed',False),('independent_reconstruction_proof_sha256','')])
+def test_unexplained_candidate_or_current_input_differences_remain_blocking(field,value):
+    p,t,d=causal_scope_receipts();d[field]=value
+    with pytest.raises(ValueError,match='two-role DEV'):verify_formal_prerequisites(p,t,d)
+
+def test_original_strict_DEV_gate_is_not_relabelled_by_external_input_scope():
+    a,b=paired();b['queries'][0]['bank_rows']=[999]
+    with pytest.raises(ValueError,match='Gaussian'):pair_receipts(a,b,recorded_dev=True)

@@ -1851,3 +1851,23 @@ bce3f54已推送并在CCI无远端Git访问方式同步，545文件controller so
 19:16:07准备进程exit1、0策略推理/0物理命令：采集器用裸SHA256(text)比对了生产带warm.rmbench.instruction.v1域前缀的digest，严格断言触发。15项程序/失败状态/完整两合同与构建日志归档8012b0547d2323102c707dbae7653bde8400a8d5f71a3fe31b1720bbbf9ee56a，manifest698e004d…，AFS及本机逐项核验。恢复helper使用生产_text_digest保持精确相等，不改指令、DEV样本、权重、合同或模型，不重建已完成bundles；新v2输出与失败v1并存，原20:37截止不变。GPU双角色资格尚未通过，不提前计新查询或性能。
 
 另在canonical增加正式准入硬检查：两角色各自3000完整state/byte-exact archive证明与实际双DEV十query配对收据必须匹配common model source及角色checkpoint，静态/单角色检查或中间状态不能代替。19:17:31本轮最终40项原生检查通过（10.78s pytest/14.43s总），stdout SHA78014335…、四源hash在ITER11_MATCHED_IMPLEMENTATION_CHECK_V2.json/log。该formal-only门槛改动不改变正在准备的旧74fb冻结DEV代码、模型推理或任何已测结果。
+
+### 23.126 新双入口Full200实际DEV完成，匹配对侧仍在运行
+
+恢复准备使用生产指令digest后，两角色typed合同预检均通过，新v2计划2c8a1112bd60071c77f890e7b643572085fce698885e6ace18e4baf30a4c069a保持Full200/Pooled100、PB435十前缀和同namespace。19:24:00唯一CCI logged runner2369882启动，Full worker2369891；原phase截止20:37:04.827513UTC保持，actual admitted spec52b57774…/max4200秒含在窗口内。所有原训练、已完成pool100单角色和q96终态不变。
+
+Full于19:32:31 exit0，十个frame0/4/…/36全部真实重规划、H32有限、K32有效；观察history有效token为0/4/8/12/16/20/24/24/24/24，动作history slot为0/1/2/3/4/5/6/7/8/8。严格类WarmRetrospectionFastWAM/schema warm.retrospection-checkpoint/update200/权重1fb035c4…核实，模式未改、无Full专用probe、生成动作执行0、仿真0、success=null。38原件档案ef1c3db8f31be969f3c56858cdc70db9921685826d46137298a5db0930e71c1c（1,342,475bytes）本机独立验证每个hash、十份原H32数组与真实history，原AFS完整档案保留。它只关闭新Full入口的工程资格，不证明最终性能/repair；当前新Pooled worker2370928仍运行，实际双角色输入/Gaussian配对尚待核验，不提前宣称完成。
+
+f8311af已推送/CCI同步；未来formal controller source2b7df3433bb06cfd3b79c673bc83e98549ca16a81bd70a721530e185581f9ac4冻结。与实际DEV controller74fb…相比，543/545源文件及两个worker程序逐字节相同，11个推理/采样见证/配对函数AST完全相同，仅formal准入与测试变化；两个冻结树分别保留。19:30:25训练Full1938（新1738）/pool1227（新1127）连续有限，durable200/100、Nov11 12:29:56UTC不变，AFS116,116,328,448bytes。原33页与已完整验收的v12 PDF/source ZIP不改，本轮仍无正式TEST或新效能收益。
+
+### 23.127 两角色完整推理与严格全候选池资格失败均保留
+
+Pooled19:41:00 exit0完成十前缀/H32有限/K32有效/真实history，38原件archive d6b4433a3a86e114db1f5c2734e41c0e757fe456ea4c7e7112bf77fa629e21f8。主campaign因bank_rows不同于19:41:02 exit1；两子角色完成不等于主资格通过。初始identity/共同合同、十次当前图像/proprio/query key/derived seed/实际Gaussian完全相同，初始K32及payload相同；frame12/20/24/28/32各一个第32候选不同，其余top31一致，另外五次池逐项相同。20重规划来自一个DEV episode，不作独立episode样本，不重跑或换样。
+
+已用原bank successor_row、前一次实际选择/源接受/thread资格与原精确排序规则在AFS及本机分别重算，五处差异全部精确复现：方法各自的选择反馈会保留一个后继候选，不是不同外部bank、query/DINO或随机数漂移。139项6,892,482bytes档案SHA6a98ce52938e832d82508bd34cd75f2e76c8c701014f0dbf481dfcf5368200fa、manifest f21477ef43cc83ce5ef07a0194b168aaf24fccc852e76f87fcc2f899ecdb35ed双端逐成员核验；本机独立重构证明SHA a065c7922d4962c7b889f41650e695b8a2cd644ae318e61f99e6453699744549。0仿真/0生成动作执行/0任务成功率，旧严格失败保持原身份。
+
+### 23.128 TEST前单独冻结共同外部输入资格范围
+
+原3484ad14正式设计要求共同初始输入/随机性、bank与信息预算，后续保留各方法自己的因果状态；额外DEV工程断言把续接选择状态也强制相同，范围更强。19:55:11冻结MATCHED_DEV_SCOPE_AMENDMENT_V3.json/SHA fa089d4d0bfb0753de4ecc9e52c05ddb8d398de20ce498441693091abd1ee6ca，明确旧失败不改名成功。单独的MATCHED_EXTERNAL_INPUT_QUALIFICATION_V3只确认十次共同当前输入/query key/Gaussian、初始K32及全部可重构续接差异，不证明后续固定候选相同、独立机制隔离或最终效能。Formal计划须显式选择该范围、绑定修订和独立证明，且修订早于首次TEST准入；任何无法解释的差异仍拒绝。最终3000完整state/CAS、50-roster、真实并发和所有科学主指标/算法/样本/截止保持。
+
+formal-only证明绑定追加后，19:56:28全46项检查通过（10.91s pytest/14.72s总），stdout SHA c1fdfb7c…；严格pair函数和两worker/模型推理不改。最新回复增量2/15块/20矩阵4fb14257…明确中间权重、因果续接差异及final performance pending。v12 PDFed11dae1…/ZIP8955a7e9…不改，A.3已有后继续接机制，无新增论文数字。20:01:37实际Full2075（新1875）/pool1370（新1270）连续有限、durable200/100、原Nov11 12:29:56UTC截止保持，AFS116,093,566,976bytes。CCI两角色均终态，不记活动GPU；新包双端验收另记，全部科学closure=false，未发布/上传，真机新增延期。

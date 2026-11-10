@@ -96,8 +96,19 @@ def validate_training_attestation(binding,attestation):
 def verify_formal_prerequisites(plan,training,dev):
     """Engineering integration never substitutes for complete final training."""
     if plan['phase']!='formal':raise ValueError('Formal prerequisites requested for a different phase')
-    if (dev.get('status')!='complete_actual_dual_role_DEV_matching'
-        or dev.get('evaluation_source_sha256')!=plan['evaluation_source_sha256']
+    strict=dev.get('status')=='complete_actual_dual_role_DEV_matching'
+    causal=(dev.get('schema')=='warm.rebuttal.matched-external-input-qualification.v1'
+        and dev.get('status')=='qualified_current_inputs_noise_and_causal_retrieval_feedback'
+        and plan.get('DEV_qualification_scope')==dev.get('qualification_scope')=='matched_external_inputs_with_causal_selection_feedback'
+        and plan.get('DEV_scope_amendment',{}).get('sha256')==dev.get('scope_amendment_sha256')
+        and dev.get('scope_amendment_sha256') is not None
+        and dev.get('current_input_proprio_and_query_keys_exact') is True
+        and dev.get('initial_candidate_pool_exact') is True
+        and dev.get('all_later_retrieval_differences_causally_reconstructed') is True
+        and dev.get('common_top31_at_differing_queries_exact') is True
+        and dev.get('strict_all_query_candidate_equality_passed') is False
+        and bool(dev.get('raw_evidence_archive_sha256')) and bool(dev.get('independent_reconstruction_proof_sha256')))
+    if (not (strict or causal) or dev.get('evaluation_source_sha256')!=plan['evaluation_source_sha256']
         or dev.get('actual_noise_pairs_verified')!=10 or dev.get('simulator_loaded') is not False
         or dev.get('generated_commands_executed')!=0 or dev.get('role_types_verified') is not True):
         raise ValueError('Actual two-role DEV input/noise/history qualification is required')
@@ -130,7 +141,24 @@ def verify_inputs(plan):
             training[role]=read_json(ref['path'])
         ref=plan['dual_role_DEV_qualification']
         if file_sha(ref['path'])!=ref['sha256']:raise ValueError('Actual two-role DEV receipt changed')
-        verify_formal_prerequisites(plan,training,read_json(ref['path']))
+        dev=read_json(ref['path']);verify_formal_prerequisites(plan,training,dev)
+        if dev.get('qualification_scope')=='matched_external_inputs_with_causal_selection_feedback':
+            scope=plan['DEV_scope_amendment']
+            if file_sha(scope['path'])!=scope['sha256']:raise ValueError('Explicit pre-TEST DEV scope amendment changed')
+            amendment=read_json(scope['path'])
+            if (amendment.get('pre_TEST') is not True or amendment.get('unchanged_scientific_design_sha256')!=DESIGN_SHA256
+                or amendment.get('scientific_primary_metrics_samples_weights_algorithms_or_deadlines_changed') is not False
+                or datetime.fromisoformat(amendment['created_utc'])>datetime.fromisoformat(plan['first_admitted_utc'])):
+                raise ValueError('DEV scope must be declared before the original formal admission')
+            proof_ref=plan['DEV_reconstruction_proof']
+            if file_sha(proof_ref['path'])!=proof_ref['sha256'] or proof_ref['sha256']!=dev['independent_reconstruction_proof_sha256']:
+                raise ValueError('Independent causal retrieval reconstruction proof differs')
+            proof=read_json(proof_ref['path'])
+            if (proof.get('all10_current_input_proprio_query_key_and_Gaussian_pairs_exact') is not True
+                or proof.get('initial_K32_exact') is not True or proof.get('strict_all_query_pair_gate_passed') is not False
+                or proof.get('archive_sha256')!=dev['raw_evidence_archive_sha256']
+                or proof.get('causally_reconstructed_continuation_tail_differences')!=dev.get('continuation_tail_difference_frames')):
+                raise ValueError('Observed input or retrieval difference is not fully accounted for')
         q=plan['native_concurrency_qualification']
         if file_sha(q['path'])!=q['sha256']:raise ValueError('Native concurrency qualification receipt changed')
         receipt=read_json(q['path'])

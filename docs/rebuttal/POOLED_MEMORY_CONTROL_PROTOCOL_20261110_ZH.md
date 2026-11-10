@@ -1,5 +1,7 @@
 # 同信息池化对照：预训练冻结协议
 
+**11月11日20:01 UTC更新：** 新Full200/Pooled100双入口实际DEV各十query完整推理，十次当前输入/query key/Gaussian及初始K32精确匹配。整体额外全query池相同检查仍失败，五处后继候选差异已按前序实际选择/接受及successor规则双端重构，139原件6a98ce52…保留；不改旧失败身份。较窄的共同外部信息资格在TEST前单独声明，formal计划须显式引用scope amendment fa089d4d…及独立证明；不声称后续候选全部相同或已有性能收益。详见MATCHED_DEV_SCOPE_AMENDMENT_20261111_ZH.md，后文旧pending只代表其历史时点。原pool100单角色资格仍保持，最终3000/50-rosters/并发资格/100对性能尚待完成。
+
 **11月11日恢复优先更新：** pool100真实原生DEV资格已16:41:20UTC完整10/10、runner exit0，原source-only模式、真实因果history/all-K和8+4条件路径通过；46原件136b665c…及51项旧失败/数据原件双端核验。下面旧pending段落只代表历史时点，不再重复资格。固定3000两训练继续、尚无最终匹配TEST；最新正式100对/200回合设计见`MATCHED_NATIVE_FINAL3000_EVAL_DESIGN_20261111_ZH.md`与冻结3484ad14…，未派发。原RB6对确已到其原生700上限（不是低于任务上限的截短），余4对pending且Full/null均0，shared-stage身份不变；勿与原BRT600/3500的有界来源混淆。
 
 **11月10日15:03 UTC状态更新：** 以下首次资格段落保留其历史时点。独立all-K对照现已完成1–100连续有限更新、真实typed checkpoint及完整state，并通过逐字节可重建归档；它已不处于0-update阶段。父100权重SHA cbdfcef2432f2e2b99ddfc22a95dc16450df43979c094c85e3f7787faecfe5ec，raw TAR SHA f132c9a5b5f917e9eb1a2a0c093811d0c1634c8b1211dadd43631f999ae4bb54。新100→3000计划fe595b17…使用原f9/source48ce6ba8…、完整父状态、共同配方与同master7526a475…截止；标准ACP c852e8e2e91f4d9ba9d42cfa0682bbb2已通过父状态核验并实际进入初始化/恢复。此时不能称已产生101+更新，须读真实metrics。此前f31fd1c5…因收据路径类型错误在创建训练输出前失败，已核对ACP离线原始堆栈；该失败与修复记录保留。原Full标准任务95e49547…持续运行，禁止重复提交。最新进度读canonical current_iteration与实验台账末尾。

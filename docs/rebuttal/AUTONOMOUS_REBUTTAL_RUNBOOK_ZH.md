@@ -1,5 +1,11 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**最高优先级恢复锚点（2026-11-10T20:01:37UTC）：** 双checkpoint原生worker/campaign已实现，formal最终state/CAS与实际DEV声明门槛46项检查通过。两个PB435 DEV角色各十次真实推理exit0；当前图像/proprio/query key/实际Gaussian十对相同、初始K32相同。整体严格每query池相同检查仍exit1，frame12/20/24/28/32各一个后继候选不同；139原件6a98ce52…双端核验，五处全部用实际前序选择/接受/thread、不可变successor和精确排序双端独立重构。不重跑20次，不把旧严格失败改名成功。
+
+单独external-input资格与scope amendment fa089d4d…只关闭共同外部输入/随机性和可审计因果续接条件，不证明后续固定候选或效能。formal计划须显式选择matched_external_inputs_with_causal_selection_feedback、绑定修订及独立证明且在TEST前声明；初始K32、当前输入/随机性或不可解释差异仍阻止准入。严格pair函数、模型算法、原指标/样本/截止不改。新回复/矩阵在responses/20261111_v12_addendum2（15块/3份/20项，matrix4fb14257…）；完整v12 PDF/源ZIP与95项原包不变，论文A.3已描述后继候选，无新论文数字。新包收据以canonical最新为准。
+
+**实际活动仅两路标准ACP训练：** 20:01 Full95e49547…2075（新1875/durable200），poolc852e8e2…1370（新1270/durable100），连续有限，fixed3000及Nov11 12:29:56UTC不变，AFS约116.09GB。CCI runner2369882/Full2369891/pool2370928均终态；原q96仍18:20 exit1，勿重复创建/续跑。下一优先准备RB/BT各50个首批expert-admitted rosters（RB旧10必须为前缀）与真实worker可写路径并发/初始确定性资格；两final3000完整state/CAS齐后才派发10固定分片。另推进原BT12000/f77完整在线资格/原生轨迹及repair/withdrawal、真正missing-skill证据，不用新shared结果填旧v8或specialist成绩。全部科学closure仍false，真机延期，不发布/正式上传。后文旧active/pending仅作历史时点。
+
 **最高优先级恢复锚点（2026-11-10T18:37:45UTC）：** 当前回复与20项矩阵使用responses/20261111_v12_addendum1，15块/3份、matrix62fdfe7a…；44项增量包b384164b…已本机/AFS逐项核验。原v12 PDF ed11dae1…/29源ZIP8955a7e9…、38页/10主文和95项原审阅包d327dc92…不变，完整编译与视觉验收通过，stable_release_ready=false。当前工程终态不要求重编译未变PDF；原目录/原件不能覆写。
 
 **q96已终态，不再活动或等待重试：** 标准UID492eb35f…18:20:13实际exit1。两Full均26条成功后在index26遇同一TOPP拒绝，parent/RNG/物理端点与DINO/26条轨迹全部精确相同；不是端点复现漂移，通用assert文字包含H32有效性失败。H32效应不可得、AABA不合格，0候选端点/32未观测。36原件45f4f00c…双端完整核验，原query96/rank10/H32/14k/窗口均不变；不要重跑同一无效Full、缩H、换rank或放宽guard。两遍384前缀资格仍有效但不等于候选资格。全局native lease在已知退出后实测空闲。后文旧active状态仅是历史时点。
