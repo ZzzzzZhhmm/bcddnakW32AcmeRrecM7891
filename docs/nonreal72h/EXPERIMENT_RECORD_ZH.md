@@ -1699,3 +1699,11 @@ Pool初始训练1–100连续有限loss/grad，runner13:26:25 exit0、source48ce
 首版归档器错误预期冷启动resume_step=0，实际为null，因此在任何归档/新更新前停止；原失败和收据保留。V2按实际冷启动schema做精确检查，并增加与Full共同输入身份验证，未修改训练/数值validator或重训100步。23原件38,530,508,108bytes形成原始TAR38,530,570,240bytes，14:08已完成逐字节可重建验证，raw TAR SHA f132c9a5b5f917e9eb1a2a0c093811d0c1634c8b1211dadd43631f999ae4bb54。CAS增加13,525,627,917bytes，原checkpoint/完整optimizer/scheduler/RNG/dataloader状态、raw TAR、manifest及旧失败均保留。收据POOL100_COMPLETE_ARCHIVE_V2/archive_receipt.json；本机收到收据/inventory，完整CAS本机传输另记，不冒充已双端复制全部38.5GB。
 
 run_rebuttal_training_segment.py扩展明确Full/pooled_memory_prior两角色；构造器必须与角色一致，pool四项移除的机制loss必须为0，pool父状态必须已有独立verified-byte-exact收据并匹配source/checkpoint/update。原四项存储/恢复控制、固定final3000、原scheduler/batch/seed数学配方及strict实际resume validator保持。旧Full运行仍用冻结H7a，未被代码同步改动。原有segment检查与新角色/防混用/保留机制loss拒绝共7项native通过（0.80s）；首次测试因缺工作区PYTHONPATH在收集前失败，修正运行入口后通过，未改测试要求。新增tmp容量门槛与角色明确的归档/账目，后继仍须沿master7526a475…同11月11日12:29:56UTC截止；先核对实际AFS空间并为两个最终state及CAS留余量，不删除原件或重置预算。
+
+### 23.105 两个新ACP尝试已接受；pool实际路径预检发现并修复类型错误
+
+14:43冻结两项新尝试，所有原样本与时钟不变。Pool100→3000计划SHA58f8e2231d16b0b27fc4a15584cdb2508523b9ae430b5bb0ac41433c459dd8fc，父100权重cbdfcef2…、无损收据b725cee2…；AFS实际119,581,700,096bytes，对两个final raw state、两份实测CAS增量和4GiB保底预留108,407,363,610bytes。标准ACP warm-pool-resume100-3000-20261110-std（UID f31fd1c5066d4841a1568a8bb5a53642）14:47接受，首次详情为排队，不能称已训练。其原冻结操作器在CCI实际完整父状态预检中触发AttributeError：给file_hash传了JSON字符串而非Path；在创建训练输出前失败，0新增update。首任务的实际终态和控制台日志须继续核销，不能凭预检替它宣布退出。
+
+在CCI中把收据绑定提取为validate_parent_archive并显式Path转换，source LF SHA1c935bb2dfa01d9921fca5e20b0532e6cde0cffb6120636c1b07ead234f86908。新增真实JSON字符串路径与五类跨身份拒绝测试；连同原7项共13项native通过（0.84s）。原完整hash/update/source/checkpoint/role核验标准保持，模型和训练数学配方未改；现用真实父状态重新预检。旧冻结源695控制器source SHA b448aacb800f2fc2922f299b2ac07f13920314a7acafde2c1a9da234ff79e2e3，archive内collector eea5ac8e…、operator b60e06b8…是实际运行字节身份，须与工作树LF单文件身份区分。所有运行旧快照不变。修复后另存新attempt/spec与新冻结操作器，不覆盖已接受任务或重置master截止。
+
+原q48新attempt v2计划SHA6b91a7ed5b48cbd94a8919cc6634f4baa82af2933471b92d51a11ee626423c5a，spec cbc1e6d0…，显式绑定两遍prefix manifest278dd78e…及原失败计划58b336f3…。标准ACP warm-brt-q48-effects-20261110-std（UID25fdd1b8acce4d78a3c17680c9d667d6）14:49接受，首次详情启动中；原13:01:03起算/21:01:03UTC截止不变。仍须AABA通过才继续固定32候选。源模型C ff32342d…、参考H7a与BRT14k权重、q48/rank0/seed0/H32均不变，未新增端点/修复结论。

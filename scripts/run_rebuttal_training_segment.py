@@ -72,6 +72,19 @@ def validate_role_recipe(role, recipe):
             raise ValueError('Pooled control must remove its declared mechanism losses')
 
 
+def validate_parent_archive(plan):
+    """Check an actual JSON plan's string path and its preserved lineage."""
+    receipt = Path(plan['parent_archive_receipt'])
+    preserved = read(receipt)
+    if (file_hash(receipt) != plan['parent_archive_receipt_sha256']
+            or preserved['status'] != 'verified_byte_exact_reconstruction'
+            or preserved['role'] != plan['role']
+            or preserved['optimizer_updates'] != plan['start_update']
+            or preserved['checkpoint_sha256'] != plan['parent_checkpoint_sha256']
+            or preserved['source_sha256'] != plan['training_source_sha256']):
+        raise ValueError('Pooled parent is not independently preserved and attested')
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--plan', type=Path, required=True)
@@ -115,13 +128,7 @@ def main():
     before = yaml.safe_load(Path(plan['base_config']).read_text())
     validate_role_recipe(role, before)
     if role == 'pooled_memory_prior':
-        preserved = read(plan['parent_archive_receipt'])
-        if (file_hash(plan['parent_archive_receipt']) != plan['parent_archive_receipt_sha256']
-                or preserved['status'] != 'verified_byte_exact_reconstruction'
-                or preserved['role'] != role or preserved['optimizer_updates'] != plan['start_update']
-                or preserved['checkpoint_sha256'] != plan['parent_checkpoint_sha256']
-                or preserved['source_sha256'] != plan['training_source_sha256']):
-            raise ValueError('Pooled parent is not independently preserved and attested')
+        validate_parent_archive(plan)
     output = Path(plan['output'])
     after = segment_config(before, output=output, resume=parent,
                            start=plan['start_update'], end=plan['end_update'])
