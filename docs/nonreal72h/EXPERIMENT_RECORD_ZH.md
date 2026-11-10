@@ -1414,3 +1414,18 @@ source2与source1的原q48分别于02:42:55和02:46:34 UTC完成，终态outer�
 02:49:25 GPU实际0MiB/81,080MiB空闲，三个pool/lease均明确terminal/free，AFS仅73,464,709,120 bytes。验证唯一原ACP f已知停止、自然gate及q48null结束、Full b真实failed、原campaign lease空及next_role恰为case3/full/seed340800003后，于02:51:17按原冻结controller5b9ebd7/source56393c5a…准入下一固定role，outer2230608。spec SHA `623f26451b8ac2f0abe2d9f2db35c2c59a8c05ee68e3d978aaae8e11faf821c7`；worker3600秒、outer5400秒、原08:31:04 UTC总截止不变，准备意图先于派发落盘。此为准入，不是完成第四对或新收益，原所有旧attempts保留。
 
 v6替换v5中的“四query/仍采集”文字与表行，报告全部六query/182完整/10未知。三位英文回复仍15块/20项，原稿原表及九图保持，主文10页与v4逐页文本相同；完整37页工程与29文件ZIP独立干净重编译，37页文本一致。全部渲染、31/32新增表格视觉检查通过，无undefined/overfull，46原有font warnings保持。PDF SHA `b91620c380d4ec270e3ac54ec7e7d252481940f2a7fb2287d4298998ea25cdfd`，ZIP SHA `6137ce24f88cc3e1b2fbbd4a9146eb0f81ef269035dbe3344948e24742491250`。当前候选为responses/20261110_v6和revision/WARM_ICLR2027_v6；v5及更早候选完整保留。stable_release_ready=false，关键模型对应/直接机制/coverage/同信息最终性能未关闭，未发布或上传。
+
+
+### 自动采集：fresh-scene K32 fixed-fresh-rearrange_blocks-e0000-q0048
+
+fresh-pool:fixed-fresh-rearrange_blocks-e0000-q0048:075c81ed9003701b3a5ce7a482b3005a482af9b2d87473b53359907a5c341f62；原K32有效候选32，完整H32端点32，完整refined重复支持True；原件`/mnt/afs/task3_2/L202500276_lwz/projects/WARM_evaluations/rebuttal_20261109_acp/rb_source0_fresh_K32_v1/q0048`，候选结果SHA `73478a4d718edd4d9fe6547dc3a086315e974a828da55b6fd6efba23f773ba80`，centered结果SHA `91014a9d8d460de0244cdeaa1462787c14c46650e3751b98543344181ed2b267`。**仅固定source/query的直接候选效应数据；不替换原论文表格，不视作整个cohort或策略收益。**
+
+
+### 自动采集：fresh-scene K32 fixed-fresh-rearrange_blocks-e0002-q0048
+
+fresh-pool:fixed-fresh-rearrange_blocks-e0002-q0048:a742f9188889244827f6ce930bf43b20921d868a97be608b66ccf2ccc32324e4；原K32有效候选32，完整H32端点32，完整refined重复支持True；原件`/mnt/afs/task3_2/L202500276_lwz/projects/WARM_evaluations/rebuttal_20261109_acp/rb_source2_fresh_K32_v1/q0048`，候选结果SHA `29130e04ebe6650f679001e980639174d56956c76627c3e0740c7028290f362d`，centered结果SHA `fb0464da99a131ee23d92696562bc5896924c6392f94727e7383f9e7cb42272a`。**仅固定source/query的直接候选效应数据；不替换原论文表格，不视作整个cohort或策略收益。**
+
+
+### 自动采集：fresh-scene K32 fixed-fresh-rearrange_blocks-e0001-q0048
+
+fresh-pool:fixed-fresh-rearrange_blocks-e0001-q0048:91e0ea3f20ca3008237c3dd6407d973a841bf602c692ebba864938ddbde40991；原K32有效候选32，完整H32端点32，完整refined重复支持True；原件`/mnt/afs/task3_2/L202500276_lwz/projects/WARM_evaluations/rebuttal_20261109_acp/rb_source1_fresh_K32_v1/q0048`，候选结果SHA `806acaff1d69fc33b450555e5584e4f29277df581ab34fe157c9c5254ec77917`，centered结果SHA `cc25f3e51efe4f5747134ae984b6dd929346d9537f419755dc0d3475bf01b0d5`。**仅固定source/query的直接候选效应数据；不替换原论文表格，不视作整个cohort或策略收益。**
