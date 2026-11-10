@@ -1477,3 +1477,11 @@ ACP登录恢复后，两次标准资源创建尝试均未生成任务；第二�
 环境测量b一直未获GPU，worker事件显示FailedScheduling（nvidia.com/gpu不足及曾有PVC未绑定），不能当作实际模型运行。停止请求与停止中阶段保留，05:22:56确认为已停止，UID0d255c27…；AFS测量目录仍无。仅在确认终态后，以先于创建冻结的cluster02 intent将同一静态测量转投另一允许闲时集群，05:24:59唯一c成功创建，UID `23bd904f9f3741b8b98e1821800d5ed1`，1GPU/8CPU/128GiB、重启0、原timeout900/镜像/AFS/排他输出目录不变。05:29:32仍启动中、任务规格*0，具体ACP runtime子字段未测得；不重提未知c、不将调度状态记作工程或科学成功。b终态停止收据SHA `4eb544a193cd723b7822f0c8b2339050be5b84db766c70b3dcee2e362fa78846`及c创建/身份收据已双端保存。整个过程没有延长/重置旧Full训练b的窗口或修改训练数值校验。
 
 05:28:24现场核查case4/Full实际child2245058存活，campaign心跳持续、GPU100%、用32,967MiB，原source56393c5a…与08:31:04UTC截止保持；完整配对仍4，不提前算case4。该时点AFS可用224,506,974,208 bytes，已超过原80GiB空间门槛，先前容量不足只是历史观察，本轮没有删除任何state/CAS。当前训练恢复的ACP差异、时限和原specialist绑定仍需分别关闭。完整快照在`ITER5_LIVE_CAPTURE_V1.json`，原件Git外保全。
+
+### 23.78 case4/Full完整700与原candidate-null接续
+
+case4/seed340800004的Full角色于05:33:36完整700、success0，outer05:33:43 exit0，source前后56393c5a…不变。通过原read_roles/verify_role核对固定seed/checkpoint/core/runtime、初始相机与qpos、完整finite700轨迹和durable result后，原worker的564项档案`verified_worker_evidence.tar.gz`已保全，3,981,936 bytes，SHA `1b4f903bb6dd0846fa628ae8f4830a5d1c6af9c41a6c1903a2794e60012a8c62`，manifest SHA `5601ad530429de4ac03f9c61284cfbef5e09ef5527f6da02e641ce55487d1c0b`。05:39:10本机564项逐项核验；AFS与C盘均保全。此时Full/null完整配对仍4，不将缺失counterpart视作失败或新增第五对。
+
+Full实际terminal、进程退出与lease/GPU空闲81,080MiB核实后，冻结next_role返回case4/candidate_null。此前pre-admission将API角色误写为null的断言已阻止提交，未生成错误job或GPU执行；保留原检查脚本。05:37:15正确准入该原固定counterpart，outer2249166，worker3600/outer5400，原08:31:04UTC campaign总截止不变；spec SHA `b67d1301c59f3152bb24118ad67e3b27ffd5a84280bf00675ede518d09c6645e`，source56393c5a…与shared checkpoint68c7f384…不变。新角色只记进行中，尚无新配对结论。原件收据`CASE4_FULL_V1_VERIFIED_COMPLETE_V1.json`、本机核验和`CCI_FIXED_CASE4_NULL_V1_LAUNCH.json`均在Git外。
+
+05:39:13 ACP c的唯一worker仍等待、无Host IP，事件明确为cluster01e_02缺1张GPU。它尚未运行静态测量；保留该UID继续排队，不再复制未知活动任务，也不把创建成功记成算力或实验成功。
