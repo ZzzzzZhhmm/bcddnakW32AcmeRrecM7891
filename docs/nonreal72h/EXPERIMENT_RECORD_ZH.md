@@ -1318,3 +1318,31 @@ v4内部审阅包共52项、80,581,790 bytes，SHA `3d34361f3e92d8fdbbeffe159210
 原生冻结测试快照`fresh_null_later_precommit_v1/code`以885dafb为基础，仅覆盖三项本轮源码/测试，source前后均`0f151abf603ed112ac9641c39b4bc22ece82055c4fee8c82556bac904cb6fa08`。13项原生测试全部通过（0.89秒），覆盖pending未知、严格默认、单调依赖完成、重复完成拒绝、query/parent/端点/文件损坏拒绝和既有fresh-pool路径。Windows当前Python无pytest，未称本机测试通过。
 
 00:23:45实际source0/q48预检明确exit0（15.627秒），严格核对原Full事实、frame192的原probe/generation、同Gaussian/null gate与封存输入、两个Full anchor及原DINO reader绑定；完整读原记录的preflight不加载policy/reader、不执行物理分支。收据`LATER_NULL_Q48_ACTUAL_PREFLIGHT_V1.json`和`LATER_NULL_NATIVE_TESTS_V1.json`保留在AFS；尚未把该入口、资格或pending raw写成实际null完成或新增收益。后续使用已提交冻结快照准入真实H32分支，原三路活动快照保持。
+
+### 23.64 已提交q48真实分支准入与默认q8实物回归
+
+代码提交`9c6fe8d1c8a8837fd82d64a3ec60ccc5058af44b`已推送并核实，CCI canonical于00:25:46 UTC快进同步；最终Linux快照`controller_9c6fe8d/code`的source SHA仍为`0f151abf603ed112ac9641c39b4bc22ece82055c4fee8c82556bac904cb6fa08`，与13项原生检查的precommit快照完全相同，活动Eb/原科学core均未修改。已提交快照再次通过q48实际输入预检，原默认不带流水选项的q8也于00:32:12明确exit0（15.216秒）；后者无新policy/物理执行，不是重复采集旧q8。
+
+00:27:21 UTC，在原闭环campaign lease空、单H100空闲55,096MiB、旧任务未重复的条件下，准入`fresh_null_source0_q48_v1`，outer PID2216810。新query独立有界时限5400秒、截止01:57:21 UTC，不改变三路原12h窗口及08:31闭环campaign截止。spec文件SHA `e1deefa9242c4c20e0d90da21fd385b4bd2a43a31c75fd7ad1c21e2923c265eb`，runner规范化spec SHA `17df30d6a9dbea516ecd4b2492dcf51f3c39d6fd790c99c8c2007947c7eff558`。先写prepared intent，再派发并原子写入PID；outer继承独占admission lock，不重复未知派发。CCI本次实际重启剩余未获控制台确认，未声称拥有新的4h窗口；持久输出与原件不受代码同步覆盖。
+
+00:34:58实际核查q48 outer为running，正在原事实前缀回放，日志counter到50（不是50条均已完成的证明），尚无新的H32分支结果；三路原q48完整候选25/19/20，各summary仍仅q8完成。H100用34,146MiB、100%；Full b的AFS operator仍无。source0选中raw rank29和pool-final-anchor保持pending，不能用null启动填全三角色query。后续独占case3/Full前必须同时核实此新q48任务和三路pool的实际terminal/lease/资源，不只检查原闭环campaign lease。
+
+### 23.65 六事实query的实际撤回干预、非空等规模bank与65项原件保全
+
+对原v5已封存的q0/8/24/48/80/120作只读核查：六份Full有效门分别为0.1904296875、0.1875、0.1923828125、0.185546875、0.189453125、0.1884765625，null有效门均0；每份Full/null Gaussian的dtype、shape及bytes精确相同，conditioning及最终native动作均不同。自然alpha保留不变。它确认当前撤回对照确实改变了生成路径，不能把Full/null同为失败解释为两者输入/动作完全相同；它没有新增物理执行，也不证明修复收益、门值校准或missing-skill可靠性。六状态来自同一个source episode，不增加独立episode数。派生表MD/LaTeX位于`tmp/rebuttal/execution/20261110_iter3/withdrawal_sampler_six_fixed_queries_v1.*`，原始数值和24项文件哈希见`SIX_FACTUAL_QUERY_WITHDRAWAL_INTERVENTION_AUDIT_V1.json`。
+
+00:31:14对原89,680-event bank的真实task_index数组核对manifest哈希后，按原seed3407及已冻结family taxonomy生成非空等规模搜索域。Rearrange Blocks两条件均19,540事件，holdout移除六个原block-family任务；Battery Try两条件均78,772事件，holdout移除battery_try。原bank字节、事件ID和context task标签不变，四份行索引与原manifest/task_index已封存。实际predicate coverage、自然gate及配对SR尚未测量；保留通用grasp/transport可能适用这一限制，不把task-family移除称为零相关技能覆盖。两目标的原配对样本量/主指标未改。
+
+本轮源码/13项检查/实际q48与默认q8预检、准入及spec、24项六query撤回原件、q48两份已完整anchor和原pool/null封存输入、真实bank及四份搜索行索引，共65项已归档`later_null_inputs_and_holdout_universes_v1.tar.gz`：5,610,283 bytes、SHA `9046ea05dfc9b02bf4f264ef01222dd5818f9b0dd0efd2713d93b3ec97f6e6e8`，manifest SHA `20463e180ade729d53186024647f02b2a1687fc88a7e72443b3abcd0110c8f22`。00:36:45本机逐项核验65文件、24原始采样器哈希及四份bank行索引一致；收据`LATER_NULL_INPUTS_HOLDOUT_LOCAL_VERIFICATION_V1.json`。这是输入/资格/既有封存干预与搜索域准备包，含本轮新null物理分支结果0；新q48运行轨迹待真实terminal后另包保全。
+
+00:43:23实际核查新q48 null已完成H32，独立局部标签0，严格原父/RNG/DINO资格未放宽；正在post-null Full的原192命令前缀回放，尚未完成重复端点资格。此单null分支不等于整个三角色query或收益结论。另核对三source各q8/q48的六份原生anchor记录：父stage_id均0、press_cnt均0、first_placement均false。`FIXED_QUERY_NATIVE_TASK_STAGE_AUDIT_V2.json`绑定六份原件SHA，说明这些query有控制时间差异，但没有已验证的语义阶段覆盖；不删失败source、不按结果换轨迹，也不把此局部限制推翻原稿其余task/模型报告结果。
+
+### 23.66 q48两个H32真实完成、局部对照表与文稿联动补充
+
+新q48任务于00:53:28 UTC outer明确exit0，科学主体1503.679秒。null与post-null Full各32条命令、局部next-interaction标签均0；两次各192条事实prefix，新增分支命令64、prefix命令384。重新独立核验所有32×14实际命令与原seal一致、实际articulation qpos/qvel有限、完整native/RNG父hash及DINO精确，post-null Full端点hash与效应向量均精确复现原anchor。原科学core前后5d7748e7…、runtime前后a97e308c…保持。只记录实际单run时长，不作为受控速度优势。
+
+完整终态档案`q48_same_parent_null_and_Fullrepeat_terminal_v1.tar.gz`，35项、3,083,743 bytes，SHA `c685d8c3d145d0154e722a433bf2971138f8c0e4dd21449de211031e35ad28b7`，manifest SHA `f8d6f62d65ca1da36603d515ebf34f223df29f4e805afd3869f0cb3fc3ca2750`；AFS与本机全部35文件核验。此前15项partial档案SHA `3ac59bcd4aa44402e1d10e7efa24bbc8f02c6bd62258846eaa3874e7abbf7795`也已本机核验并保留，不覆盖。报告`Q48_SAME_PARENT_NULL_TERMINAL_ARCHIVE_V1.json`与`Q48_TERMINAL_LOCAL_VERIFICATION_V1.json`。
+
+q8/q48局部对照表JSON/Markdown/LaTeX已生成于`tmp/rebuttal/execution/20261110_iter3/same_parent_q8_q48_local_comparison_v1.*`。q8的raw/Full/null均0、依赖齐；q48的Full/null均0，原raw29与pool-final仍pending，不能填全repair/harm。两个query的Full/null实际physical-joint端点都不同，说明实际运动受到干预，但未观察到局部任务收益。两query仅一个source episode、均native stage0，重复Full不是独立样本；原闭环完整配对仍3，不制造总体修复率、置信区间或跨阶段主张。
+
+v4 research-patch1于00:49:43 AFS核验46项、7,079,858 bytes，archive SHA `ca06730ff406133399f6d6907bfdc955d4f20c91597231322d627c0f403b0ea7`；它是终态前的不可变快照。终态补充于01:00:09 AFS核验12项、3,117,044 bytes，SHA `382598a650bce349a17db674f729157e3d3bc28586448c1646fbb30aae7c176e`，manifest SHA `2dab1d74dbde849ce2778438666e5dda4962cfc0a7130002ce91f69ace1ebeae`，目录`writing_candidates/20261110_v4_q48_terminal_addendum`。已联动20项映射、内部README与一致性门槛；三位英文回复正文和35页论文/29文件LaTeX ZIP未改，PDF/source SHA再次核对保持，不为未修改文稿重复编译。没有把新局部0/0写成收益、没有对外发布，stable_release_ready=false。

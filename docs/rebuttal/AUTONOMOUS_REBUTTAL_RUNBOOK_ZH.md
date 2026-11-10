@@ -1,5 +1,9 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**最新终态（2026-11-10 01:00 UTC）：** 新q48 null32/post-null Full32已于00:53:28 exit0，两标签0；完整父/RNG/DINO精确，Full端点/效应精确，35项终态档案c685d8c3…双端核验。勿重跑此q48任务。原raw29与pool-final仍pending，继续三路Eb固定K32；闭环完整配对仍3。q8/q48同父局部表已生成（单source、两个stage0状态，无新增收益/跨阶段主张）。v4终态补充12项已在AFS核验，`writing_candidates/20261110_v4_q48_terminal_addendum`，SHA382598a6…；原PDF/LaTeX与英文正文不变。下一步须完成原固定q48依赖，核对投稿模型/协议，同时准备基于既有三个固定source初始query的等规模非空bank自然gate诊断；该诊断不能替代原完整coverage/配对SR主协议。恢复后核查实际进程，不再按下文旧四路running状态重复派发。
+
+**最新前置（2026-11-10 00:34:58 UTC）：** 新source0/q48 null/post-null-Full实际任务已准入，outer2216810，冻结controller9c6fe8d/source0f151abf…，新query时限至01:57:21 UTC。正回放原192命令前缀，H32结果尚无；原选中raw29与pool-final仍为query依赖。原三路pool继续（q48完整候选25/19/20），GPU100%。下一个case3/Full仍固定不变，但其独占准入还须确认这个新q48 outer terminal，不能只看闭环campaign lease空。源码/native13测试与真实q48、默认q8输入资格、六query干预核对及非空等规模bank准备已在65项档案9046ea05…双端保全。实际缺失技能覆盖、自然gate、收益均未据此关闭。
+
 **最新恢复优先级（2026-11-10 00:04:31 UTC）：** case3/null已完整700步、success0、564项原件本机/AFS核验，Full仍缺，完整配对数仍3；三路原Eb fresh pool已00:01:31按原窗口恢复（runner2212837/2212838/2212839）。先核查这些实际进程/lease/结果，不重复旧null。下一个闭环角色case3/Full宜在pool完成或本次已知约02:01 UTC wall-time退出后独占执行，原worker3600秒与08:31:04 UTC总截止不变。ACP控制台00:04:31实际要求重新登录，作者已收到登录请求；Full b的AFS operator仍无，禁止据此重复创建。后文旧时点状态只作历史记录；current_iteration及末尾新锚点优先。
 
 v4内部审阅交付已于00:09:56 UTC在AFS核验52项：`writing_candidates/20261110_v4`，archive SHA3d34361f…；回复15块/20项，PDF35页/主文10页、完整source29文件，全部重编译/视觉检查通过。当前模型对应、后果预测/修复、自然missing-skill与同信息最终对照仍是关键门槛，未发布。00:10三路进程/lease与100%GPU核实，q48候选23/17/18，各另有2个anchor；以`FINAL_LIVE_HANDOFF_20261110_0010_V2.json`读取真实endpoint_status计数，不能将anchor或无status字段的派生unknown混入候选分母。

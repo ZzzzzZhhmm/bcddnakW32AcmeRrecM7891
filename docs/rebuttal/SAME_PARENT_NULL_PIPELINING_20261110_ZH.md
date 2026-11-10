@@ -5,6 +5,7 @@
 ## 不变的执行要求
 
 - source0/q48对应第192条事实命令后的父状态；q48是replan ordinal，不是只回放48条命令。每个新分支都独立fresh reset并精确回放原192条命令。
+- query ordinal表示控制时间，不能据此推断语义任务阶段。当前三个source的q8/q48父状态均为原生stage0、尚未完成first placement；固定失败source保留，不能写成跨阶段机制验证或另选成功轨迹替代。
 - 原Full事实700步及六个query的Full/null采样动作已经封存；新任务不重新生成policy动作、不消费未来teacher、不修改当前事实history。
 - 两份已有Full初始anchor必须完整H32，且原始父状态、端点和语义效应精确相同。新分支再逐项匹配完整native/RNG父状态、保存RGB/官方policy输入及原DINO数组；任何差异均停止并保留原件，不放宽容差。
 - 执行封存null H32，然后独立reset/replay执行原Full H32。后者必须精确复现原Full端点和效应。新的两个分支不会写入事实模型记忆。
