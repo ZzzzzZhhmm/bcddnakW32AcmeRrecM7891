@@ -1,5 +1,9 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**13:19 UTC恢复优先级：** v10完整37页/10主文、29源码、三份15块/20项已联动验收；原q8负结果单列C.2.5/Table22，不替换原稿另一个cohort。PDF7d5489a9…/ZIPa9099b1e…，308原件ec533960…双端核验，未发布。q48 plan58b336f3…的首次资格已known failure（事实prefix TOPP，0branch/0truth），15原件b29ff2d1…保留，不重跑旧入口。当前唯一CCI worker为两遍prefix审计outer2320686，precommit271fadea…，同21:01UTC总截止、worker3600；13:19第一遍index102/1拒绝，还不能认证。先查该audit实际process/lease/operator/exit；严格核对源每步API/每4步RGB和跨遍真实物理，不把source600 attempts写成600有效动作，不能无清单吞掉prefix异常或放宽候选guard。
+
+两标准ACP Full95e49547…/poolf7f3df01…真实训练已更新（13:05 Full231，pool29），原父runtime差异消除；最终3000和正式比较未完成，durable Full仍200，pool待100完整state。先核对pool100是否终态并保全，再在同master7526a475…/11月11日12:29:56UTC截止下恢复100→3000；不要新建同一未知任务。真机新取证仍延期。
+
 **12:51 UTC最新事实：** 原q8 K32已12:41:33 exit0，29完整/3 TOPP unknown，四Full精确；308原件ec533960…双端核验。centered预测0.0525203，高于constant0.0181195且接近historical0.0524970，明确未观察到优势；勿重跑/换样/重缩放。后继仍原q48/q96并各自认证native父。新generic collector先CCI实现/CLI验证；qualify-only可短段执行AABA，长pool交ACP同plan接续，实际launch读canonical状态，别将方案当运行。
 
 新24h同信息训练phase7526a475…截止11月11日12:29:56UTC，与旧窗口分开。标准Full95e49547…及poolf7f3df01…均已创建/真实runner心跳。12:51 Full运行时diff=[]但新201+metrics仍0，pool更新0；两者实际做初始化/恢复，勿重提或写最终训练完成。原Full/action-onlycontrol200不变、pool新身份；先查连续metrics/退出/完整state，再pool100→3000同截止。v9完整61项审阅包83022d60…保留，下一稿须纳入原q8负结果并联动回复。真机新取证仍延期。

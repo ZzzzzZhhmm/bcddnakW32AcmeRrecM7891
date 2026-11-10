@@ -1,0 +1,7 @@
+# WARM v10内部审阅候选
+
+新增原BRT固定14k/seed0/q8独立后果结果，Appendix C.2.5/Table22与Bbqv W3/Q2、Hh4E W5、20项矩阵一致：32个候选全部核销，29完整H32、3 TOPP unknown。预测centered0.052520高于constant0.018119、接近historical0.052497，明确未观察到该状态优势；无BRT适用性标签，不报告修复或总体SR。308原件ec533960…已双端逐项核验；原稿其他机制cohort及shared-stage记录分别保留，未用新state替换。
+
+英文三份/15块/20项见tmp/rebuttal/responses/20261110_v10，完整29文件原LaTeX工程WARM_ICLR2027_v10及sourceZIP。PDF SHA7d5489a9ea85b25cbc87874904aea0f52a81dee2828439ef023399a14b90abca，sourceZIP SHAa9099b1e256f16001b74e3615d00db1594029ec14cfe32c8f90b5f5db1e86d57。完整/干净ZIP两次编译37页/10主文，37页文本一致；所有原实验tabular数值和9图保持，引用/overfull/匿名性检查通过，46条继承font warnings不增。37页render/contact及全部8个变化页单独视觉验收，新增Table22数值从独立原件核对。
+
+两项标准ACP实际训练已开始更新，最终3000及匹配评测尚未完成。原q48在事实前缀重放中遇到TOPP拒绝，未生成新branch端点；先归档失败并审计source执行上下文，不放宽候选有效性或换query。原DEV/其余cohort绑定、直接后果/修复、自然missing-skill与公平最终比较仍开放。v9及原33页投稿保持，stable_release_ready=false，未发布评论或正式上传；真机新增仍延期。

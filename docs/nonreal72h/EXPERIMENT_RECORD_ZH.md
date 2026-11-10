@@ -1665,3 +1665,20 @@ Appendix A.1明确四个已审计原specialist的四token均匀变化均值，sh
 ### 23.100 后续原固定query采集入口与短资格模式
 
 先在CCI实现，再同步本机：collector严格支持原预封存q8/q48/q96，对应固定rank28/0/10及真实frame32/192/384。每个query均读取其自身probe、Full chunk、pre-forward RNG和源前缀/下一replan观测，仍用原模型/reader/均匀delta均值；不将q8父资格推广为后续状态已通过。新增qualify-only在四分支AABA完整通过后停止，保留同一plan/seal给ACP接续完整pool；短CCI资格与长ACP计算分开，不重置绝对deadline或绕过任何原验证。CLI --help及语法/路径检查通过只算工程资格，新的真实AABA须独立完成。原q8冻结collector1b0a5ee和308原件不变。
+
+
+### 23.101 v10已纳入完整原q8负结果并完成联动验收
+
+原BRT14k/source0/q8的32候选核销与同29支持集MSE已单列Appendix C.2.5/Table22（32/33页），Bbqv W3/Q2、Hh4E W5和全部20项映射同步；不将新固定point当原DEV准确率或另一个原机制cohort的替代，原均匀delta描述与shared-stage加权投影保持区分。三项TOPP unknown完整保留、BRT适用性未知、不推断修复或总体收益。
+
+v10完整29文件LaTeX和干净sourceZIP两次编译均37页/10主文，37页文本一致。原所有实验tabular数值与九图保持，主文十页逐页文本不变；无undefined references/overfull，46条继承font warnings不增，匿名性通过。37页render/contact及全部8变化页18/29/32/33/34/35/36/37逐页视觉核查；新Table22的5项数值独立对照308原件核实。PDF SHA7d5489a9ea85b25cbc87874904aea0f52a81dee2828439ef023399a14b90abca，sourceZIP SHAa9099b1e256f16001b74e3615d00db1594029ec14cfe32c8f90b5f5db1e86d57。三份英文/15块/20项在responses/20261110_v10，完整工程及PDF在revision。v9与原33页稿保留，未发布/上传，实证release gates仍开放。
+
+### 23.102 q48事实前缀拒绝已保全；独立两遍上下文审计进行
+
+原q48/rank0 plan58b336f3…于13:01:03准入，只运行90分钟以内的CCI四分支资格；独立8h phase截止21:01:03UTC不变，计划通过后长pool交ACP。13:04:36在anchor-a之前的事实prefix重放触发官方left_mplib_planner TOPP拒绝，runner13:04:40 exit1，0完整分支/0新candidate endpoint。不是q48候选H32成败标签，不能按已完成或替换state。15原件218,023bytes archive b29ff2d1308732a9b73243bb9fe337f9c0f7bd3a973b6e10e76c60f71892ab9e、manifest8e9b6795…双端逐项核验。
+
+定位到原600来源采集器记录的是实际命令尝试和前后API/观测，没有逐命令规划拒绝flag。600 attempts不能自动扩写为600条均有效执行；q8独立branch仍已严格认证，原q8数值/原件不受影响。新增audit_rebuttal_original_prefix.py先CCI实现/CLI检查，再同步本机，独立冻结precommit271fadea…；13:16:30在SAME21:01UTC phase内准入outer2320686，worker3600，0新policy/候选truth。两次从fresh scene重放同192记录，不重试/替换任何命令；每一步API值、每4步源RGB及两遍真实关节/速度须精确一致，所有已诊断TOPP异常显式写出，其他异常/RPC仍拒绝。若通过，仅建立新的事实上下文重放/失败清单，不追溯声称源执行全部有效；分支guard及终态有效性保持严格。
+
+13:19:40实际审计第一遍至index102，观测1次前缀拒绝，尚未完成两遍，不能提前认证或改候选入口。必须先核查真实终态、保全完整原件，再决定是否可以按明确expected prefix失败清单恢复同一query，原失败/截止/source均不覆盖。
+
+同时13:05:04两标准ACP真实连续metrics已可见：Full201–231共31新更新，pool1–29共29更新，心跳持续，Full父运行时differences=[]且原返回未改。Full的durable checkpoint仍200，pool尚无完成checkpoint，不把进行中updates当可恢复的新权重或最终公平性能。
