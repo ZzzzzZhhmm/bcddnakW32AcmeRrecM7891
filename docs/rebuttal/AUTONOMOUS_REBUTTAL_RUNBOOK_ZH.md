@@ -1,5 +1,13 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**21:51UTC晚到已独立验真：** v21原包核验截止26role/12对不覆写；另1092原件TAR92d02572…/manifest556ea914…保全RB case5 Full与case24 Pooled，累计28完整role/14对均0/0，旧unknown与RB22一次TOPP保留。新索引`responses/20261112_v21_execution_addendum1`；原v21 70成员AFS包已21:48:30逐成员及解包验真。先读新规划JSON与Full工程monitor，勿按下文旧活动状态重启。
+
+**Nov11 21:47UTC写作与执行锚点：** v21逐审稿人作者对话稿完成，`responses/20261112_v21_reviewer_dialogue`，20项/17块/37未填槽位；完整原LaTeX与干净ZIP独立编译44页/主文10页，PDF f37c1d03…、源码ZIP511a4262…，9变化页直接验看/35页像素不变，0 undefined/overfull。原v20不覆盖，P1–P5整体仍待证。新2955原件TARfa08586a…/manifest72edfd0d…独立验真，累计26完整role、12对均0/0；原BT q96 AABA46原件TARc853450d…亦独立验真，提案/Full交互0/0、全池仍活动，不填repair或全池MSE。详见台账23.189–190与CANDIDATE_V21_20261112_ZH.md。
+
+**CCI新独立工程窗口，禁止误作旧null续跑：** segment24已20:55正常退出，原bt00余量不足3660s，不再准入正式role/不重置2214UTC。canonical e135295已离线FF，原活动BT/RB/q96冻结入口hash不变。`full_q8_reproduction_engineering_20261111_v1`已21:38:34唯一启动，monitor2529133/worker2529134，固定截止22:08:34；source df718191…、admission05266559…，最多一次Full精确复现、禁止null生成/物理分支、不能重开原13:09科学窗口。先核查monitor/exit/operator和全部原件，不重复创建；GPU资格尚待实际结果。第一次同步在FF后因CRLF字节检查中断，未启动GPU；v2证明仅换行归一化并重过8项CPU检查后才冻结/准入，旧收据原样保留。
+
+**ACP21:44实际：** 原RB00/RB20及标准q96均运行中；恢复RB10/BT10/BT20仍启动中、无新AFS科学runner，不复制未知allocation。所有原first/deadline不改。v21 AFS70成员包的独立验证以ITER25_V21_AFS_VERIFICATION_V1为准，规划JSON安装后优先新状态，不沿下文旧PID重启。
+
 **20:41UTC晚到q96进度：** 第一Full anchor-a已实际完成32步/complete_horizon/parent_recreated/error null，正在第二Full anchor-aa。14原件TAR7b30bbae…/manifest5fe48907…已双端保全、本机全成员验真；AABA和next-interaction标签尚未完成，不把native_success false当该交互标签，也不计算repair或全池MSE。最新operator/实际runner持续读原q96 root，不能重跑首anchor或另建同job。
 
 **Nov11 20:35UTC优先锚点：标准H100已实际运行新q96，勿重复创建。** 原BT specialist事前query96/rank20/H32/K32首次20:16准入，plan8e3ddd84…/原controllerf7cf0583…/checkpoint27c137d6…，固定截止Nov12 07:16:01UTC（含排队）。标准job `warm-bt-q96-pool-20261111-std` UID536a352f050b4142890aa99fb88aa23b，20:24:19实际runner启动，H10080GB runtime2f3e5d29…与原编码器合同完全一致；20:29仍anchor-a父状态重建/0端点，尚无效果或repair结果。独立原19GPUh预算组，非新formal分片，不改旧时钟。读`ORIGINAL_BT_Q96_ACP_V1_CLOUD_IDENTITY.json`及`original_BT_cohort_case0_q96_fresh_pool_v1`实际operator/job_logs；不要误读旧BRT q96路径。

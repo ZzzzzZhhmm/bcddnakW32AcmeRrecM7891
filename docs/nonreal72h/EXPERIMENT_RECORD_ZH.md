@@ -2393,3 +2393,19 @@ CCI segment24已20:55:32正常退出；21:34 GPU实测0MiB/0%，原三个PID均�
 46项26,201,105B原件于21:24:41封存`ITER25_BT_Q96_AABA_V1`，TARc853450d01cc174d400e06b6dc2fc47c19092e2c302d6ced088ebcec7fb09df3、manifest9d996b0789b76a36d48afc5b4e02119b61ca83c469fad7bcc3f7dd4078ec5b3f；21:34:44本机逐成员、四端点与重复Full hash独立核验通过。原controllerf7cf0583、checkpoint27c137d6、单source state及07:16UTC硬截止不改；21:34实际完成6branch/3candidate endpoints，正在rank2，不能将相关候选或三个query当独立回合。
 
 另在CCI先实现仅一次Full精确复现的独立工程模式：新schema/最长1800s，禁止null生成、模拟器与物理分支，不能重开原13:09已过期null窗口。8项CCI CPU准入/上下文检查通过（21:28:46），尚未GPU验证；源码及测试SHA分别d90cbed74aa8ed47c3bacdb55cf2f14543e398cdb7f4c71769d8a39b1ac655f5、38091091419bb78e7309c712af0bbd28646377edc3191c81be089fe25d850c90。保留两个旧加载失败和全量原件，不将工程资格写成修复收益。
+
+### 23.191 v21作者对话精修与一次Full工程资格实际启动
+
+v21三位回复逐一核对真实认可，明确作者we/our、直接回答和已完成修订总结；正面区分原表显著性、Full/Pooled估计对象、监督的训练/部署界限、提案指标/修复/终局，以及真机任务难度/经验库多样性。固定零门控保证与自然缺失技能可靠性分开。原核心贡献与原九图、数值、公式和表格保留；附录加入原BT q96 AABA的零/零，不把工程进度写成收益。20项/17评论块/37空槽位仍整体待证。
+
+完整原LaTeX及干净ZIP独立含BibTeX四遍编译44页、主文含结论10页；全部页文字一致，0 undefined/overfull、45继承字体warning。9变化页1/6/7/8/9/10/42/43/44直接验看，其余35像素一致；匿名/内部标记通过。PDF f37c1d03f3f5c7ab9451893a664f0d688263598ce1edcc77dc8e93411971e57d，源ZIP511a42628023660d544d20dfcb74371c6b472a3b68785d05cb8ef958fc211323。70成员123,831,172B包TAR14b837a5bad2fa9f4c627ff9afa32f9b9b75a114ee4173dd578081c048eacdc8、manifest48119b4952eb74307124f0ed7f5f2bf584e325a07192580ce5850652ad604ec8已本机及21:48:30 AFS逐成员/解包独立验证，位于writing_candidates/20261112_v21，收据ITER25_V21_AFS_VERIFICATION_V1；未发布，原v20不改。
+
+代码e135295已本机commit/push/远端核实、CCI离线FF。首同步在FF后因CRLF/LF原始字节检查中断，未启动GPU；恢复核对规范化后源码与commit逐字节相同，重跑8项CPU检查后才冻结新controller df718191947fec6bb45300b947d66f44609e303d36998ba08626243516a9f7ff，原三活动入口hash不变。先前原始字节证据和失败脚本保留，未修改旧科学快照。
+
+Full-only工程资格实际21:38:34首次准入并启动，monitor2529133/worker2529134，root `full_q8_reproduction_engineering_20261111_v1`；admission052665590d6f1344f83f4919afa9295e9539bf1700897b93b08b309066f5919e，固定22:08:34截止，单Full推理/0null/0物理/不重开旧科学窗口。21:50实际GPU24443MiB、模型加载、尚无complete generation，不能计效能或精确复现通过。原bt00正式窗口与四小时平台重启边界未核实事项保留。
+
+### 23.192 v21封存后的晚到两个固定RB角色
+
+RB case5 Full（21:43:53）及case24 Pooled（21:43:54）各真实exit0、700命令/175个完整H32/1400物理记录、success0、0TOPP。1092原件27,667,548B已双端封存`ITER25_LATE_TERMINALS_V1`，TAR92d02572b23df3f14f78a357bb2c59583e1ba62ffc1edd5d7f23a81c0804353e、manifest556ea9145e8628b602f6d5545fa26603ae733bf60f47dc36e26a82467fcd08d3；本机逐成员、全部动作/物理链、H32与配对初态/首输入/共同噪声/首K32独立核验。累计28完整role、14完整对（12RB、2BT），均0/0，原不利/unknown保留，不填原100对最终SR/CI、优势或非劣效。
+
+新增内部执行增量`responses/20261112_v21_execution_addendum1`单列最新28/14进度并维护20项映射；v21三回复、PDF/源码与70成员包原样保留其明确核验截止。ACP21:44实测原RB00/RB20及标准q96运行中，三个唯一恢复allocation仍启动中；21:50 AFS心跳确认原RB继续case6/25，q96继续原全池，不能按旧部分946/988动作计新运行。所有原first/deadline与固定样本不变。
