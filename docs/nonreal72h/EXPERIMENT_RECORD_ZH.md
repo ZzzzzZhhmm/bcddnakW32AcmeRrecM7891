@@ -2071,3 +2071,25 @@ Full median/p95为473.357205/500.255421ms，Pooled476.475901/501.096383ms；mean
 q48已知终态和全原件封存，绝不重复启动。q96原rank20/首次11h仍未准入，准备器/正式100对都等待IAM重新登录；04:02浏览器inventory仍是原登录墙、全部tab保留，未再发重复请求/未创建云任务/未冻结正式时钟。当前不能把旧running进度算活动GPU；最终实际进程/AFS/CCI状态以最新live快照为准。原BRTq96失败保持，不与新BT q96混淆。
 
 04:07:52UTC追加核验：95项v15包在AFS writing_candidates/20261111_v15逐成员落盘hash全部一致，WRITING_CANDIDATE_V15_AFS_VERIFICATION.json；包SHAe45f94bf…/manifest530b2b98…不变。04:08:51实际CCI nvidia-smi无compute app、相关科学程序均无进程；q48实际已知终态、formal根/q96 plan均不存在。AFS5,748,465,664B。没有已知活动rebuttal GPU程序，但IAM阻断下不把本机无进程当作云allocation终态证明。恢复登录后先核对旧UID与唯一创建，再准入正式100对及固定q96；新余量按实际原件和归档估计，不删原checkpoint。
+
+### 23.153 原BT后果训练/测量合同及64个原始目标逐项审计
+
+2026-11-11T04:29:36UTC只读CPU审计正常exit0；没有重跑policy/simulator/DINO、修改checkpoint/metric/样本或访问Git远端。固定原BT12000/f77/source case0的q8/q48共64个候选，逐一绑定实际bank row和event ID，追溯32个原训练feature-cache episode，原bank46,783事件（与新shared成本89,680不同）。原缓存每个起点/终点4×768 float32 tokens与bank effect_pre/post逐字节相同，时间差均32；按原_mean_effect逐项重算历史效果与事前sealed数组完全一致，predicted数组与原event_adapter probe完全一致。所有大bank/cache原件按manifest SHA读核，未复制或修改。
+
+原model action_horizon32、bank mining32、demonstrated query teacher t+32、反事实分支H32一致，timing_dim4是维度；训练event effect只监督自身历史事件，当前requirement为示范query变化，不能从factual重建推断反事实转移已识别。DINO cam_high、2×2 row-major adaptive pooling、原BF16计算/float32存储、同camera/encoder/M1/stats合同均对上。此次审计未发现足以改变既有q8/q48误差的这些合同错配；原retrieval tensor本身未保存，不冒称已恢复该tensor。所有负结果与unknown保持，没有拟合projection/scale或替换主要指标。
+
+64项2,440,194B审计原件（含源文件、配置、32缓存manifest、64目标切片、原probe及退出观察）归档SHA49f3e061ae9a313202440c954daee6bbee673b3e80830ec0f07b5d2b5cc80edf，manifest168c5cc7ab6eae8f85a1235c23c3a3b23a550d4a340c5f1c5dcc45b0c96ce444。04:31:34本机逐项64成员及全部历史mean以独立numpy float64/声明IEEE舍入界核对，ITER15_EFFECT_CONTRACT_AUDIT_LOCAL_VERIFICATION_V1。大bank/cache未下载至Windows，这里不称本机完整重hash。此为已看见负结果后的工程/测量合同审计，不是新的正向机制、成功率、repair或NI结果。
+
+04:21实际CCI无GPU/相关科学程序，formal根/q96 plan不存在，原q48已知exit0；ACP IAM实际页面只有登录按钮，认证仍待原异步请求，不重复索取或创建。新静态只读工作不计GPU活跃；当前5.748GB AFS余量需在认证恢复后准入前再核对，原状态及checkpoint均保留。
+
+### 23.154 v16将完整q48与64目标审计真正纳入回复/原LaTeX
+
+04:44:48UTC完成v16三回复/15块/20项联动验收，3020词（1329/1219/472）、最大单块3387字符，纯Markdown列表/行内LaTeX。Bbqv W3/Q2与Hh4E W5完整保留q48的32/0unknown、三参照MSE及全部零交互标签；新增N-ORIGINAL-BT-Q48-COMPLETE和N-ORIGINAL-EFFECT-CONTRACT-AUDIT-64，全部scientific closure=false。原正向控制、旧不利/unknown、q8单终点高度差和独立适用性cohort均保留，不从标签地板推NI或自动withdrawal。
+
+完整原LaTeX C.2.6/p34/Table25并列q8/q48；64原目标测量合同只作为可比性核验，不能由factual监督推反事实识别。新增表号顺移后所有回复/矩阵按实际aux重定位，C.4旧成本Table28/29、C.5新匹配成本/模块Table30/31，原数值不变。原29文件与干净ZIP两次独立编译均40页/10主文，前33页文本/像素与v15完全一致，变化34–40逐页视觉验收；九图及同改动文件12原table块字节相同，无overfull/undefined，46旧font警告。r1原41页/PDF/source/QA先完整封存，再将重复q8说明合并进新表收为40页，未缩font/margin或删除任何数值。
+
+PDF94c88d81d2e01777f34d8d9da7d0f78405b190e6b3c1eaecef65762a2fa45e87；sourceZIP427846e23c3e7f458cf9f23264ced224e971eeaf2acc66e057c27733d39dc894；matrix79a467417603892ac1a4dabf9255dae172c303445085905b882bd724623823de。65项127,561,493B审阅包e519361aedd3cffa103d9abe157c8d32a243d09eec0d8a6b2ff702f19c52800d，manifest833eba1a3703642783864b36e4cdafe4824851fda4ea8b7b78280b8ddfc5626c，本机04:47:39及AFS04:50:07逐成员落盘验证。AFS writing_candidates/20261111_v16；父v15完整保留，包补全380项q48及64项审计原件，旧训练/CAS和成本原件用父包SHA引用。科学截止04:29:36UTC，未发布或正式上传，真机延期。正式100对及q96仍未准入，不把审计/编译通过写为策略效能。
+
+### 23.155 本轮实际运行终核，保护正式窗口和存储
+
+04:53:11UTC ITER15_FINAL_LIVE_V1确认CCI nvidia-smi无compute app、相关科学程序无进程；原BTq48仍已知正常终态，64目标审计已正常结束，formal campaign根与BT q96 plan均不存在。AFS实际5,124,112,384B，准入前须再核对完整有界context/轨迹、归档和并发余量，原大bank/cache/checkpoint/CAS均保留。此前04:21 IAM实际页认证过期，原请求待答；没有新GPU/云创建或正式计时，不由CCI空进程推出cloud allocation终态。正式100对与固定q96仍是下一计算优先项，旧已完成资格/审计/计时不重复，v16已完成q48录入无需下一轮再做同版整合。

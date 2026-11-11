@@ -1,6 +1,15 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
 
+**最新恢复锚点（2026-11-11T04:50:07UTC）：** 当前内部候选v16：responses/20261111_v16三文3020词/15块/20项；原LaTeX v16、40页/10主文PDF94c88d81…、29源ZIP427846e2…、matrix79a46741…。已把完整BTq48实际录入Bbqv W3/Q2、Hh4E W5、C.2.6/p34/Table25及20项映射，不再只是late-intake。原图/数值/负与unknown保持，前33页文字/像素与v15相同，变化34–40逐页视觉验收；全工程及干净ZIP两次独立复编、无undefined/overfull，46旧font警告。65项127.561MB包e519361a…/manifest833eba1a…已本机和AFS writing_candidates/20261111_v16逐成员验收。科学截止04:29:36，所有科学closure/stable仍false，未发布/正式上传。详见CANDIDATE_V16_20261111_ZH.md。
+
+**本轮64目标审计也已完成，不要重跑：** ITER15_ORIGINAL_BT_EFFECT_CONTRACT_AUDIT_V1于04:29:36实际exit0，只读CPU绑定原BT q8/q48的64event ID/bank row到32训练feature-cache episodes。原bank46,783（不是新成本89,680），bank pre/post与缓存t/t+32精确；原_mean_effect历史值与事前seal精确。原model/bank/query/branch都32步、uniform四token、camera/encoder/M1/stats一致，未找到这些合同错配，既有误差不变。64项2.440MB原件49f3e061…和本机独立mean/成员核验通过。该后验合同审计不是正向预测/策略证据，factual重建不自动识别反事实。原实际retrieval tensor仍未保存，不声称恢复。
+
+**04:53实际终核：** ITER15_FINAL_LIVE_V1确认CCI无GPU/相关科学程序、formal根/q96 plan仍不存在，AFS5,124,112,384B；所有原bank/cache/checkpoint/CAS保持。正式准入前复核完整有界轨迹/context及压缩归档和并发存储余量，不以source-audit通过推策略成功。
+
+**执行优先级：** 两final3000完整训练/state/CAS/typed bundles、所有roster/reset/十worker资格、58+17成本、BTq8/q48及本次审计均完整，禁止按旧pending重复。最新04:21 actual CCI无GPU/相关进程、formal根/q96 plan不存在；IAM实际页仍只有登录按钮，原异步请求待答、不重复索取。认证恢复且能实际提交后，先核对旧UID/未知创建/实际AFS余量，再冻结固定100对phase并交错准备六片；标准优先、实际GPU quota不足才闲时。BTq96固定rank20/首次11h等待可提交时再准备，不重置旧窗口或因负结果换点；共享runtime跨节点排他不能靠CCI本地flock。当前仍无新成功率/NI/修复优势或自然撤回可靠性证据，不能用更多工程检查替代。后文为历史时点。
+
+
 **最新恢复锚点（2026-11-11T04:04:24UTC）：** 内部候选v15已完整验收：responses/20261111_v15三文2930词/15块/20项；原LaTeX v15、40页PDF1fe43092…/29源ZIP34953fea…、matrix9a2c418a…。两次完整编译（原工程/干净ZIP）、原39页全部文本/像素相同、新p40视觉通过；九图/全部原数字和不利/unknown保留。Appendix C.5/Table29、30新增两final3000的完整记录成本和五个嵌套区域实测。95项82.764MB包e45f94bf…本机全验收，AFS writing_candidates/20261111_v15是否完成见独立AFS receipt。科学截止03:28:53；20项科学closure/stable均false，未发布/正式上传。详见CANDIDATE_V15_20261111_ZH.md。
 
 **两final3000、成本、模块计时全部完成，不要重跑：** Full b0669047…/Pooled9c9c9124…完整state/CAS和RB/BT typed bundles已齐（Pool proof1058dfbc…/bundle929fac30…）。干净两方法各100测量/20warmup：median/p95 Full473.4/500.3、Pool476.5/501.1ms，58原件14e94a59…和本机独立核算通过。另一次Full五区域均100/100，effect/gate CUDA中位0.565/0.692ms，17原件942c2739…全验证；重叠区间不相加、不称因果节省，detached OS exit未采集显式null。模块首次NameError准备失败保全、原窗口不改。原530.1/565.2ms FastWAM参考旧profile保持独立。
