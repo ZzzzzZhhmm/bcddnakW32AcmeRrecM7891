@@ -1,5 +1,7 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**12:49UTC终态与修复锚点：** B四角色已12:37:19真实exit0、两完整配对0/0；全部2,214原件59.143MB/TAR33.026MB40ea8cb2…已完整封存核验，勿重跑B。新同状态null曾12:28:30真实exit1，根因冻结controller cwd使DiffSynth相对text资产模式为空，0已完成生成/0物理；14原件全部封存6e4e0c84…，原12:23:30→13:09窗口不改。独立generation修复资产工作目录并验证绝对绑定，之后只允许原窗口内、有已知失败/全归档收据的新冻结恢复；当前是否已续跑须读current_iteration/原study子目录，勿重新创建原root。原v17/负结果保留。作者现在明确自己补采真机：需提供R2P/SOR详细执行包；旧录像仍不重复索取，新增采集由作者推进。
+
 **12:15UTC完整角色补充：** Stage B clean candidate-null已12:03:08正常exit0、700/175/1400物理记录、0 TOPP、success0，542项10.326MB原件/TAR3.652MB SHA86e57ad3…，本机12:15:30全成员/实际动作/物理链及175次显式null验真。B共三个角色完整、holdout配对0/0；唯一driver已进入最后clean Full（12:13实际worker2469618加载），原13:09:30窗口不变。不要把此前“clean null活动”当当前状态，勿重复执行任何完整角色；新null同状态研究是否启动仍以新冻结源/准入/实际operator为准。
 
 **12:07UTC工程准备锚点（尚无新null生成/物理结果）：** 固定原native clean q8同状态null入口已实现，先认证事实上下文/图像/proprio和原采样参数，精确复现Full H32/source/conditioning及预测后才生成冷独立null，再做Full/null/Full原生物理对照。三个CPU拒绝检查、真实原上下文及旧K32兼容preflight通过；首次开发依赖打包失败0GPU/0物理已保全，v2完整包通过。详见[NATIVE_SAME_PARENT_NULL_PROTOCOL_20261111_ZH.md](NATIVE_SAME_PARENT_NULL_PROTOCOL_20261111_ZH.md)。必须先push/CCI同步、冻结新source、核销旧rb30已知终态/全归档预约并另设至多一小时窗口后准入，不修改原K32/B/正式时钟。12:04 ACP六UID仍“启动中”，未观察到科学runner；B仍按原计划继续。下一次实际状态以current_iteration和新operator为准，不将本段准备写成已执行结果。

@@ -2237,3 +2237,11 @@ B holdout Full于11:28:50.548294UTC正常exit0，700命令/175完整H32/1,400物
 固定seed3408 clean candidate-null于12:03:08.479061UTC正常exit0、未有界终止，700命令/175完整H32/1400实际物理记录、0 TOPP、success0/max_reward0；全部542项10,325,642B，TAR3,652,287B SHA86e57ad323a4fdc783051ea9f5b9a676172009a096abbabfa26f8022194a1fed。12:15:04 CCI核验原完整archive、typed checkpoint b0669047…、全部生成、实际动作/API/物理链和175次effective/source gate0且source精确Gaussian；alpha保持自然正值，min/median/max .1767578125/.1904296875/.21875。
 
 原件和收据存于AFS ITER18_STAGEB_CLEAN_NULL_COMPLETE_INTAKE_V1及原role archive；12:15:30本机独立重读全部542成员及175H32、700动作/1400物理链/零TOPP通过，同名本机目录保存原TAR和LOCAL_VERIFICATION，不改原件。当前B已三个角色完整、holdout一对0/0，最后clean Full实际worker2469618仍在原13:09:30截止内运行；不能提前补成clean配对或收益/NI，也不认证missing skill。均晚于v17原科学截止，下一完整修订统一纳入。原Stage A未知退出及所有零结果保留。
+
+### 23.173 Stage B完整结束；同状态null加载失败已封存，修复资产工作目录
+
+B于12:37:19.651368UTC真实driver exit0，四角色完整、两配对均0/0；最后clean Full archive9ca95894…，原四角色源/样本/窗口未变。全部2,214原件59,143,224B连同四个原role archive和实际stage_exit统一封存：StageB_complete.tar.gz 33,026,220B SHA40ea8cb2b3c8eb9cb41959c1ff235cb98ffc442faba5173430f9d117ae694f46；manifest6ea0faca…，12:49:18 AFS全成员hash复核通过。最后Full及clean配对的本机科学核算另行登记，不能把打包通过当机制收益。
+
+同状态null原唯一driver12:28:30真实exit1，generation exit1、非预算终止；DiffSynth相对模型资产模式从冻结controller目录解析，text encoder文件集为空，未完成任何Full/null生成或物理分支。14原件30,312B及完整日志/配置/原12:23:30→13:09窗口保全，TAR7,521B SHA6e4e0c84e87cf8dd4f920db499b609b4246e5a94a2e99db2f82c4a09c511d08f，manifest458bd6c2…；两任务退出、原件及进程不存在收据在ITER19_STAGEB_COMPLETE_AND_NULL_LOAD_FAILURE_V1，旧失败不覆盖。
+
+修复只在独立generation程序恢复原typed资产根作为工作目录，确认原base/VAE/text/tokenizer绝对绑定均位于该根，再以冻结C模型源码构造策略；记录asset_resolution见证，模型文件/配置/阈值、q8上下文、源及原H32精确复现门均不变。新增拒绝外部资产根的回归检查。恢复必须使用新冻结实现、显式失败归档证明及原first/deadline，不重开窗口、不换query、不把加载错误记为策略失败。

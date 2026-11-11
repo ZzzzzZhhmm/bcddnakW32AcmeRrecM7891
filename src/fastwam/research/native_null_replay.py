@@ -4,11 +4,25 @@ This path reads sealed factual tensors and calls the production sampler. It
 does not construct, consume, or pretend to own a historical BoundOnlineStep.
 """
 from dataclasses import MISSING, fields
+from pathlib import Path
 import numpy as np
 
 FORBIDDEN = frozenset({'target_action', 'target_effect', 'current_semantic_teacher',
                        'target_action_valid_mask', 'future_valid_mask'})
 ACTUAL = frozenset({'actual_base_gaussian', 'actual_source', 'actual_conditioning_tokens'})
+
+
+def asset_working_directory(runtime):
+    """Resolve the original loader's relative patterns from its bound assets."""
+    base = Path(runtime['warm_base_checkpoint_path'])
+    if not base.is_absolute() or base.parent.name != 'fastwam_release' or base.parent.parent.name != 'checkpoints':
+        raise ValueError('original absolute FastWAM asset layout required')
+    root = base.parents[2].resolve(strict=True)
+    for key in ['warm_base_checkpoint_path', 'warm_vae_checkpoint_path', 'warm_text_encoder_path', 'warm_tokenizer_path']:
+        value = Path(runtime[key])
+        if not value.is_absolute() or not value.resolve(strict=True).is_relative_to(root):
+            raise ValueError('bound model asset is outside the original loader root: ' + key)
+    return root
 
 
 def restore_factual_context(payload, context_type, *, device):
