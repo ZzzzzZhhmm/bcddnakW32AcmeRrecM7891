@@ -1,5 +1,11 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**Nov11 22:30UTC当前锚点：原正式资源窗口已结束，不再是两个RB活动。** 六片截止22:12–22:16均过期；新增RB6 Full531命令/133生成、RB25 Pooled665/167均exit-15/success unknown，各最后一条未闭合命令保留。974原件TARbd1dd24e…/manifestb83101e3…已双端与本机物理链/H32验真。原100对仅28完整role/14对均0/0、累计6unknown，不能称完整研究或填总体SR/CI。三个唯一恢复排队allocation已逐项停止，22:30 UI确认均已停止；无正式GPU活动，不重置原时钟或重建原任务。
+
+**原specialist q96仍实际运行：** UID536a352f050b4142890aa99fb88aa23b标准H100详情22:30仍运行，原07:16UTC截止不变。新rank0–6七H32/标签均0的70原件TAR48e35882…/manifesteb0dcb70…双端及本机逐成员验真，`ITER26_Q96_COMPLETED_DELTA_V1`；整池未完成，不能先算全池MSE。继续原唯一job，不替换固定状态/rank。
+
+**工程准入已前置：** CCI先实现加载前严格runtime/hash检查并保存差异，10项CPU加实际原合同CPU检查通过；不得改合同绕过错误、不得称GPU复现已通过。源码ac73d083…/测试923416f9…，开发收据ITER26_ENCODER_PREFLIGHT_DEVELOPMENT_V1。当前canonical与同步以新规划JSON为准；原v21回复/44页PDF/70成员包继续封存，等待新证据时优先原task-specialist协议与共同信息对照的后续开发资格，不按shared3000测试结果选权重。详见台账23.194–196。
+
 **22:02UTC最新Full工程终态，覆盖下文加载中：** worker2529134实际21:51:20 exit1，0完整推理/0null/0物理，两PID均消失。12原件TARc9b74de9…/manifest311b02c0…已双端与本机全成员验真，`ITER25_FULL_ENGINEERING_FAILURE_V1`。启动模板多设NVIDIA_TF32_OVERRIDE=0，原M1合同为null；只读对照确认移除后全部字段一致、加回后仅该字段不同。未来模板已修正，放在`ITER25_FULL_ENVIRONMENT_FIX_V1`，但未重新加载/未获GPU精确复现资格。不得再按“加载中”复制或重跑root；原22:08截止不重置，余量不够冷加载。优先继续现有ACP原q96池和原固定对照的终态保全，下一新准入须使用修正环境并在加载前核验严格合同，勿改合同绕过检查。详见台账23.193。
 
 **21:51UTC晚到已独立验真：** v21原包核验截止26role/12对不覆写；另1092原件TAR92d02572…/manifest556ea914…保全RB case5 Full与case24 Pooled，累计28完整role/14对均0/0，旧unknown与RB22一次TOPP保留。新索引`responses/20261112_v21_execution_addendum1`；原v21 70成员AFS包已21:48:30逐成员及解包验真。先读新规划JSON与Full工程monitor，勿按下文旧活动状态重启。

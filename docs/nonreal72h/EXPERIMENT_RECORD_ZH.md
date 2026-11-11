@@ -2415,3 +2415,21 @@ RB case5 Full（21:43:53）及case24 Pooled（21:43:54）各真实exit0、700命
 晚到核查确认：Full-only worker2529134实际21:51:20正常收取exit1、非bounded；`online DINO runtime differs from the M1 contract`发生在policy构造末段、0完整生成/0null/0物理。两个实际PID已消失，不能沿用21:50“加载中”的旧观察。12原件15,397B保存在`ITER25_FULL_ENGINEERING_FAILURE_V1`，TARc9b74de9ab7285be7653f803fed2e8ef836b7777d5b7a0450ee5a2479b79a276、manifest311b02c0ce172393e441cfec7527a320ce07ebd8f03414789de3b74a55bedab4；双端及本机21:59:50全成员独立验真。原21:38→22:08窗口不重置，余量不足另一次冷加载，不重跑原root。
 
 已定位启动模板额外设置`NVIDIA_TF32_OVERRIDE=0`，而绑定M1合同为null。22:01:52在新进程进行只读对照：无额外覆盖时全部运行环境字段与合同相同；设置该覆盖后仅`nvidia_tf32_override`一字段不同，足以触发原严格合同检查。修正未来模板以显式移除该环境变量；原失败monitor、模型代码、合同和原始日志保持不变。诊断与未启动模板在`ITER25_FULL_ENVIRONMENT_FIX_V1`，实际新推理和精确Full复现资格仍未完成，不能宣称已恢复科学对照或repair证据。原ACP三项实际运行继续，v21材料及已保全的28role/14对不改。
+
+### 23.194 原固定对照资源窗口结束，保全两个新unknown
+
+Nov11 22:20UTC核查时，六个原正式分片的22:12–22:16资源窗口均已结束。RB case6 Full实际22:11:35 exit-15，531个完整命令对/133个H32；RB case25 Pooled实际22:16:19 exit-15，665/167；二者各保留一个未闭合的最后command_begin。结果文件的loading_typed_policy是未刷新的旧字面，不能当0已执行动作。实际exit收据均标非bounded；未凭时间接近原截止就将根因认定为抢占或某一层计时器。
+
+974原件23,770,894B封存`ITER26_FORMAL_WINDOW_END_V1`，TARbd1dd24eb4b74e85780f02c1199044d1a6ffeb49922e1533befca5070978a7e2、manifestb83101e3c601e79385a98f5c77f0256e2a8401789e7894f5b1c8e8e99c03eb9e；双端及本机22:24:18逐成员、全部完整命令物理链与H32独立核验，新增完整命令对0TOPP。累计28完整role/14完整对仍均0/0，unknown attempt累计6个，不能将unknown填成失败或称100对完成。固定模型、样本及全部原窗口保持，不从这些测试结果挑选权重或换样本。
+
+原RB00/RB20云任务已失败终态；三个恢复allocation在原窗口结束后仍启动中，实际停止前冻结唯一名称/UID意图，逐项确认弹窗与目标一致后停止，22:30只读刷新确认三项均已停止。未重复未知停止或创建。原标准q96（UID536a352f050b4142890aa99fb88aa23b）明确排除；22:30详情仍运行中、镜像与AFS配置不变。原100对研究以部分完成/含unknown封存，不声称统计收益、非劣效或原稿specialist复现。
+
+### 23.195 加载前编码器运行合同检查，避免再次延迟发现环境错误
+
+在CCI canonical先实现严格预检查，再回传本机：`generate_rebuttal_native_query_null.py`在构造policy前核对M1与online合同的原runtime hash，保存真实运行环境及逐字段差异；有任一差异立即拒绝，不修改环境、合同或模型。比较保留缺失字段及JSON类型差别，修正Full-only加载状态文字以免误称构造了null replica。原昂贵加载后的合同验证仍保留。
+
+22:23:25 CCI十项CPU检查通过，实际原合同及已保全runtime另在22:28:46通过hash绑定/正确环境接受/原错误覆盖拒绝检查；0policy加载、0新GPU样本、0物理。开发收据`ITER26_ENCODER_PREFLIGHT_DEVELOPMENT_V1`，源码/测试SHA ac73d0832117fe5315cf6b0732f5caa283984ea3b31f32c4659d6ff841e8f01a / 923416f9e4f040e4b97897e7d45588d44aadb20dc28b57de44d730a7bcab36c6；实际合同检查见`ITER26_ACTUAL_ENCODER_PREFLIGHT_CPU_V1.json`。这修复工程准入，尚未取得精确Full复现或科学效能证据，不续开已过期窗口。
+
+### 23.196 原BT q96新七个完整候选原件
+
+rank0–6各完整H32、parent_recreated true、error null；七个独立下一交互标签均0（物体落至桌下），与原rank20和三个Full锚点属于同一固定状态，不能当八个独立回合。70原件45,441,016B另封存`ITER26_Q96_COMPLETED_DELTA_V1`，TAR48e3588279b49a28a43f92088ddcea8d0ee36f1548e8548dfd2bf29aaaf802bf、manifesteb0dcb7039bd2e1bb2f6c216ea84a3a361b5378e4774dd8dea0624103c8b45bb；22:28:33本机逐成员及全部端点独立核验。22:20实际operator为rank7父状态重建、累计11完整branch/8候选端点，原07:16UTC截止与全部固定rank不变；全池未完成，不报告全K32 MSE、repair或总体SR。

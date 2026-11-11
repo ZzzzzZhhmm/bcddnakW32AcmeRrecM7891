@@ -36,3 +36,20 @@ def test_engineering_replay_cannot_authorize_null_physics_or_other_source(tmp_pa
     for key,value in [('null_generation_authorized',True),('maximum_physical_branches',1),('maximum_full_replays',2),('sealed_query_sha256','other-source')]:
         a=admission(tmp_path);a[key]=value
         with pytest.raises(ValueError):check(a,tmp_path)
+
+
+def test_encoder_preflight_exposes_launcher_override_without_mutating_contract():
+    expected={'nvidia_tf32_override':None,'cuda_matmul_allow_tf32':False,'platform':'fixed'}
+    actual=dict(expected,nvidia_tf32_override='0')
+    witness=M.encoder_runtime_witness(expected,actual)
+    assert not witness['matches']
+    assert witness['differences']=={'nvidia_tf32_override':{'expected':None,'actual':'0'}}
+    assert expected['nvidia_tf32_override'] is None and actual['nvidia_tf32_override']=='0'
+    assert not witness['policy_constructed'] and not witness['contract_edited']
+    assert M.encoder_runtime_witness(expected,dict(expected))['matches']
+
+
+def test_encoder_preflight_keeps_all_fields_and_json_types_strict():
+    expected={'allow_tf32':False,'override':None}
+    for actual in [{'allow_tf32':0,'override':None},{'allow_tf32':False},dict(expected,extra=None)]:
+        assert not M.encoder_runtime_witness(expected,actual)['matches']

@@ -62,6 +62,20 @@ def require_generation_admission(admission, *, full_qualification_only, seal_sha
     return start, end
 
 
+
+def encoder_runtime_witness(expected, actual):
+    """Compare actual metadata before cold loading; never edit either mapping."""
+    canonical = lambda value: json.dumps(value, sort_keys=True, separators=(',', ':'), ensure_ascii=False)
+    differences = {key: dict(expected=expected.get(key), actual=actual.get(key))
+                   for key in sorted(set(expected) | set(actual))
+                   if key not in expected or key not in actual
+                   or canonical(expected[key]) != canonical(actual[key])}
+    return dict(schema='warm.encoder-runtime-preflight.v1',
+                expected_runtime=expected, actual_runtime=actual,
+                differences=differences, matches=not differences,
+                policy_constructed=False, contract_edited=False)
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--seal', required=True, type=Path)
@@ -181,10 +195,21 @@ def main():
         runtime = read(sealed / 'runtime_args.json')
         runtime['warm_telemetry_path'] = str(out / 'policy_telemetry.jsonl')
         H.M.atomic_json(out / 'runtime_args.json', runtime)
+        from fastwam.memory.runtime_fingerprint import current_encoder_runtime
+        from fastwam.memory.manifest import sha256_canonical_json
+        encoder_contract = read(Path(runtime['warm_encoder_contract_path']))
+        online_contract = read(Path(runtime['warm_online_contract_path']))
+        expected_runtime = encoder_contract['runtime']
+        if sha256_canonical_json(expected_runtime) != online_contract['encoder_runtime_sha256']:
+            raise ValueError('bound M1 and online encoder runtime contracts disagree')
+        witness = encoder_runtime_witness(expected_runtime, current_encoder_runtime(runtime['warm_dino_device']))
+        H.M.atomic_json(out / 'encoder_runtime_preflight.json', witness)
+        if not witness['matches']:
+            raise ValueError('encoder runtime differs before policy loading: ' + json.dumps(witness['differences'], sort_keys=True))
         asset_root = helper.asset_working_directory(runtime)
         H.M.atomic_json(out / 'asset_resolution.json', dict(previous_cwd=str(Path.cwd()), asset_working_directory=str(asset_root), immutable_model_code=str(core), bound_asset_paths_unchanged=True))
         os.chdir(asset_root)
-        state.update(status='loading_one_typed_policy_and_cold_readonly_replica')
+        state.update(status='loading_one_typed_policy' if cli.full_qualification_only else 'loading_one_typed_policy_and_cold_readonly_replica')
         save()
         with helper.bound_asset_metadata(deployment, runtime,
                 lambda witness: H.M.atomic_json(out / 'loaded_asset_metadata.json', witness)):
