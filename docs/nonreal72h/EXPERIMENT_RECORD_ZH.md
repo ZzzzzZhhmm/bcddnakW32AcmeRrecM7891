@@ -2339,3 +2339,21 @@ Nov11 18:15:38UTC封存四个新完整role：RB case1 Full、case2 Full、case21
 Nov11 18:40:41UTC对晚到RB case2 Pooled（实际18:27:58 exit0）与case21 Full（18:20:35 exit0）另行封存，每个700命令/175完整H32/1400物理记录、success0；1092项27,894,518B，TAR e18d90f6e996cfdbd375841f9d5901f6d60aadcd7eaee2fc325ad25cd98b502f、manifest194369dab8808a32f202875c66252c06137271627c376e7f0cefe833b4712765，位于`ITER22_LATE_TERMINALS_V1`。
 
 18:41:17本机逐成员hash、全部动作/物理连续链、H32生成及0TOPP独立核验；累计13完整role（12RB及1BT），RB case0/1/2/10/20/21六对均0/0，各对初态、首输入/高斯/首K32相同。四个旧unknown和原截止不改，不填最终100对SR/CI或优势/NI。新独立20项索引在`responses/20261112_v20_execution_addendum1`，三文件已双端保全；v20原三回复/PDF/源码ZIP/72成员包不覆写。
+
+### 23.185 首BT完整配对、三角色增量与原顺序接续
+
+Nov11 18:50:37UTC BT case0 Pooled正常exit0、非bounded，1000命令/250完整H32/2000物理记录、success0；与原Full组成首BT完整0/0对。新增RB case3 Pooled（19:01:44）及case22 Full（18:56:28）各正常700/175/1400、success0。19:08:44封存1863项46,233,171B，位于`ITER23_TERMINALS_V1`，TAR2aabe65026145307e4a7b09f4e18b14ed86fd91e5b31907d5d884ed97428bf31、manifest28ea38666f4e82ac0d8cd58cdd53b3e5d174012302ec66197331e99e812c2c94。
+
+19:08:55本机逐成员、全部动作/物理连续链和完整H32独立核验，新三角色各0TOPP；首BT的初态、首输入/高斯/首K32与Full一致。累计16完整role及7完整对（6RB、1BT），均0/0；仍不能填100对总体SR/CI、优势、repair、自然missing-skill或NI。原四unknown及所有固定样本/权重/时间窗口保留。
+
+核实segment22正常终态、三个旧PID消失/GPU空、campaign及native lease空、余量>3660s且AFS>4GiB，并通过原amendment真实CPU资格后，19:09:58原bt00 slot启动`cci_segment_iter23_v1`。monitor2514155/campaign2514156/worker2514161，原顺序case1 Pooled，最多1新role/6000s、单worker3600s；原first10:14:31/截止22:14:31不改。四小时重启边界未独立确定，在准入中显式保留unverified，不伪称有确定重启余量。
+
+19:06 ACP实际UI仍原RB00/RB20运行中，三个唯一恢复allocation启动中；未证实新GPU runner、未重复创建。内部执行增量2保留20项映射，位于`responses/20261112_v20_execution_addendum2`，三文件双端验真manifest25e5339576be113cf8d348976b78f7d216ec78851166038b44daf0c3b9970832。v20三回复/PDF/源码ZIP/72成员包仍封存，37槽位和全部empirical closure不改。
+
+### 23.186 首BT配对的反归一化与观察/物理状态边界
+
+只读诊断重新读取已核验Full/Pooled各250个生成块和1000命令，以实际dataset stats（SHA2cac1e1b434b2a339f2e4eddeab7815682e243d59428bc7dcaddca14f173746d）重算所有执行前缀反归一化；两角色最大绝对误差均0。12臂关节命令相对首观察的RMS位移中位数Full .877296rad、Pooled .897698rad；这描述命令，并非物理跟踪误差或成功证据，不能仅据首几条小命令推断全回合静止。
+
+`qpos_trace`中的14维观察qpos与独立物理状态严格区分；另保留原`physical_commands`的38维articulation逐步快照，在未建立索引映射时不计算所谓12臂关节物理误差。初次本机派生诊断把观察qpos误标为physical，已在任何论文使用前更正为`diagnostic_v2.json`，旧派生文件明确标superseded并保留；原采集数据与论文数值未改。未生成图，未据此推断失败根因或训练收敛。
+
+原stats与两个派生版本位于本机`execution/20261112_iter23/BT_ACTION_DIAGNOSTIC_V1`及AFS`ITER23_BT_ACTION_DIAGNOSTIC_V1`；三成员manifest29a820729b13ebae737c5945b74c939d58f001c089192b6c15551f16848c6ec4、当前诊断SHAf711fd3449937c28bccfabe1e363ea353c2738bd39b50006a30f3b508fd56d91。19:20:45全成员AFS验证通过；这是工程/解释资格，不能填入P1–P5优势结论。

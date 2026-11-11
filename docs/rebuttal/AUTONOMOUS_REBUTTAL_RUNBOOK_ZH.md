@@ -1,5 +1,11 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**Nov11 19:20UTC当前锚点：** 首BT case0 Full/Pooled均完整1000/250生成/2000物理、0/0；新1863原件TAR2aabe650…/manifest28ea3866…已双端保全及本机独立验真，累计16完整role、7对均0/0。20项执行增量位于`responses/20261112_v20_execution_addendum2`，原v20文本/44页PDF/源码/72成员包不改，37槽位仍待证。
+
+**CCI已经进入segment23，不能重启旧段：** 19:09:58原bt00 slot接续case1 Pooled，monitor2514155/campaign2514156/worker2514161；原first10:14:31/2214UTC截止、f774双角色3600s及单次最多1role/6000s不变。segment22与首BT配对已归档，不重跑。19:06原RB00/RB20 ACP活动，三恢复UID仍启动中；不复制未知/活动任务。真实重启边界未核实，不能编造确定余量。
+
+**新只读诊断：** 首BT两角色500生成块→2000命令反归一化误差均0，但观察qpos不等于独立物理测量。使用`diagnostic_v2.json`，旧误标派生版保留superseded；38维真实articulation快照另存，未建立到12臂关节的映射，不声称物理误差0或根因已明。详见台账23.185–186及MATCHED_NATIVE_COLLECTOR解释边界；新增资格不能替代收益证据。
+
 **Nov11 18:41UTC晚到核验：** 另1092原件TAR e18d90f6…/manifest194369da…已双端保全、本机全部动作物理链验真；新增RB case2 Pooled与case21 Full后累计13完整role、RB六对（0/1/2/10/20/21）均0/0，仍无总体100对SR/CI或收益。`responses/20261112_v20_execution_addendum1`更新20项索引，v20已封存回复/PDF/源码/72成员包不改。实际CCI三PID18:39仍活跃、GPU32392MiB/94%；勿按下文旧segment启动。最新Git HEAD以规划JSON及离线同步收据为准，ef5为最新实现commit。
 
 **Nov11 18:35UTC最新锚点（覆盖下文旧活动标志）：** v20作者对话精准稿已完整验收，`responses/20261112_v20_author_precision`及原LaTeX工程；44页/含结论主文10页，PDFcc162884…/ZIP8e4fa62e…，0未定义/overfull、三处变化页直接验看，其他41页像素不变。AFS72成员包3fe83921…/manifest15c50f60…全成员验真。37空槽、20项实证closure仍false，未发布。见CANDIDATE_V20_20261112_ZH.md。

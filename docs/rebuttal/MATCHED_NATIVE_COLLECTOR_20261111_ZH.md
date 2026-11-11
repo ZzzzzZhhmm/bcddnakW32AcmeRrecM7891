@@ -15,6 +15,12 @@
 
 campaign lease由子进程继承，未知退出阻止重复worker。每个attempt保留exit、日志、原输出与档案；明确未知终态需检查后显式resume，不能在多个已知结果间挑选。持久first-start和固定绝对截止同时生效，max-new-roles只限制本次调用，不重置窗口。程序不探测Git远端，不因dirty工作树失败。
 
+## 观察qpos与独立物理快照的解释边界
+
+`qpos_trace.npz`的before/after来自原生观察的14维`joint_action.vector`，不能直接称为独立测得的机器人关节状态。实际物理验证使用`physical_commands.jsonl`中调用前后的模拟器articulation qpos/qvel及其连续链。首BT配对另保存38维机器人articulation快照；未建立关节名称到12个臂关节的索引映射时，不把38维向量归约成“12臂关节跟踪误差”。
+
+Nov11首固定BT配对的两个1000-command角色中，全部500个生成块的执行前缀通过绑定normalizer反归一化后，与2000条命令逐元素相同；这是该配对的动作映射检查。观察qpos与命令相等不代表物理误差为零，也不解释任务失败原因。独立物理快照仍须保留，不能用观察qpos替代。
+
 19:00 UTC CCI实际实现检查：35项通过（包含新入口、旧池化配置、lease/档案生命周期和有界调用），四文件语法通过；0新GPU推理/0仿真/0正式TEST。后续仍需新入口实际Full/Pooled DEV匹配资格、最终权重严格装载、50-roster及真实并发隔离验证。接口实现和单元测试不等于正式评测已就绪或已有收益。
 
 19:17追加机器准入检查：正式TEST还必须绑定两份独立final3000完整state/byte-exact archive核验收据，以及实际双角色十个DEV输入/高斯匹配完成收据；单有最终权重文件名、静态检查或旧Pooled单角色资格不足以启动。相关新增反例检查后全40项通过，模型和部署数学未改。正在准备的DEV继续使用先前冻结controller74fb3d19…，该快照不随canonical后续同步改变；新增准入仅约束尚未派发的formal阶段。
