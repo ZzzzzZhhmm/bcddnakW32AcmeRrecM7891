@@ -1,5 +1,13 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**Nov11 18:35UTC最新锚点（覆盖下文旧活动标志）：** v20作者对话精准稿已完整验收，`responses/20261112_v20_author_precision`及原LaTeX工程；44页/含结论主文10页，PDFcc162884…/ZIP8e4fa62e…，0未定义/overfull、三处变化页直接验看，其他41页像素不变。AFS72成员包3fe83921…/manifest15c50f60…全成员验真。37空槽、20项实证closure仍false，未发布。见CANDIDATE_V20_20261112_ZH.md。
+
+**实际计算：** 原bt00已完成Full1000/250生成/2000物理、success0，旧936unknown保留；当前同slot `cci_segment_iter22_v1` monitor2507713/campaign2507716/worker2507753，原case0 Pooled实际5生成/20命令（18:25:43），不是旧segment21。原first10:14:31/2214UTC截止不变。RB00/RB20原ACP活动，新BT10 UID6bea7fe19aed473692928a535468d291、BT20 UID76da0b3af21c46da8812b35aeb425ceb以及RB10 UIDde23301cd91f4044bb7d1ff28ac51492均18:25 UI启动中，未证实新GPU runner；勿重复创建。
+
+**新核验数据：** 2409项终态增量TAR8b9f7cb3…/manifeste2401081…本机全成员/全部动作物理链通过，累计11完整role、RB case0/1/10/20四对0/0；更多controller终态尚须另封存，不先计入。BT只Full完整，Pooled未完成，无总体SR/CI或收益。两训练阶段全metrics/配置7项已独立验真：均shared固定3000、原max_steps30000、action专家梯度为正；不是原specialist复现，未判定失败原因，不按结果换权重或重选样本。v20执行索引与台账23.181–183保留负/unknown及当前20项映射。
+
+**工程身份：** canonical已ef5ce8c；原活动BT入口f774/adb5ba9b…保持，RB另用ef5/59231591…与amendmentcf96bd65…仅恢复已绑定终态、仍2400s。原所有窗口、六slot/120GPUh不改，训练/eval/ACP不访问Git远端。当前规划JSON安装完成后优先按其新receipt核查，不沿下文旧PID重启。
+
 **Nov11 17:25UTC最新锚点：** BT共同3600s外层工程修订已commit/push/CCI同步f774aba，冻结入口adb5ba9b…；原H861/C871/计划文件/first/deadline不改。原bt00已17:14:31用cci_segment_iter21_v1续跑，monitor2502475/campaign2502476/worker2502481（case0 Full第二attempt37deccf6…），最多1role/6000s，原2214UTC截止不改；17:24模型加载24.4GB、0已存generation，须核查真实进度，勿重跑。旧段已终态，不能再使用旧2496070状态。
 
 **新云分配唯一身份：** 标准申请17:17实际业务提示“成员配额已超限”（HTTP429不等于仅网络限流），列表确认无std后才闲时。bt10新UID6bea7fe19aed473692928a535468d291、bt20新UID76da0b3af21c46da8812b35aeb425ceb；新名warm-mf3k-bt10/bt20-20261112-resume-idle，17:24均启动中、尚未证实GPU分配。先查这两UID/原campaign heartbeat，不重复创建；原两失败UID备份和原22:16截止保留。rb00/rb20仍活动，rb10因非bounded SIGTERM失败尚未恢复；不能把rb10失败归因BT2400s。

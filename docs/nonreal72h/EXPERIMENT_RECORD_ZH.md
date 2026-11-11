@@ -2307,3 +2307,29 @@ Nov11 17:57:26 CCI case0 Full第二attempt正常exit0、非有界终止，1000�
 已确认旧monitor/campaign/worker终态和完整归档、GPU空、native lease空及原截止余量后，18:08:22同一bt00 slot进入cci_segment_iter22_v1，monitor2507713，下一原固定case0 Pooled，最多1新role/6000s；原first10:14:31/deadline22:14:31、BT双角色3600s及原f774冻结入口不变。后续按真实PID/generation/exit核查，不重跑完整Full。
 
 18:10云端新BT10/BT20两UID仍启动中，原RB00/RB20运行中，RB10失败；不把新BT排队写成GPU已活跃。准备为RB10增加独立的terminal-status-amendment类型：仅在原exit/result/全归档绑定下恢复unknown只读视图，保留RB2400s预算。四项本机与四项CCI检查通过，明确拒绝RB取得BT加时额度；未准入前不称已恢复。
+
+### 23.181 RB10独立恢复已创建与原窗口保护
+
+ef5ce8c23ba8e706616ac9445aa3e665945cf2a3已英文commit/push及远端exact核验，并CCI离线FF。原BT活动入口f774不变；新增RB终态恢复入口`execution_status_controller_ef5ce8c/scripts/run_rebuttal_execution_amendment.py` SHA59231591919004dcebf04025f7abc2dce0b79667147f9791e91c4a32a4914de0，独立RB amendment cf96bd65b686141f253141d09ecc102862a4bef01058156e5e1275c3d3f08cac。真实原plan CPU资格通过，RB仍2400s，两次attempt上限及旧unknown原件保持。
+
+Nov11 18:13:42UTC新唯一闲时allocation `warm-mf3k-rb10-20261112-resume-idle`，UIDde23301cd91f4044bb7d1ff28ac51492，原rb10 identity及失败UID另备份。只调用原slot下`acp_resume_iter22_v1/launch.sh`，每role核查原22:16:44截止余量；不增第七slot，不重置首次准入/窗口。18:25:32 UI确认该UID与新BT10/BT20均启动中，尚无新AFS科学runner；原RB00/RB20运行中。先标准资源实际成员配额不足的核验仍沿23.179；新恢复未重复申请标准或伪称已分到GPU。
+
+### 23.182 完整终态增量独立核验与shared阶段只读审计
+
+Nov11 18:15:38UTC封存四个新完整role：RB case1 Full、case2 Full、case21 Pooled各700命令/175生成/1400物理记录，BT case0 Full1000/250/2000；均实际exit0、success0。2409项60,303,892B原件位于`ITER22_COMPLETED_DELTA_V1`，TAR SHA8b9f7cb3084a83bd67e40f02ce5531a2a93253076f4b0575a78c100ff4ae2325，manifest e240108191b0d4ee70b38cfd7471fbb025263df1b4749b1d5fa605b816625e7b。18:26:09本机独立逐成员、全部14维动作/关节连续链、每个H32生成与物理记录验真，新四role各0TOPP；RB case1与原Pooled的初态/首输入/高斯/K32精确一致。
+
+此截止累计11个已独立核验完整role，RB case0/1/10/20四对均0/0。BT case0尚只有Full完整，Pooled活动；未填原100对总体SR/CI、优势、repair或非劣效。稍后的controller完整计数只有在另行封存和独立核对后才能提升此计数。所有旧936/946/988部分轨迹及RB11中断unknown保留。
+
+18:18:28训练只读审计保全两配置、全metrics与training_complete共7项9,210,604B，manifest d5d8d3d65078975007caf9393a4eb4937d8bec6c59e429af44e92bf131a44d0f，位于`ITER22_TRAINING_STAGE_AUDIT_V1`；18:35:19本机逐项hash并重算所记录首/末100更新均值。Full配置f84274b1…、记录step201–3000共2800；Pooled b5ca3cec…、step101–3000共2900。两者均shared阶段、固定评测3000，配置原max_steps30000，恢复run_steps分别2800/2900；这是预定3000选点，不是本轮新发现的意外提前退出。末100动作专家梯度均为正。Full action loss所记录首/末100均值.0679846→.0117938，Pooled .0950372→.0132402。
+
+这不是原论文specialist准确率复现，也未证明未收敛就是0成功的原因。配置`lr_scheduler_type: cosine`，审计receipt中的根字段scheduler=null仅是未读取正确键，不能据此声称缺失scheduler。不得据当前测试结果替换权重/样本或重新选checkpoint；新的能力资格或specialist研究须独立前瞻冻结。
+
+18:25:43实际CCI monitor2507713/campaign2507716/worker2507753仍为原bt00 segment_iter22，case0 Pooled已5完整生成/20命令，GPU32384MiB/27%；原2214UTC截止及f774双角色3600s不变。`ITER22_LIVE_FINAL_V1.json`记录状态与原窗口；加载状态字段可能滞后，按物理日志和实际exit判断。
+
+### 23.183 v20作者对话精准化与完整论文验收
+
+延续逐审稿人真实认可开场、we/our主体与已完成修订总结，修正语法/单位、明确修订位置，并使真机历史依赖行为与受控回忆消融衔接。原核心贡献和原数值/九图/公式/表格/已有附录均保留。三份回复20项/17块/37空槽，P1–P5整体仍待证，未把11角色/四对零零填为收益。
+
+完整原LaTeX及独立干净ZIP两次含BibTeX四遍编译44页/主文10页，全部页文字相同；0 undefined/overfull、45继承字体warning，3/7/8页直接视觉验收，其余41页与v19像素相同，匿名与内部标记通过。PDF SHA cc162884906c2ec4e9dc88fa78cef1cf7781533f05447ae93324d462eb3a53dc，源ZIP8e4fa62e714359f997f7bafa7a5db5e8a6d6b4b2833278a3789dc6f666a57b30。
+
+72成员123,816,401B内部包TAR3fe839215e47cddb67d7f0418b6f3d8ad249f0352f5f0818e2d11cb8cb42d187、manifest15c50f6021c7a4bc1ba4e89a10038b40b796319f5aaad33bf5b832b78dc9709f已本机与AFS全成员及解包验真，位于writing_candidates/20261112_v20，收据ITER22_V20_AFS_VERIFICATION_V1。论证/排版验收不等于科学缺口关闭；未公开发布或上传，v19基线不改。
