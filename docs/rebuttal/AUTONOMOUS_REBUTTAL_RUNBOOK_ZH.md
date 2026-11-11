@@ -1,5 +1,11 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**北京时间11月12日00:20优先锚点：** v19作者对话稿已完成并验收，responses/20261112_v19_author_dialogue，20项/17块/37未填槽位；逐审稿人真实认可开场、作者视角主体、已完成修订总结，遵循AUTHOR_DIALOGUE_WRITING_STANDARD_ZH.md。完整原LaTeX与干净ZIP两次编译44页/含结论主文10页，PDFd31a1443…/ZIP299c967c…；原9图/旧附录/公式/表格保真，文字与视觉验收通过。数据依赖整段仍PENDING，未发布/closure仍false。
+
+**实际运行已变化：** Nov11 16:10UTC rb00/rb10/rb20/bt20四ACP运行中；bt10已知40min终止、946/1000命令、success unknown（result字面loading是未刷新，不能误认0动作）；首rb00 Full/Pooled正式配对完整700各0/0，rb10 Full单角色0。2368原件TAR0373a0c0…/manifest04c0ed95…已双端核验，ITER20_FORMAL_TERMINALS_AND_LIVE_V1。正式100对整体SR/CI仍不可报告。后续优先诊断BT2400s worker不足，但任何工程预算修订须另冻结、保留两角色公平性及全部原时钟/unknown，不能原地改活动plan。
+
+**CCI实际接续原bt00：** 旧idle已确认停止、std2未创建、AFS无campaign且lease空后16:11:53启动同一slot，shards/bt-00/cci_segment_iter20_v1，monitor2496070/campaign2496071/worker2496076，最多2新role/6000s；原first10:14:31/deadline22:14:31不变。约16:20占24.4GB、模型构建；先读实际queries、operator和exit，不重复启动、不提前算完整结果。此时无需再为bt00创建std2/idle新job，其他四ACP活动不复制。旧65ebfe3本机commit已push，但CCI canonical仍54ba：上一bundle只含HEAD ref，pull bundle main失败，未改服务器；下次离线FF应显式使用HEAD，检查清洁和活动冻结源hash，不能声称已同步。
+
 **13:53UTC优先锚点：** Stage B全2,214原件及四worker/两配对已本机独立验真，均0/0；新确认clean Full命令637有一次TOPP拒绝，其余三role0，不沿用未核算前全部0的估计。q8同状态null两次加载失败均真实exit1、0推理/0物理，17项恢复原件dc4e880d…已双端保全，原13:09窗口过期，禁止重置。第二辅助修复仅规范化已加载模型的三个已绑定artifact metadata，保留全部typed/hash校验，5项CCI CPU检查通过；GPU加载资格必须另记工程窗口。新v18数据待填目标稿已写三位/15块/20项/37槽位，整段方向性结论PENDING、完整LaTeX红色标记，待PDF最终验收；v17原样保留。作者新要求自己补采真机，执行包docs/real/rebuttal_20261111优先SOR40次/R2P追加40，旧录像仍不重复索取。
 
 **ACP调度迁移未决：** 原bt00闲时UID96aa4f…13:43:51已确认停止且无AFS job_logs/campaign，原first10:14:31/deadline22:14:31不变。因标准池显示容量重新核查，在同一slot准备std2；两次UI创建触发aec2 HTTP429，13:47实际列表无std2，尚无新UID，不能称已创建/推理。先只读回查唯一名称warm-mf3k-bt00-20261111-std2，未知操作不重提；若始终未创建，可在同一原slot/原截止内安排有界CCI片段，其余五闲时不复制。详细意图/终态/原identity备份在ITER19_BT00_*和shards/bt-00/standard2_create_intent.json。当前旧identity字面仍指已停止闲时，不能只读该旧字段判活跃。

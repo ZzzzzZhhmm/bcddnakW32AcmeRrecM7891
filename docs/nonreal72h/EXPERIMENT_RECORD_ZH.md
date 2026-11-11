@@ -2259,3 +2259,21 @@ B于12:37:19.651368UTC真实driver exit0，四角色完整、两配对均0/0；�
 按作者明确要求预写理想结果下的论证，responses/20261111_v18_data_pending含三位回复、15块/20项、P1–P5共37个未填槽位和依赖门；整段定性结论也标PENDING，不是仅数字留空。原v17、旧负/unknown和所有原表/九图保留。revision/WARM_ICLR2027_v18_data_pending从完整原LaTeX工程构建；新q8与Stage B独立列示，所有待验证段红色、全页内部稿标识。初r1将结论挤至11页已发现并保留，不作为主文10页验收；后续r2通过压缩重复论述使结论回到10页，须完成最终PDF/ZIP/视觉验收并记录实际hash。
 
 作者现自行推进新真机采集，docs/real/rebuttal_20261111提供固定40个reset、80次Full/历史屏蔽计划、120个关键决策行、逐次/媒体/独立遥操作split模板及移盘可选任务卡。最小SOR40次，推荐加R2P共80；新增独立示范20条、固定checkpoint扩库20次为第二批；移盘两档各20次可第三批。当前新采集数均0，mask现场实现、设备标定与当前checkpoint仍待实测。旧原视频不重复索取；新材料不覆盖原20次SR，训练示范、事件、视频clip与自主trial分母严格分开。
+
+### 23.176 正式campaign首完整配对、BT时限中断与原slot的CCI接续
+
+北京时间11月12日00:10（Nov11 16:10UTC）实际ACP核验：rb00/rb10/rb20/bt20四UID运行中，bt10失败，旧bt00闲时已停止，std2两次HTTP429后仍无任务。不是六片仍排队。AFS真实campaign心跳与UI对应；16:11:41 rb00固定case0的Full/Pooled两角色均正常exit0、各700命令/175生成、success0/0，pair_receipts验证初态、共同信息和噪声；rb10 case10 Full也完整700/175、success0。
+
+bt10 case10 Full于15:58:57实际exit-15，bounded_termination=true，原40min worker上限；result.json最后仍写loading，**但console与物理原件显示946个完成command_end、1892物理记录、最后零基945，不能误记0动作或加载失败**。success仍unknown，不把部分轨迹记完整失败，不按结果改case。BT原生1000步可能超过2400秒角色上限，后续需显式评估工程时限修订，保留原首次/总截止/样本/两角色公平性，不能静默加时或在相同无效预算下盲目重试。
+
+以上四终态attempt共2368项57,993,368B完整封存ITER20_FORMAL_TERMINALS_AND_LIVE_V1，TAR SHA0373a0c049083ddb639b8614fc9cc6b178400750f0dd1662e8953c3b6a3fb62b、manifest04c0ed9577e17382981efcdd07d2643ebc05c5aeb867494480c1c4fe9c1047a2。16:20:06本机逐成员/三个完整role动作与物理链/首对输入Gaussian和K32独立核验。只有1正式配对，不填100对SR、CI、优劣结论。其他活动角色不能以UI状态当完整证据。
+
+bt00标准迁移确认未创建且旧idle终态后，16:11:53将同一slot接到CCI，原first10:14:31/deadline22:14:31不变、固定plan857d74f6…、两checkpoint/source不变，最多2个新角色、6000s独立invocation保护；monitor2496070/campaign2496071/首Full worker2496076，原件在shards/bt-00/cci_segment_iter20_v1。未新增第七slot，五个其他云UID不复制。16:20 CCI已占24.4GB、构建模型中，需后续检查实际queries/终态，不能提前宣称完成推理。全部执行程序不访问Git远端。
+
+### 23.177 v19作者对话式回复与原LaTeX改写验收
+
+按作者11月12日四项意见，三位开场逐一回查真人review的认可；Bbqv对应实用问题/后果选择/消融，Hh4E只复述问题重要性与两类经验整合，rkWY对应动机和可适配/可抑制经验影响，不虚构优点背书。主体作者视角、先答后证据，结尾总结已完成的澄清与修订，公开文本不出现AC/meta-review/提分目标。20项、17块、37待填槽位；假设理想数据的整段与结论方向仍PENDING，全项实证closure=false。
+
+新目录responses/20261112_v19_author_dialogue；原LaTeX revision/WARM_ICLR2027_v19_author_dialogue：引言串联贡献与实验，方法澄清event-specific训练目标和固定replan撤回命题，真机强调历史如何决定目的地与顺序，结论正面回扣证据支持的核心观点。没有删除原实验、公式、图表或不利数据，也没有用改写代替关键直接实验。
+
+完整工程和干净ZIP独立编译44页，含结论的主文10页、全44页文字一致；9张图/旧附录及主文equation/table块字节保真，匿名、引用检查通过，0 undefined/overfull，45旧字体warning。改变的主文与新附录已渲染直接验看。PDF SHA d31a14439ef95c7509085e43200cfa3127e84f5ae7749bebfcfbaffd4aa14cf5；sourceZIP299c967c27267c74ca233a2e1fbd150156220723aedb863b2add7b2e17934511。尚未发布或正式上传；v17/v18原样保留，v18旧PDF/ZIP不能当v19新源码验收件。
