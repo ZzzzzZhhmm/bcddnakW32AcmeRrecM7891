@@ -1,5 +1,9 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**13:53UTC优先锚点：** Stage B全2,214原件及四worker/两配对已本机独立验真，均0/0；新确认clean Full命令637有一次TOPP拒绝，其余三role0，不沿用未核算前全部0的估计。q8同状态null两次加载失败均真实exit1、0推理/0物理，17项恢复原件dc4e880d…已双端保全，原13:09窗口过期，禁止重置。第二辅助修复仅规范化已加载模型的三个已绑定artifact metadata，保留全部typed/hash校验，5项CCI CPU检查通过；GPU加载资格必须另记工程窗口。新v18数据待填目标稿已写三位/15块/20项/37槽位，整段方向性结论PENDING、完整LaTeX红色标记，待PDF最终验收；v17原样保留。作者新要求自己补采真机，执行包docs/real/rebuttal_20261111优先SOR40次/R2P追加40，旧录像仍不重复索取。
+
+**ACP调度迁移未决：** 原bt00闲时UID96aa4f…13:43:51已确认停止且无AFS job_logs/campaign，原first10:14:31/deadline22:14:31不变。因标准池显示容量重新核查，在同一slot准备std2；两次UI创建触发aec2 HTTP429，13:47实际列表无std2，尚无新UID，不能称已创建/推理。先只读回查唯一名称warm-mf3k-bt00-20261111-std2，未知操作不重提；若始终未创建，可在同一原slot/原截止内安排有界CCI片段，其余五闲时不复制。详细意图/终态/原identity备份在ITER19_BT00_*和shards/bt-00/standard2_create_intent.json。当前旧identity字面仍指已停止闲时，不能只读该旧字段判活跃。
+
 **12:49UTC终态与修复锚点：** B四角色已12:37:19真实exit0、两完整配对0/0；全部2,214原件59.143MB/TAR33.026MB40ea8cb2…已完整封存核验，勿重跑B。新同状态null曾12:28:30真实exit1，根因冻结controller cwd使DiffSynth相对text资产模式为空，0已完成生成/0物理；14原件全部封存6e4e0c84…，原12:23:30→13:09窗口不改。独立generation修复资产工作目录并验证绝对绑定，之后只允许原窗口内、有已知失败/全归档收据的新冻结恢复；当前是否已续跑须读current_iteration/原study子目录，勿重新创建原root。原v17/负结果保留。作者现在明确自己补采真机：需提供R2P/SOR详细执行包；旧录像仍不重复索取，新增采集由作者推进。
 
 **12:15UTC完整角色补充：** Stage B clean candidate-null已12:03:08正常exit0、700/175/1400物理记录、0 TOPP、success0，542项10.326MB原件/TAR3.652MB SHA86e57ad3…，本机12:15:30全成员/实际动作/物理链及175次显式null验真。B共三个角色完整、holdout配对0/0；唯一driver已进入最后clean Full（12:13实际worker2469618加载），原13:09:30窗口不变。不要把此前“clean null活动”当当前状态，勿重复执行任何完整角色；新null同状态研究是否启动仍以新冻结源/准入/实际operator为准。

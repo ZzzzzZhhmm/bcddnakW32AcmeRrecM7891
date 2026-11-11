@@ -150,6 +150,7 @@ def main():
         torch.set_num_threads(4)
         torch.cuda.set_per_process_memory_fraction(.45)
         budget(before_load=True)
+        from experiments.rmbench.warm_policy import deploy_policy as deployment
         from experiments.rmbench.warm_policy.deploy_policy import RMBenchWarmPolicy, _normalize_state, DEFAULT_PROMPT
         from fastwam.memory.manifest import sha256_array
         from fastwam.models.wan22.fastwam import FastWAM
@@ -161,7 +162,9 @@ def main():
         os.chdir(asset_root)
         state.update(status='loading_one_typed_policy_and_cold_readonly_replica')
         save()
-        policy = RMBenchWarmPolicy(runtime)
+        with helper.bound_asset_metadata(deployment, runtime,
+                lambda witness: H.M.atomic_json(out / 'loaded_asset_metadata.json', witness)):
+            policy = RMBenchWarmPolicy(runtime)
         typed = H.M.typed_policy_receipt(policy, plan, 'full')
         H.M.atomic_json(out / 'typed_policy_receipt.json', typed)
         model = policy.model

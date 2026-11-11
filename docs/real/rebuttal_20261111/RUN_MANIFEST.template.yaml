@@ -1,0 +1,54 @@
+schema: warm.real.rebuttal.collection.v1
+status: planned_not_collected
+protocol_version: 20261111_author_packet_v1
+cohort_id: TO_FILL_NEW_COHORT_ID
+evaluation_tasks: [R2P, SOR]
+scenarios_per_task: 20
+methods: [full, no_recollection]
+planned_autonomous_trials: 80
+scene_appearances: [original, black]
+schedule_sha256: TO_FILL_AFTER_FREEZE
+trial_start_definition: first_autonomous_policy_command
+bank_update_during_evaluation: false
+model_update_during_evaluation: false
+paper_reported_reference:
+  platform: AgileX_PiPER_single_arm_parallel_gripper
+  cameras: [head_RGB, wrist_RGB]
+  proprioception: TCP_xyz_rotation_vector_gripper_width
+  action: absolute_six_joint_targets_radians_and_gripper_width_meters
+  action_horizon: 32
+  bank_events: 1356
+  retrieval_K: 32
+  train_dev_demonstrations: [20, 5]
+  demonstration_nominal_Hz: 20
+live_verification:
+  platform_and_controller: UNVERIFIED_FILL_ON_SITE
+  calibration_identity: UNVERIFIED_FILL_ON_SITE
+  camera_resolution_and_rate: UNVERIFIED_FILL_ON_SITE
+  state_and_action_units: UNVERIFIED_FILL_ON_SITE
+  normalization_sha256: UNVERIFIED_FILL_ON_SITE
+  checkpoint_path: UNVERIFIED_FILL_ON_SITE
+  checkpoint_sha256: UNVERIFIED_FILL_ON_SITE
+  code_commit_and_config_sha256: UNVERIFIED_FILL_ON_SITE
+  bank_manifest_sha256: UNVERIFIED_FILL_ON_SITE
+  bank_train_episode_ids: UNVERIFIED_FILL_ON_SITE
+  H_prefix_NFE_K: UNVERIFIED_FILL_ON_SITE
+  actual_control_frequency: UNVERIFIED_FILL_ON_SITE
+  episode_seconds_and_step_limit: UNVERIFIED_FILL_ON_SITE
+  full_recollection_reset_between_trials: UNVERIFIED_FILL_ON_SITE
+  no_recollection_all_history_channels_checked: UNVERIFIED_FILL_ON_SITE
+  no_recollection_evidence_log: UNVERIFIED_FILL_ON_SITE
+  unchanged_low_level_limits_and_stop_policy: UNVERIFIED_FILL_ON_SITE
+evidence:
+  trial_results_csv: trial_results_template.csv
+  critical_decisions_csv: critical_decisions_template.csv
+  media_and_log_root: TO_FILL_LOCAL_AUTHOR_STORAGE
+  sha256_manifest: TO_FILL_AFTER_COLLECTION
+  raw_media_retained: UNVERIFIED_FILL_AFTER_COLLECTION
+  institutional_identity_removed_from_review_exports: UNVERIFIED_FILL_AFTER_COLLECTION
+optional_new_teleoperation:
+  planned_total: 20
+  planned_per_task_train_dev: [8, 2]
+  kept_separate_from_autonomous_SR: true
+  no_evaluation_episodes_in_bank: true
+  original_checkpoint_normalization_retained: true

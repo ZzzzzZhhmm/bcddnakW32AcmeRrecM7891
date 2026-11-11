@@ -4,6 +4,8 @@ This path reads sealed factual tensors and calls the production sampler. It
 does not construct, consume, or pretend to own a historical BoundOnlineStep.
 """
 from dataclasses import MISSING, fields
+from collections.abc import Mapping
+from contextlib import contextmanager
 from pathlib import Path
 import numpy as np
 
@@ -23,6 +25,64 @@ def asset_working_directory(runtime):
         if not value.is_absolute() or not value.resolve(strict=True).is_relative_to(root):
             raise ValueError('bound model asset is outside the original loader root: ' + key)
     return root
+
+
+def bind_loaded_asset_metadata(model, runtime):
+    """Canonicalize metadata only after proving it names the bound loader assets.
+
+    Frozen deployment code resolves relative metadata against its source root,
+    whereas DiffSynth loads those same relative paths from the working directory.
+    Keep that scientific source immutable and keep every subsequent file-hash
+    check enabled. This function neither opens weights nor changes model tensors.
+    """
+    root = asset_working_directory(runtime)
+    original = getattr(model, 'model_paths', None)
+    if not isinstance(original, Mapping):
+        raise ValueError('loaded model artifact metadata is required')
+    updated = dict(original)
+    records = {}
+    for field, bound in [('vae', 'warm_vae_checkpoint_path'),
+                         ('text_encoder', 'warm_text_encoder_path'),
+                         ('tokenizer', 'warm_tokenizer_path')]:
+        value = original.get(field)
+        if not isinstance(value, (str, Path)) or not str(value):
+            raise ValueError('missing loaded asset metadata: ' + field)
+        path = Path(value)
+        resolved = (path if path.is_absolute() else root / path).resolve(strict=True)
+        expected = Path(runtime[bound]).resolve(strict=True)
+        if resolved != expected:
+            raise ValueError('loaded asset metadata contradicts bound runtime: ' + field)
+        updated[field] = str(resolved)
+        records[field] = dict(original_metadata=str(value), resolved_asset=str(resolved),
+                              unchanged_bound_asset=True)
+    # Commit the metadata update only when every comparison has passed.
+    model.model_paths = updated
+    return records
+
+
+@contextmanager
+def bound_asset_metadata(deployment_module, runtime, record):
+    """Scope metadata correction to construction; restore the original factory."""
+    original = deployment_module.instantiate
+    count = 0
+
+    def factory(*args, **kwargs):
+        nonlocal count
+        model = original(*args, **kwargs)
+        if hasattr(model, 'model_paths'):
+            witness = bind_loaded_asset_metadata(model, runtime)
+            count += 1
+            record(dict(kind='loaded_asset_metadata_canonicalized', assets=witness,
+                        model_tensors_and_contract_checks_unchanged=True))
+        return model
+
+    deployment_module.instantiate = factory
+    try:
+        yield
+        if count != 1:
+            raise ValueError('exactly one loaded model requires asset metadata binding')
+    finally:
+        deployment_module.instantiate = original
 
 
 def restore_factual_context(payload, context_type, *, device):

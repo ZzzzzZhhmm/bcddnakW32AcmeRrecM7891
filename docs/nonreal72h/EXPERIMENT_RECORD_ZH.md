@@ -2245,3 +2245,17 @@ B于12:37:19.651368UTC真实driver exit0，四角色完整、两配对均0/0；�
 同状态null原唯一driver12:28:30真实exit1，generation exit1、非预算终止；DiffSynth相对模型资产模式从冻结controller目录解析，text encoder文件集为空，未完成任何Full/null生成或物理分支。14原件30,312B及完整日志/配置/原12:23:30→13:09窗口保全，TAR7,521B SHA6e4e0c84e87cf8dd4f920db499b609b4246e5a94a2e99db2f82c4a09c511d08f，manifest458bd6c2…；两任务退出、原件及进程不存在收据在ITER19_STAGEB_COMPLETE_AND_NULL_LOAD_FAILURE_V1，旧失败不覆盖。
 
 修复只在独立generation程序恢复原typed资产根作为工作目录，确认原base/VAE/text/tokenizer绝对绑定均位于该根，再以冻结C模型源码构造策略；记录asset_resolution见证，模型文件/配置/阈值、q8上下文、源及原H32精确复现门均不变。新增拒绝外部资产根的回归检查。恢复必须使用新冻结实现、显式失败归档证明及原first/deadline，不重开窗口、不换query、不把加载错误记为策略失败。
+
+### 23.174 第二次资产元数据错误及全量Stage B独立核对
+
+54ba301冻结恢复源7e90b4e4…在原12:23:30→13:09窗口内12:54:27恢复，13:06:42真实exit1、generation13:06:41 exit1且非预算终止；0完成推理/0物理分支。DiffSynth从原cwd加载资产后，冻结deployment的model_paths.vae又相对冻结源码PROJECT_ROOT解析，严格元数据检查拒绝。17项28,774B原件/TAR6,721B SHAdc4e880d6fd8d2c027a53c21da4e7bc7efa049f92941c0059f2ccd8ebb8283d2、manifesteb98cff0…在ITER19_NULL_RECOVERY1_TERMINAL_ARCHIVE_V1全部封存并本机逐项核验；原窗口已过，不再同窗口恢复，也不将工程错误记为策略失败。
+
+13:52:58本机重读Stage B总2,214成员、四个worker完整archive、175生成/700命令尝试/1,400物理记录每角色、初态/首当前输入/共同Gaussian/K32，以及两份加载失败archive全部通过。**新发现与纠正：clean Full在零基命令637有一次left_mplib_planner Fail to parameterize path，其他三角色0次；此前未完成独立核算前不能沿用“全部0 TOPP”的估计。** 原始数据、失败和success0均不改；角色到达700尝试不等于700次成功物理动作。clean Full archive9ca95894aa7a880927a32af8df828617e2c93ab64eabc29ba714a9fe7c780c1c；两个完整配对均0/0。独立收据tmp/rebuttal/execution/20261111_iter19/STAGEB_AND_NULL_LOCAL_AUDIT_V1.json。它们是有明确scope的DEV诊断，不支持总体收益/自然缺技能/NI。
+
+独立辅助入口的第二修复只对已加载模型的三个artifact元数据字段做绝对路径规范化：逐项要求实际cwd解析结果与原绑定VAE/text/tokenizer绝对路径完全一致，再原子改metadata；不改tensor、权重、模型配置或冻结源码，不跳过后续hash/typed检查，构造结束或异常均恢复原factory。CCI隔离开发包asset_metadata_fix_iter19_dev_v1的5项CPU拒绝/恢复检查通过；本机Python无pytest已如实记录，不能称Windows测试通过。后续GPU仅作独立有界加载资格，不能延长已过期科学study。
+
+### 23.175 提前论证稿与作者真机采集包（尚非实验完成）
+
+按作者明确要求预写理想结果下的论证，responses/20261111_v18_data_pending含三位回复、15块/20项、P1–P5共37个未填槽位和依赖门；整段定性结论也标PENDING，不是仅数字留空。原v17、旧负/unknown和所有原表/九图保留。revision/WARM_ICLR2027_v18_data_pending从完整原LaTeX工程构建；新q8与Stage B独立列示，所有待验证段红色、全页内部稿标识。初r1将结论挤至11页已发现并保留，不作为主文10页验收；后续r2通过压缩重复论述使结论回到10页，须完成最终PDF/ZIP/视觉验收并记录实际hash。
+
+作者现自行推进新真机采集，docs/real/rebuttal_20261111提供固定40个reset、80次Full/历史屏蔽计划、120个关键决策行、逐次/媒体/独立遥操作split模板及移盘可选任务卡。最小SOR40次，推荐加R2P共80；新增独立示范20条、固定checkpoint扩库20次为第二批；移盘两档各20次可第三批。当前新采集数均0，mask现场实现、设备标定与当前checkpoint仍待实测。旧原视频不重复索取；新材料不覆盖原20次SR，训练示范、事件、视频clip与自主trial分母严格分开。

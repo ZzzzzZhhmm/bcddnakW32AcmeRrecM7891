@@ -44,6 +44,40 @@ def test_asset_patterns_use_original_root_and_reject_foreign_artifacts(tmp_path)
         rules.asset_working_directory(dict(runtime, warm_text_encoder_path=str(other)))
 
 
+def test_loaded_asset_metadata_matches_bound_assets_and_factory_is_restored(tmp_path):
+    from types import SimpleNamespace
+    root = tmp_path / 'WARM'
+    paths = dict(warm_base_checkpoint_path=root / 'checkpoints/fastwam_release/base.pt',
+                 warm_vae_checkpoint_path=root / 'checkpoints/vae.pt',
+                 warm_text_encoder_path=root / 'checkpoints/text.pt',
+                 warm_tokenizer_path=root / 'checkpoints/tokenizer')
+    for path in paths.values():
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.touch()
+    runtime = {key: str(path) for key, path in paths.items()}
+    original = dict(vae='checkpoints/vae.pt', text_encoder='checkpoints/text.pt',
+                    tokenizer='checkpoints/tokenizer', video_dit='untouched')
+    model = SimpleNamespace(model_paths=dict(original))
+    factory = lambda *_args, **_kwargs: model
+    deployment = SimpleNamespace(instantiate=factory)
+    records = []
+    with rules.bound_asset_metadata(deployment, runtime, records.append):
+        assert deployment.instantiate() is model
+        assert model.model_paths['vae'] == str(paths['warm_vae_checkpoint_path'].resolve())
+        assert model.model_paths['video_dit'] == 'untouched'
+    assert deployment.instantiate is factory and len(records) == 1
+    model.model_paths = dict(original, vae='checkpoints/text.pt')
+    with pytest.raises(ValueError, match='contradicts'):
+        with rules.bound_asset_metadata(deployment, runtime, records.append):
+            deployment.instantiate()
+    assert deployment.instantiate is factory
+    assert model.model_paths['text_encoder'] == original['text_encoder']
+    with pytest.raises(ValueError, match='exactly one'):
+        with rules.bound_asset_metadata(deployment, runtime, records.append):
+            pass
+    assert deployment.instantiate is factory
+
+
 def test_restore_rejects_future_unknown_or_missing_witness_and_clones_tensors():
     payload = dict(query_context=torch.ones(1, 3), candidate_valid_mask=torch.ones(1, 32, dtype=torch.bool),
                    actual_base_gaussian=torch.ones(1), actual_source=torch.ones(1), actual_conditioning_tokens=torch.ones(1))
