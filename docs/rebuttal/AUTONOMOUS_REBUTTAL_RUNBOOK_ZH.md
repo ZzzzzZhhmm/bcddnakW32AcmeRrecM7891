@@ -1,5 +1,13 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**20:41UTC晚到q96进度：** 第一Full anchor-a已实际完成32步/complete_horizon/parent_recreated/error null，正在第二Full anchor-aa。14原件TAR7b30bbae…/manifest5fe48907…已双端保全、本机全成员验真；AABA和next-interaction标签尚未完成，不把native_success false当该交互标签，也不计算repair或全池MSE。最新operator/实际runner持续读原q96 root，不能重跑首anchor或另建同job。
+
+**Nov11 20:35UTC优先锚点：标准H100已实际运行新q96，勿重复创建。** 原BT specialist事前query96/rank20/H32/K32首次20:16准入，plan8e3ddd84…/原controllerf7cf0583…/checkpoint27c137d6…，固定截止Nov12 07:16:01UTC（含排队）。标准job `warm-bt-q96-pool-20261111-std` UID536a352f050b4142890aa99fb88aa23b，20:24:19实际runner启动，H10080GB runtime2f3e5d29…与原编码器合同完全一致；20:29仍anchor-a父状态重建/0端点，尚无效果或repair结果。独立原19GPUh预算组，非新formal分片，不改旧时钟。读`ORIGINAL_BT_Q96_ACP_V1_CLOUD_IDENTITY.json`及`original_BT_cohort_case0_q96_fresh_pool_v1`实际operator/job_logs；不要误读旧BRT q96路径。
+
+**原固定对照继续：** 20:13:52已独立验真2955新原件TAR189ef7fb…/manifest9ca75683…，累计21完整role、9对均0/0；RB case22 Pooled有1TOPP，其余新角色0，unknown保留。CCI已20:14:56进入`cci_segment_iter24_v1`，monitor2520444，case1 Full，原2214UTC截止/3600s共同worker不变；旧segment23已正常终态且不得重跑。原RB00/RB20 ACP活动，三恢复allocation20:11仍启动中，不能复制未知任务。
+
+**材料：** `responses/20261112_v20_execution_addendum3`维护最新20项映射；v20三回复、44页PDF/源码ZIP与72成员包不变，37槽位/P1–P5仍整体待证。q96准备与实际GPU原件14项manifestef44a77d…已双端保全、本机独立验真，计为工程/实际运行，不计机制收益。详见台账23.187–188。
+
 **Nov11 19:20UTC当前锚点：** 首BT case0 Full/Pooled均完整1000/250生成/2000物理、0/0；新1863原件TAR2aabe650…/manifest28ea3866…已双端保全及本机独立验真，累计16完整role、7对均0/0。20项执行增量位于`responses/20261112_v20_execution_addendum2`，原v20文本/44页PDF/源码/72成员包不改，37槽位仍待证。
 
 **CCI已经进入segment23，不能重启旧段：** 19:09:58原bt00 slot接续case1 Pooled，monitor2514155/campaign2514156/worker2514161；原first10:14:31/2214UTC截止、f774双角色3600s及单次最多1role/6000s不变。segment22与首BT配对已归档，不重跑。19:06原RB00/RB20 ACP活动，三恢复UID仍启动中；不复制未知/活动任务。真实重启边界未核实，不能编造确定余量。

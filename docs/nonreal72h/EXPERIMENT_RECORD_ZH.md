@@ -2357,3 +2357,23 @@ Nov11 18:50:37UTC BT case0 Pooled正常exit0、非bounded，1000命令/250完整
 `qpos_trace`中的14维观察qpos与独立物理状态严格区分；另保留原`physical_commands`的38维articulation逐步快照，在未建立索引映射时不计算所谓12臂关节物理误差。初次本机派生诊断把观察qpos误标为physical，已在任何论文使用前更正为`diagnostic_v2.json`，旧派生文件明确标superseded并保留；原采集数据与论文数值未改。未生成图，未据此推断失败根因或训练收敛。
 
 原stats与两个派生版本位于本机`execution/20261112_iter23/BT_ACTION_DIAGNOSTIC_V1`及AFS`ITER23_BT_ACTION_DIAGNOSTIC_V1`；三成员manifest29a820729b13ebae737c5945b74c939d58f001c089192b6c15551f16848c6ec4、当前诊断SHAf711fd3449937c28bccfabe1e363ea353c2738bd39b50006a30f3b508fd56d91。19:20:45全成员AFS验证通过；这是工程/解释资格，不能填入P1–P5优势结论。
+
+### 23.187 五个完整固定角色增量与CCI下一角色
+
+Nov11 20:13:40UTC封存RB case3 Full、case4 Full、case22 Pooled、case23 Pooled各700/175/1400，以及BT case1 Pooled1000/250/2000；均真实exit0、success0。2955原件74,139,896B，TAR189ef7fb9f6f1ae02551948ab70784f26013ae4ad95035283aa34a30a089d20a、manifest9ca75683180edaf1a89eba7d50070d4e9182feef93806fa61f9fbf53a568e6cb，位于`ITER24_TERMINALS_V1`。20:13:52本机逐成员、全部动作/物理链与H32独立核验；case22 Pooled保留1次TOPP拒绝，其余新增角色0。累计21完整role、9完整对（8RB及1BT），均0/0，不填原100对最终SR/CI或优势/非劣效。
+
+CCI旧segment23已19:50:33真实正常终态，旧三PID消失、GPU空且全部原件/新Pooled完整轨迹已归档后，20:14:56同一bt00 slot接续case1 Full，`cci_segment_iter24_v1`，monitor2520444。原first10:14:31、2214UTC截止、两个角色共同3600s及单次1role/6000s不改；未重跑case0或已完成case1 Pooled。下一步核查实际新PID/生成和exit，不能沿用旧segment23活动字段。
+
+### 23.188 原BT q96首次准入、标准H100成功及实际运行
+
+依照Nov10预先声明的独立19GPUh/单H100原BT机制研究，q96此前未准入，q48已知终态且全量归档后，Nov11 20:16:01首次冻结q96的39600秒窗口，绝对截止Nov12 07:16:01.631389UTC，排队计入且不重置。该研究不是第七个matched formal分片；不改变原100对的模型/样本/截止。旧BRT q96及原BT q8/q48的所有不利/unknown与原时间窗保留。
+
+新plan SHA8e3ddd84c84db10085f78b63fe887a77c7daec00efa3925f30e538e022f06468、job原文件c0172c00515db7eb324b7b6261192c7deb587778200cc8c76ae31c2a888a1bc2、shell2accf040ebcc9b101d141d91c11cd9d9204d1c7e96188b5cb01dcaaeaa6d6efd；原controller f7cf0583e82ea95792ae1ac45f15d04e650d309956bdfc68debe2ab5e1447a7a、原checkpoint12000 SHA27c137d689007b38f6204d3dd12bb038550b1e58403506d7a9894bd6fcd43a9f。query96/rank20/K32/H32、物理seed340800000/root3407及原均匀四DINO delta token指标不变。需先完整AABA，再全部原候选及末Full；同一回合三个query不是独立任务样本，且此旧代际仍无同状态强制null对照。
+
+20:19第一次UI点击仍在表单显示cluster“请选择”，随后只读确认唯一标准job不存在；补齐cluster及被切换清空的单卡规格后才再次提交，旧意图/超时与只读证据保留，未重复未知创建。20:23:14标准资源实际创建成功，唯一UID536a352f050b4142890aa99fb88aa23b、名称warm-bt-q96-pool-20261111-std；本次无需闲时fallback。镜像ccr-zhicheng-02/lwz_wam:lwz-workspace-20261029145800，AFS afs-p3-01e /→/mnt/afs RW，1GPU/22CPU/230GiB/1worker/0重启。
+
+20:24:15实际节点测得NVIDIA H10080GB HBM3，完整encoder runtime SHA2f3e5d2979f2fbb3063da65d25a49d15fb4c3a19b52fcf329879fa87fbcb9e01与原合同完全一致、0字段差异，未修改runtime对象。实际科学runner20:24:19启动，至20:29:54正在anchor-a重建固定父状态，0完整branch/0候选端点，不能报告预测或修复收益。唯一身份在`ORIGINAL_BT_Q96_ACP_V1_CLOUD_IDENTITY.json`，root为`original_BT_cohort_case0_q96_fresh_pool_v1`，应区别旧BRT q96路径，勿重复创建。
+
+14项初始准备/实际GPU/启动原件封存`ITER24_BT_Q96_READINESS_V1`，manifestef44a77d9eb0115fda7b376affe018c600bfe515511a53c5b163d6ed6e8402ca，20:35:42本机逐成员独立验真。内部`responses/20261112_v20_execution_addendum3`更新21role/9对与q96实际状态并维护20项映射；原v20三回复/44页PDF/源码ZIP不改，37槽位和P1–P5整体方向仍待证，未发布。
+
+20:41实际q96已完成第一Full anchor-a，正在anchor-aa父状态重建。首anchor的14项6,726,139B原件及sealed query另存`ITER24_BT_Q96_FIRST_ANCHOR_V1`，TAR7b30bbae036d6f9c8b5b7b5dbd2071876c2320d52b9b4c8de072035bf859bb71、manifest5fe48907b5926ddef0f4ddb9eb3f2b5da2289969eb1aad122db59f771fbec096；20:43:42本机全部成员独立验真，result实际executed_steps32、complete_horizon、parent_recreated true、error null。endpoint_native_success false只记录终局标记，不据此推断独立下一交互标签。重复Full/原提案和完整AABA尚未完成，仍不计效能或repair证据。CCI20:41仍原case1 Full活动、32380MiB/24%，原所有截止不改。
