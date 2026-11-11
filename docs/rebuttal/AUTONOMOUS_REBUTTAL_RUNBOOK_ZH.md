@@ -1,5 +1,7 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**Nov11 17:10UTC工程修订准备：** BT固定case0/10/20均在原2400s外层上限前未完成1000步（实际936/946/988），真实exit-15且success unknown；CCI旧segment已终态/GPU空，不按旧running重启。11个已终态attempt共6046原件147.137MB，TAR3965424b…/manifest6f087c2e…已AFS全成员封存，receipt_exit_bound_v2 9b5ca0cc…绑定实际exit/result，原raw不修改。新增BT共同3600s工程修订入口及3项本机/3项CCI拒绝检查通过；必须先读hash绑定amendment及新launch记录后判当前是否准入，不把准备当GPU结果。原所有first/deadline、6slot/120GPUh与科学计划不改。RB case11 pooled另-15非bounded/0动作，需核查云抢占，不混作BT时限。rb00/rb20活动不得重复。
+
 **北京时间11月12日00:20优先锚点：** v19作者对话稿已完成并验收，responses/20261112_v19_author_dialogue，20项/17块/37未填槽位；逐审稿人真实认可开场、作者视角主体、已完成修订总结，遵循AUTHOR_DIALOGUE_WRITING_STANDARD_ZH.md。完整原LaTeX与干净ZIP两次编译44页/含结论主文10页，PDFd31a1443…/ZIP299c967c…；原9图/旧附录/公式/表格保真，文字与视觉验收通过。数据依赖整段仍PENDING，未发布/closure仍false。
 
 **实际运行已变化：** Nov11 16:10UTC rb00/rb10/rb20/bt20四ACP运行中；bt10已知40min终止、946/1000命令、success unknown（result字面loading是未刷新，不能误认0动作）；首rb00 Full/Pooled正式配对完整700各0/0，rb10 Full单角色0。2368原件TAR0373a0c0…/manifest04c0ed95…已双端核验，ITER20_FORMAL_TERMINALS_AND_LIVE_V1。正式100对整体SR/CI仍不可报告。后续优先诊断BT2400s worker不足，但任何工程预算修订须另冻结、保留两角色公平性及全部原时钟/unknown，不能原地改活动plan。
