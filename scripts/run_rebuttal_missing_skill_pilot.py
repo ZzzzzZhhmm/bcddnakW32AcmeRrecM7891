@@ -72,10 +72,12 @@ def main():
     ap.add_argument('--case-id',type=int);ap.add_argument('--output',type=Path,required=True);ap.add_argument('--roster-sha256')
     cli=ap.parse_args()
     if N.sha(cli.plan)!=cli.expected_plan_sha256:raise ValueError('Pilot plan changed')
-    plan=N.read(cli.plan);verify(plan)
+    plan=N.read(cli.plan);N.validate(plan);N.require_window(plan)
     if not cli.prepare_roster and (cli.case_id not in plan['admitted_case_ids'] or cli.role is None or cli.condition is None):raise ValueError('Unregistered pilot role')
     H=load('frozen_native_role',Path(plan['native_helper_code'])/'scripts/run_rebuttal_matched_native.py')
     lease=H.M.activate_native_isolation(plan);core,identity=H.install_core(plan)
+    # Source-identity helpers import fastwam; install the frozen core first.
+    verify(plan)
     out=cli.output.resolve();assert not out.is_relative_to(ROOT) and not out.is_relative_to(core);out.mkdir(parents=True,exist_ok=False)
     os.environ.update(HF_HUB_OFFLINE='1',TRANSFORMERS_OFFLINE='1',HF_DATASETS_OFFLINE='1',DIFFSYNTH_SKIP_DOWNLOAD='true',TOKENIZERS_PARALLELISM='false')
     if cli.prepare_roster:

@@ -2101,3 +2101,13 @@ PDF94c88d81d2e01777f34d8d9da7d0f78405b190e6b3c1eaecef65762a2fa45e87；sourceZIP4
 入口复用冻结H native物理执行、明确记录研究干预，收集完整命令/实际关节、初始输入/Gaussian、门值和q0/q8预执行候选。自然Full与显式撤回各维持自身因果历史；族移除不是实际技能缺失、门正也不自动计误激活，独立coverage仍null。固定DEV种子专家拒绝/运行异常必须保留，未完成不补0；开发少量同成败不构成NI。具体协议见NATIVE_FAMILY_HOLDOUT_DEV_PILOT_20261111_ZH.md。
 
 05:28 actual CCI无GPU/相关程序、formal根/q96 plan仍不存在，AFS4,519,288,832B；05:29实际IAM仍只有登录按钮，原请求待答、不重复索取。尚未冻结新pilot快照/准入资源窗口或启动policy；下一步完成英文提交同步、唯一私有runtime保留标记与正式准备器相应防并发门，再冻结并启动第一开发段。不把“代码可运行”当已执行结果，v16 PDF/回复/证据包不改。
+
+### 23.157 开发首段冷导入失败保全及修复，原窗口继续
+
+06:29:13.790798UTC首次准入Stage A，固定seed3407，截止09:29:13.790798UTC；原plan SHA2aa0d716c34471a786bc56c17bbe5256911557ed7488e0e93d386b8f4a8fef77、555文件pilot快照bdb6dd5f9ce95bab3e72dced358e6597b5e151e4b2dfab464a04abbe5571d39a，实际06:32:38启动。06:32:44 supervisor/worker均已知exit1，原因为校验助手过早导入fastwam，触发冻结core的Foreign model package检查；0 reset/0 policy trial，不计作任务失败或unknown回合。14个已存在原件完整归档5e63c4c24a51c5c45ff98a8ead1b8046ff4637d111cfece330e090cb755fe666，位置AFS rebuttal_20261109_acp/ITER16_NATIVE_DEV_FIRST_FAILURE_V1；源快照、计划、首次准入及原退出收据全部保持。
+
+只修正新pilot入口的冷导入顺序：先激活私有cache/lease并安装冻结common core，再导入source-identity助手核验。实际新解释器走真实worker main、真实H/C及全部输入绑定，只以观察器替代reset callable；确认fastwam来自C87199cc6…且Torch/模型/模拟器均未加载。另19项CPU协议检查06:44:10再次通过，日志799a95b7e0bdf4aa8a74d6956a27d993a8eb122b9ccddbf32792f3e2a9ad9143。此为工程验证，无新策略结论；修复后续跑须新增冻结实现/独立attempt根与修订收据，保留原09:29截止和固定样本，不覆盖失败根。
+
+rb-40的外部保留标记EXTERNAL_NATIVE_PILOT_RB40_V1.json仍未释放。正式准备器v2 SHA41a72e12540ae04afdb4b019e266387744dc4567ae201ed7b8483420f51d6552增加该worker已知终态/完整归档/显式释放门，原v1 e42963e9…及formal科学设计/H/C/时钟不变。此后正式准入使用v2，不能绕过保留标记使用旧v1。
+
+06:43:42只读候选副本库存记录AFS仅3,307,687,936B；新建微小文件证明hardlink能力，仅是工程探针，未改动任何既有文件。所有writing_candidates总量约1.97GB，多数大PDF/ZIP版本不同，未擅自删除或宣称可回收。正式freeze原4GiB余量门仍保持，当前不能用旧5.12GB读数准入；下一步以真实原生记录测容量并核查可逆派生副本整理，保护原件/checkpoint/CAS。v16回复/PDF及20项scientific closure保持不变。
