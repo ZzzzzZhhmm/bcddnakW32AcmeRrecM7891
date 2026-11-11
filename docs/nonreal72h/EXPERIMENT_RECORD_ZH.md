@@ -2299,3 +2299,11 @@ f774aba84e9f653946e750a17d3936632d8fab0c已英文commit/push并远端exact核验
 新bt10 UID6bea7fe19aed473692928a535468d291（17:19:51创建），bt20 UID76da0b3af21c46da8812b35aeb425ceb（17:24:12创建）；分别warm-mf3k-bt10/bt20-20261112-resume-idle。新命令只调用原slot下acp_resume_iter21_v1/launch.sh，逐role检查原截止余量后显式resume，不自动重试新的未知退出。原first10:16:44/截止22:16:44均不改；只替换失败allocation，不增第七formal slot。17:24云端仍“启动中”，分配GPU未验证，不能把它们记为活动GPU。新identity及旧备份在原shard/新resume目录；ITER21_NEW_CLOUD_IDENTITIES_V1保留两唯一身份。
 
 17:20:25本机全6046成员/7完整700-role动作与物理链、3组初态/首输入/高斯/K32以及4个unknown独立核验通过；RB case0/10/20三对均0/0，case1 Pooled另单角色0。3/100固定配对不填总体SR/CI，不支持优势/非劣效。内部增量responses/20261112_v19_execution_addendum1更新20项映射并区分Pooled和candidate-null；原v19三回复/44页PDF/源码ZIP不变、P1–P5仍待证。后续应同时检查shared3000能力/原specialist范围，不能静默用新权重或样本替换已开始cohort。
+
+### 23.180 首BT完整1000步验收与下一个原角色接续
+
+Nov11 17:57:26 CCI case0 Full第二attempt正常exit0、非有界终止，1000命令/250完整生成/2000物理记录，success0；这证明共同3600s工程上限允许完成原1000步，不是模型收益。旧936步unknown与原40min退出保留。771项18,241,828B完整attempt封存ITER22_BT_FULL1000_INTAKE_V1，TARcfa4ad61674997a0e464f5414fe287abc30e4cedee8db62ddb5cdbccc4e37c48、manifest6f70dd4a09b4ca75abba65d1010fee66636b299c362ae1fc877e7216c6d44fa5；18:10:02 Windows逐成员、全部动作和物理链、250生成独立核验，TOPP拒绝0。只有单角色，不填配对收益或总体SR。
+
+已确认旧monitor/campaign/worker终态和完整归档、GPU空、native lease空及原截止余量后，18:08:22同一bt00 slot进入cci_segment_iter22_v1，monitor2507713，下一原固定case0 Pooled，最多1新role/6000s；原first10:14:31/deadline22:14:31、BT双角色3600s及原f774冻结入口不变。后续按真实PID/generation/exit核查，不重跑完整Full。
+
+18:10云端新BT10/BT20两UID仍启动中，原RB00/RB20运行中，RB10失败；不把新BT排队写成GPU已活跃。准备为RB10增加独立的terminal-status-amendment类型：仅在原exit/result/全归档绑定下恢复unknown只读视图，保留RB2400s预算。四项本机与四项CCI检查通过，明确拒绝RB取得BT加时额度；未准入前不称已恢复。

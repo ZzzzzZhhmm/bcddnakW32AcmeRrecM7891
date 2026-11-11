@@ -27,16 +27,20 @@ def sha(path):
 
 def qualify(amendment, plan, plan_sha, now=None):
     now = now or datetime.datetime.now(datetime.timezone.utc)
-    if amendment.get('schema') != 'warm.rebuttal.execution-time-amendment.v1':
+    kind = amendment.get('schema')
+    if kind not in ('warm.rebuttal.execution-time-amendment.v1',
+                    'warm.rebuttal.terminal-status-amendment.v1'):
         raise ValueError('explicit execution amendment required')
+    task = 'battery_try' if kind == 'warm.rebuttal.execution-time-amendment.v1' else 'rearrange_blocks'
+    effective_limit = 3600 if task == 'battery_try' else 2400
     if (plan_sha != amendment['original_plan_sha256']
             or plan['first_admitted_utc'] != amendment['first_admitted_utc']
             or plan['absolute_deadline_utc'] != amendment['absolute_deadline_utc']
             or plan['controller_source_sha256'] != amendment['frozen_controller_sha256']):
         raise ValueError('original plan, controller or resource window changed')
-    if (plan['phase'] != 'formal' or plan['task'] != 'battery_try'
+    if (plan['phase'] != 'formal' or plan['task'] != task
             or plan['worker_max_seconds'] != 2400
-            or amendment['effective_worker_max_seconds'] != 3600
+            or amendment['effective_worker_max_seconds'] != effective_limit
             or amendment['applies_to_roles'] != ['full', 'pooled_memory_prior']
             or amendment['scientific_fields_changed'] != []
             or amendment['maximum_parallel_formal_slots'] != 6
@@ -45,9 +49,10 @@ def qualify(amendment, plan, plan_sha, now=None):
     end = datetime.datetime.fromisoformat(plan['absolute_deadline_utc'])
     if now.tzinfo is None or end <= now or end > datetime.datetime(2026, 11, 12, 18, tzinfo=datetime.timezone.utc):
         raise ValueError('original resource deadline expired or changed')
-    if not amendment['reason'].startswith('Three predeclared BT attempts'):
+    reason = 'Three predeclared BT attempts' if task == 'battery_try' else 'Known externally interrupted RB role'
+    if not amendment['reason'].startswith(reason):
         raise ValueError('observed infrastructure reason required')
-    return dict(plan, worker_max_seconds=3600)
+    return dict(plan, worker_max_seconds=effective_limit)
 
 
 def terminal_view(row, worker, archive):
@@ -99,7 +104,8 @@ def main():
     def write(path, value):
         if Path(path).name in ('attempt.json', 'campaign_state.json'):
             value = dict(value, execution_amendment=dict(path=str(cli.amendment.resolve()),
-                sha256=cli.expected_amendment_sha256, effective_worker_max_seconds=3600,
+                sha256=cli.expected_amendment_sha256,
+                effective_worker_max_seconds=effective['worker_max_seconds'],
                 original_frozen_plan_unchanged=True))
         return original_write(path, value)
     # Only the orchestration view changes. Child collectors read original bytes.

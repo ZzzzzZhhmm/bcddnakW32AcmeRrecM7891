@@ -17,3 +17,7 @@
 CPU拒绝检查覆盖：只改变共同worker时限且不修改原plan；拒绝改变截止、角色公平性、科学字段或超出本次3600秒；没有实际终态/hash不允许转换stale status。正式启动前还须核查旧云UID/CCI组终态、campaign及native lease、AFS容量、原截止余量和source hash。
 
 CCI采用最多一个新role的有界invocation；长批次放ACP。实际成功率、置信区间与rebuttal结论只用完整且独立核查的原固定样本。该工程修订本身不构成机制收益证据。
+
+## RB外部中断的独立恢复类型
+
+RB case11 Pooled的实际非bounded SIGTERM使用单独的terminal-status-amendment收据。它只在完整原件/exit/result绑定下把旧stale loading放入只读unknown视图；RB共同worker上限仍为原2400秒。该类型不能取得BT的3600秒额度，也不改变任何原样本、策略或截止。正在运行的BT修订入口继续使用其旧冻结源码，不受后来功能扩展影响。

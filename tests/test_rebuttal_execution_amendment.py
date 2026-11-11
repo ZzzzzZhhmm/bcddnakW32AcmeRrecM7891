@@ -30,4 +30,13 @@ class ExecutionAmendment(unittest.TestCase):
             p.write_text('{"changed":true}')
             with self.assertRaises(ValueError):M.terminal_view(row,worker,proof)
 
+    def test_RB_terminal_status_resume_keeps_original_worker_budget(self):
+        plan=dict(self.plan,task='rearrange_blocks')
+        amendment=dict(self.a,schema='warm.rebuttal.terminal-status-amendment.v1',
+                       effective_worker_max_seconds=2400,
+                       reason='Known externally interrupted RB role with archived actual exit')
+        self.assertEqual(M.qualify(amendment,plan,'plan',self.now),plan)
+        with self.assertRaises(ValueError):
+            M.qualify(dict(amendment,effective_worker_max_seconds=3600),plan,'plan',self.now)
+
 if __name__=='__main__':unittest.main()
