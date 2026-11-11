@@ -2093,3 +2093,11 @@ PDF94c88d81d2e01777f34d8d9da7d0f78405b190e6b3c1eaecef65762a2fa45e87；sourceZIP4
 ### 23.155 本轮实际运行终核，保护正式窗口和存储
 
 04:53:11UTC ITER15_FINAL_LIVE_V1确认CCI nvidia-smi无compute app、相关科学程序无进程；原BTq48仍已知正常终态，64目标审计已正常结束，formal campaign根与BT q96 plan均不存在。AFS实际5,124,112,384B，准入前须再核对完整有界context/轨迹、归档和并发余量，原大bank/cache/checkpoint/CAS均保留。此前04:21 IAM实际页认证过期，原请求待答；没有新GPU/云创建或正式计时，不由CCI空进程推出cloud allocation终态。正式100对与固定q96仍是下一计算优先项，旧已完成资格/审计/计时不重复，v16已完成q48录入无需下一轮再做同版整合。
+
+### 23.156 固定final3000的原生family-holdout开发入口实现，尚无新效能结果
+
+2026-11-11T05:54:15UTC在CCI实现独立pilot schema/配对规则及worker，19项CPU协议检查通过，日志SHA02e00edbe6415cf1d548ef7fb53b67e37c4abd29397b00075c6feb0d48b5f2c5；源码语法/CLI依赖检查另记，均不计GPU/模拟效能。计划使用已登记DEV物理seed3407/3408、固定final3000 Full b0669047…、同模型candidate-null、两套原19,540-event universe及原生700/H32/prefix4/NFE10。Stage A/B各独立3h/最多单H100，原正式100对与既有missing-skill NI主协议不变；截止与固定样本不根据结果重置或替换。
+
+入口复用冻结H native物理执行、明确记录研究干预，收集完整命令/实际关节、初始输入/Gaussian、门值和q0/q8预执行候选。自然Full与显式撤回各维持自身因果历史；族移除不是实际技能缺失、门正也不自动计误激活，独立coverage仍null。固定DEV种子专家拒绝/运行异常必须保留，未完成不补0；开发少量同成败不构成NI。具体协议见NATIVE_FAMILY_HOLDOUT_DEV_PILOT_20261111_ZH.md。
+
+05:28 actual CCI无GPU/相关程序、formal根/q96 plan仍不存在，AFS4,519,288,832B；05:29实际IAM仍只有登录按钮，原请求待答、不重复索取。尚未冻结新pilot快照/准入资源窗口或启动policy；下一步完成英文提交同步、唯一私有runtime保留标记与正式准备器相应防并发门，再冻结并启动第一开发段。不把“代码可运行”当已执行结果，v16 PDF/回复/证据包不改。
