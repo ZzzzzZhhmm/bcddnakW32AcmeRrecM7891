@@ -1,5 +1,11 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**Nov11 17:25UTC最新锚点：** BT共同3600s外层工程修订已commit/push/CCI同步f774aba，冻结入口adb5ba9b…；原H861/C871/计划文件/first/deadline不改。原bt00已17:14:31用cci_segment_iter21_v1续跑，monitor2502475/campaign2502476/worker2502481（case0 Full第二attempt37deccf6…），最多1role/6000s，原2214UTC截止不改；17:24模型加载24.4GB、0已存generation，须核查真实进度，勿重跑。旧段已终态，不能再使用旧2496070状态。
+
+**新云分配唯一身份：** 标准申请17:17实际业务提示“成员配额已超限”（HTTP429不等于仅网络限流），列表确认无std后才闲时。bt10新UID6bea7fe19aed473692928a535468d291、bt20新UID76da0b3af21c46da8812b35aeb425ceb；新名warm-mf3k-bt10/bt20-20261112-resume-idle，17:24均启动中、尚未证实GPU分配。先查这两UID/原campaign heartbeat，不重复创建；原两失败UID备份和原22:16截止保留。rb00/rb20仍活动，rb10因非bounded SIGTERM失败尚未恢复；不能把rb10失败归因BT2400s。
+
+**已核验新数据：** 6046终态原件TAR3965424b…/exit-bound收据9b5ca0cc…已双端与本机独立验证。7完整role、RB case0/10/20三对均0/0，BT三部分936/946/988和RB case11未知保留；不得称收益/NI或最终100对SR。v19内部增量responses/20261112_v19_execution_addendum1维护20项；原三回复/PDF/源码ZIP不改。后续除完成原固定样本，还须正视shared3000能力范围，与原specialist分开；新研究另冻结，不能替换旧负结果。
+
 **Nov11 17:10UTC工程修订准备：** BT固定case0/10/20均在原2400s外层上限前未完成1000步（实际936/946/988），真实exit-15且success unknown；CCI旧segment已终态/GPU空，不按旧running重启。11个已终态attempt共6046原件147.137MB，TAR3965424b…/manifest6f087c2e…已AFS全成员封存，receipt_exit_bound_v2 9b5ca0cc…绑定实际exit/result，原raw不修改。新增BT共同3600s工程修订入口及3项本机/3项CCI拒绝检查通过；必须先读hash绑定amendment及新launch记录后判当前是否准入，不把准备当GPU结果。原所有first/deadline、6slot/120GPUh与科学计划不改。RB case11 pooled另-15非bounded/0动作，需核查云抢占，不混作BT时限。rb00/rb20活动不得重复。
 
 **北京时间11月12日00:20优先锚点：** v19作者对话稿已完成并验收，responses/20261112_v19_author_dialogue，20项/17块/37未填槽位；逐审稿人真实认可开场、作者视角主体、已完成修订总结，遵循AUTHOR_DIALOGUE_WRITING_STANDARD_ZH.md。完整原LaTeX与干净ZIP两次编译44页/含结论主文10页，PDFd31a1443…/ZIP299c967c…；原9图/旧附录/公式/表格保真，文字与视觉验收通过。数据依赖整段仍PENDING，未发布/closure仍false。

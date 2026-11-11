@@ -2287,3 +2287,15 @@ Nov11 17:05UTC核验，BT case0/10/20分别在936/946/988个实际command_end后
 工程修订入口run_rebuttal_execution_amendment.py只在hash绑定的修订收据下，把BT两个角色的外层共同上限2400→3600s。原计划文件和冻结collector、样本、权重、1000步上限、推理配置、首次/总截止、6slot/120GPUh上限均不改；各新attempt/campaign状态保存修订path/hash/effective limit。它导入原冻结orchestrator并只修改内存中的工程预算视图，子collector仍读取原计划字节。stale loading只有实际exit/result与完整终态档案相符才在独立视图标unknown，原next_request与两attempt上限仍执行。
 
 三项本机及三项CCI隔离CPU检查通过，覆盖公平共同预算、拒绝改deadline/science、保留unknown及hash变更拒绝；尚不是GPU或模型效果证据。具体资格/固定收据完成后才在原剩余窗口有界接续。新的trial或重训若需收敛资格须另前瞻冻结，不能用不同样本或模型替换现有100对。
+
+### 23.179 工程修订实际准入、标准成员配额核验与新云身份
+
+f774aba84e9f653946e750a17d3936632d8fab0c已英文commit/push并远端exact核验，CCI离线HEAD-ref FF；旧H861/C871源前后相同。冻结新工程入口execution_budget_controller_f774aba/scripts/run_rebuttal_execution_amendment.py（SHAadb5ba9b6cd77f5b5a6ff54817592185e47ed7fce41694ff81181a21a54e027b），bt00/10/20三份独立amendment分别17d4241e…/f8506bf1…/30332ecf…；三项真实原plan CPU preflight均exit0，无GPU初始化/新物理结果。资格收据ITER21_BUDGET_SYNC_AND_QUALIFICATION_V1。
+
+17:14:31原bt00 slot以CCI segment_iter21_v1接续，monitor2502475/campaign2502476/worker2502481，最多1新role/6000s外层，旧部分轨迹/exit保留；case0 Full第二attempt37deccf6…，worker共同3600s，campaign原first/deadline不变。17:24还在加载、24.4GB、0已保存generation，不写完成推理。真实status/exit后续核查，不重复启动。
+
+17:17:47重新实际申请标准资源时，UI明确返回“成员配额已超限”，HTTP429由工具泛化标为SITE_RATE_LIMITED，**此处业务原因是成员配额超限，不能只称网络限流或推断已创建**。17:18:37列表确认新std任务不存在后，才恢复闲时；已确认镜像ccr-zhicheng-02/lwz_wam:lwz-workspace-20261029145800、AFS afs-p3-01e /→/mnt/afs RW、1卡/22CPU/230GiB/1worker/0重启。旧两UID失败已逐项回查。
+
+新bt10 UID6bea7fe19aed473692928a535468d291（17:19:51创建），bt20 UID76da0b3af21c46da8812b35aeb425ceb（17:24:12创建）；分别warm-mf3k-bt10/bt20-20261112-resume-idle。新命令只调用原slot下acp_resume_iter21_v1/launch.sh，逐role检查原截止余量后显式resume，不自动重试新的未知退出。原first10:16:44/截止22:16:44均不改；只替换失败allocation，不增第七formal slot。17:24云端仍“启动中”，分配GPU未验证，不能把它们记为活动GPU。新identity及旧备份在原shard/新resume目录；ITER21_NEW_CLOUD_IDENTITIES_V1保留两唯一身份。
+
+17:20:25本机全6046成员/7完整700-role动作与物理链、3组初态/首输入/高斯/K32以及4个unknown独立核验通过；RB case0/10/20三对均0/0，case1 Pooled另单角色0。3/100固定配对不填总体SR/CI，不支持优势/非劣效。内部增量responses/20261112_v19_execution_addendum1更新20项映射并区分Pooled和candidate-null；原v19三回复/44页PDF/源码ZIP不变、P1–P5仍待证。后续应同时检查shared3000能力/原specialist范围，不能静默用新权重或样本替换已开始cohort。
