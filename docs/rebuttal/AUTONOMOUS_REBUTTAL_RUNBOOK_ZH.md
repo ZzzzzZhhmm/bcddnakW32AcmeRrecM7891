@@ -1,5 +1,11 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**最新恢复锚点（2026-11-11T10:01:16UTC）：** 原Stage A已由外部中断终止，monitor/driver/worker均不存在，原06:29:13→09:29:13窗口已结束，禁止重开。clean Full/null和holdout Full各完整700/175，成功全0；clean配对初态/共同噪声一致，null175次实际source精确Gaussian且candidate slots为0、gist/记忆保留。最后holdout null仅加载、0已记录命令，退出码未采集保持unknown，原stage_exit缺失不造。全部1,664原件44.111MB封存2eb7ac6d…，本机全成员及三个物理链验证；旧两实施失败/unknown保留。此前下文08:15“正在运行”仅是历史。详见[NATIVE_QUERY_AND_STORAGE_RECOVERY_20261111_ZH.md](NATIVE_QUERY_AND_STORAGE_RECOVERY_20261111_ZH.md)。
+
+作者已答复无法扩容、先保存再清理：Control200七state26.307GB已另复制到本机`tmp/rebuttal/storage_backup/20261111/control200/state`并独立hash，receipt96a53ef9…；原38.438GB TAR当日重新hash匹配d838ed0c…，CAS仍在。AFS七原件重新hash及无打开FD后，仅迁移两个大raw state副本26,307,288,751B，评测weight、五小state、CAS/数据/其他checkpoint及原件不改，原root加STORAGE_LOCATOR_V1和精确恢复脚本，历史收据不改。**当时df仍1.27GB，逻辑迁移不等于已可用空间，须再查实际容量，formal4GiB门不放宽。** 另25派生TAR去重450.610MB保留全部路径/SHA；八冻结源/选定operator3,723项另存本机并验真。
+
+固定clean q8/K32/H32预truth seal3d540098…已本机验真；35物理分支collector、rb-30真实CPU preflight、三个拒绝负例和27项协议检查通过，**GPU尚未准入、无新预测/缺技能结果**。prospective Stage B seed3408允许被动q48候选保存，原Stage A不变。正式Git外准备器以后使用v3（2c29354d…，新增rb-30外部保留门、保留v1/v2），Stage B/q8/正式100对均须先查唯一外部保留标记和真实容量/实际时长再启动。ACP08:24实际IAM登录墙，原请求仍待答，不重复创建。当前v16回复/PDF不变、20项closure全false，下一版应纳入完整不利/unknown及明确开发模型与原specialist范围。
+
 **最新完整角色（2026-11-11T08:05:23UTC）：** 下述DEV StageA的clean Full已08:01:46正常exit0，完整700命令/175H32/1400物理记录，success0、max_reward0，无TOPP拒绝。544原件10,962,089B、archive affb212b…，CCI和本机全成员/物理链/生成核验通过。175依赖query gate范围0.17285–0.22266、中位0.19043，自然精确Gaussian为0/175；这是clean单角色，不是技能缺失/配对/NI证据。唯一原driver2437213已进入candidate-null，08:03实际child2438365，**先查当前PID/进度，不要复制启动**。原09:29:13截止、源c159f171…和plan804408d8…保持。
 
 本轮最新工作映射 `20261111_v16_execution_addendum2`（1c6901eb…）纳入这一不利完整角色，三份回复/原v16 PDF仍不变、20项closure仍false。第2增量包b8028719…/manifest9be16a31…；本机及08:09:56 AFS全部四成员验证完成。后文07:56的“未完成角色”只适用于原时点；上段及current_iteration最新LIVE优先。

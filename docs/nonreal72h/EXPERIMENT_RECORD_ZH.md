@@ -2141,3 +2141,45 @@ rb-40的外部保留标记EXTERNAL_NATIVE_PILOT_RB40_V1.json仍未释放。正�
 第2增量矩阵1c6901eb642d2b5b875998ddac9784e269f2644c69dd5d9750cf67b5fe801755新增这一完整不利角色并关联BB-W4/Q3、HH-W4、RK-Q2；不改v16三回复/PDF或20项closure。四文件包b802871927d07c4478e475d01d746e2ee5a69353d94ccb3b332fcb91836ce00e、manifest9be16a317b357343d99050f705246620f16340bdbf21a72a93d271b63c9c0f82，本机及08:09:56 AFS全部四成员验收。第1包完整保留。此数据晚于第1包冻结，独立追加而不覆盖。
 
 库存数值澄清：ITER16_STORAGE_TOPLEVEL_READONLY_V1于06:54精确统计writing_candidates逻辑字节1,804,223,105B；§23.157的约1.97GB为粗估，以原JSON精确值优先。07:59实际AFS余量1,922,101,248B，非已保护预留；仍不得按旧读数开启formal或删除原数据/checkpoint/CAS。
+
+### 23.161 保留路径和全部bytes的派生归档去重，缓解存储压力
+
+2026-11-11T08:23:38只读、按原PACKAGE_MANIFEST逐项核对，找到25份审阅包内的派生TAR，与AFS根已封存归档大小/SHA完全相同，共450,609,777逻辑字节；plan SHA13dcede9ef054e69b3a0dcfa203299a686730ecbac012085e16b0209d9187bc4。08:24:06 Windows在既有Git外原件中逐一找到25份相同大小/SHA的耐久副本，receipt fcbc17c705e15f140c1d7c912cbdce4d41e1a6e26841ed606b0117265a14d1cb；没有新下载大备份或删除任何原件。
+
+08:26:24→08:26:53有界operator完成：先在全新微小文件上核验atomic hardlink replacement，再把全部25份派生副本另存CCI /tmp回滚副本并验证；仅将writing_candidates内已冻结派生TAR的底层存储合并到相同bytes的根归档。所有25个既有逻辑路径、文件大小和SHA保持，原始根TAR从未覆盖，模型、数据集、checkpoint、CAS、活动实验根和科学源均未修改；每个受影响包完整原manifest的所有成员重新核验。详细receipt及每项Windows耐久副本/CCI回滚路径见AFS ITER17_DERIVED_ARCHIVE_LINK_EXECUTION_V1，本机execution/20261111_iter17同名目录。
+
+去重450,609,777逻辑字节不是新的科学结果。卷上其他写入同时发生，free采样从1,335,353,344到1,584,308,224B、08:27为1,789,779,968B，不把这些差值等同于独占回收量；仍低于原formal4GiB门，不放宽准入。原容量请求和ACP重新登录请求仍待答，08:24实际IAM页只有登录按钮，未创建新云任务。浏览器任务空闲过期后diagnose确认tasks=[]，原页面保留。
+
+08:18实际candidate-null已24命令/7次replan并通过真实g/source=0及Gaussian边界；08:34继续636/700、160 replans，原driver/09:29:13截止保持，尚未在此时点声明完整pair。原clean Full700失败及所有不利/unknown、v16/增量包均保留。
+
+### 23.162 clean原生配对完整，显式撤回边界验证而未见任务收益
+
+08:36:15.628987UTC clean candidate-null正常exit0，700命令/175完整H32/1,400物理记录/0 TOPP拒绝、success0/max_reward0。542项原件TAR3,675,723B SHA7290e79df621efa5d75b4b5e1439be6926912607d46dc38566ffc6aac7b2c5de；同原clean Full合计1,086项，CCI及09:06:03本机独立全成员、350H32、1,400命令/2,800物理记录核验通过。两角色初态、初始K32输入和Gaussian一致，之后各自因果history允许分化；Full/null首H32最大差.060546875只是干预效果，不是成功收益。
+
+null全部175次实际g/source_gate为0，source精确同Gaussian；q0/q8/q48实际context导出的BF16精确float32视图中，12个conditioning tokens末四candidate slots精确0，前八required-gist保留、非零元素32,768；q8/q48 episode memory有效。observation mask的24/60/84是token数，不是记忆事件数；容量仍20/8。支持显式零候选影响而保留事实gist/记忆，不建立自然gate撤回可靠性。clean配对0/0，不建立NI、等效性或任务收益。原final3000 b0669047…、source c159f171…、plan804408d8…及06:29→09:29窗口不变。
+
+### 23.163 Stage A第三角色失败与最后角色中断，整段原件本机保全
+
+09:10:43.323745UTC family-holdout Full正常exit0，同700/175/1,400/0 TOPP，success0/max_reward0，最终press_cnt1、stage_id0；544原件10,878,209B，TAR4,023,595B SHA42a1954141e278db71a5f60bdd2fbb3415cb2faa0e51c76493edba7483b56feb，CCI独立核验通过。自然gate min/median/max .1689453125/.19921875/.22265625，精确Gaussian0/175。等规模19,540搜索域移除六类block任务不自动证明实际skill absence，适用性allK仍缺。
+
+最后holdout null停在loading_typed_policy，0条query/0已记录命令、successnull、无exit收据；Stage A也无stage_exit。最后supervisor心跳09:26:34.349148，新sshd09:26:54，原monitor2437210/driver2437213/worker2440916均不存在、GPU无程序。这是外部中断观察，OS退出码仍未知，不编造exit0/失败/完整回合，也不以sshd当平台lease。原09:29:13.790798截止已过，禁止新Stage A窗口。
+
+09:37:04 ITER17_STAGEA_EXTERNAL_TERMINAL_ARCHIVE_V1封存全部1,664项44,110,896B，TAR23,660,517B SHA2eb7ac6d260ee1fc1ae88a22f45e3fbd393a7b017d6133aac6502abdd9d95928、manifest0bd98a5944af68d385a8825d2e7e08c0715493520c7d7161b226d8cf95ed90b3；09:57:14本机逐成员及三个完整700命令物理链独立验证通过。两个原实施失败及旧0命令unknown均保留，不能被新完整角色覆盖；Stage B seed3408仍未准入。scope仅固定新shared-final3000的DEV诊断，不替换原specialist成绩、正式100对或缺技能NI。
+
+### 23.164 固定q8预truth分支代码及prospective Stage B保存修正
+
+新增CPU seal入口逐项验证原角色完整归档/计划/权重/实际候选和前32物理命令，固定原clean q8(frame32) K32/H32；ITER17_NATIVE_CLEAN_Q8_PRETRUTH_ACTION_SEAL_V1的seal SHA3d540098467c1d28fdc49273da15f99ad353d6496cdda015a9f1b6b0574813d5，manifest06c061df13407842479b47d24dba4d9717b1b46bc73c53f1324795692719081b，全部35动作及成员已本机验真。仅Full前四未来命令是factual，不能把剩余28步当原结果；同状态null尚缺，不用已分化closed-loop q8 null替代。
+
+新collector要求每分支精确重建前缀/API/实际关节/全部RGB/RNG，Full/Full/K32/Full anchor、完整H32效果公共支持集和预定shared效果定义；异常/早停/unknown保留，不能换点或候选。输入篡改、错误seal、未核销前runtime三个真实CLI负例在输出/GPU前拒绝，09:40:02收据；09:40:17实际rb-30 CPU preflight通过，source digest2fdbbfeed9d19c83afe6f91ad141fb0c19bb942cfbcfb5b2c6511384a01d65bb，未加载DINO/policy或执行物理分支。固定3h准入/512MiB余量/256MiB原件门及明确归档恢复保护并发，不访问Git远端。
+
+prospective Stage B仅允许[0,8,48]保存候选，原Stage A默认[0,8]保持；不改动作/gate/权重。27项CPU协议检查09:21:16通过，日志455ea45e2bf9ee0f79b4e47a548f3c4669e42c6ae0bf7713af8dcd3b1373fe73。Git外正式准备器v3 SHA2c29354d8092e31b6123cc0cac75de6bfee90f16c02e35ea5792d5b7ada691e9，五项rb-30保留guard检查通过、v1/v2保全。均属工程准备，无新增后果预测优势/repair/自然missing-skill或正式成功率；q8 GPU、Stage B及formal均未准入。
+
+### 23.165 作者授权后先保全，再迁移旧Control200冗余raw state
+
+作者明确暂不能扩容、先保存需保留内容并修正代码。09:57:09 Windows将旧Control200全部七state26,307,343,356B从已有cache另复制到Git外`tmp/rebuttal/storage_backup/20261111/control200/state`，每项源流hash及目标独立重读SHA与原manifest一致；BACKUP_VERIFICATION SHA96a53ef94cc21fd6625b531790eff5d329d77a3ae707fdc87c476e421f462f4d。原cache38,437,867,520B TAR重新hash匹配d838ed0c5fc039170394a9719523a3c8d738929c9652b8f49ea6795d895451d7；已有401文件/35,973,567,912B本机压缩CAS仍在，旧verification9351592b…保留，不冒称本轮重hash全部CAS。
+
+AFS全部7状态重新hash一致，原Control200 operator exit0、无相关进程及打开state FD，独立评测weight12,130,288,488B SHA93870d3395cb0ee62978e627ec13d8da38f5b41c886fd5cba11aa60664069a41。10:01:15→16仅移出两个已本机完整备份且inode/mtime/size未变的大raw副本：optimizer12,766,666,737B与model_state13,540,622,014B，共26,307,288,751逻辑字节。五小state、评测weight、当前Full/Pooled final3000、AFS/local CAS、数据/轨迹/原视频与所有历史收据不改，unique bytes丢失0。原state根新STORAGE_LOCATOR_V1 SHA2e0679808728d150e3ffe5bb5f0b57fca8d04ae402680415c82b895a1f5a0e9a及精确拒绝覆盖的restore脚本可恢复旧raw resume；不能按旧路径已迁移就称证据丢失或静默改历史manifest。
+
+详细原件ITER17_CONTROL200_VERIFIED_STORAGE_MIGRATION_V1及只读preflight已本机保存。操作后瞬时AFS仍1,272,446,976B，没有当场观察到26.3GB可分配容量增长；logical迁移与实际df严格分开，不能据此立即通过formal4GiB门。八个已冻结科学源和selected operators另封存3,723项40,417,093B，TAR9,121,551B SHA0b6b67e6910976d908230b0cb3889098de63fc45d76d01cbafd9384b9d41f1c4，09:59:51 Windows逐成员验真；源不改。容量/ACP认证仍须实际回读，不继续删除独一原件，不把排队/工程通过计作GPU活跃。
+
+10:04:37UTC追加实际df核验：AFS可用27,142,139,904B，已观察到容量增长，原两个raw路径仍不存在、locator/备份保持。此为共享卷实际采样，不把前后差值全归因于独占回收量；以后准入再查并发增长/原件归档预算。当前无需继续清理其他独一原件。ACP认证仍须实际核验。

@@ -41,6 +41,9 @@ def validate(plan):
     if plan.get('root_seed')!=3407 or plan.get('formal_TEST') is not False or plan.get('primary_NI_protocol_replaced') is not False:
         raise ValueError('Pilot cannot replace formal performance or NI evidence')
     if set(plan.get('roles',{}))!={'full'}:raise ValueError('Exactly one frozen Full checkpoint is shared by both interventions')
+    captures=plan.get('preexecution_capture_replans',[0,8])
+    if captures not in ([0,8],[0,8,48]) or captures==[0,8,48] and plan['admitted_case_ids']!=[1]:
+        raise ValueError('Additional q48 capture is prospective StageB only;never choose queries from results')
     b=plan['roles']['full']
     if (b.get('model_class'),b.get('checkpoint_schema'),b.get('checkpoint_update'))!=('WarmRetrospectionFastWAM','warm.retrospection-checkpoint',3000):
         raise ValueError('Fixed final3000 Full factory and schema required for both roles')

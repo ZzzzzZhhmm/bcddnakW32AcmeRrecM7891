@@ -72,3 +72,15 @@ def test_actual_numpy_bank_rows_survive_source_mutation():
 def test_invalid_bank_row_evidence_is_rejected(bad):
     from fastwam.research.missing_skill_pilot import snapshot_bank_rows
     with pytest.raises(ValueError):snapshot_bank_rows(bad)
+
+
+def test_extra_candidate_capture_is_prospective_stageB_only():
+    p=plan();p['preexecution_capture_replans']=[0,8,48]
+    with pytest.raises(ValueError):validate(p)
+    p['admitted_case_ids']=[1];assert validate(p) is p
+
+
+@pytest.mark.parametrize('queries', [[],[8,48],[0,48,8]])
+def test_cannot_select_different_capture_queries_after_outcomes(queries):
+    p=plan();p['admitted_case_ids']=[1];p['preexecution_capture_replans']=queries
+    with pytest.raises(ValueError):validate(p)

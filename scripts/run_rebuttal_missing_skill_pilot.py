@@ -126,7 +126,7 @@ def main():
             value.update(mode_unmodified=cli.role=='full',legacy_Full_probe_enabled=True,observational_probe_enabled=True,
                 declared_force_null=cli.role=='candidate_null',effective_gate=g,source_gate=sg,alpha=float(arrays['alpha'].reshape(-1)[0]),
                 configured_gate_threshold=float(probe['gate_threshold']),independently_measured_relevant_coverage=None,false_activation=None)
-            if ordinal in (0,8) and cli.role=='full':
+            if ordinal in plan.get('preexecution_capture_replans',[0,8]) and cli.role=='full':
                 f=out/f'pre-execution-probe-q{ordinal:04d}.pt'
                 with f.open('xb') as stream:torch.save(dict(probe=probe,bank_rows=N.snapshot_bank_rows(capture['online_step'].bank_rows),before_any_local_branch_truth=True),stream)
                 value['pre_execution_probe_sha256']=N.sha(f)
