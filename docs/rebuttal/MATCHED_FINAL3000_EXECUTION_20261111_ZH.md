@@ -1,5 +1,9 @@
 # 固定3000 Full/Pooled 正式配对评测：执行与恢复
 
+**04:04 UTC恢复更新：** 下文01:52的训练pending为历史状态。两角色固定3000完整训练/state/CAS/typed bundles和十计划资格均已完成；Pooled proof1058dfbc…/bundle929fac30…，不重跑训练或CPU独立重建。实际formal campaign根尚不存在、时钟未启动，IAM登录过期阻止新标准ACP创建；原rb00仅保留草稿。准备器SHA e42963e9…不改，认证恢复且可实际提交后才freeze/prepare，以保护固定窗口。BT q48已04:00:18正常退出并380原件完整封存，q96首次11h未开始；独立私有formal worker并发规则保持。现有AFS约5.98GB，首次准入再检查完整轨迹/有界context及其压缩归档的余量，不删除原件。
+
+已完成的记录成本见候选v15 Appendix C.5，不替代正式成功率。新增CPU结果汇总器17检查已通过，固定100对未齐时primary始终null；不重采roster/reset/十worker资格或把DEV输入一致性当性能。以下保留首次准备过程以便恢复。
+
 本页记录当前已授权协议的工程执行，不提供新的策略效果。科学设计仍为 `MATCHED_NATIVE_FINAL3000_EVAL_DESIGN_V1/DESIGN.json`，SHA `3484ad1477a868607a916638c631c80df25501db59dd82edbf6651c768238e33`。RB/BT各50对、总100对/200角色回合，native700/1000，H32/prefix4/NFE10/K32/recent20/summary8，root3407。两方法均固定最终3000，不以DEV/TEST选择权重。此为新的shared-stage补充比较，不替代原稿逐任务specialist成绩或命名baseline复现。
 
 AFS操作根目录：`/mnt/afs/task3_2/L202500276_lwz/projects/WARM_evaluations/rebuttal_20261109_acp`，下称P。

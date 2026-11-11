@@ -2015,3 +2015,59 @@ Full3000两task静态合同00:17:04正常完成，本机00:20:25逐项核对12�
 原稿正向表格/受控证据、新shared-stage与原specialist不利结果/unknown、BT单状态终点对照但无completion repair、缺技能正门控等均保留。现有完整v14三回复与87项包保持不可变；原LaTeX/PDF SHA230dcc6e…无改动，沿用既有完整工程/干净ZIP编译及视觉验收，不重复编译未改PDF。后续完整新结果再统一推进论文版本。全部empirical_closure=false、stable_release_ready=false；未发布/正式上传。
 
 第一次本机结构检查因HH-W5旧matrix存完整旧标题而失败（无科学程序）；保留 `BRIEF_HEADING_CHECK_ATTEMPT1.json`，按唯一稳定W/Q前缀映射并写入新确切标题后，3文/15块/20项检查通过。不把该文本检查失败算实验失败或静默漏掉W5。
+
+### 23.146 Pooled固定3000完整训练、无损CAS及独立状态核验完成
+
+2026-11-11T02:04:30原训练runner正常exit0，2900条新增101…3000连续且loss/grad有限；root3407、parent100 cbdfcef2…、训练源48ce6ba8…前后不变。最终checkpoint `9c9c9124bd4cb999b47b6bfd866b977c4c52357cc1af25c916bde68fa30b42fb`，原自动归档于02:14:19完成，38,534,492,160B原TAR SHA `f4ddb364dc6bd369509c8560c1913faf67d3b769279e2fa5dc7281ce7d5959e4`，3841个CAS分块。没有重复训练或重复打包CAS，原训练窗口保持。
+
+唯一CPU流水线于02:14:43接续既有归档，在CCI临时盘逐块重建；02:24:00核验全部十五原始文件及七完整state文件（含optimizer/scheduler/RNG/trainer），模型schema与共同实际优化配方一致，不初始化CUDA。formal准入proof `ITER14_POOL3000_INDEPENDENT_AUDIT_V1/FINAL_TRAINING_EVIDENCE.json` SHA `1058dfbce185fbf209f20e830ec119d98ac961ffcf8c91953ba3579988200a3b`。所有原AFS权重/state/CAS保持，sampler.bin实际缺席明确记录，不虚构该文件。
+
+02:33:57明确Pooled构造器/schema、同一root3407与正式namespace的RB/BT两task静态接口完成，receipt `929fac3015355aef0f5c15167a1fd549a1deac6bfe5833c113f9758deed06d69`，十二文件。02:50:29本机核验全部metadata引用、原TAR/manifest/attestation身份及每个静态文件；receipt `ITER14_POOLED3000_LOCAL_METADATA_VERIFICATION_V1.json`。本机没有下载38.534GB大TAR或大权重，不把该检查称为Windows端完整tensor重hash；完整字节重建由CCI独立完成。
+
+两角色final状态和静态接口全部齐备，02:37:29十个实际计划在内存中逐一通过全部fixed design/inputs/native字段检查，但未创建formal根或时钟。ACP在02:19再次跳IAM登录页，原用户登录页及未提交表单保留、只发一次登录请求；无法读取最新cloud terminal或提交新job，不能声称100对已经派发。现有q48不受影响，02:38已有18完整候选/active rank18，原06:23:48UTC保持；其完整32池仍未完成。
+
+### 23.147 固定Full/Pooled结果汇总器在CCI实现并同步
+
+新增纯分析入口核对原始role archive全部成员及原件hash、实际model class/schema/最终checkpoint、每条H32生成和原生命令、原重置物理身份、配对初始输入/Gaussian。固定两任务各50，未知和未启动保持null，已识别无效模型输出仅在封存直接证据成立时计策略失败；不把基础设施异常计0、不选重复成功记录。全部100对完整后才输出主要配对差/Bonferroni exact区间、等任务宏平均及匿名LaTeX表；这不是missing-skill NI检验，也不把episode不确定性写成多训练seed结论。
+
+02:35:22在CCI完成17项CPU统计/档案检查，stdout SHA e7295eefdf7692e1719c685c5d8a3edd1f0dc7f77f25aab9bd8153dec6d4def1，0GPU/0policy/0模拟；fixture明确不是实验数据。02:37真实无campaign入口检查返回not-admitted、0完整对、primary=null、100行空白未知CSV，无主文结果表。canonical `7e3d0ee46707355b00f2c6828fa23288a1918158` 已按英文规范提交/push并精确验证；CCI自身三新增源码与远端内容逐字节相同后离线FF，备份原件及五冻结科学源前后hash均保持，未让训练/eval访问Git远端。
+
+### 23.148 新最终模型的记录观察成本对照独立准入
+
+在任何新测量前冻结协议 `MATCHED_FINAL3000_RECORDED_COST_PROTOCOL_V1/PROTOCOL.json` SHA263f84b4…：新Full/Pooled固定最终3000、PB最早五个DEV回合各20前缀、每角色20warmup，总各100测量；H32/prefix4/NFE10/K32/recent20/summary8/BF16/B1。沿用未改C87199cc6…原生产计时器，被动构造观察器仅在计时区域外核对真实class/schema/weight，不改采样器或模型。预定顺序Full→Pooled、各自warmup，是描述性完整pipeline成本，不是顺序随机化、独立模块成本、MemoryWAM计时或任务SR。
+
+02:36:28唯一CCI资源段首次准入至03:36:28UTC，outerPID2430405，整个准备/失败/重试均包含其中，不重置。pipeline源码67ef4d91…、observer da627efa…；先两角色PB静态合同、完整输入资格，然后在CCI GPU空闲检查后再加载实际模型。双方各100固定DEV输入资格已通过、catalog d4a13afc…与回合清单一致，实际data配置精确相同，任何输入不合法都不能换样。02:48正在profile_full加载，GPU当时0MiB，不以准备计实际GPU推理或完成成本结果；后续以真实typed receipt/timing rows和GPU观察为准。
+
+新profile使用b0669047…/9c9c9124…两模型，和原530.1/565.2ms Full/FastWAM参考profile（旧68c7f384…）分开。不得把新数值替换旧值、跨研究拼比或提前宣称收益–成本优势。所有原始日志、静态合同、计划和输入资格Git外保全；训练已完成不等于已完成原生成功率。
+
+### 23.149 两final3000记录DEV完整成本对照完成及双端原件核验
+
+2026-11-11T03:04:42UTC唯一CCI pipeline在原02:36:28→03:36:28窗口内完成，两实际role子进程均exit0。Full/Pooled使用最终b0669047…/9c9c9124…，实际构造器WarmRetrospectionFastWAM/PooledMemoryPriorFastWAM及schema/weight核对，未改共同C87199cc6…生产计时器或模型。PB435–439共100个记录前缀/每方法20warmup、相同数据配置、89,680 bank、H32/prefix4/NFE10/K32/BF16/B1；固定Full→Pooled顺序，不冒充随机化显著性。
+
+Full median/p95为473.357205/500.255421ms，Pooled476.475901/501.096383ms；mean467.595249/470.436345ms。分配显存23.620066/23.612736GiB，reserved23.740234/23.751953GiB；一次构造438.976166/420.413419s单列、不含在query计时。Full/Pooled median ratio0.9934546623，成本相近而非统计提速或总体收益—成本优势。只用记录已执行action更新history，生成命令未执行、未来图像丢弃，无policy SR或模拟。旧68c7f384… WARM/FastWAM 530.1/565.2ms参考完全保留，不用新checkpoint跨研究替换。
+
+58原件633,133B全归档SHA14e94a59634b66de53e8390914a3092bbd763af0d6d6a3f7b9832a989dcee74e，manifest48dc02de681c9bf1c3185a207bb16d061691c3782e4768999761098d7129935c；03:23:22本机逐成员/240timing行/120每role/共同数据与模型/独立quantile核算通过，ITER14_MATCHED_COST_LOCAL_VERIFICATION_V1。全部原件Git外保留，不将记录成本写为成功率。
+
+### 23.150 Full五模块的被动嵌套区间实测完成，未知OS退出保留
+
+另立预定30min资源段03:18:42→03:48:42UTC，程序10335ffe…使用同Full最终b0669047…、同C87199cc6…、相同100观测/20warmup。第一次准备因未绑定C而NameError，发生于创建子进程/GPU之前，PREP_FAILURE_V1.json完整保留；仅修操作器路径绑定，未改科学源或重置窗口。03:20:13实际启动，03:28:53所有测量完成；被动hook返回None，method observer只调用原方法一次并原样返回，不改变参数/采样器。
+
+五区域在全部100测量query均调用一次（连warmup共120）。CUDA流median/p95 ms依次为source_resolution inclusive14.894560/16.106834、event_adapter inclusive3.132816/3.289618、完整predict_effects方法0.565360/0.609763、candidate reranker0.530208/0.561414、confidence_gate forward0.691664/0.739397。对应host median/p95为14.939850/16.166463、3.169838/3.326645、0.599687/0.644036、0.548434/0.579332、0.723374/0.771382ms。event adapter包含effect/context，source resolution包含以上区域；gate行不包含后续eligibility/blending。它们是含observer enqueue及host gap的重叠区间，不是exclusive kernel时间或删模块因果节省，quantile不可相加。
+
+此instrumented outer median/p95为477.215488/506.452863ms，独立保留，不替换干净473.4/500.3，跨次差不识别observer开销。17原件324,053B档案SHA942c27396e13d1fd4454d4314accda485f1b2cead470d5d5c139b631bc1e0834，manifest0f41c837effa62ef3df7a1c5fb5bb87e8f6cc0bc4ae393bcf9460140c4a153c0；03:38:37本机核对所有120观测/500测量区域调用、每行数值/原args/schedule/父子区间序及全部统计，ITER14_MODULE_INTERVALS_LOCAL_VERIFICATION_V1。detached launcher未采集OS退出码，实际进程已退出但OS_exit_code=null/collected=false；不伪造exit0或重跑同cohort取回该状态。完整观测和统计核验与OS状态未知明确分开。
+
+### 23.151 v15完整工程、简洁逐项回复与新成本联动验收
+
+03:59:35形成三份英文/15话题块/20项映射，总2930词（1300/1158/472）、单块最多2984字符，纯Markdown列表/行内LaTeX可粘贴，不假设平台字符上限。新匹配成本和五区间分别联动Bbqv W5/Q4、Hh4E W2，核心原稿正向对照及全部不利/unknown保持，Pooled四机制loss与完整方法范围一致。全部empirical_closure_claimed=false、stable_release_ready=false；正式100对性能尚无结果，不以训练/成本关闭科学效能意见。
+
+原LaTeX新增Appendix C.5/p40，Table29匹配总成本、Table30嵌套区间。完整29源文件和干净ZIP两次独立编译均40页/10主文；全部原39页文本/像素与v14相同、九图原bytes保持。新增p40逐项视觉验收、无overfull/undefined refs，46个既有font警告。r1出现仅三行尾页，原41页PDF/source/QA已封存layout_review；只压缩新增冗余表述、未改font/margin/数值即收为一页。PDF1fe430921cd50d96b763604b4630287ed85b9c4e007e136051da2b0886a3b287，源码ZIP34953fea89ee7e02233f59664a1caba044744e79ea0c623ba5c296866278d041，matrix9a2c418ac0ead70751adcfddf8462a294807a524aebcce97e99602efe3c1d40c。95项82,764,031B审阅包e45f94bfbd0b6b0ffdce1ba5125635426fd1b23caf90adf50b0d93437b6914b2，manifest530b2b98ac14225a83ced9081d067b9656c8ba22539f549becf97adb381707c5，本机04:04:24完整成员验证；AFS安装须另核对收据再计完成。科学截止03:28:53UTC，原v14及首版简洁稿不覆盖。未发布评论或正式上传，真机新增延期。
+
+### 23.152 原BTq48全32候选及四Full控制完成，负结果完整保留
+
+04:00:18实际standard ACP runner59dd5f78…正常exit0，原06:23:48.137340UTC窗口、plan363bc263…、rank3、H32、checkpoint27c137d6…和源f7cf0583…保持；32候选和四Full均完整、无unknown，四Full endpoint/effect精确相同。380原件49,017,472B档案SHA6c92f2fe882749c3cf35c966dc6034722841cc7516552bc0ee30336d7bdec839、manifest2cb2ee082fe3560d47851ff11491b04ad90a1ab0904d8968080d02444e4f87b6；04:02:39本机独立逐成员核对所有前缀/物理阈值/DINO平均及共同支持集方差恒等式，沿用原已验证分析器，不换指标或拟合projection/scale。
+
+预测/历史/常量centered MSE0.20727800146193764/0.20621809690076948/0.12835179957861667；预测/历史absolute0.29646672695389914/0.29501998659385764，常量absolute不可识别仍null。全部32下一物理交互标签为0，selected raw/Full均0，无完成型repair/harm；此状态没有预测优势，零标签地板也不是等效性或NI证据。仍仅一个原来源episode的dependent diagnostics，不同q8累加成总体频率。新结果在v15科学截止之后，单独BT_Q48_COMPLETE_EVIDENCE_INTAKE.md列出Bbqv W3/Q2、Hh4E W5及C.2.6下一版统一录入，v15不可变包不静默覆盖。
+
+q48已知终态和全原件封存，绝不重复启动。q96原rank20/首次11h仍未准入，准备器/正式100对都等待IAM重新登录；04:02浏览器inventory仍是原登录墙、全部tab保留，未再发重复请求/未创建云任务/未冻结正式时钟。当前不能把旧running进度算活动GPU；最终实际进程/AFS/CCI状态以最新live快照为准。原BRTq96失败保持，不与新BT q96混淆。
+
+04:07:52UTC追加核验：95项v15包在AFS writing_candidates/20261111_v15逐成员落盘hash全部一致，WRITING_CANDIDATE_V15_AFS_VERIFICATION.json；包SHAe45f94bf…/manifest530b2b98…不变。04:08:51实际CCI nvidia-smi无compute app、相关科学程序均无进程；q48实际已知终态、formal根/q96 plan均不存在。AFS5,748,465,664B。没有已知活动rebuttal GPU程序，但IAM阻断下不把本机无进程当作云allocation终态证明。恢复登录后先核对旧UID与唯一创建，再准入正式100对及固定q96；新余量按实际原件和归档估计，不删原checkpoint。

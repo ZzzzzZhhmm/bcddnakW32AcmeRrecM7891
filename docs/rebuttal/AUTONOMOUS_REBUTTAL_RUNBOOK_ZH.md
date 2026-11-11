@@ -1,5 +1,20 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+
+**最新恢复锚点（2026-11-11T04:04:24UTC）：** 内部候选v15已完整验收：responses/20261111_v15三文2930词/15块/20项；原LaTeX v15、40页PDF1fe43092…/29源ZIP34953fea…、matrix9a2c418a…。两次完整编译（原工程/干净ZIP）、原39页全部文本/像素相同、新p40视觉通过；九图/全部原数字和不利/unknown保留。Appendix C.5/Table29、30新增两final3000的完整记录成本和五个嵌套区域实测。95项82.764MB包e45f94bf…本机全验收，AFS writing_candidates/20261111_v15是否完成见独立AFS receipt。科学截止03:28:53；20项科学closure/stable均false，未发布/正式上传。详见CANDIDATE_V15_20261111_ZH.md。
+
+**两final3000、成本、模块计时全部完成，不要重跑：** Full b0669047…/Pooled9c9c9124…完整state/CAS和RB/BT typed bundles已齐（Pool proof1058dfbc…/bundle929fac30…）。干净两方法各100测量/20warmup：median/p95 Full473.4/500.3、Pool476.5/501.1ms，58原件14e94a59…和本机独立核算通过。另一次Full五区域均100/100，effect/gate CUDA中位0.565/0.692ms，17原件942c2739…全验证；重叠区间不相加、不称因果节省，detached OS exit未采集显式null。模块首次NameError准备失败保全、原窗口不改。原530.1/565.2ms FastWAM参考旧profile保持独立。
+
+**原BTq48已完成，不再计活动：** 04:00:18实际runner exit0，全32候选H32/四Full精确/0unknown。380原件49.017MB、SHA6c92f2fe…双端及本机物理/DINO/方差恒等式核验；centered预测/历史/常量0.207278/0.206218/0.128352，32交互标签全部0、selected raw/Full0/0，无完成型repair/harm或预测优势。BT_Q48_COMPLETE_EVIDENCE_INTAKE.md记录下一版三处录入；晚于v15冻结截止，不静默覆盖旧包。q96固定rank20/首次11h尚未准入，**等登录恢复可提交云任务后才准备，勿提前消耗窗口**。旧BRTq96失败与本BT研究保持区分。
+
+**当前外部阻断为ACP认证：** 04:02只读inventory仍停IAM登录页，已发一次异步请求，不重复索取。所有正式输入齐，但matched_native_final3000_campaign_v1仍不存在、phase36h/分片12h/正式TEST/新云UID均未启动。恢复登录后直接按MATCHED_FINAL3000_EXECUTION_20261111_ZH.md冻结并准备交错六片，标准优先，实际GPU配额不足才闲时；旧未知创建必须核销且不重复。当前AFS约5.98GB，准入前再查原始记录/压缩档案和并发输出余量，不能删任何checkpoint/原件；本地空闲flock不是跨节点排他证据。需要优先的科学证据仍是正式100对性能、同状态修复/撤回及自然missing-skill，而不是再做已完成资格或计时。以下为历史时点。
+
+**最新恢复锚点（2026-11-11T02:50:29UTC）：** 两角色固定3000现已真正完成完整state/CAS独立核验与RB/BT静态接口，不再是训练pending。Pooled实际训练02:04:30 exit0、原自动归档02:14:19完成；checkpoint9c9c9124…、38,534,492,160B原TAR f4ddb364…、3841分块、七state/十五原件，独立proof1058dfbc…于02:24完成。两task十二静态文件929fac30…于02:33:57完成，本机全部元数据链接及12文件核验通过。02:37十个真实final计划在内存中全部通过，`matched_native_final3000_campaign_v1`仍不存在：**正式100对没有派发或启动时钟，当前等待SenseCore重新登录**。已发一次异步登录请求；保留tab1728812484登录页及2477未提交rb00表单，不重复提交或把草稿计作云任务。
+
+当前唯一CCI有界新工作是 `MATCHED_FINAL3000_RECORDED_COST_V1`，outer PID2430405、首次02:36:28→03:36:28UTC原窗口。新Full/Pooled固定最终模型、相同100个PB DEV前缀和每角色20warmup、生产H32/prefix4/NFE10/K32；双方100输入资格均通过，02:48实际正在profile_full模型加载，GPU当时0MiB，不提前计作完成成本结果。先查实际operator/child/timings/typed receipt；保留首次窗口与所有失败，不重开整个pipeline。协议263f84b4…、pipeline67ef4d91…、被动构造观察器da627efa…，共同C87199cc6…不变。该新成本对照与原Full/FastWAM旧profile分开，不能替换其530.1/565.2ms或混算收益；无仿真/任务SR。
+
+新固定100对汇总器已CCI实现并17项CPU检查通过（stdout e7295eef…），真实无campaign入口检查返回0完成、主结果null、100空白未知CSV，不是新策略数据。canonical7e3d0ee已push及CCI离线FF，五个科学源前后精确；以后使用 `scripts/summarize_rebuttal_matched_final3000.py` 核验每个归档成员、实际类型/权重、全部H32/原生命令、初始物理及共同噪声，完整100对后才生成主文LaTeX表。unknown/已识别无效模型输出与基础设施失败分类不混。当前简洁工作稿已改为通用列表，2629词、15块/20项，matrix c4161d7a…；01:49首稿2650词已另存原件。旧v14 PDF/ZIP/87包仍完整不变。下文时间锚点均保留为历史。
+
 **最新恢复锚点（2026-11-11T01:52:39UTC）：** CCI 有唯一的 CPU 终态资格流水线 `ITER14_FINAL3000_QUALIFICATION_PIPELINE_V1`，outer PID2429211、最长5400秒，脚本 `run_final3000_qualification_pipeline_v1.py` SHA c5cb2a50…。它只等待现有 Pooled 训练及原自动归档已知成功，再执行独立完整 CAS/state 重建及 RB/BT 两任务静态合同；不训练、不创建云任务、不启动 formal 时钟。必须先查其 operator/launcher/实际 PID 与两个子阶段的退出，不重复启动。01:48:56 实际 Pooled2940/3000 连续有限，唯一原标准 UIDc852e8e2…保持，原训练12:29:56UTC截止不变。Full3000 已独立核验，01:43 ACP原UID95e49547…明确成功。q48唯一原UID59dd5f78…继续，01:47 已10个完整候选、active rank10；不得当完整32池或重复创建。
 
 正式100对准备器 `prepare_formal_final3000_v1.py` 已CCI核对全部 frozen native worker必需字段，补齐 cuRobo源路径；修前97dc4e10…保全，修后e42963e9…。10固定分片/100对、无效分片拒绝、原截止与缺失Pooled完整proof阻断均通过。此时 `matched_native_final3000_campaign_v1` **尚不存在**，formal时钟/TEST均未开始。静态资格齐后才 `--mode freeze`，再逐个 `--mode prepare --shard rb-00/bt-00/...`，最多6个未知/已准备/活动slot；每个云创建前保存唯一intent，窗口从首次准入起包含队列且不可重置。原Tab1728812477只有rb00表单草稿，尚未点击完成创建；不能把该草稿当云UID或已启动GPU。详见 `MATCHED_FINAL3000_EXECUTION_20261111_ZH.md`。
