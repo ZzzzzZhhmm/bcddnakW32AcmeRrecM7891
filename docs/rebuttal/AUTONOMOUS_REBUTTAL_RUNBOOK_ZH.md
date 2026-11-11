@@ -1,5 +1,11 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**Nov11 23:43UTC最新锚点：v22已完整验收，原v21不动。** 当前三位作者对话回复`responses/20261112_v22_count_precision`覆盖20项/17块，保持逐review真实优点感谢开场、we/our与具体修订结尾。新增13任务原报告计数的Wilson区间（0新增rollout、独立固定策略假设、非paired baseline显著性）及q96干预前已掉落范围；原九图/数值/公式/表格保留。45页/主文10页，全文与干净ZIP含BibTeX四遍编译、两变化页7/42及新增45直接验看，其余42页像素一致，0 undefined/overfull。83成员包`writing_candidates/20261112_v22`已23:41:58 AFS逐成员/解包验真，TARfc8a2a85…/manifest451f3540…；P1–P5及37槽仍整体待证，不发布。详见CANDIDATE_V22_20261112_ZH.md与台账23.199–202。
+
+**CCI下一原固定role正在运行，禁止重复：** case40 Full实际23:27:20 exit0、1000命令/250H32、success0/0TOPP，776原件双端及本机动作/物理链验真；累计29完整role/14完整对均0/0/6unknown，新Full尚未配对。原bt40窗口不改，23:31:29唯一续段`cci_segment_iter27_v1`开始case40 Pooled（monitor2534261/campaign2534262/worker2534267），23:42实际24,555MiB/心跳、0生成/物理。先查其真实终态与原10:44:53UTC截止，再续原case41；不得把Pooled加载当完整新配对或另交ACP重复。
+
+**原specialist q96继续原唯一标准任务：** 23:42 UI确认UID536a352f050b4142890aa99fb88aa23b运行中，原07:16UTC截止不变；AFS18branch/15候选端点、rank14重建父状态。23:43真实runner console已至414/1000、events heartbeat仍更新，不能因operator仅在分支边界刷新就断言停滞或重复启动。rank7–13另70原件TAR0c778ff4…/manifesta240a4c8…双端与本机验真、七标签均0；累计15候选端点已独立归档，整池未完成。零标签/unknown和原支持集保持，别用新原报告区间填未完成的P1/P2。
+
 **22:53UTC范围补充与实际加载：** case40 Full CCI worker2532713实际24,443MiB/心跳持续，0完整生成/0物理，不称已完成对照；原q96已14branch/11候选端点、rank10，原截止不改。新只读审计确认q96全部11个已独立归档端点的父状态384步在干预前已记录掉落；零/零不能被当作预防初始掉落的检验，也不据此证明不可恢复。保留全部标签和主指标，下一整版修订需纳入`Q96_PARENT_SCOPE_V1/AUTHOR_REPLY_AND_PAPER_INSERT.md`，不要称已写进封存v21 PDF。详见台账23.198。
 
 **22:47UTC新执行优先锚点：bt40首次准入，不能按前六片过期推断整项研究已结束。** 原master十片/100对/Nov12 18UTC硬截止不变；原rb00云端失败+真实runner终态+13attempt全原件验证后显式核销，修复准入端raw/canonical spec哈希比较口径，不改原runner。原计划case40–49的bt40此前未准入，22:44:53首次窗口→Nov12 10:44:53，plan44c23a4b…；原六片first/deadline和原fixed50/reset/Full-Pooled共享3000权重不改，不是重开旧窗。

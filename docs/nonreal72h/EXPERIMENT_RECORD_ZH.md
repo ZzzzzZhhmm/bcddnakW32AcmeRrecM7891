@@ -2451,3 +2451,27 @@ bt40为原master预先登记、此前目录及任何create intent均不存在的
 另对已独立验真的AABA及rank0–6共11个端点原件审计：父状态hash一致、均从384步执行至416步；在任何分支开始前，`BT_parent_progress.object_fell_below_table`已经为true（首对象世界z约0.02934）。因此q96零/零描述已经发生掉落后的动作干预，不是对初始掉落预防效果的检验。该时间事实不能单独推出可恢复性/不可恢复性或一般失败原因；全部零标签、固定状态、候选支持集和原主指标保留。
 
 诊断与英文作者回复/LaTeX插入稿位于本机`execution/20261112_iter26/Q96_PARENT_SCOPE_V1`，对齐Bbqv W3/Q2、Hh4E W5/P2。它属于下一整版修订需纳入的已核实范围补充，不能称已加入封存v21 PDF/源码；当前不通过改标签或删状态获得收益。22:52真实CCI case40 Full已占24,443MiB、进程和心跳持续但0生成/0物理；原q96已14branch/11候选端点、正在rank10，尚无全池估计。
+
+### 23.199 原case40 Full完整终态与Pooled唯一续段
+
+原bt40 case40 Full实际Nov11 23:27:20.300128UTC正常exit0、非bounded，1000命令/250个H32/2000物理记录完整，success0、0TOPP。776原件18,245,994B保存在`ITER27_BT40_FULL_TERMINAL_V1`，TAR d3e2ce9a26a65d92c21675de3fd47f432d9dac40df32fbda90382550af7ba5d9、manifest e64419333a9c145df7cfd1f642d8dc90f6cbf59222be2464f11b7a12c0769da7；本机23:30:25逐成员及动作/生成/物理链独立验真。权重b0669047…、科学source87199cc6…、controller861004fa…保持。累计29完整role/14完整对均0/0/6unknown，新Full尚未配对，不产生100对最终SR/CI、收益或非劣效结论。
+
+旧三个PID消失、GPU空、前终态原件核验且原两lease空后，23:31:25在原bt40窗口内启动唯一`cci_segment_iter27_v1`；campaign23:31:29开始case40 Pooled，monitor2534261/campaign2534262/worker2534267，最多1role/outer6000s/common worker3600s。冻结入口adb5ba9b…和修订dfaa351a…、原plan44c23a4b…不变；原首次22:44:53→Nov12 10:44:53截止不重置，无ACP重复。23:42实际24,555MiB、心跳/进程、0保存生成/物理，只能称加载。后续真实终态收据和完整轨迹验真后才可续下一个固定role。
+
+### 23.200 原报告13任务区间的派生统计，0新增试验
+
+重新核对正式33页PDF SHA aa04f9519881983b9f6f408dcfb5b912c9290b883dbe31567f671136fa864594：4.1给出RMBench每任务100次、真机每任务20次；表2九项WARM整百分数与4.3真机17/16/15/15均可绑定原报告成功数。仅在固定策略、任务内独立二项试验模型下计算逐任务边际95% Wilson区间，未给异构任务合并区间、训练种子不确定性、paired baseline显著性或联合覆盖保证。RMBench计数为原报告百分数与分母所隐含，未声称恢复逐次身份或原日志。
+
+13行独立公式与CCI CPU SciPy binomtest(method=wilson)一致，最大fraction差2.220446049250313e-16；0新rollout。BT64/100区间[54.2,72.7]%、PB92/100[85.0,95.9]%；真机B2B17/20[64.0,94.8]、D2B16/20[58.4,91.9]、R2P/SOR15/20[53.1,88.8]，其余九项完整表保存在Git外`ITER27_ORIGINAL_REPORTED_INTERVALS_V1`（本机与AFS同名）。输入source_counts、intervals、MD、TeX四成员本机独立验hash，intervals SHA0928c841c2b56fbf0eae22c5d35c7d106b6140b87a240f049679abcc3bde3a7d；manifest SHA另由LOCAL_VERIFICATION.json绑定。只支持原报告逐任务精度呈现，不填P1/P2待证实验槽或比较效能。
+
+### 23.201 原BT q96新增七候选原件，保持同一不利父状态
+
+原固定rank7–13各完整H32、parent_recreated true、error null；七项独立下一交互标签均0。70原件45,440,977B保存在`ITER27_Q96_COMPLETED_DELTA_V1`，TAR0c778ff4bd32a7e7ed5ac2b5348b33940fe2058d71916263c8486773f995127c、manifesta240a4c8c7af39c27547cbc362f7631a00411fa9428b850782ced2b1af0d8a73；双端及本机23:39:20全成员/H32独立验真。累计原AABA加rank0–13共15个候选端点已归档；一个source/query的依赖候选不是独立回合。
+
+23:42 UI刷新确认原标准UID536a352f050b4142890aa99fb88aa23b仍运行中、原镜像/AFS/重启0不变；AFS18branch/15候选端点、rank14重建父状态。23:43实际job_logs console至414/1000、runner events heartbeat仍更新；operator在分支边界更新，不能仅因其时间较旧就重复启动。原07:16:01UTC硬截止、固定rank/父状态/主指标不变，整池尚未完成，不报告完整K32 MSE或修复收益。
+
+### 23.202 v22作者对话、原报告精度与干预时序整版验收
+
+v22三位回复保持原review实际认可优点的感谢开场、we/our作者视角和仅总结真实改动的结尾；20项意见/17评论块/37空槽。新增附录D.6的13任务原报告Wilson区间，以及D.1的q96父状态384步干预前已掉落事实，与q8提案掉落而Full未掉落区分。原标签与原支持集全部保留，不据此推出不可恢复。主文4.2就近指向精度表；原核心贡献、九图、数值、公式及既有表格不删，P1–P5整段方向仍待证，未公开发布。
+
+完整原LaTeX与干净ZIP均含BibTeX四遍编译45页、主文含结论10页，全部页文字一致；0undefined/overfull、45继承字体warning。对v21页7/42改变及新增45逐页直接验看，另42页像素一致，匿名及内部标识通过。PDF ade470a6a7ba9e1e7a346a150514790039c069f0ea902dc926f430ac151f6567；source ZIP cf05bf28bd59ee027a1ddfe9e28335e7fa5a2bff5621441e00c7464c286cd92e。83成员123,862,802B包TARfc8a2a8524c909c57d486659091f26709841f8273d62d1beffd99dd2fa1e5888、manifest451f3540e5ed37ac95c3ab091f4b94f3d0bbb83a64aec7026dab7463de6435f5，已本机逐项及23:41:58 AFS解包独立验证，`writing_candidates/20261112_v22`。详见CANDIDATE_V22_20261112_ZH.md；实证release仍false，原v21封存不改。
