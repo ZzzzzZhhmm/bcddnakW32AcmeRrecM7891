@@ -2377,3 +2377,19 @@ CCI旧segment23已19:50:33真实正常终态，旧三PID消失、GPU空且全部
 14项初始准备/实际GPU/启动原件封存`ITER24_BT_Q96_READINESS_V1`，manifestef44a77d9eb0115fda7b376affe018c600bfe515511a53c5b163d6ed6e8402ca，20:35:42本机逐成员独立验真。内部`responses/20261112_v20_execution_addendum3`更新21role/9对与q96实际状态并维护20项映射；原v20三回复/44页PDF/源码ZIP不改，37槽位和P1–P5整体方向仍待证，未发布。
 
 20:41实际q96已完成第一Full anchor-a，正在anchor-aa父状态重建。首anchor的14项6,726,139B原件及sealed query另存`ITER24_BT_Q96_FIRST_ANCHOR_V1`，TAR7b30bbae036d6f9c8b5b7b5dbd2071876c2320d52b9b4c8de072035bf859bb71、manifest5fe48907b5926ddef0f4ddb9eb3f2b5da2289969eb1aad122db59f771fbec096；20:43:42本机全部成员独立验真，result实际executed_steps32、complete_horizon、parent_recreated true、error null。endpoint_native_success false只记录终局标记，不据此推断独立下一交互标签。重复Full/原提案和完整AABA尚未完成，仍不计效能或repair证据。CCI20:41仍原case1 Full活动、32380MiB/24%，原所有截止不改。
+
+### 23.189 新五角色原件与第二个BT完整配对
+
+Nov11 21:24:36UTC另封存RB case4/5 Pooled、case23/24 Full及BT case1 Full，均正常exit0、success0；RB各700命令/175个完整H32/1400物理记录，BT1000/250/2000。2955项74,262,343B保存在AFS `ITER25_TERMINALS_V1`及本机`tmp/rebuttal/execution/20261112_iter25/ITER25_TERMINALS_V1`；TAR fa08586a15e3284605b2ca73c138abc1e0a659b3d45f8c0b17accb26918bc0ab，manifest72edfd0d0584333475bf7f03351dbdff39b5a2c4c593187cab5b8c920206d986。
+
+21:32:32本机逐成员hash、全部动作/物理连续链、完整生成及首输入/初态/共同噪声/初始候选池独立核验通过；新增五角色均0TOPP，原RB22 Pooled的1次TOPP及全部旧unknown保留。累计26完整角色、12完整配对（10RB、2BT），均0/0，尚非100对最终SR/CI，不能用于优势或非劣效结论。模型仍是固定shared3000，原稿逐任务specialist成绩不替换。
+
+CCI segment24已20:55:32正常退出；21:34 GPU实测0MiB/0%，原三个PID均不再活动。剩余原bt00窗口不足3660秒，不再准入另一个正式角色、不降低阈值、不重置原22:14:31截止。RB00/RB20实际campaign心跳持续；三个恢复allocation尚无新科学runner，不能按旧部分动作数计新结果。
+
+### 23.190 原BT specialist q96的固定AABA与独立工程资格
+
+原BT q96于21:07:12完成事前固定AABA：anchor-a、anchor-aa、rank20、anchor-qual-final各完整32步、parent_recreated true、error null；三个Full的父状态及端点hash相同。固定rank20提案与Full的独立下一交互标签均0，paired known、repair false、harm false；不把native terminal success替代交互标签。全候选池仍运行，尚无完整池MSE、总体repair或自然撤回对照。
+
+46项26,201,105B原件于21:24:41封存`ITER25_BT_Q96_AABA_V1`，TARc853450d01cc174d400e06b6dc2fc47c19092e2c302d6ced088ebcec7fb09df3、manifest9d996b0789b76a36d48afc5b4e02119b61ca83c469fad7bcc3f7dd4078ec5b3f；21:34:44本机逐成员、四端点与重复Full hash独立核验通过。原controllerf7cf0583、checkpoint27c137d6、单source state及07:16UTC硬截止不改；21:34实际完成6branch/3candidate endpoints，正在rank2，不能将相关候选或三个query当独立回合。
+
+另在CCI先实现仅一次Full精确复现的独立工程模式：新schema/最长1800s，禁止null生成、模拟器与物理分支，不能重开原13:09已过期null窗口。8项CCI CPU准入/上下文检查通过（21:28:46），尚未GPU验证；源码及测试SHA分别d90cbed74aa8ed47c3bacdb55cf2f14543e398cdb7f4c71769d8a39b1ac655f5、38091091419bb78e7309c712af0bbd28646377edc3191c81be089fe25d850c90。保留两个旧加载失败和全量原件，不将工程资格写成修复收益。

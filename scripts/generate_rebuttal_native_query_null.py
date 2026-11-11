@@ -39,6 +39,29 @@ def load(name, path):
     return module
 
 
+def require_generation_admission(admission, *, full_qualification_only, seal_sha, output, now):
+    """Keep a new engineering replay separate from the expired null study."""
+    schema = ('warm.native-DEV-q8-full-qualification.v1' if full_qualification_only
+              else 'warm.native-DEV-q8-null-admission.v1')
+    maximum = 1800 if full_qualification_only else 3600
+    start = datetime.datetime.fromisoformat(admission['first_admitted_utc'])
+    end = datetime.datetime.fromisoformat(admission['absolute_deadline_utc'])
+    if (admission['schema'] != schema or not 0 < (end-start).total_seconds() <= maximum
+            or not start <= now < end or admission['sealed_query_sha256'] != seal_sha
+            or Path(admission['generation_output']).resolve() != output.resolve()):
+        raise ValueError('generation mode, original window, source or output differs')
+    if full_qualification_only and (
+            admission.get('study_kind') != 'full_reproduction_engineering_only'
+            or admission.get('null_generation_authorized') is not False
+            or type(admission.get('maximum_full_replays')) is not int
+            or admission['maximum_full_replays'] != 1
+            or type(admission.get('maximum_physical_branches')) is not int
+            or admission['maximum_physical_branches'] != 0
+            or admission.get('previous_null_window_reopened') is not False):
+        raise ValueError('engineering qualification cannot authorize null or physical evidence')
+    return start, end
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--seal', required=True, type=Path)
@@ -46,7 +69,10 @@ def main():
     ap.add_argument('--output', required=True, type=Path)
     ap.add_argument('--admission', type=Path)
     ap.add_argument('--expected-admission-sha256')
-    ap.add_argument('--preflight-only', action='store_true')
+    mode = ap.add_mutually_exclusive_group()
+    mode.add_argument('--preflight-only', action='store_true')
+    mode.add_argument('--full-qualification-only', action='store_true',
+                      help='One exact Full replay; no null generation or physical branch')
     cli = ap.parse_args()
     seal = read(cli.seal)
     sealed = cli.seal.resolve(strict=True).parent
@@ -75,16 +101,14 @@ def main():
         if cli.admission is None or cli.expected_admission_sha256 is None or sha(cli.admission) != cli.expected_admission_sha256:
             raise ValueError('explicit immutable null-study admission required')
         admission = read(cli.admission)
-        start = datetime.datetime.fromisoformat(admission['first_admitted_utc'])
-        end = datetime.datetime.fromisoformat(admission['absolute_deadline_utc'])
-        if (admission['schema'] != 'warm.native-DEV-q8-null-admission.v1'
-                or not 0 < (end - start).total_seconds() <= 3600
-                or not start <= datetime.datetime.now(datetime.timezone.utc) < end
-                or admission['sealed_query_sha256'] != cli.expected_seal_sha256
-                or Path(admission['generation_output']).resolve() != out):
-            raise ValueError('null study query, output or original resource window differs')
+        start, end = require_generation_admission(admission,
+            full_qualification_only=cli.full_qualification_only,
+            seal_sha=cli.expected_seal_sha256, output=out,
+            now=datetime.datetime.now(datetime.timezone.utc))
         marker = read(admission['external_worker_reservation_path'])
-        if (marker['status'] != 'reserved_native_null_followup_before_first_process'
+        expected_marker = ('reserved_full_reproduction_qualification_before_first_process'
+                           if cli.full_qualification_only else 'reserved_native_null_followup_before_first_process')
+        if (marker['status'] != expected_marker
                 or marker['generation_output'] != str(out)
                 or marker['sealed_query_sha256'] != cli.expected_seal_sha256):
             raise ValueError('unique cross-client null-study reservation required')
@@ -168,9 +192,11 @@ def main():
         typed = H.M.typed_policy_receipt(policy, plan, 'full')
         H.M.atomic_json(out / 'typed_policy_receipt.json', typed)
         model = policy.model
-        null_model, weights = replica_rules.shared_weight_inference_replica(model)
+        null_model, weights = None, None
         model.configure_research_probe(capture=True, force_null=False)
-        null_model.configure_research_probe(capture=True, force_null=True)
+        if not cli.full_qualification_only:
+            null_model, weights = replica_rules.shared_weight_inference_replica(model)
+            null_model.configure_research_probe(capture=True, force_null=True)
         with np.load(sealed / 'query_observation.npz', allow_pickle=False) as z:
             cameras = {k: z[k].copy() for k in z.files if k != 'native_qpos'}
             qpos = z['native_qpos'].copy()
@@ -188,7 +214,9 @@ def main():
         ctx_before = context_records(ctx)
         H.M.atomic_json(out / 'reconstructed_inputs.json', dict(prompt=prompt, model_input_sha256=sha256_array(image), proprio_sha256=sha256_array(proprio), derived_seed=query['derived_seed'], sampler_options=options, factual_context=ctx_before, no_BoundOnlineStep_constructed=True))
         outputs = {}
-        for role, selected_model in [('full-replay', model), ('candidate-null', null_model), ('full-replay-final', model)]:
+        roles = [('full-replay', model)] if cli.full_qualification_only else [
+            ('full-replay', model), ('candidate-null', null_model), ('full-replay-final', model)]
+        for role, selected_model in roles:
             budget()
             state.update(status='generating_' + role)
             save()
@@ -204,13 +232,33 @@ def main():
             torch.save(probe, out / (role + '_probe.pt'))
             if context_records(ctx) != ctx_before:
                 raise RuntimeError('production generation mutated the sealed factual context')
-            replica_rules.assert_shared_weights_unchanged(weights)
+            if weights is not None:
+                replica_rules.assert_shared_weights_unchanged(weights)
             if role.startswith('full-replay'):
                 helper.require_reproduced_full(action, original, probe, original_probe, payload)
             else:
                 helper.require_explicit_null_probe(probe, original_probe)
             outputs[role] = action
             del output
+        if cli.full_qualification_only:
+            from fastwam.research.candidate_pool import decode_branch_actions
+            native = decode_branch_actions(policy.action_normalizer, outputs['full-replay'])
+            with np.load(sealed / 'sealed_native_actions.npz', allow_pickle=False) as z:
+                if not np.array_equal(native, z['anchor-a']):
+                    raise ValueError('Full qualification native commands differ from the original')
+            np.save(out / 'full-replay_native_actions.npy', native, allow_pickle=False)
+            result = dict(schema='warm.full-generation-qualification.v1',
+                original_seal_sha256=cli.expected_seal_sha256, full_replay_exact=True,
+                original_Gaussian_source_conditioning_and_prediction_exact=True,
+                policy_inferences=1, null_generation_performed=False,
+                simulator_loaded=False, physical_branches_executed=0,
+                previous_null_window_reopened=False, efficacy_claimed=False,
+                checkpoint_sha256=policy.checkpoint_sha256,
+                controller_source_sha256=admission['controller_source_sha256'])
+            H.M.atomic_json(out / 'full_qualification.json', result)
+            state.update(status='complete_exact_Full_reproduction_engineering_only', **result)
+            save()
+            return
         if not np.array_equal(outputs['full-replay'], outputs['full-replay-final']):
             raise ValueError('interleaved null generation changed the Full H32')
         from fastwam.research.candidate_pool import decode_branch_actions
