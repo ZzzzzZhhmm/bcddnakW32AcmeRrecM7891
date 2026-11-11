@@ -1937,3 +1937,35 @@ CCI新增qualify_rebuttal_matched_resets.py与逐worker独立HOME/cache/tmp/runt
 增加新建场景重放中的逐步API及实测物理核对、原RGB前缀、完整parent/RNG/DINO、原H32 AABA与独立BT next-interaction标签，实际前缀保存已有在槽极性组合，原隐藏正确答案不用于标签或policy。标签读取前后检查状态不变；raw/Full repair与harm及unknown分开。原f77_uniform_mean_DINO_delta投影保持，候选数不是独立episode数，不能估总体SR或替代原19% cohort。事实前缀拒绝需另有两遍审计，不能静默吞错。
 
 22:45:53UTC CPU只读核验（0模型新推理/0物理）：事实源已89条命令/23个replan，q8预truth seal完整、原selected rank4/32有效、gate0.8984375，q48/96当时尚未到达。完整H32/首次4条实测前缀已精确匹配旧资格；源仍运行，尚无完整1000终态或新增后果/修复结果。原候选预测、adapter、采样RNG、infer kwargs和输出hash在ITER13_BT_PRIMARY_SEAL_INVENTORY_V1.json。原f77没有新shared模型的configure_research_probe接口，同状态零影响撤回仍为开放项，不套用新接口或绕过bound capability。完整协议见ORIGINAL_BT_SAME_STATE_PROTOCOL_20261111_ZH.md。
+
+### 23.136 原BT完整native1000固定来源；全部2020原件保全
+
+2026-11-10约23:04UTC原case0回合正常exit0，1000条连续原生命令、250次有限H32与完整replan/probe seal，0 TOPP，官方任务未成功。模型仍作者确认原BT12000/f77/sourceff32342d…、root3407/physical340800000、roster612cb5d1…、事实plan9d479fa7…；首图像/首H32/前四API及实测物理与既有资格精确相同，源码前后不变。该失败来源完整保留，不能视为总体SR0或改用成功样本。原DEV选点仍未知，不替代投稿specialist成绩。
+
+2020项100,561,680B完整归档a1a42358a991f710914b6de3ad376720d70e58a004391107a8b99b06e39f5414，manifest b143f0c0…；收据ORIGINAL_BT_NATIVE1000_COMPLETE_ARCHIVE_V1。本机23:06:42独立解码全部250 H32和观察NPZ，核对每条API/实测物理连续、指令、固定8/48/96 seal及全部档案成员，ITER13_BT_NATIVE1000_SOURCE_LOCAL_VERIFICATION_V1。infer_kwargs中的部分tensor是显式unserialized_type占位，不能称完整可恢复模型上下文；后续撤回仍须真实factory绑定。全部原件Git外；canonical实现3753286已push精确验证并CCI离线FF，活跃事实采集source5729f876及原模型不受同步影响。
+
+### 23.137 原BT q8独立H32 AABA及终点后果对照；完整候选池接续
+
+23:00:36UTC在新branch truth前冻结query8/48/96原selected rank4/3/20，三个完整32候选有效集合保持；登记ORIGINAL_BT_PRIMARY_RANKS_PREBRANCH_V1，inventory0fcca10e…。22:44新增BT入口54项实现检查已通过，canonical3753286冻结controllerf7cf0583…/549文件、collector64e88773…；原BRT入口及所有旧结果不变。
+
+q8于23:04:51首次准入，23:14:29完整资格exit0，plan94c9e7ba…；四分支128条新命令和128条事实前缀重放，所有API、RGB、实测parent/RNG精确，三个Full终点和DINO效应相同，原rank4提案物理终点不同。原提案电池1终点z=0.027890842407941818m，Full=0.7598833441734314m，预定跌落阈值0.70m；另一电池分别0.7896867394/0.7600132823m。两者独立next-interaction completion标签均0，**不计完成型repair或harm，不估预测精度/总体效能/自动撤回**。Full本身也未完成下一交互，不能称任务成功或全程安全。场景相机遮挡，新增表只使用原物理坐标，不用图像臆判跌落。
+
+58项5,677,705B完整归档b7e7359ce1fb8f11b88d13a76c5eee483da5e8011ff49ab48216cc1626580343，manifest021cac6f…；本机23:24:58逐项独立核对四分支命令/前缀/父/端点高度，十二张导出图像像素均有原pickle/result绑定，ITER13_BT_Q8_QUALIFICATION_LOCAL_VERIFICATION_V1。旧operator `applicability_labels=0`日志计数未更新并保留；真实四个sealed分支标签均已知，独立来源1、原候选1、Full控制1，不能把重复控制当独立样本。
+
+23:16:30在已知资格成功和58原件完整封存后，q8接续全部固定候选、最终Full anchor，outer2418349；同一plan94c9e7ba…、绝对截止2026-11-11T01:04:40.464620UTC不变，已sealed分支只读复用。23:57实际20候选完整，正重建rank20；尚非完整32池，未知与未完成不填成失败。q48/q96未准入。23:55:30按已完成q8分支时间间隔及长前缀长度，在q48/q96首次准入前声明独立资源修订：6h/11h，总含q8为19GPUh/最多1H100；原6GPUh及q8窗口保留，模型、固定query/rank、H32、标签和指标均不变，预算计算未读取结果。长任务ACP、标准优先，实际GPU quota不足才闲时。收据BT_Q48_Q96_PREADMISSION_RESOURCE_AMENDMENT_V1，不表示已创建ACP任务。
+
+### 23.138 v13完整LaTeX/PDF与回复联动验收；Full3000训练自动归档完成
+
+新增Appendix C.2.6/Table24/p34如实呈现单状态终点高度及两个零完成标签；三英文/15块/20项映射联动，全部scientific closure=false。完整原LaTeX及干净29文件ZIP独立复编，39页逐页文本一致，主文10页文本/像素与v12相同，原所有表九图/不利与未知保持。全部39页渲染、变化18/29/34–39逐页视觉验收；无未解析引用或overfull，46个既有字体警告。PDF dd70f15ac53777adb27dc67b148e1cd99ce931bd3436b9868e263c43361aa86a，ZIP1a6f548f…，matrixbd927766…；responses/20261111_v13。
+
+64项182,286,118B完整审阅包630eb424504793c431f14d74285c69dbbb07db67298063af9e5ce7f5f92b1767、manifest0ec74c5f…于本机23:57:00、AFS Nov11 00:00:40逐项落盘验证，writing_candidates/20261111_v13。包含2020/58完整原件档案和本机独立核验；原v12及增量保留。科学截止q8资格23:14:29，运行进度以新operator为准；未发布OpenReview或正式上传，真机新增延期。
+
+Full标准ACP UID95e49547…23:41:34实际训练exit0到3000，201起2800条loss/grad连续有限，原数学配方/root3407/父200不变；checkpoint b0669047fbcb0f8f79fd25fea2de25f689cfd286d85ae899872c9b4435fff27b。23:51:50自动完整state/CAS逐字节归档成功，原TAR899dc17f41cf25f952fc2301c6d049b67e3056235dd3e17359e84d31c3b0b8a3、38,603,714,560B，新增CAS13,581,159,874B。另起CPU独立重建审计PID2422615/ITER13_FULL3000_INDEPENDENT_AUDIT_V1，0GPU、不另训练/新pack；00:00已独立重建完整TAR，正在逐项核对原state，终态另记。Pool UIDc852e8e2…23:57实际2442/3000，原Nov11 12:29:56UTC截止不变。AFS62GB已包含Full raw38.604GB及CAS13.581GB消耗，原108.407GB预算剩余约56.223GB须保护，不再机械要求消费前110GB，也不删任何checkpoint。仍须双方完整state/CAS/typed bundles后才准入冻结100对，正式TEST未派发、时钟未开始。训练完成不等于新效能结果。
+
+### 23.139 Full3000完整状态独立重建及正式前置收据
+
+2026-11-11T00:03:22UTC独立CPU审计正常完成，未重复训练或重新pack CAS。按现有3817个CAS片段逐个验证内容哈希，完整重建38,603,714,560B原TAR899dc17f…；TAR全部15个文件与AFS原件逐项SHA及大小完全一致。七个实际完整state文件包含模型/优化器、scheduler、随机状态、trainer数据位置及zero_to_fp32脚本；sampler.bin实际不存在，收据明确记录false，不声称保存了不存在的文件。checkpoint原payload含warm.retrospection-checkpoint，CPU mmap检查未初始化CUDA；训练source前后4efb8094…，parent200、root3407、batch128、固定scheduler30000、2800新增有限更新与原attestation/合同一致。
+
+正式准入schema收据ITER13_FULL3000_INDEPENDENT_AUDIT_V1/FINAL_TRAINING_EVIDENCE.json，SHA62e9ecd838086a3d4cdd81b196914ff3ab028ad95875d824d2c374a7f165cc2a；state inventory f9e3254a…，checkpoint b0669047…不变。00:09本机独立核对收据/七state inventory/十五raw inventory及原自动归档收据的所有引用哈希，ITER13_FULL3000_LOCAL_METADATA_VERIFICATION_V1。38.604GB原TAR在CCI临时盘重建，持久CAS与原AFS检查点保持，本机未下载大TAR，此处不冒充本机完整权重字节校验。
+
+00:07:29在该终态与收据后，单独CPU准备Full3000的RB/BT两task typed bundle，PID2424423，使用common87199cc6…/原root3407矩阵、Full专用config/schema及新正式namespace；0实际policy/模拟/TEST，不启动正式评测时钟。需分别核对实际bundle manifest与对方final3000状态，不能把静态合同准备当正式效能。00:05最新实际Pooled2475/3000连续有限、q8完整24个候选且仍持有全局native lease，原截止均不变，ITER13_LIVE_V4保存实际metrics/runner/进程与AFS61,871,456,256B；其后进度以新收据为准。

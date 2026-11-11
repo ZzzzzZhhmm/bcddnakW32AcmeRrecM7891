@@ -1,5 +1,11 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**最新恢复锚点（2026-11-11T00:00:40UTC）：** 内部候选v13在responses/20261111_v13；PDF dd70f15a…、原LaTeX ZIP1a6f548f…，39页/10主文，完整工程和干净ZIP复编一致，变化8页视觉验收、原全部表九图及不利/未知保留。三回复/15块/20项矩阵bd927766…；64项182.286MB包630eb424…/manifest0ec74c5f…已本机及AFS writing_candidates/20261111_v13逐项验证。全部科学closure=false，未发布/正式上传。详见CANDIDATE_V13_20261111_ZH.md；后文旧v12/loading仅为历史时点。
+
+原BT完整native1000源已正常完成：1000命令/250 replan/0 TOPP/任务未成功，2020原件a1a42358…双端及本机独立数组/轨迹/前注册seal核验。固定主query8/48/96在新truth前冻结原rank4/3/20；q8四分支H32 AABA通过、58原件b7e7359c…完整，原提案电池1终点0.0279m、Full0.7599m，但交互完成标签均0，仅单状态描述性后果差异。完整q8池23:16:30续跑、outer2418349，controllerf7cf0583…/commit3753286，原01:04:40.464620UTC截止不变；23:57已20候选完整/正在rank20，不重复派发。原operator labels=0是保留的旧计数，真实标签必须从sealed result核对。q48/q96尚未准入；新预准入资源修订23:55:30按实测耗时为6h/11h、最多1H100，长任务ACP/标准优先，旧q8窗口及科学协议不改。
+
+Full标准ACP UID95e49547…23:41:34实际完成3000（201起2800条连续有限），23:51:50自动完整state/CAS逐字节归档，checkpoint b0669047…/raw TAR899dc17f…38.604GB。独立CPU审计ITER13_FULL3000_INDEPENDENT_AUDIT_V1已23:54:16启动PID2422615，截止01:24:16UTC，0GPU/不新pack CAS；00:00已重建全TAR，正在逐项核对全部实际state，不按旧pending重复训练或打包。Pool标准UIDc852e8e2…23:57仍2442/3000连续有限，原Nov11 12:29:56UTC训练截止保持。AFS62GB已包含Full raw/CAS消耗，剩余Pool完整raw/CAS原预算仍须保护，不再使用已消费前的108GB门槛，也不删任何checkpoint。正式100对仍等双方完整state/CAS和各自final3000 typed bundles，正式时钟未开始。Full CPU审计终态后可先准备其RB/BT两task静态bundle，不能将静态bundle当实际policy或TEST结果。
+
 **最新执行锚点（2026-11-10T22:32:20UTC）：** 原BT case0完整native1000事实源已22:27:39实际启动，outer2414197/flock/collector、plan9d479fa7…、source5729f876…/commit75eb6f53…；全局native lease实测持有，loading_original_full_policy，0新查询/命令。本阶段单一截止23:57:39.628419UTC，不能复制启动或重置；先读operator/runner/完整trace/实际进程，失败先封存，成功也须完整归档核验再分析。全50原BT评测仍未派发。全50-roster/十worker资格已完成，不重跑。
 
 两标准ACP Full2715/Pooled2058连续有限、完整final3000待齐，原Nov11 12:29:56UTC截止保持，AFS114.86GB须保护108.407GB最终raw/CAS预留。内部增量3 responses/20261111_v12_addendum3、matrix0e18d942…、78项包9dcbfd6d…/manifest796870b6…已双端全成员验收，AFS writing_candidates/20261111_v12_addendum3。三英文15块/v12 PDF38页10主文/ZIP完全不变、全部20科学closure=false，不发布或正式上传。既有q8/q48不利、q96不可观测与原稿所有数字保留；后续重点是原BT固定探针同状态直接证据和两final3000的正式100对，不将工程资格写作效能。
