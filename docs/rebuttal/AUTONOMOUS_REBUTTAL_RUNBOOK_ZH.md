@@ -1,5 +1,11 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**22:47UTC新执行优先锚点：bt40首次准入，不能按前六片过期推断整项研究已结束。** 原master十片/100对/Nov12 18UTC硬截止不变；原rb00云端失败+真实runner终态+13attempt全原件验证后显式核销，修复准入端raw/canonical spec哈希比较口径，不改原runner。原计划case40–49的bt40此前未准入，22:44:53首次窗口→Nov12 10:44:53，plan44c23a4b…；原六片first/deadline和原fixed50/reset/Full-Pooled共享3000权重不改，不是重开旧窗。
+
+**CCI现在原case40 Full启动/加载，非旧Full工程复现：** `shards/bt-40/cci_segment_iter26_v1`，monitor2532679/worker2532713，22:47心跳活动、GPU0MiB/0完整生成；最多1新role/6000s，原f774入口adb5ba9b…，两角色共同3600s修订dfaa351a…在新truth前冻结。查实际operator/exit/生成后才继续下一个角色，勿复制到ACP。准入/核销21原件TARc2b71eb3…/manifest7ebd3252…封存于ITER26_BT40_ADMISSION_ARCHIVE_V1；此前六窗unknown完整保留。首操作Path解析失败发生在新时钟前，已保留并独立恢复。
+
+**原q96继续：** 22:47实际13branch/10候选端点、rank9父状态重建，原07:16UTC截止不改；rank7/8为晚到未独立归档增量，不抢先算全池。v21原PDF与三回复不动，最新执行映射用`responses/20261112_v21_execution_addendum3`，规划JSON完成安装后以其收据为准。下文“六窗过期”只描述首六片，不指新bt40。
+
 **Nov11 22:30UTC当前锚点：原正式资源窗口已结束，不再是两个RB活动。** 六片截止22:12–22:16均过期；新增RB6 Full531命令/133生成、RB25 Pooled665/167均exit-15/success unknown，各最后一条未闭合命令保留。974原件TARbd1dd24e…/manifestb83101e3…已双端与本机物理链/H32验真。原100对仅28完整role/14对均0/0、累计6unknown，不能称完整研究或填总体SR/CI。三个唯一恢复排队allocation已逐项停止，22:30 UI确认均已停止；无正式GPU活动，不重置原时钟或重建原任务。
 
 **原specialist q96仍实际运行：** UID536a352f050b4142890aa99fb88aa23b标准H100详情22:30仍运行，原07:16UTC截止不变。新rank0–6七H32/标签均0的70原件TAR48e35882…/manifesteb0dcb70…双端及本机逐成员验真，`ITER26_Q96_COMPLETED_DELTA_V1`；整池未完成，不能先算全池MSE。继续原唯一job，不替换固定状态/rank。

@@ -2433,3 +2433,15 @@ Nov11 22:20UTC核查时，六个原正式分片的22:12–22:16资源窗口均�
 ### 23.196 原BT q96新七个完整候选原件
 
 rank0–6各完整H32、parent_recreated true、error null；七个独立下一交互标签均0（物体落至桌下），与原rank20和三个Full锚点属于同一固定状态，不能当八个独立回合。70原件45,441,016B另封存`ITER26_Q96_COMPLETED_DELTA_V1`，TAR48e3588279b49a28a43f92088ddcea8d0ee36f1548e8548dfd2bf29aaaf802bf、manifesteb0dcb7039bd2e1bb2f6c216ea84a3a361b5378e4774dd8dea0624103c8b45bb；22:28:33本机逐成员及全部端点独立核验。22:20实际operator为rank7父状态重建、累计11完整branch/8候选端点，原07:16UTC截止与全部固定rank不变；全池未完成，不报告全K32 MSE、repair或总体SR。
+
+### 23.197 核销已终态allocation，首次推进原计划中未准入的bt40
+
+原master仍在Nov12 18:00UTC硬截止内，预先列明十片/100对；前六片过期不等于剩余rb30/bt30/rb40/bt40已准入或整项研究结束。为继续固定样本，先核销rb00原allocation：云端独立确认UIDc1186e7f7fd24a5e9647e769a52ce0a8失败；实际runner21:11UTC后已终态exit1，记录reason scheduler_signal_2。13个attempt的全部文件逐一对照既有原件manifest，另外保全完整job_logs；原所有success0和unknown不改。
+
+查明旧准入程序把runner的canonical JSON spec hash与缩进JSON原文件hash比较，导致真实终态无法核销。独立操作修订改为验证原runner的canonical spec hash、原始job文件hash分别绑定，保留原runner不变；三项运行中/未知exit/错spec拒绝检查通过。原冻结准入程序字节不改，核销v2证据单列`rb-00/release_canonical_v2.json`。第一操作在核销已完成、任何新分片时钟尚未创建前因Path类型错误退出；修正仅路径解析后继续，保留两个操作原件，未重复原任务。
+
+bt40为原master预先登记、此前目录及任何create intent均不存在的case40–49，22:44:53.565472首次准入，固定截止Nov12 10:44:53.565472UTC；原master及六片admission逐字节不变、并发≤6及总120GPUh不改。plan44c23a4b88e6424b802a6fab25a8792181e63a08a4bdb18e2fe684caa10ab179，同一shared3000双角色/原50-reset roster/原H861和C871，未按结果更换任何原样本或权重。共同3600s工程预算在首次新truth前冻结，amendment dfaa351a1c4158d3b5539c3a05129ccfcee399629270b3c78cf36af1db34e4fe，不改科学plan。
+
+22:46:06 CCI实际启动原case40 Full，monitor2532679/worker2532713，`cci_segment_iter26_v1`最多1新role、外层6000s；没有创建ACP重复任务。22:47实际campaign心跳持续，GPU尚0MiB、0完整生成，属于进程启动/加载阶段，不能称新GPU推理或结果。CCI四小时平台重启边界未核实，单次边界<4h且所有中断/unknown须保留。21项77,161B准入/核销/入口原件封存`ITER26_BT40_ADMISSION_ARCHIVE_V1`，TARc2b71eb32f9cefe799db070f224299fbf3114c16d01b465f7847b10d8c8286ed、manifest7ebd32525eb467bd51dc88e57d4c0e2dad2fe03f08afd3042d3b6f2e05ab1d5b；旧过期窗口未重开，新增准入不等于科学收益。
+
+原q96同一时点已13完整branch/10候选端点，正在rank9；新rank7/8晚于上一七候选归档，后续按原身份接收，不提前称全池完成。v21三回复/PDF/源码封存不变，增量3维护新准入与20项索引，全部P1–P5仍待证。
