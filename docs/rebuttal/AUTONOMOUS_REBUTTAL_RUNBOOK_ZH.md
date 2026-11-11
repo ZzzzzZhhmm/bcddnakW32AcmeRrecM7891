@@ -1,5 +1,7 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**22:02UTC最新Full工程终态，覆盖下文加载中：** worker2529134实际21:51:20 exit1，0完整推理/0null/0物理，两PID均消失。12原件TARc9b74de9…/manifest311b02c0…已双端与本机全成员验真，`ITER25_FULL_ENGINEERING_FAILURE_V1`。启动模板多设NVIDIA_TF32_OVERRIDE=0，原M1合同为null；只读对照确认移除后全部字段一致、加回后仅该字段不同。未来模板已修正，放在`ITER25_FULL_ENVIRONMENT_FIX_V1`，但未重新加载/未获GPU精确复现资格。不得再按“加载中”复制或重跑root；原22:08截止不重置，余量不够冷加载。优先继续现有ACP原q96池和原固定对照的终态保全，下一新准入须使用修正环境并在加载前核验严格合同，勿改合同绕过检查。详见台账23.193。
+
 **21:51UTC晚到已独立验真：** v21原包核验截止26role/12对不覆写；另1092原件TAR92d02572…/manifest556ea914…保全RB case5 Full与case24 Pooled，累计28完整role/14对均0/0，旧unknown与RB22一次TOPP保留。新索引`responses/20261112_v21_execution_addendum1`；原v21 70成员AFS包已21:48:30逐成员及解包验真。先读新规划JSON与Full工程monitor，勿按下文旧活动状态重启。
 
 **Nov11 21:47UTC写作与执行锚点：** v21逐审稿人作者对话稿完成，`responses/20261112_v21_reviewer_dialogue`，20项/17块/37未填槽位；完整原LaTeX与干净ZIP独立编译44页/主文10页，PDF f37c1d03…、源码ZIP511a4262…，9变化页直接验看/35页像素不变，0 undefined/overfull。原v20不覆盖，P1–P5整体仍待证。新2955原件TARfa08586a…/manifest72edfd0d…独立验真，累计26完整role、12对均0/0；原BT q96 AABA46原件TARc853450d…亦独立验真，提案/Full交互0/0、全池仍活动，不填repair或全池MSE。详见台账23.189–190与CANDIDATE_V21_20261112_ZH.md。

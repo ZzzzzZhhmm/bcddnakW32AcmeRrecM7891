@@ -2409,3 +2409,9 @@ Full-only工程资格实际21:38:34首次准入并启动，monitor2529133/worker
 RB case5 Full（21:43:53）及case24 Pooled（21:43:54）各真实exit0、700命令/175个完整H32/1400物理记录、success0、0TOPP。1092原件27,667,548B已双端封存`ITER25_LATE_TERMINALS_V1`，TAR92d02572b23df3f14f78a357bb2c59583e1ba62ffc1edd5d7f23a81c0804353e、manifest556ea9145e8628b602f6d5545fa26603ae733bf60f47dc36e26a82467fcd08d3；本机逐成员、全部动作/物理链、H32与配对初态/首输入/共同噪声/首K32独立核验。累计28完整role、14完整对（12RB、2BT），均0/0，原不利/unknown保留，不填原100对最终SR/CI、优势或非劣效。
 
 新增内部执行增量`responses/20261112_v21_execution_addendum1`单列最新28/14进度并维护20项映射；v21三回复、PDF/源码与70成员包原样保留其明确核验截止。ACP21:44实测原RB00/RB20及标准q96运行中，三个唯一恢复allocation仍启动中；21:50 AFS心跳确认原RB继续case6/25，q96继续原全池，不能按旧部分946/988动作计新运行。所有原first/deadline与固定样本不变。
+
+### 23.193 Full工程资格的真实退出及启动环境修正
+
+晚到核查确认：Full-only worker2529134实际21:51:20正常收取exit1、非bounded；`online DINO runtime differs from the M1 contract`发生在policy构造末段、0完整生成/0null/0物理。两个实际PID已消失，不能沿用21:50“加载中”的旧观察。12原件15,397B保存在`ITER25_FULL_ENGINEERING_FAILURE_V1`，TARc9b74de9ab7285be7653f803fed2e8ef836b7777d5b7a0450ee5a2479b79a276、manifest311b02c0ce172393e441cfec7527a320ce07ebd8f03414789de3b74a55bedab4；双端及本机21:59:50全成员独立验真。原21:38→22:08窗口不重置，余量不足另一次冷加载，不重跑原root。
+
+已定位启动模板额外设置`NVIDIA_TF32_OVERRIDE=0`，而绑定M1合同为null。22:01:52在新进程进行只读对照：无额外覆盖时全部运行环境字段与合同相同；设置该覆盖后仅`nvidia_tf32_override`一字段不同，足以触发原严格合同检查。修正未来模板以显式移除该环境变量；原失败monitor、模型代码、合同和原始日志保持不变。诊断与未启动模板在`ITER25_FULL_ENVIRONMENT_FIX_V1`，实际新推理和精确Full复现资格仍未完成，不能宣称已恢复科学对照或repair证据。原ACP三项实际运行继续，v21材料及已保全的28role/14对不改。
