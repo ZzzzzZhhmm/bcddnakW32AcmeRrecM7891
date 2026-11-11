@@ -1,5 +1,7 @@
 # 固定3000 Full/Pooled 正式配对评测：执行与恢复
 
+**10:57 UTC最新状态：** 两final已齐，ACP认证和AFS容量阻断已解除；master首次10:11:36.607719UTC冻结，硬截止Nov12 18UTC，首六分片原12h窗口已开始（22:12–22:16UTC截止），六个唯一闲时UID已创建。当前使用冻结准备器v3 SHA2c29354d…，H861/C871/固定100对设计3484ad14…不变。详见[CANDIDATE_V17_20261111_ZH.md](CANDIDATE_V17_20261111_ZH.md)的UID表和各shard/identity.json；**不能按下文旧“未准入”再freeze、延时或重复创建**。两个标准集群各单卡实际“限额中”后已10:26:59停止、无runner/campaign，原件元数据归档后才idle；预检查弹窗不是实际拒绝，已另存澄清。10:48首片worker等待中，事件明确GPU1不足，所有六片仍未看到AFSrunner；不把“启动中”当GPU工作。GPU调度成功后核对真实来源/进程/轨迹/终态/归档，排队仍占slot和原窗口。rb30/rb40有不同CCI研究的外部保留，后四正式分片未准入；v3及master不得改写。以下为历史过程。
+
 **04:04 UTC恢复更新：** 下文01:52的训练pending为历史状态。两角色固定3000完整训练/state/CAS/typed bundles和十计划资格均已完成；Pooled proof1058dfbc…/bundle929fac30…，不重跑训练或CPU独立重建。实际formal campaign根尚不存在、时钟未启动，IAM登录过期阻止新标准ACP创建；原rb00仅保留草稿。准备器SHA e42963e9…不改，认证恢复且可实际提交后才freeze/prepare，以保护固定窗口。BT q48已04:00:18正常退出并380原件完整封存，q96首次11h未开始；独立私有formal worker并发规则保持。现有AFS约5.98GB，首次准入再检查完整轨迹/有界context及其压缩归档的余量，不删除原件。
 
 已完成的记录成本见候选v15 Appendix C.5，不替代正式成功率。新增CPU结果汇总器17检查已通过，固定100对未齐时primary始终null；不重采roster/reset/十worker资格或把DEV输入一致性当性能。以下保留首次准备过程以便恢复。

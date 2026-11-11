@@ -2183,3 +2183,29 @@ AFS全部7状态重新hash一致，原Control200 operator exit0、无相关进�
 详细原件ITER17_CONTROL200_VERIFIED_STORAGE_MIGRATION_V1及只读preflight已本机保存。操作后瞬时AFS仍1,272,446,976B，没有当场观察到26.3GB可分配容量增长；logical迁移与实际df严格分开，不能据此立即通过formal4GiB门。八个已冻结科学源和selected operators另封存3,723项40,417,093B，TAR9,121,551B SHA0b6b67e6910976d908230b0cb3889098de63fc45d76d01cbafd9384b9d41f1c4，09:59:51 Windows逐成员验真；源不改。容量/ACP认证仍须实际回读，不继续删除独一原件，不把排队/工程通过计作GPU活跃。
 
 10:04:37UTC追加实际df核验：AFS可用27,142,139,904B，已观察到容量增长，原两个raw路径仍不存在、locator/备份保持。此为共享卷实际采样，不把前后差值全归因于独占回收量；以后准入再查并发增长/原件归档预算。当前无需继续清理其他独一原件。ACP认证仍须实际核验。
+
+### 23.166 代码push/CCI同步后，独立Stage B与固定q8分支真正准入
+
+代码7309c9d2381386e87aa6b94df4f42b8a05df0f84英文提交已push、origin exact verified；10:06:12 CCI离线FF，五处仅本轮已核对source先备份再处理，八个旧冻结科学源前后相同，无训练/ACP/eval访问Git远端。新557文件源2fdbbfeed9d19c83afe6f91ad141fb0c19bb942cfbcfb5b2c6511384a01d65bb冻结于native_family_dev_controller_7309c9d/code，原c159/H861/C871及所有checkpoint不改。
+
+B固定seed3408首次10:09:30.774636→13:09:30.774636UTC，plan a3f5a02e9a5925877a3a143a37d6502d888e7e54eb7dd253690b029d79c0f9e7，monitor2444145/driver2444146，10:12:21原专家/两次原生reset资格exit0。按原登记反序holdout null/Full、clean null/Full，额外q48仅被动保存，绝不按Stage A得分换种子。旧rb40保留标记先绑定Stage A外部终态/全原件归档释放收据，再分配B；旧窗口/未知退出不改。
+
+固定clean q8/K32首次10:15:26.693183→13:15:26.693183UTC，seal3d540098…、admission89679388d9fbe637c074f08096c353b6d8009196bdce26d2f217d2ce20d66e95，monitor2447586/worker2447587；独立已核验rb30，先保存唯一外部保留再启动35分支。10:43已有2Full锚点/13候选，尚无完整池汇总。为保B首角色原2400s上限，10:45:52给B短时计算优先，名义300s、实际301.676881s后10:50:54自动SIGCONT恢复q8；不咨询任务score、不改任何源/样本/指标或两个首次窗口。调度原件ITER17_BOUNDED_CCI_PRIORITY_V1保全，不计新效能，也不得按旧pause状态遗留停止。
+
+### 23.167 ACP恢复并提交正式首六固定分片，实际仍待GPU调度
+
+10:06实际ACP认证恢复；10:07–11三旧UID95e49547…/c852e8e2…/59dd5f78…云端成功逐项核对，新warm-mf3k前缀暂无数据。AFS实际27GB后原4GiB门通过，10:11:36.607719UTC master首次冻结，硬截止Nov12 18UTC，设计3484ad14…、H861/C871/两固定final3000/原100对及120GPUh/6slot不变。v3操作器2c29354d…绑定master，不可之后改写。
+
+首rb00首次10:12:01→22:12:01、bt00 10:14:31→22:14:31，其余四10:16:44→22:16:44，原静态CPU预检均已成功且不消耗新科学样本。先实际申请标准01e UID04e6e357e289419eaf91ec03ec30d20c、01e_02 UID76b34e7651324e74a16b6a4214ab886c，均“限额中”、无AFS runner/campaign；10:26:59明确已停止、唯一UID及元数据全归档后才fallback。原“限额不足”弹窗只是可确认提交的preflight warning，并非实际后端创建拒绝；旧误读结论以PREFLIGHT_WARNING_CLARIFICATION.json纠正保留。中间一次另集群表单漏选GPU规格被UI拒绝，无云job/策略运行，原失败与修正收据保持；未重置窗口。
+
+10:30–34六个唯一闲时UID：rb00 c1186e7f7fd24a5e9647e769a52ce0a8、bt00 96aa4fd9d473406fadfb3bd7915c9946、rb10 ef42e49d7d9f419588312000cf075981、bt10 bef818e6de314819bdb38ccbd4802459、rb20 ac826871b0c642519fb7446c8d7e75ca、bt20 c74786dc829e44fa9d8898ad50d04573。每次创建前保存精确form/plan/job/shell hash与intent，镜像ccr-zhicheng-02/lwz_wam:lwz-workspace-20261029145800、AFS afs-p3-01e /→/mnt/afs RW、1GPU/22vCPU/230GiB/1worker/0自动重启逐项验真；原std身份归档，当前identity不与仍活跃旧UID并发。
+
+10:42六云状态“启动中”，10:39 AFS全部尚无run_manifest/campaign；10:48 rb00 Worker实际“等待中”、Host/Pod IP为空，已加载事件明确`FailedScheduling: 4200 | 29/29 nodes in VC match job | insufficient resource: nvidia.com/gpu 1`。这是云端GPU资源不足，不是科学代码失败或已分配GPU；六个slot及原时钟保持，不因pending重建。只核验首片具体scheduler reason，不冒称其余五事件都已逐一读取。后四正式分片未准入，rb30/rb40仍由CCI研究保留。新BTq96未准入。所有队列、工程预检、实际策略及完整效能严格分开。
+
+### 23.168 v17全量回复/原LaTeX验收及之后到达的B首角色
+
+v17三文3,281英文词/15块/20项，新增BB-W4/Q3、HH-W4、RK-Q2的同一已核验Stage A边界及完整0/0、holdout失败/unknown。新Table22/p33保留所有不利记录，显式null的175次Gaussian与候选conditioning为零而gist/记忆保留，和自然技能缺失检测/NI保持区分。原稿正向结果及旧负/unknown全保留；新开发shared模型不替换原specialist成绩。
+
+完整29文件原LaTeX和干净ZIP两次独立编译41页/主文10，原九图与13个旧table块字节不变，前32页文字/像素与v16相同、变化33–41逐页视觉验收，无overfull/未定义引用，46旧font警告。PDF a4e4f5d7859a5b23cf38ca979805e4c977c39a9f0d80f4ba7a8a7f0d739787a4；sourceZIP5d57cdcabeff96271c8e33aa6921ca6ce1864dd13552e8e56cdf11380cbe9e12；matrixab51206c471856a15a9f8820ac91c98c720d0ab07398e60b1908abc08e6d34bd。116项115,881,629B包78783ccd6e6b2e0c9da76a1a8171a346b931469bc9fd25810e332f7b3fd10bc2、manifest95657d0f9d54db867eb5bcd84758dc66d83a3a3b6454bb921e24f9e97fde18ff，10:55:53 AFS writing_candidates/20261111_v17全成员验真，科学截止09:57:14不改。未发布/正式上传，20项closure/stable仍false。
+
+之后B首holdout candidate-null于10:51:16.340649UTC正常exit0，未有界终止，700命令/175H32/1,400物理记录，0 TOPP、success0/max_reward0。542项原件10,353,251B，TAR3,677,006B SHA1f095dfe7b07e726eeb676fcb940f30a5b71b173db3fd92a6b7e1a4dc0f4ecfc；10:56:52 CCI与10:57:51 Windows全成员/生成/物理链及175次actual-null独立验真，gate/source0、source精确Gaussian，alpha仍为自然正值（median.1875），不混淆alpha与最终effective gate。该数据晚于v17固定截止，单列ITER17_STAGEB_FIRST_NULL_COMPLETE_INTAKE_V1；须下一版与配对/完整q8整合，不能静默改已冻结包或计收益/NI。原driver已进入同seed holdout Full，未复制。每小时heartbeat已核对仍ACTIVE，目标Nov13 23:00不变。

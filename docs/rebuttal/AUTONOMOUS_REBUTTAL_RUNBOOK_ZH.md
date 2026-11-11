@@ -1,5 +1,11 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**最新恢复锚点（2026-11-11T10:57:51UTC）：** v17内部候选已验收：三回复3,281词/15块/20项，完整原LaTeX41页/主文10页、PDFa4e4f5d7…/29源ZIP5d57cdca…/matrixab51206c…。原工程与干净ZIP独立编译，前32页与v16文字/像素相同、33–41逐页视觉验收，原图/数值/不利/unknown保留。116成员115.882MB包78783ccd…/manifest95657d0f…已本机及10:55:53 AFS writing_candidates/20261111_v17全成员验真。科学截止09:57:14；20项closure/stable仍false，未发布/正式上传。详见[CANDIDATE_V17_20261111_ZH.md](CANDIDATE_V17_20261111_ZH.md)。
+
+**计算与容量已改变，不能照旧“未准入/认证阻断”重启：** Control200已核验备份迁移后10:04 AFS实际27.142GB，10:39仍27.064GB，当前无需再删独一原件。ACP认证已恢复，旧三UID成功已核对。正式master已首次10:11:36UTC冻结/硬截止Nov12 18UTC；首六rb00/bt00/rb10/bt10/rb20/bt20已各自唯一闲时UID，详见v17 handoff表及各shard/identity.json。两个标准集群实际限额、标准申请已知停止/0科学运行后才fallback；分片原22:12–22:16截止不改。10:48 rb00 Worker事件明确`insufficient resource:nvidia.com/gpu1`、无Host/Pod IP，六片尚无AFS runner；排队/启动中不计活动GPU。保留六slot，不复制创建，v3准备器已随phase冻结不可改。
+
+CCI两个独立实际任务已准入：B固定seed3408 plan a3f5a02e…/新557源2fdbbfeed…，root native_family_dev_case1_v1，monitor2444145/driver2444146，原10:09:30→13:09:30；首holdout null已10:51:16正常exit0、700/175、0TOPP/success0，542原件1f095dfe…已本机核验，属于晚于v17截止的late intake，下一版整合；原driver正在holdout Full，勿复制。固定clean q8/root native_final3000_dev_case0_clean_q8_pool_v1，monitor2447586/worker2447587，seal3d540098…/admission89679388…，原10:15:26→13:15:26，10:43已13候选+2Full锚点尚无全池指标。q8名义300s临时算力让位B（实际301.677s）已10:50:54自动SIGCONT，当前应为继续运行，两个窗口/样本/模型/指标不改。rb40/rb30外部保留仍有效，不能把CCI-local空flock当释放。每小时heartbeat仍ACTIVE。以下都是历史时点。
+
 **最新恢复锚点（2026-11-11T10:01:16UTC）：** 原Stage A已由外部中断终止，monitor/driver/worker均不存在，原06:29:13→09:29:13窗口已结束，禁止重开。clean Full/null和holdout Full各完整700/175，成功全0；clean配对初态/共同噪声一致，null175次实际source精确Gaussian且candidate slots为0、gist/记忆保留。最后holdout null仅加载、0已记录命令，退出码未采集保持unknown，原stage_exit缺失不造。全部1,664原件44.111MB封存2eb7ac6d…，本机全成员及三个物理链验证；旧两实施失败/unknown保留。此前下文08:15“正在运行”仅是历史。详见[NATIVE_QUERY_AND_STORAGE_RECOVERY_20261111_ZH.md](NATIVE_QUERY_AND_STORAGE_RECOVERY_20261111_ZH.md)。
 
 作者已答复无法扩容、先保存再清理：Control200七state26.307GB已另复制到本机`tmp/rebuttal/storage_backup/20261111/control200/state`并独立hash，receipt96a53ef9…；原38.438GB TAR当日重新hash匹配d838ed0c…，CAS仍在。AFS七原件重新hash及无打开FD后，仅迁移两个大raw state副本26,307,288,751B，评测weight、五小state、CAS/数据/其他checkpoint及原件不改，原root加STORAGE_LOCATOR_V1和精确恢复脚本，历史收据不改。**当时df仍1.27GB，逻辑迁移不等于已可用空间，须再查实际容量，formal4GiB门不放宽。** 另25派生TAR去重450.610MB保留全部路径/SHA；八冻结源/选定operator3,723项另存本机并验真。
