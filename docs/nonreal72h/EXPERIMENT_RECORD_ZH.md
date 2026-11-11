@@ -1997,3 +1997,21 @@ Full3000两task静态合同00:17:04正常完成，本机00:20:25逐项核对12�
 00:52:33实际q48 AABA通过；三个Full完整H32端点/原DINO效应相同，四个parent/RNG相同，原rank3提案物理端点不同。selected raw/Full下一物理交互标签仍0/0，无完成型repair或harm。此为与q8相同来源回合的第二个固定状态，不能当独立任务试验；完整32池仍运行，暂不填写预测误差或总体频率。
 
 不停止、不重启或修改活跃程序，只读核对四个不可变complete marker及其所有文件后，于00:55:50保存47项5,423,239B资格快照e0da5bdc85c01f975cb6eac97012c2e05481cb586648fe38e77d6c7748d808ff。四支各192条事实前缀与32条新命令完整，归档前后sealed哈希不变；本机全成员及四支前缀/H32/端点再次核验，ITER13_BT_Q48_ACTIVE_AABA_LOCAL_VERIFICATION_V1。该档案不是whole-job terminal或完整pool档案，原UID59dd5f78…/plan363bc263…/rank3/06:23:48UTC保持。回复研究录入备忘BT_Q48_RESPONSE_EVIDENCE_INTAKE.md已保存，待固定池完整后纳入下一版；当前v14仍明确冻结于完整q8的数据截止，不将新资格误称效能。
+
+### 23.144 正式配对比较准入前检查与唯一CPU资格流水线
+
+2026-11-11T01:32:12UTC只读解析Full/Pooled两份真实resolved config：仅model factory、retrieval/effect/adaptation/gate四项loss、输出目录、parent resume、本段run_steps八处不同；其他数据/模型/优化器/scheduler等叶子精确相同。Full四loss为0.1/0.05/0.05/0.05，Pooled全0，符合原事先协议，不改训练目标。完整方法及对应监督的对照不能称仅改变结构或整个recipe hash相同。配置SHA f84274b1…/b5ca3cec…和实际差异在Git外 `ITER14_ENGINEERING_PREPARATION_V1/PREPARATION_CHECKS.json`，无新推理或TEST。
+
+01:42正式计划准备器逐项对照不可变native worker时，发现尚缺必需cuRobo路径，已在任何formal准入前补齐，并加入实际worker字段完整检查。修前operator97dc4e10…原件单独保全，修后e42963e9…；资格V2核对十固定分片/100对、无效分片拒绝、硬截止裁剪/过期拒绝、真实缺失Pooled终态阻断、cuRobo目录与全部native必需字段。原设计3484ad14…、科学H861004fa…/共同C87199cc6…、模型与样本均不改，formal根/时钟尚未建立。
+
+01:43 ACP实际页面确认Full原UID95e49547…成功，和已有runner exit0/七完整state/全部CAS重建一致；Pooled原UIDc852e8e2…仍训练，01:48:56实际2940/3000，2840条新增101起连续有限。q48原UID59dd5f78…实际页面运行中，01:47有10完整候选/active rank10，非完整池。原各绝对截止不变，队列/工程检查不计策略结果。
+
+01:52:39在CCI唯一启动有界CPU资格流水线，outer PID2429211、5400秒；源码 `run_final3000_qualification_pipeline_v1.py` SHA c5cb2a50…、原始intent/launch/operator/log在Git外 `ITER14_FINAL3000_QUALIFICATION_PIPELINE_V1`。先等待原Pooled自动归档已知成功，再依次独立重建全部CAS/state（脚本3df01180…，不重复CAS打包）、准备明确Pooled角色RB/BT静态合同（e707eb6d…）。未加载policy/仿真、不用GPU、不启动formal时钟、不创建云任务、不访问Git远端；恢复须先核查该唯一实际进程及已知子阶段退出，不能另开未知重复。01:54:53实际父子进程均在、正等待训练2967/3000；此时没有宣称最终资格或性能。
+
+### 23.145 三审稿人简洁回复候选，原PDF与全部实证范围保持
+
+01:49:29形成 `responses/20261111_v14_brief_working`，三文由1805/1552/704词压缩为1170/1008/472词，合计4061→2650；仍15话题块，逐条覆盖全部20项weakness/question。工作矩阵ea0473bbae10507e5942939910f0f718fcd46a2bf25230172db7e82a63750c0a，三文SHA4506e4d1…/85e0d693…/5ec73b64…。补充明确Pooled的机制及四loss范围，压缩重复协议，不增加新性能或统计显著性，不以工程资格关闭科学意见。
+
+原稿正向表格/受控证据、新shared-stage与原specialist不利结果/unknown、BT单状态终点对照但无completion repair、缺技能正门控等均保留。现有完整v14三回复与87项包保持不可变；原LaTeX/PDF SHA230dcc6e…无改动，沿用既有完整工程/干净ZIP编译及视觉验收，不重复编译未改PDF。后续完整新结果再统一推进论文版本。全部empirical_closure=false、stable_release_ready=false；未发布/正式上传。
+
+第一次本机结构检查因HH-W5旧matrix存完整旧标题而失败（无科学程序）；保留 `BRIEF_HEADING_CHECK_ATTEMPT1.json`，按唯一稳定W/Q前缀映射并写入新确切标题后，3文/15块/20项检查通过。不把该文本检查失败算实验失败或静默漏掉W5。
