@@ -22,6 +22,8 @@ def main():
     ap.add_argument('--output',type=Path,required=True);ap.add_argument('--preflight-only',action='store_true');ap.add_argument('--admission',type=Path);ap.add_argument('--expected-admission-sha256')
     ap.add_argument('--resume-audit',type=Path);ap.add_argument('--expected-resume-audit-sha256')
     ap.add_argument('--preflight-isolation',type=Path,help='CPU-only check of another already qualified private worker')
+    ap.add_argument('--null-generation-seal',type=Path,help='Separate exact-Full-qualified same-context null seal;does not rerun the K32 pool')
+    ap.add_argument('--expected-null-generation-seal-sha256')
     cli=ap.parse_args();seal_path=cli.seal.resolve(strict=True);sealed=seal_path.parent;seal=read(seal_path);ROOT=Path(__file__).resolve().parents[1];out=cli.output.resolve()
     if sha(seal_path)!=cli.expected_seal_sha256 or seal['schema']!='warm.rebuttal.native-DEV-query-seal.v1':raise ValueError('Fixed query seal differs')
     if (seal['task'],seal['query'],seal['horizon'],seal['candidate_slots'],seal['valid_candidates'])!=('rearrange_blocks',8,32,32,32) or seal['formal_TEST'] is not False:raise ValueError('Only the fixed native DEV q8/allK study is supported')
@@ -33,6 +35,21 @@ def main():
     for name,item in seal['inputs'].items():
         f=Path(name)
         if f.stat().st_size!=item['bytes'] or sha(f)!=item['sha256']:raise ValueError('Original source input changed: '+name)
+    null_seal=None
+    if cli.null_generation_seal is not None:
+        if cli.expected_null_generation_seal_sha256 is None or sha(cli.null_generation_seal)!=cli.expected_null_generation_seal_sha256:raise ValueError('Separate null generation seal differs')
+        null_seal=read(cli.null_generation_seal)
+        if (null_seal.get('schema')!='warm.rebuttal.sealed-native-same-parent-null.v1'
+            or null_seal.get('original_seal_sha256')!=cli.expected_seal_sha256
+            or null_seal.get('expected_branch_order')!=['anchor-a','candidate-null','anchor-final']
+            or null_seal.get('checkpoint_sha256')!=seal['source_checkpoint_sha256']
+            or null_seal.get('original_factual_context_sha256')!=sha(sealed/'source_context.pt')):raise ValueError('Null belongs to another factual query or model')
+        for flag in ['full_replay_exact','full_source_Gaussian_conditioning_and_prediction_exact','cold_null_replica_shared_readonly_weights','same_factual_context','Gaussian_exact','explicit_candidate_null','before_any_generated_null_execution','no_historical_BoundOnlineStep_capability_constructed_or_consumed']:
+            if null_seal.get(flag) is not True:raise ValueError('Null is not qualified before truth: '+flag)
+        if null_seal.get('counterfactual_branches_executed')!=0 or null_seal.get('formal_TEST') is not False or null_seal.get('natural_skill_absence_certified') is not False:raise ValueError('Null generation scope differs')
+        for name,item in null_seal['files'].items():
+            if Path(name).name!=name or sha(cli.null_generation_seal.parent/name)!=item['sha256']:raise ValueError('Sealed null raw bytes differ')
+    elif cli.expected_null_generation_seal_sha256 is not None:raise ValueError('Null seal path is missing')
     source_plan_path=next(Path(n) for n in seal['inputs'] if Path(n).name=='plan.json');source_plan=read(source_plan_path)
     if sha(source_plan_path)!=seal['source_plan_sha256']:raise ValueError('Source plan identity differs')
     if out.is_relative_to(ROOT) or out.is_relative_to(sealed):raise ValueError('External output outside source and sealed inputs required')
@@ -48,7 +65,8 @@ def main():
         if cli.preflight_isolation is not None:raise ValueError('GPU runtime isolation must be frozen in the admission')
         if cli.admission is None or cli.expected_admission_sha256 is None or sha(cli.admission)!=cli.expected_admission_sha256:raise ValueError('Explicit immutable resource admission required')
         admission=read(cli.admission);start=datetime.datetime.fromisoformat(admission['first_admitted_utc']);end=datetime.datetime.fromisoformat(admission['absolute_deadline_utc']);now=datetime.datetime.now(datetime.timezone.utc)
-        if admission['schema']!='warm.native-DEV-q8-pool-admission.v1' or (end-start).total_seconds()!=10800 or not start<=now<end:raise ValueError('Original bounded three-hour admission required')
+        valid_window=(admission['schema']=='warm.native-DEV-q8-null-admission.v1' and 0<(end-start).total_seconds()<=3600) if null_seal else (admission['schema']=='warm.native-DEV-q8-pool-admission.v1' and (end-start).total_seconds()==10800)
+        if not valid_window or not start<=now<end:raise ValueError('Original bounded admission for this study required')
         if admission.get('minimum_free_bytes')!=512*1024**2 or admission.get('maximum_raw_bytes')!=256*1024**2:raise ValueError('Fixed raw/storage protection required')
         if admission['sealed_query_sha256']!=cli.expected_seal_sha256 or Path(admission['output']).resolve()!=out:raise ValueError('Admission changed query or output')
         if cli.resume_audit:
@@ -66,7 +84,9 @@ def main():
         prerequisite=admission['previous_stage_terminal_archive_receipt'];proof=read(prerequisite['path'])
         if sha(prerequisite['path'])!=prerequisite['sha256'] or proof['actual_processes_absent'] is not True or proof['all_existing_raw_archived'] is not True:raise ValueError('Previous rb40 stage remains active/unknown or unarchived')
         marker=read(admission['external_worker_reservation_path'])
-        if marker['status']!='reserved_native_query_followup_before_first_process' or marker['query_output']!=str(out) or marker['sealed_query_sha256']!=cli.expected_seal_sha256:raise ValueError('Cross-client private-worker reservation differs')
+        expected_reservation='reserved_native_null_followup_before_first_process' if null_seal else 'reserved_native_query_followup_before_first_process'
+        if marker['status']!=expected_reservation or marker['query_output']!=str(out) or marker['sealed_query_sha256']!=cli.expected_seal_sha256:raise ValueError('Cross-client private-worker reservation differs')
+        if null_seal and (null_seal['original_pool_terminal_receipt']!=prerequisite or null_seal['controller_source_sha256']!=admission['controller_source_sha256']):raise ValueError('Generation and physical study have different admission ancestry')
         isolation=admission['runtime_isolation'];isolation_file=Path(isolation['runtime_root'])/'MATCHED_WORKER_ISOLATION.json'
         if read(isolation_file)!=isolation or sha(isolation_file)!=admission['runtime_isolation_sha256']:raise ValueError('Qualified private worker marker differs')
         runtime_plan.update(native_runtime=isolation['runtime_root'],runtime_isolation=isolation)
@@ -88,6 +108,15 @@ def main():
     with np.load(actions_file,allow_pickle=False) as z:actions={k:z[k].copy() for k in z.files}
     if list(actions)!=seal['expected_branch_order'] or any(x.shape!=(32,14) or x.dtype!=np.float32 or not np.isfinite(x).all() for x in actions.values()):raise ValueError('All35 sealed finite native H32 branches required')
     if not np.array_equal(actions['anchor-a'],actions['anchor-aa']) or not np.array_equal(actions['anchor-a'],actions['anchor-final']):raise ValueError('Repeated Full actions differ')
+    original_pool_anchor=None
+    if null_seal:
+        with np.load(cli.null_generation_seal.parent/'sealed_native_actions.npz',allow_pickle=False) as z:null_actions={k:z[k].copy() for k in z.files}
+        if list(null_actions)!=['anchor-a','candidate-null','anchor-final'] or any(x.shape!=(32,14) or x.dtype!=np.float32 or not np.isfinite(x).all() for x in null_actions.values()):raise ValueError('Exactly finite H32 Full/null/Full commands required')
+        if not np.array_equal(null_actions['anchor-a'],actions['anchor-a']) or not np.array_equal(null_actions['anchor-final'],actions['anchor-a']):raise ValueError('Null followup replaced the original Full commands')
+        proof=read(null_seal['original_pool_terminal_receipt']['path'])
+        if sha(null_seal['original_pool_terminal_receipt']['path'])!=null_seal['original_pool_terminal_receipt']['sha256'] or sha(proof['archive'])!=proof['archive_sha256']:raise ValueError('Original complete pool terminal/archive changed')
+        original_pool_anchor=read_verified_branch(Path(proof['root'])/'anchor-a/attempt-001',query_id=f"final3000-dev-rb-{seal['case_id']}-{seal['condition']}-q8",branch_id='anchor-a')
+        actions=null_actions
     runtime=Path(runtime_plan['native_runtime']);runtime_before=source_identity(runtime)['sha256']
     if runtime_before!=seal['runtime_source_sha256']:raise ValueError('Private native runtime source changed')
     if resume:
@@ -96,6 +125,7 @@ def main():
     else:out.mkdir()
     if admission and not resume:(out/'admission_snapshot.json').write_bytes(cli.admission.read_bytes())
     op=out/'operator.json';state=dict(status='inputs_verified',pid=os.getpid(),execution_host=socket.gethostname(),sealed_query_sha256=cli.expected_seal_sha256,completed_branches=[],completed_candidate_branches=0,independent_candidate_labels=0,formal_TEST=False,policy_loaded=False,physical_unpack=False)
+    if null_seal:state.update(study='same_parent_Full_null_Full',null_generation_seal_sha256=cli.expected_null_generation_seal_sha256)
     def save():state['updated_utc']=datetime.datetime.now(datetime.timezone.utc).isoformat();atomic_json(op,state)
     save()
     if cli.preflight_only:
@@ -141,6 +171,7 @@ def main():
                 if branch_id.startswith('anchor') and row['endpoint_status']!='complete_horizon':
                     state.update(status='fixed_Full_H32_anchor_unavailable_no_new_pool_claim',stopped_on=branch_id,remaining_candidates_unknown=32-state['independent_candidate_labels']);save();return
                 if branch_id in ['anchor-aa','anchor-final'] and (row['endpoint_hashes']!=records['anchor-a']['endpoint_hashes'] or row['observed_effect']!=records['anchor-a']['observed_effect']):raise RuntimeError('Previously mismatched Full anchors remain quarantined')
+                if null_seal and branch_id=='anchor-a' and any(row[key]!=original_pool_anchor[key] for key in ('parent_hashes','endpoint_hashes','observed_effect')):raise RuntimeError('Completed Full control differs from the original pool;stop before null truth')
                 continue
             old_attempts=list(branch_root.glob('attempt-*'))
             if old_attempts and (resume is None or not all(str(x) in resume['adjudicated_incomplete_attempts'] for x in old_attempts)):raise ValueError('Incomplete/unknown branch attempt must be archived and adjudicated before retry')
@@ -185,6 +216,13 @@ def main():
             if branch_id.startswith('anchor') and status!='complete_horizon':
                 state.update(status='fixed_Full_H32_anchor_unavailable_no_new_pool_claim',stopped_on=branch_id,unavailable_reason=error,remaining_candidates_unknown=32-state['independent_candidate_labels']);save();return
             if branch_id in ['anchor-aa','anchor-final'] and (eh!=records['anchor-a']['endpoint_hashes'] or row['observed_effect']!=records['anchor-a']['observed_effect']):raise RuntimeError('Repeated Full endpoint/effect differs;quarantine')
+            if null_seal and branch_id=='anchor-a' and any(row[key]!=original_pool_anchor[key] for key in ('parent_hashes','endpoint_hashes','observed_effect')):raise RuntimeError('Original Full parent/endpoint/effect differs;stop before null truth')
+        if null_seal:
+            full=records['anchor-a'];null=records['candidate-null']
+            labels={name:row['independent_label']['applicable'] for name,row in records.items()}
+            atomic_json(out/'same_parent_contrast.json',dict(schema='warm.rebuttal.native-same-parent-null-contrast.v1',sealed_query_sha256=cli.expected_seal_sha256,null_generation_seal_sha256=cli.expected_null_generation_seal_sha256,task=seal['task'],case_id=seal['case_id'],query=8,horizon=32,original_Full_parent_endpoint_effect_exact=True,full_controls_exact=True,labels=labels,full_minus_null_next_interaction=None if labels['anchor-a'] is None or labels['candidate-null'] is None else labels['anchor-a']-labels['candidate-null'],Full_endpoint_status=full['endpoint_status'],null_endpoint_status=null['endpoint_status'],Full_observed_effect=full['observed_effect'],null_observed_effect=null['observed_effect'],natural_skill_absence_certified=False,noninferiority_claimed=False,formal_TEST=False,scope='One fixed DEV state,explicit candidate withdrawal and direct physical next-interaction contrast;not automatic withdrawal reliability or population success.'))
+            state.update(status='complete_same_parent_Full_null_Full',full_anchors_exact=True,original_Full_endpoint_exact=True,actual_missing_skill_certified=False,noninferiority_claimed=False);save()
+            return
         assembled=dict(task=seal['task'],episode_id=seal['case_id'],query_id=query_id,required_effect=as_array(probe['required_effect'])[0].tolist(),candidates=[])
         for rank in range(32):
             row=records[f'rank-{rank}'];assembled['candidates'].append(dict(candidate_id=f'rank-{rank}',valid=True,horizon=32,predicted_effect=as_array(probe['predicted_effect'])[0,rank].tolist(),historical_effect=as_array(probe['historical_effect'])[0,rank].tolist(),observed_effect=row['observed_effect'],endpoint_status=row['endpoint_status'],executed_steps=row['executed_steps'],applicable=row['independent_label']['applicable'],label_provenance=row['independent_label']['label_provenance']))

@@ -2223,3 +2223,17 @@ v17三文3,281英文词/15块/20项，新增BB-W4/Q3、HH-W4、RK-Q2的同一已
 B holdout Full于11:28:50.548294UTC正常exit0，700命令/175完整H32/1,400物理记录、0 TOPP、success0/max_reward0；545项11,071,471B，TAR4,120,709B SHA4a2ba2a50f80c7f5d6f439c337900a729d96ddf97cad634dd631aec1465d35a9。CCI及Windows全成员/动作/物理链核验，源/权重/seed3408/plan a3f5a02e…不变。自然g/source_gate min/median/max .177734375/.2041015625/.2197265625，175次精确Gaussian0；alpha中位.2080078125，不混淆soft effective gate。
 
 两角色初态、实际物理、当前输入/共同Gaussian/首K32逐项独立匹配，11:35:16 LOCAL_PAIR_VERIFICATION确认holdout Full/null0/0，各原生700。此为单开发seed/条件的描述配对，通用技能缺失/false activation/NI仍未建立。Full本机验证首版status文字沿用null的542，仅显示标签有误，实际assert及hash始终545；原件/初版receipt保全，LOCAL_VERIFICATION_R2明确545和旧receiptSHA，不改科学检查或数据。原driver已进入seed3408 clean candidate-null，13:09:30截止不延长。所有新B数据晚于v17截止，下一稳定修订统一整合，不补写未完成clean配对，不替换Stage A中断未知角色。
+
+### 23.171 固定q8同状态null直接对照的工程入口与CPU资格
+
+新增generation入口读取原seal3d540098…/context/query RGB/native qpos/derived seed，通过原typed权重、事实上下文和原生产FastWAM kernel验证完整Full H32及actual source/Gaussian/conditioning和预测精确，再生成冷状态只读共享权重candidate-null及第二Full。拒绝伪造/重用历史BoundOnlineStep、future/teacher或未知上下文字段；不改变任何模型结构、阈值、权重、原query/rank或主要指标。null先封存归一化/原仿射native动作及truth前seal；collector只另做同parent Full/null/Full三分支，并要求首Full复现原池parent/endpoint/effect后才接触null物理后果。原K32入口默认行为保持，旧source快照不改。
+
+12:03/06 CCI三个CPU关键拒绝检查通过；12:06:53真实原q8上下文CPU preflight通过，12:07:07旧35分支入口和原rb30 runtime只读兼容检查通过，均无GPU初始化/无策略生成/无物理truth。首iter18_development_check_v1四文件开发包遗漏既有inference_replica.py，CPU入口在策略加载和输出目录创建前FileNotFound退出1，0GPU/0物理；原包/log/CPU_PREFLIGHT_RECEIPTS_V1全保留。完整五文件iter18_development_check_v2独立包再次3项通过及两个实际preflight exit0，不能静默覆盖首失败或称新效能证据。修复仅补全开发部署依赖，正式冻结须包含原完整source。
+
+原件位于AFS iter18_development_check_v1/v2，本机tmp/rebuttal/execution/20261111_iter18保留对应源码包与检查记录。此时尚未准入新GPU研究；拟共享单一至多1h窗口、加载前至少32GiB空闲/运行至少8GiB、0.45显存上限，旧rb30终态/全原件归档显式核销后才独立预约，既有B/六ACP slot与原始窗口不变。12:04实际六闲时UID仍启动中、两标准已停止，未观察到正式科学runner。研究只回应同状态显式撤回与局部物理后果，不能将预期流程写成repair、自动missing-skill可靠性、NI或总体SR。
+
+### 23.172 Stage B clean candidate-null完整终态与本机独立验证
+
+固定seed3408 clean candidate-null于12:03:08.479061UTC正常exit0、未有界终止，700命令/175完整H32/1400实际物理记录、0 TOPP、success0/max_reward0；全部542项10,325,642B，TAR3,652,287B SHA86e57ad323a4fdc783051ea9f5b9a676172009a096abbabfa26f8022194a1fed。12:15:04 CCI核验原完整archive、typed checkpoint b0669047…、全部生成、实际动作/API/物理链和175次effective/source gate0且source精确Gaussian；alpha保持自然正值，min/median/max .1767578125/.1904296875/.21875。
+
+原件和收据存于AFS ITER18_STAGEB_CLEAN_NULL_COMPLETE_INTAKE_V1及原role archive；12:15:30本机独立重读全部542成员及175H32、700动作/1400物理链/零TOPP通过，同名本机目录保存原TAR和LOCAL_VERIFICATION，不改原件。当前B已三个角色完整、holdout一对0/0，最后clean Full实际worker2469618仍在原13:09:30截止内运行；不能提前补成clean配对或收益/NI，也不认证missing skill。均晚于v17原科学截止，下一完整修订统一纳入。原Stage A未知退出及所有零结果保留。

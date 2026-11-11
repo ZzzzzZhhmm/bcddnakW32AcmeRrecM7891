@@ -1,5 +1,9 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**12:15UTC完整角色补充：** Stage B clean candidate-null已12:03:08正常exit0、700/175/1400物理记录、0 TOPP、success0，542项10.326MB原件/TAR3.652MB SHA86e57ad3…，本机12:15:30全成员/实际动作/物理链及175次显式null验真。B共三个角色完整、holdout配对0/0；唯一driver已进入最后clean Full（12:13实际worker2469618加载），原13:09:30窗口不变。不要把此前“clean null活动”当当前状态，勿重复执行任何完整角色；新null同状态研究是否启动仍以新冻结源/准入/实际operator为准。
+
+**12:07UTC工程准备锚点（尚无新null生成/物理结果）：** 固定原native clean q8同状态null入口已实现，先认证事实上下文/图像/proprio和原采样参数，精确复现Full H32/source/conditioning及预测后才生成冷独立null，再做Full/null/Full原生物理对照。三个CPU拒绝检查、真实原上下文及旧K32兼容preflight通过；首次开发依赖打包失败0GPU/0物理已保全，v2完整包通过。详见[NATIVE_SAME_PARENT_NULL_PROTOCOL_20261111_ZH.md](NATIVE_SAME_PARENT_NULL_PROTOCOL_20261111_ZH.md)。必须先push/CCI同步、冻结新source、核销旧rb30已知终态/全归档预约并另设至多一小时窗口后准入，不修改原K32/B/正式时钟。12:04 ACP六UID仍“启动中”，未观察到科学runner；B仍按原计划继续。下一次实际状态以current_iteration和新operator为准，不将本段准备写成已执行结果。
+
 **11:35UTC晚到数据锚点：固定q8已完整结束，不再是活动GPU。** 原worker2447587于11:21:38实际exit0，35分支/32候选全H32、3个Full锚点精确一致、0unknown；286原件155.112MB，TAR44.004MB SHA f0d6fe04…/manifest38857217…，本机11:23:28逐成员/全部动作/关节链/weighted DINO与两种MSE独立验真。centered预测/历史/常量.065133/.103004/.048779，absolute.183358/.187569/.201642；预测仅在centered优于历史，不优于主指标常量，两指标并列不更换。32局部交互标签与Full均0，不构成repair、通用技能缺失或NI。三份可粘贴补充回复及20项新矩阵位于responses/20261111_v17_native_q8_addendum1（matrixfb60c266…），12成员44.260MB包3643bdef…/manifestaed6955e…已双端验证，原v17 PDF/源码/三文/116包不覆盖。新数值属于讨论补充，不能声称已包含在v17 PDF；下一完整稳定修订再统一纳入。
 
 B holdout Full也已11:28:50实际exit0，700/175/0TOPP/success0，545原件TAR4a2ba2a5…本机验证；与此前null组成seed3408完整holdout0/0配对，初态/输入/共同噪声/首K32独立核对相同，仍非NI或真实skill-absence证书。原B driver已进入clean null，**B仍活动至原13:09:30截止**。q8私有rb30外部保留尚未显式释放，已归档终态不能独自当作lease释放；先核对后用独立release收据转给固定同状态null或正式分片，勿再次重跑q8池。下一项优先是sealed q8上下文/观测下精确重现Full，再生成null并作Full/null/Full；原同状态null仍未测，不能用已分化closed-loop null代替。六ACP UID仍保留、未看到runner且首片GPU不足，勿重复创建。以下均为历史时点。
