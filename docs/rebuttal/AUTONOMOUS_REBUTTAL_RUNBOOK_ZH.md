@@ -1,5 +1,21 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**最新完整角色（2026-11-11T08:05:23UTC）：** 下述DEV StageA的clean Full已08:01:46正常exit0，完整700命令/175H32/1400物理记录，success0、max_reward0，无TOPP拒绝。544原件10,962,089B、archive affb212b…，CCI和本机全成员/物理链/生成核验通过。175依赖query gate范围0.17285–0.22266、中位0.19043，自然精确Gaussian为0/175；这是clean单角色，不是技能缺失/配对/NI证据。唯一原driver2437213已进入candidate-null，08:03实际child2438365，**先查当前PID/进度，不要复制启动**。原09:29:13截止、源c159f171…和plan804408d8…保持。
+
+本轮最新工作映射 `20261111_v16_execution_addendum2`（1c6901eb…）纳入这一不利完整角色，三份回复/原v16 PDF仍不变、20项closure仍false。第2增量包b8028719…/manifest9be16a31…；本机及08:09:56 AFS全部四成员验证完成。后文07:56的“未完成角色”只适用于原时点；上段及current_iteration最新LIVE优先。
+
+**最高优先级恢复锚点（2026-11-11T07:56:36UTC）：** 固定final3000的原生family-holdout DEV StageA正在CCI运行。当前根 `native_family_dev_case0_resume2_v1`，monitor2437210/driver2437213/worker2437240，plan804408d8…、555文件冻结pilot源c159f171…/commitcc384a4；真实进度clean Full504/700命令、127次replan，尚无完整配对。**首次窗口仍06:29:13.790798→09:29:13.790798UTC，禁止重置。** 先核查实际operator/PID/完整轨迹、stage_exit及每角色归档，再作任何恢复；不要重复未知启动。
+
+两次实施失败均保全：原冷导入检查失败0策略回合，14项原件5e63c4c2…；resume1成功完成固定seed3407专家和两次真实reset资格，但首q0生成后保存NumPy行向量失败，0命令/1启动unknown，全部原件a6c29cc2…、role13项71a93c84…。修复后23项CPU检查通过，已复用roster f9b29663…，不再重采资格；新q0生成与旧unknown原H32字节相同。当前运行快照与正式H861/C871、原bank/checkpoint均不变。
+
+q0/q8预执行K32/H32、预测/requirement、上下文和观测及前32真实物理命令已封存，21项2.537MB，archive771dded8…/manifestac0c0a46…；本机全成员及实际NPY/JSON验证通过。两clean gate为0.189453125，source均非Gaussian；这不是holdout/自然缺技能可靠性或成功率。raw位于 `ITER16_NATIVE_Q0_Q8_SEALED_V1`。后续独立allK须用这类truth前固定快照，不按结果换q或候选。固定StageB seed3408已登记但未准入，各段3h/总至多6GPUh，执行不根据StageA得分选择。
+
+正式100对仍未准入。**以后使用 `prepare_formal_final3000_v2.py`（41a72e12…）**，原v1保全；v2要求rb-40外部保留标记有已知终态、全部原件归档和显式释放证据。当前rb-40保留给开发段；本地flock空闲或窗口过期不是跨节点释放。首次六个正式分片不涉及rb-40，其他固定科学设计/源及窗口不变。
+
+07:04实际ACP IAM页只有登录按钮，原请求仍待答，不重复索取/创建。07:46 AFS仅2,272,653,312B，80TiB卷近满；容量请求已发，保护原始数据/state/checkpoint/CAS，原formal 4GiB门不放宽。最新实际容量以新LIVE优先；不要用下文旧5GB/60GB读数准入。尚无认证回读的旧cloud allocation终态，不能由CCI进程推断云终态。
+
+v16原回复/LaTeX/PDF/65项包保持；新增 `20261111_v16_execution_addendum1` 20项矩阵4d8c1a28…纠正三处旧final-state TODO并关联当前DEV，三回复/15块及原表/页位置逐项一致，全部closure仍false。四文件增量包e56ebae5…/manifest3b90971a…已双端验证。详见CANDIDATE_V16_EXECUTION_ADDENDUM1_20261111_ZH.md；有新完整效能数据后再联动修订并完整编译，不因仅工程进度重编不变v16。以下为历史锚点。
+
 
 **最新恢复锚点（2026-11-11T04:50:07UTC）：** 当前内部候选v16：responses/20261111_v16三文3020词/15块/20项；原LaTeX v16、40页/10主文PDF94c88d81…、29源ZIP427846e2…、matrix79a46741…。已把完整BTq48实际录入Bbqv W3/Q2、Hh4E W5、C.2.6/p34/Table25及20项映射，不再只是late-intake。原图/数值/负与unknown保持，前33页文字/像素与v15相同，变化34–40逐页视觉验收；全工程及干净ZIP两次独立复编、无undefined/overfull，46旧font警告。65项127.561MB包e519361a…/manifest833eba1a…已本机和AFS writing_candidates/20261111_v16逐成员验收。科学截止04:29:36，所有科学closure/stable仍false，未发布/正式上传。详见CANDIDATE_V16_20261111_ZH.md。
 

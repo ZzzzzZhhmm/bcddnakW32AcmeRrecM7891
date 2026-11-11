@@ -2119,3 +2119,25 @@ rb-40的外部保留标记EXTERNAL_NATIVE_PILOT_RB40_V1.json仍未释放。正�
 首个clean Full实际以final3000 b0669047…成功加载并通过typed合同，完成q0生成后，保存预执行候选时对NumPy bank_rows错误调用Tensor.detach，07:12:29已知exit1。0实际命令、0完整策略回合、1已启动的unknown回合；不能计作失败/成功或有效withdrawal证据。13成员role原件71a93c8422bc1480ec70d125c1db84fc2861a8272f026bb15d12f4d6e42fe1b8已逐项核验；整个已失败段（含资格、源绑定、原退出和0byte未完成probe）再完整归档a6c29cc238058e4a8eeb56de394cf279d9c5860c6df8c687f63ab51f042b3aa3，AFS ITER16_NATIVE_DEV_RESUME1_FAILURE_V1，原件保持。
 
 只修复bank-row保存接口，显式复制实际K32 NumPy整型行向量、隔离后续原数组改动；不改候选/动作、模型、gate或搜索域。新增实际NumPy边界检查后23项CPU协议/快照测试通过。下一续跑须新快照和独立attempt根，引用已完整qualified roster，仍用原09:29:13截止；所有前次失败/unknown保留，不靠重新准入延时。正式100对/缺技能NI均未运行，v16回复/PDF不变。
+
+### 23.159 原窗口内实际原生执行、truth前快照及20项映射增量
+
+07:27:20UTC唯一resume2实际启动，555文件pilot源c159f1717d541d892192debf124419caf65558773bd7cedc28d6f22dbeaa0819、plan804408d807553451071ab1f59d335dec9f1ba994bccb752f36ccbc5f54efe168，源commitcc384a4…已三端同步且六个旧科学源保持。成功复用原固定roster，不再reset采样。07:56:36 clean Full实际504/700命令、127 replans；尚无完成配对，不能将其写作策略成功率。首次06:29:13→09:29:13UTC截止保持，StageB3408未准入。两处修复后的23项CPU日志e36ccb558b90af6e8d9910ed357f80e82073924e75253214c6de54fcf8b88bb9不是科学效能。
+
+07:50:01将预定q0/q8的完整K32/H32、预测/requirement/source、上下文、原始观测及前32实际物理命令封存，21成员2,537,468B，压缩771dded80226ffe0b0f3ed15fa4a7ef1b4317b3cefc109f796ba6bd893f158b5、manifestac0c0a461ea723dee2e676b88749ce1f38c24f85ba2a185ae9ebd8e8b7542fec。初始32命令共有64条begin/end，实际连续计数/无error；两个自然clean g/source_gate/alpha均0.189453125，阈值0.15，source非Gaussian。独立allK覆盖/false activation仍null，不能由clean两依赖查询断言自然缺技能可靠性。q0生成H32与保存错误的原unknown bytes完全相同，只支持该次修复未改输出。
+
+07:51:55本机逐项21成员、2个NPY H32和64物理JSON独立验证；大Torch/BF16 probe标量由保存的CCI reader读取，本机未解码，范围明确。原件位于AFS ITER16_NATIVE_Q0_Q8_SEALED_V1，本机execution/20261111_iter16同名目录。该封存是活动回合的固定subset，不声称整回合/whole-job终态，不干预持续写入的原physical log。
+
+三回复/15块/40页原v16均保持，新的v16_execution_addendum1矩阵4d8c1a28deed998b4a103f7522aa59a7fdc8cc059c77aee63c33a9f72b639afb纠正三处已完成final-state待办，并关联四项意见的在跑DEV/预truth原件。所有20原问题、回复heading和v16实际表/页一致，closure全false；四文件包e56ebae572ce3a397e5b7539b1cfcacaddf3bac273d916d457e415a519a62402/manifest3b90971abb8416e56c0e53c625016c861cf3c1cd22b8c998ad2a569f203d89d1于07:56:07 AFS验证。原v16工程不改，无需为本执行增量重新编译PDF。
+
+07:04 ACP实际IAM仍只有登录按钮，原请求待答；07:46 AFS80TiB近满，仅2,272,653,312B，容量请求已发，formal原4GiB门保持，不能新freeze。只读库存及新微小hardlink探针未改任何既有文件或回收任何空间。短暂一次SCP超时后07:56:36 SSH可达、原worker持续，未复制启动；已保存AFS包回执待本机重取，不将传输超时误称原任务失败。正式100对/q96仍未准入，真机延期，未发布或正式上传。
+
+### 23.160 首个完整新DEV角色：clean Full原生700失败，配对null继续
+
+08:01:46.471206UTC原clean Full正常exit0、无预算终止，700真实命令/175个完整H32/1400条物理记录，success0、max_reward0，最终stage_id/press_cnt仍0。544原件10,962,089B，TAR4,124,749B SHAaffb212b3a9cf55f185fbc3d44f787571d294feef80f58290faec1c1d05eceb1；08:05:23独立CCI核对归档全成员、每个生成及实际命令/物理关节链，0 TOPP拒绝，实测最大单步关节变化0.1703804135，确有物理运动。08:06:57本机独立验证544成员、175H32、700×14 trace及1400 JSON记录，LOCAL_VERIFICATION保全。
+
+175个依赖query的g/source_gate/alpha min/median/max为0.1728515625/0.1904296875/0.22265625，均非0；自然source与Gaussian精确相同为0/175。这是单个clean开发回合，没有证明skill absence、false activation、配对收益或NI。前一个0命令unknown单列保留，不能用本次完成覆盖。原09:29:13截止不变，实际driver随后启动clean candidate-null（08:03 child2438365），尚无完整pair，holdout未完成。
+
+第2增量矩阵1c6901eb642d2b5b875998ddac9784e269f2644c69dd5d9750cf67b5fe801755新增这一完整不利角色并关联BB-W4/Q3、HH-W4、RK-Q2；不改v16三回复/PDF或20项closure。四文件包b802871927d07c4478e475d01d746e2ee5a69353d94ccb3b332fcb91836ce00e、manifest9be16a317b357343d99050f705246620f16340bdbf21a72a93d271b63c9c0f82，本机及08:09:56 AFS全部四成员验收。第1包完整保留。此数据晚于第1包冻结，独立追加而不覆盖。
+
+库存数值澄清：ITER16_STORAGE_TOPLEVEL_READONLY_V1于06:54精确统计writing_candidates逻辑字节1,804,223,105B；§23.157的约1.97GB为粗估，以原JSON精确值优先。07:59实际AFS余量1,922,101,248B，非已保护预留；仍不得按旧读数开启formal或删除原数据/checkpoint/CAS。
