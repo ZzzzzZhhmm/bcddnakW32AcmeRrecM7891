@@ -1,5 +1,7 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**追加恢复锚点（2026-11-11T00:55:50UTC）：** q48已00:52:33通过完整H32 AABA，原rank3 raw/Full交互完成标签仍0/0、无完成型repair。活跃全32池继续，不重启/不停止/不改06:23:48UTC窗口。只读归档四个已sealed分支47项5.423MB，SHAe0da5bdc…及本机全成员/192前缀/H32独立验证均通过；收据ORIGINAL_BT_Q48_ACTIVE_AABA_ARCHIVE_V1/ITER13_BT_Q48_ACTIVE_AABA_LOCAL_VERIFICATION_V1。它不是whole-job terminal，不能再派发相同实验或当完整池指标。回复研究录入备忘BT_Q48_RESPONSE_EVIDENCE_INTAKE.md保留；v14及87项包保持原bytes和完整q8截止。最新LIVE_V7（00:50:38）Pooled2678/3000、q48三分支尚在第四控制的历史状态，应以此追加资格及实际operator为准。其余下文为带时间戳锚点。
+
 **当前恢复锚点（2026-11-11T00:44:11UTC）：** 内部候选已推进到responses/20261111_v14、原LaTeX v14，39页/10主文，PDF230dcc6e…/源码ZIP9ba9dca5…/矩阵b910f3a8…。原工程及干净ZIP39页一致，前33页像素与v13相同、变化34–39逐页视觉验收，原表九图/所有负与未知保留。87项124.898MB包1bf35dca…/manifesta52af5c0…已本机及AFS writing_candidates/20261111_v14逐项验收；父v13和原件保留。三回复/15块/20项科学closure=false、未发布/正式上传，详见CANDIDATE_V14_20261111_ZH.md。
 
 **不要重跑已完成q8：** 原BTq8全32候选H32、四Full控制完整，380原件9d4f92e6…及本机独立物理/DINO/误差核算通过；10正/22零交互标签，selected raw/Full仍0，预测/历史/常量centered MSE0.076844/0.076292/0.022408，不支持该状态预测优势。原终点跌落差异保留而不称完成型repair；原q8截止01:04:40UTC未改。q48标准ACP UID59dd5f78…已实际运行，sourcef7cf0583…/plan363bc263…/rank3，原06:23:48.137340UTC截止；00:43两个Full控制完整、正在rank3父重建，尚无AABA或完整新比较。先读实际operator/runner，失败保全不放宽guard。前一个q48已知终态并完整归档后，才运行prepare_original_BT_query_ACP_v1.py --query96，首次11h窗口，不因原BRTq96失败而混淆两个研究。

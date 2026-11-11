@@ -1991,3 +1991,9 @@ Full3000两task静态合同00:17:04正常完成，本机00:20:25逐项核对12�
 00:43:23在ACPq48实际runner前后均running、collector已有两个完整Full控制时，CCI对同一绝对AFS flock路径的本地探针仍返回空闲。实际ACP spec确实使用该flock路径；该测量证明CCI探针不足以排除另一ACP client的已知活动，不能把单client锁值当全局互斥证明。完整收据ITER13_NATIVE_LEASE_SCOPE_AUDIT_V1，不据此笼统推断其它所有文件系统锁的实现。
 
 旧LIVE_V5原字段和值保留，并标明它只来自CCI client；新LIVE_V6另存CCI_client_flock_available=true，全局共享runtime准入仍false。后续必须以唯一ACP UID、实际runner、已知退出及完整归档核销为准。q48/q96准备器原已要求前一任务已知终态和档案，因此没有重复执行；本轮未修改运行中的f7cf科学源、样本、指标或窗口。正式十worker使用另行资格通过的私有runtime/匿名IPC与独立路径，仍需各自明确准入，不能把共享runtime活动或本地GPU空闲当可重复派发的依据。
+
+### 23.143 运行中的BTq48已完成H32 AABA，四个sealed分支独立保全
+
+00:52:33实际q48 AABA通过；三个Full完整H32端点/原DINO效应相同，四个parent/RNG相同，原rank3提案物理端点不同。selected raw/Full下一物理交互标签仍0/0，无完成型repair或harm。此为与q8相同来源回合的第二个固定状态，不能当独立任务试验；完整32池仍运行，暂不填写预测误差或总体频率。
+
+不停止、不重启或修改活跃程序，只读核对四个不可变complete marker及其所有文件后，于00:55:50保存47项5,423,239B资格快照e0da5bdc85c01f975cb6eac97012c2e05481cb586648fe38e77d6c7748d808ff。四支各192条事实前缀与32条新命令完整，归档前后sealed哈希不变；本机全成员及四支前缀/H32/端点再次核验，ITER13_BT_Q48_ACTIVE_AABA_LOCAL_VERIFICATION_V1。该档案不是whole-job terminal或完整pool档案，原UID59dd5f78…/plan363bc263…/rank3/06:23:48UTC保持。回复研究录入备忘BT_Q48_RESPONSE_EVIDENCE_INTAKE.md已保存，待固定池完整后纳入下一版；当前v14仍明确冻结于完整q8的数据截止，不将新资格误称效能。
