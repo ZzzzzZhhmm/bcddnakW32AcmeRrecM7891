@@ -1,5 +1,13 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**当前恢复锚点（2026-11-11T00:44:11UTC）：** 内部候选已推进到responses/20261111_v14、原LaTeX v14，39页/10主文，PDF230dcc6e…/源码ZIP9ba9dca5…/矩阵b910f3a8…。原工程及干净ZIP39页一致，前33页像素与v13相同、变化34–39逐页视觉验收，原表九图/所有负与未知保留。87项124.898MB包1bf35dca…/manifesta52af5c0…已本机及AFS writing_candidates/20261111_v14逐项验收；父v13和原件保留。三回复/15块/20项科学closure=false、未发布/正式上传，详见CANDIDATE_V14_20261111_ZH.md。
+
+**不要重跑已完成q8：** 原BTq8全32候选H32、四Full控制完整，380原件9d4f92e6…及本机独立物理/DINO/误差核算通过；10正/22零交互标签，selected raw/Full仍0，预测/历史/常量centered MSE0.076844/0.076292/0.022408，不支持该状态预测优势。原终点跌落差异保留而不称完成型repair；原q8截止01:04:40UTC未改。q48标准ACP UID59dd5f78…已实际运行，sourcef7cf0583…/plan363bc263…/rank3，原06:23:48.137340UTC截止；00:43两个Full控制完整、正在rank3父重建，尚无AABA或完整新比较。先读实际operator/runner，失败保全不放宽guard。前一个q48已知终态并完整归档后，才运行prepare_original_BT_query_ACP_v1.py --query96，首次11h窗口，不因原BRTq96失败而混淆两个研究。
+
+**跨节点锁口径：** CCI本地flock空闲不能排除ACP上同AFS路径的实测活动；00:43审计ITER13_NATIVE_LEASE_SCOPE_AUDIT_V1完整。旧LIVE_V5的native_global_lease_available字段只反映CCI client探针；LIVE_V6另设CCI_client_flock_available，实际全局共享runtime准入仍false。不得仅凭CCI锁空闲/GPU空闲复制ACP任务；以唯一UID、实际runner、已知退出及归档判断。当前只有Pooled训练与BTq48两路标准ACP活动，CCI GPU0MiB；Full训练及q8均已完成，不再计活动GPU。私有formal worker仍须其独立路径和已验证隔离。
+
+Full3000完整state/CAS独立重建收据62e9ecd8…已通过，Full两任务静态bundle00:17完成、12文件本机验证c04abdc8…，不等同新策略或TEST。最新LIVE_V6（00:43:26）Pooled2646/3000连续有限，原Nov11 12:29:56UTC保持；其完整final状态/CAS/typed bundles齐后，直接准备并准入固定100对/10分片、最多6H100/120GPUh/36h且不晚Nov12 18UTC的正式比较，钟尚未开始。RB/BT各50-roster/200reset与十worker资格均已完整，不重采。显式绑定external-input因果反馈修订fa089d4d…及a065c792…证明；旧全query候选严格相同失败保留。AFS约61.6GB，Full raw/CAS已消费，保护尚余约56.2GB训练预留；实际DEV context约0.6MB/份，formal只按冻结有界证据策略保存，准入时另核对原始记录/归档余量，不删checkpoint或历史原件。真正缺技能、自动撤回和原DEV绑定仍开放；真机延期，不重复索取。
+
 **最新恢复锚点（2026-11-11T00:00:40UTC）：** 内部候选v13在responses/20261111_v13；PDF dd70f15a…、原LaTeX ZIP1a6f548f…，39页/10主文，完整工程和干净ZIP复编一致，变化8页视觉验收、原全部表九图及不利/未知保留。三回复/15块/20项矩阵bd927766…；64项182.286MB包630eb424…/manifest0ec74c5f…已本机及AFS writing_candidates/20261111_v13逐项验证。全部科学closure=false，未发布/正式上传。详见CANDIDATE_V13_20261111_ZH.md；后文旧v12/loading仅为历史时点。
 
 原BT完整native1000源已正常完成：1000命令/250 replan/0 TOPP/任务未成功，2020原件a1a42358…双端及本机独立数组/轨迹/前注册seal核验。固定主query8/48/96在新truth前冻结原rank4/3/20；q8四分支H32 AABA通过、58原件b7e7359c…完整，原提案电池1终点0.0279m、Full0.7599m，但交互完成标签均0，仅单状态描述性后果差异。完整q8池23:16:30续跑、outer2418349，controllerf7cf0583…/commit3753286，原01:04:40.464620UTC截止不变；23:57已20候选完整/正在rank20，不重复派发。原operator labels=0是保留的旧计数，真实标签必须从sealed result核对。q48/q96尚未准入；新预准入资源修订23:55:30按实测耗时为6h/11h、最多1H100，长任务ACP/标准优先，旧q8窗口及科学协议不改。

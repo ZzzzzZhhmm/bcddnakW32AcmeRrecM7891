@@ -1969,3 +1969,25 @@ Full标准ACP UID95e49547…23:41:34实际训练exit0到3000，201起2800条loss
 正式准入schema收据ITER13_FULL3000_INDEPENDENT_AUDIT_V1/FINAL_TRAINING_EVIDENCE.json，SHA62e9ecd838086a3d4cdd81b196914ff3ab028ad95875d824d2c374a7f165cc2a；state inventory f9e3254a…，checkpoint b0669047…不变。00:09本机独立核对收据/七state inventory/十五raw inventory及原自动归档收据的所有引用哈希，ITER13_FULL3000_LOCAL_METADATA_VERIFICATION_V1。38.604GB原TAR在CCI临时盘重建，持久CAS与原AFS检查点保持，本机未下载大TAR，此处不冒充本机完整权重字节校验。
 
 00:07:29在该终态与收据后，单独CPU准备Full3000的RB/BT两task typed bundle，PID2424423，使用common87199cc6…/原root3407矩阵、Full专用config/schema及新正式namespace；0实际policy/模拟/TEST，不启动正式评测时钟。需分别核对实际bundle manifest与对方final3000状态，不能把静态合同准备当正式效能。00:05最新实际Pooled2475/3000连续有限、q8完整24个候选且仍持有全局native lease，原截止均不变，ITER13_LIVE_V4保存实际metrics/runner/进程与AFS61,871,456,256B；其后进度以新收据为准。
+
+### 23.140 原BTq8完整32候选和四Full控制；标准q48实际运行
+
+2026-11-11约00:23UTC原q8 pool runner正常exit0，全部36分支终态：32个原有效候选均完整H32，无unknown，四个Full终点/原DINO效应精确相同，全部parent/RNG一致。原plan94c9e7ba…、rank4、checkpoint27c137d6…、controllerf7cf0583…和01:04:40.464620UTC截止未改。380项49,259,146B原件归档9d4f92e6a40fafbbe3b5d1a10557426c586cc37f2d4fe60201bfe6526c9e64ee，manifest bfe7dea6…，收据ORIGINAL_BT_Q8_POOL_COMPLETE_ARCHIVE_V1；已完成原件不重跑。
+
+00:24:56本机独立核对380成员及每个branch marker，逐支核对全部前缀/物理跌落阈值，按原四token DINO均值投影重算effect（保留float32原值，以声明的IEEE舍入界核对float64独立均值），再用独立方差恒等式重算同支持集MSE。预测centered0.07684433201273627/absolute0.13682638107124517，历史centered0.07629158519676332/absolute0.1360761372288195，常量centered0.022408466917335543（absolute不可识别仍null）。该状态无预测优势。候选物理下一交互标签10正/22零/0unknown，selected proposal与Full仍0，无完成型repair或harm；原跌落终点差异仍仅单状态描述。候选及控制不当独立episode，不替换原19% cohort。核验ITER13_BT_Q8_POOL_INDEPENDENT_LOCAL_VERIFICATION_V1，全部负结果保全。
+
+按已先声明的资源修订，00:23:48首次冻结q48六小时绝对窗口至06:23:48.137340UTC，plan363bc263…/job6b71d4b6…/原rank3，不延长q8或旧BRT窗口。已知q8终态并完整归档后才准备，标准ACP00:26:12创建成功、UID59dd5f78631b40ae81a1298844d499ba，1GPU/1worker/22vCPU/230GiB、0自动重启；镜像ccr-zhicheng-02/lwz_wam:lwz-workspace-20261029145800，AFSafs-p3-01e子目录/→/mnt/afs读写均逐项回读。00:27:20实际H100编码器runtime全部字段匹配原合同，00:27:52原collector开始；00:29 UI运行中与AFS实际runner一致，不再仅称排队。00:43已有两个Full H32控制完成，正在rank3父重建，尚无完整AABA/候选比较。q96未准入，保留固定rank20/首次11h；旧BRTq96失败不替换或重跑。浏览器task已finish且保留原tab，没有第二次创建或闲时请求。
+
+### 23.141 v14同步完整q8结果，原LaTeX及87项审阅包双端验收
+
+在原物理终点对照旁新增完整32池、10/22标签及三参照MSE，明确不支持该状态预测优势；与Bbqv/Hh4E两处回复、15分块、20项映射同步。PDF仍39页/主文10页；完整原工程与干净29文件ZIP复编全部39页一致。前33页像素与v13精确相同，变化34–39逐页视觉检查；原所有表/九图/不利与未知保持，无未解析引用或overfull，46个既有字体警告。
+
+PDF230dcc6e4e4642a2ac522f2cd1943ab69ae10c58825a9f58210d977fc7dbfe54、ZIP9ba9dca5…、matrixb910f3a8…；responses/20261111_v14。87项124,898,316B包1bf35dca2beb2121fbf97dab03e10c7108f6e9cbef6f368e3aac7d0627a3c723、manifest a52af5c0…，本机00:41:22、AFS00:44:11全成员落盘验证，writing_candidates/20261111_v14。包内含完整pool380项、独立核验及Full3000七state/15raw清单与两任务静态合同12项；父v13包630eb424…保留完整来源2020和资格58项。论文/回复不宣称预测、完成型repair、撤回或总体新效能；全部scientific closure=false，未发布OpenReview或正式上传。最初v14编译脚本CRLF导致在set选项即退出，原脚本保留后仅统一LF，完整正常/干净ZIP编译均成功；没有任何实验重跑。
+
+Full3000两task静态合同00:17:04正常完成，本机00:20:25逐项核对12文件、显式root3407/config/schema/namespace，收据c04abdc8…；不称实际policy或正式TEST。最新00:43:26 Pooled2646/3000连续有限，Full3000完整状态与合同已齐，仍须Pooled完整final状态/CAS/typed合同后才准入100对；原训练截止不变。AFS约61.62GB，原训练预留扣除已消费Full raw/CAS后约56.2GB仍保护。实测已有DEV context每份584475–620635B；正式记录遵循原有界保存协议，准入前结合剩余训练、原始轨迹和归档核对容量，不删历史或检查点。
+
+### 23.142 跨节点共享runtime的锁观测范围核销
+
+00:43:23在ACPq48实际runner前后均running、collector已有两个完整Full控制时，CCI对同一绝对AFS flock路径的本地探针仍返回空闲。实际ACP spec确实使用该flock路径；该测量证明CCI探针不足以排除另一ACP client的已知活动，不能把单client锁值当全局互斥证明。完整收据ITER13_NATIVE_LEASE_SCOPE_AUDIT_V1，不据此笼统推断其它所有文件系统锁的实现。
+
+旧LIVE_V5原字段和值保留，并标明它只来自CCI client；新LIVE_V6另存CCI_client_flock_available=true，全局共享runtime准入仍false。后续必须以唯一ACP UID、实际runner、已知退出及完整归档核销为准。q48/q96准备器原已要求前一任务已知终态和档案，因此没有重复执行；本轮未修改运行中的f7cf科学源、样本、指标或窗口。正式十worker使用另行资格通过的私有runtime/匿名IPC与独立路径，仍需各自明确准入，不能把共享runtime活动或本地GPU空闲当可重复派发的依据。
