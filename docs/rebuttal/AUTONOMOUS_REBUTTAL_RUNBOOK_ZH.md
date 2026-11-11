@@ -1,5 +1,7 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**Nov11 18:41UTC晚到核验：** 另1092原件TAR e18d90f6…/manifest194369da…已双端保全、本机全部动作物理链验真；新增RB case2 Pooled与case21 Full后累计13完整role、RB六对（0/1/2/10/20/21）均0/0，仍无总体100对SR/CI或收益。`responses/20261112_v20_execution_addendum1`更新20项索引，v20已封存回复/PDF/源码/72成员包不改。实际CCI三PID18:39仍活跃、GPU32392MiB/94%；勿按下文旧segment启动。最新Git HEAD以规划JSON及离线同步收据为准，ef5为最新实现commit。
+
 **Nov11 18:35UTC最新锚点（覆盖下文旧活动标志）：** v20作者对话精准稿已完整验收，`responses/20261112_v20_author_precision`及原LaTeX工程；44页/含结论主文10页，PDFcc162884…/ZIP8e4fa62e…，0未定义/overfull、三处变化页直接验看，其他41页像素不变。AFS72成员包3fe83921…/manifest15c50f60…全成员验真。37空槽、20项实证closure仍false，未发布。见CANDIDATE_V20_20261112_ZH.md。
 
 **实际计算：** 原bt00已完成Full1000/250生成/2000物理、success0，旧936unknown保留；当前同slot `cci_segment_iter22_v1` monitor2507713/campaign2507716/worker2507753，原case0 Pooled实际5生成/20命令（18:25:43），不是旧segment21。原first10:14:31/2214UTC截止不变。RB00/RB20原ACP活动，新BT10 UID6bea7fe19aed473692928a535468d291、BT20 UID76da0b3af21c46da8812b35aeb425ceb以及RB10 UIDde23301cd91f4044bb7d1ff28ac51492均18:25 UI启动中，未证实新GPU runner；勿重复创建。
