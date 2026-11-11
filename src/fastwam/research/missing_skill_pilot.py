@@ -20,6 +20,15 @@ def sha(path):
 
 def read(path):return json.loads(Path(path).read_text())
 
+
+def snapshot_bank_rows(value):
+    """Copy the actual NumPy online-step bank rows before evidence serialization."""
+    import numpy as np
+    rows=np.asarray(value)
+    if rows.shape!=(32,) or rows.dtype.kind not in 'iu' or np.any(rows<0):
+        raise ValueError('Expected the actual K32 nonnegative integer bank-row vector')
+    return rows.copy()
+
 def validate(plan):
     if plan.get('schema')!='warm.rebuttal.native-family-dev-pilot.v1' or plan.get('phase')!=PHASE:
         raise ValueError('Separate development-pilot identity required')

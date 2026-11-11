@@ -128,7 +128,7 @@ def main():
                 configured_gate_threshold=float(probe['gate_threshold']),independently_measured_relevant_coverage=None,false_activation=None)
             if ordinal in (0,8) and cli.role=='full':
                 f=out/f'pre-execution-probe-q{ordinal:04d}.pt'
-                with f.open('xb') as stream:torch.save(dict(probe=probe,bank_rows=capture['online_step'].bank_rows.detach().cpu(),before_any_local_branch_truth=True),stream)
+                with f.open('xb') as stream:torch.save(dict(probe=probe,bank_rows=N.snapshot_bank_rows(capture['online_step'].bank_rows),before_any_local_branch_truth=True),stream)
                 value['pre_execution_probe_sha256']=N.sha(f)
             return value
         H.M.replan_receipt=observed

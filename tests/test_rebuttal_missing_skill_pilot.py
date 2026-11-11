@@ -59,3 +59,16 @@ def test_only_initial_common_noise_is_required_not_fictional_later_state_identit
     a,b=rows();a['queries'].append(dict(a['queries'][0],model_input_sha256='causal_full_history'))
     b['queries'].append(dict(b['queries'][0],model_input_sha256='causal_null_history'))
     assert pair(a,b)['full_minus_null']==0
+
+
+def test_actual_numpy_bank_rows_survive_source_mutation():
+    import numpy as np
+    from fastwam.research.missing_skill_pilot import snapshot_bank_rows
+    original=np.arange(32,dtype=np.int64);saved=snapshot_bank_rows(original);original[0]=999
+    assert saved.shape==(32,) and saved.dtype==np.int64 and saved[0]==0
+
+
+@pytest.mark.parametrize('bad', [list(range(31)),[0.0]*32,[-1]+list(range(31))])
+def test_invalid_bank_row_evidence_is_rejected(bad):
+    from fastwam.research.missing_skill_pilot import snapshot_bank_rows
+    with pytest.raises(ValueError):snapshot_bank_rows(bad)
