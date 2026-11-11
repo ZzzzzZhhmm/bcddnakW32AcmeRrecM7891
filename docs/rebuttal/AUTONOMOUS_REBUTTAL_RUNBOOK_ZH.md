@@ -1,5 +1,7 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**22:53UTC范围补充与实际加载：** case40 Full CCI worker2532713实际24,443MiB/心跳持续，0完整生成/0物理，不称已完成对照；原q96已14branch/11候选端点、rank10，原截止不改。新只读审计确认q96全部11个已独立归档端点的父状态384步在干预前已记录掉落；零/零不能被当作预防初始掉落的检验，也不据此证明不可恢复。保留全部标签和主指标，下一整版修订需纳入`Q96_PARENT_SCOPE_V1/AUTHOR_REPLY_AND_PAPER_INSERT.md`，不要称已写进封存v21 PDF。详见台账23.198。
+
 **22:47UTC新执行优先锚点：bt40首次准入，不能按前六片过期推断整项研究已结束。** 原master十片/100对/Nov12 18UTC硬截止不变；原rb00云端失败+真实runner终态+13attempt全原件验证后显式核销，修复准入端raw/canonical spec哈希比较口径，不改原runner。原计划case40–49的bt40此前未准入，22:44:53首次窗口→Nov12 10:44:53，plan44c23a4b…；原六片first/deadline和原fixed50/reset/Full-Pooled共享3000权重不改，不是重开旧窗。
 
 **CCI现在原case40 Full启动/加载，非旧Full工程复现：** `shards/bt-40/cci_segment_iter26_v1`，monitor2532679/worker2532713，22:47心跳活动、GPU0MiB/0完整生成；最多1新role/6000s，原f774入口adb5ba9b…，两角色共同3600s修订dfaa351a…在新truth前冻结。查实际operator/exit/生成后才继续下一个角色，勿复制到ACP。准入/核销21原件TARc2b71eb3…/manifest7ebd3252…封存于ITER26_BT40_ADMISSION_ARCHIVE_V1；此前六窗unknown完整保留。首操作Path解析失败发生在新时钟前，已保留并独立恢复。
