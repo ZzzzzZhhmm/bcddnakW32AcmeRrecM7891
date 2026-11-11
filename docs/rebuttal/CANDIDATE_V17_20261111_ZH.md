@@ -2,6 +2,8 @@
 
 本轮先完成原件保全和存储迁移，再恢复计算，并把已独立核验的Stage A结果纳入三位审稿人的回复及原LaTeX。候选科学截止09:57:14UTC；之后到达的结果单列late intake，不静默覆盖已冻结材料。仍为内部候选，未发布评论或上传正式稿，20项科学closure和stable_release_ready仍false。
 
+**11:35晚到补充：** q8全32/H32、三Full锚点、0unknown已实际11:21:38 exit0并本机独立验证；三份简短讨论补充及20项矩阵位于`responses/20261111_v17_native_q8_addendum1`，12成员44.260MB增量包3643bdef…已双端验证，原PDF/源码保持。centered预测/历史/常量.065133/.103004/.048779，absolute.183358/.187569/.201642；主指标未优于常量，32候选和Full局部标签均0，同状态null尚缺，不计repair/absence/NI。B holdout Full也已11:28:50正常700失败，与null成seed3408的holdout0/0配对并独立核验，driver现进入clean null。这些晚到数值不声称已进入v17已冻结PDF，后续稳定修订统一纳入；下文在跑进度保留其原时间戳。
+
 ## 本轮交付
 
 - 回复：`tmp/rebuttal/responses/20261111_v17`，Bbqv/Hh4E/rkWY共3,281英文词，15块覆盖20项，最大块3,387字符；可直接粘贴的纯Markdown/行内LaTeX。

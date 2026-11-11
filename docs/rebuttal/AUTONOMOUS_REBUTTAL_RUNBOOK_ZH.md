@@ -1,5 +1,9 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**11:35UTC晚到数据锚点：固定q8已完整结束，不再是活动GPU。** 原worker2447587于11:21:38实际exit0，35分支/32候选全H32、3个Full锚点精确一致、0unknown；286原件155.112MB，TAR44.004MB SHA f0d6fe04…/manifest38857217…，本机11:23:28逐成员/全部动作/关节链/weighted DINO与两种MSE独立验真。centered预测/历史/常量.065133/.103004/.048779，absolute.183358/.187569/.201642；预测仅在centered优于历史，不优于主指标常量，两指标并列不更换。32局部交互标签与Full均0，不构成repair、通用技能缺失或NI。三份可粘贴补充回复及20项新矩阵位于responses/20261111_v17_native_q8_addendum1（matrixfb60c266…），12成员44.260MB包3643bdef…/manifestaed6955e…已双端验证，原v17 PDF/源码/三文/116包不覆盖。新数值属于讨论补充，不能声称已包含在v17 PDF；下一完整稳定修订再统一纳入。
+
+B holdout Full也已11:28:50实际exit0，700/175/0TOPP/success0，545原件TAR4a2ba2a5…本机验证；与此前null组成seed3408完整holdout0/0配对，初态/输入/共同噪声/首K32独立核对相同，仍非NI或真实skill-absence证书。原B driver已进入clean null，**B仍活动至原13:09:30截止**。q8私有rb30外部保留尚未显式释放，已归档终态不能独自当作lease释放；先核对后用独立release收据转给固定同状态null或正式分片，勿再次重跑q8池。下一项优先是sealed q8上下文/观测下精确重现Full，再生成null并作Full/null/Full；原同状态null仍未测，不能用已分化closed-loop null代替。六ACP UID仍保留、未看到runner且首片GPU不足，勿重复创建。以下均为历史时点。
+
 **最新恢复锚点（2026-11-11T10:57:51UTC）：** v17内部候选已验收：三回复3,281词/15块/20项，完整原LaTeX41页/主文10页、PDFa4e4f5d7…/29源ZIP5d57cdca…/matrixab51206c…。原工程与干净ZIP独立编译，前32页与v16文字/像素相同、33–41逐页视觉验收，原图/数值/不利/unknown保留。116成员115.882MB包78783ccd…/manifest95657d0f…已本机及10:55:53 AFS writing_candidates/20261111_v17全成员验真。科学截止09:57:14；20项closure/stable仍false，未发布/正式上传。详见[CANDIDATE_V17_20261111_ZH.md](CANDIDATE_V17_20261111_ZH.md)。
 
 **计算与容量已改变，不能照旧“未准入/认证阻断”重启：** Control200已核验备份迁移后10:04 AFS实际27.142GB，10:39仍27.064GB，当前无需再删独一原件。ACP认证已恢复，旧三UID成功已核对。正式master已首次10:11:36UTC冻结/硬截止Nov12 18UTC；首六rb00/bt00/rb10/bt10/rb20/bt20已各自唯一闲时UID，详见v17 handoff表及各shard/identity.json。两个标准集群实际限额、标准申请已知停止/0科学运行后才fallback；分片原22:12–22:16截止不改。10:48 rb00 Worker事件明确`insufficient resource:nvidia.com/gpu1`、无Host/Pod IP，六片尚无AFS runner；排队/启动中不计活动GPU。保留六slot，不复制创建，v3准备器已随phase冻结不可改。

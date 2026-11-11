@@ -2209,3 +2209,17 @@ v17三文3,281英文词/15块/20项，新增BB-W4/Q3、HH-W4、RK-Q2的同一已
 完整29文件原LaTeX和干净ZIP两次独立编译41页/主文10，原九图与13个旧table块字节不变，前32页文字/像素与v16相同、变化33–41逐页视觉验收，无overfull/未定义引用，46旧font警告。PDF a4e4f5d7859a5b23cf38ca979805e4c977c39a9f0d80f4ba7a8a7f0d739787a4；sourceZIP5d57cdcabeff96271c8e33aa6921ca6ce1864dd13552e8e56cdf11380cbe9e12；matrixab51206c471856a15a9f8820ac91c98c720d0ab07398e60b1908abc08e6d34bd。116项115,881,629B包78783ccd6e6b2e0c9da76a1a8171a346b931469bc9fd25810e332f7b3fd10bc2、manifest95657d0f9d54db867eb5bcd84758dc66d83a3a3b6454bb921e24f9e97fde18ff，10:55:53 AFS writing_candidates/20261111_v17全成员验真，科学截止09:57:14不改。未发布/正式上传，20项closure/stable仍false。
 
 之后B首holdout candidate-null于10:51:16.340649UTC正常exit0，未有界终止，700命令/175H32/1,400物理记录，0 TOPP、success0/max_reward0。542项原件10,353,251B，TAR3,677,006B SHA1f095dfe7b07e726eeb676fcb940f30a5b71b173db3fd92a6b7e1a4dc0f4ecfc；10:56:52 CCI与10:57:51 Windows全成员/生成/物理链及175次actual-null独立验真，gate/source0、source精确Gaussian，alpha仍为自然正值（median.1875），不混淆alpha与最终effective gate。该数据晚于v17固定截止，单列ITER17_STAGEB_FIRST_NULL_COMPLETE_INTAKE_V1；须下一版与配对/完整q8整合，不能静默改已冻结包或计收益/NI。原driver已进入同seed holdout Full，未复制。每小时heartbeat已核对仍ACTIVE，目标Nov13 23:00不变。
+
+### 23.169 固定native q8完整池及独立核算，晚到补充不替换主指标
+
+11:21:38.164944UTC唯一q8 collector实际exit0，原10:15:26→13:15:26窗口不改；35分支、全部32候选完整H32、三次Full端点/效果精确、0unknown，1,120条实际branch命令。每分支复现原32命令前缀，逐API/物理关节/RGB/RNG parent guard通过；不physical unpack。286原件155,112,041B，TAR44,004,165B SHAf0d6fe04f18a4104c4f94440769ae29a0f6600e165353d5b462845c2dac89fa7、manifest388572171d55c547c8c49e1e9a587c196334a21b1a74b481bbd1eb317efc0d1d。11:23:28 Windows逐成员、封存native动作、全部branch实际关节链、三Full和shared训练同定义weighted DINO及两MSE独立核验；最大float32效果汇总舍入差2.3841858e-7。完整parent/endpoint pickle在本机只验bytes，不声称已解释所有native pack；报告的parent hashes一致，实际物理链及特征另独立核对。
+
+同32候选support的centered MSE预测/历史/常量分别0.06513299851425262/0.10300351376862686/0.04877937700243701；absolute分别0.18335801630915716/0.18756856257649224/0.20164210619387846。预测器在预定centered主指标优于历史但不优于常量，absolute辅助误差较低，两指标原样并列，不能用后者替换主指标或拟合projection/scale。观测centered variance0.0487793770，预测EV=-0.3352568753。32严格下一物理交互标签全0、Full0，无完成型repair；这不认证通用技能缺失、自然fallback可靠性、NI或总体SR。是固定seed3407/clean/q8的一个shared-final3000点，不与原specialist uniform mean及提交时cohort合并。同parent candidate-null生成仍未测。
+
+三位审稿人的简短额外讨论块和全部20项矩阵已生成，root responses/20261111_v17_native_q8_addendum1，matrixfb60c26683f3ecbd6a189ce1849e42d39091d8575b9e9bec8144f2f7ce497333。12成员44,259,958B补充包SHA3643bdeff4df84a966eefd1c09d1adb5ba0838a7f372e6f5b132067384bf1aae、manifestaed6955e000b574591e0f97d4fbde108714bbf4021b7d3c45c48437373342822，11:31:25 AFS逐成员验真；原v17三文/41页PDF/源ZIP/116包保持，其截止09:57:14，不声称PDF已含晚到q8新数值。新讨论补充正面报告不利/有利参照差异，科学closure全false，未发布。rb30仍保留，下一使用须显式核销release，不因已退出/空flock盲目复制实验。
+
+### 23.170 Stage B holdout两角色完整0/0，clean阶段继续
+
+B holdout Full于11:28:50.548294UTC正常exit0，700命令/175完整H32/1,400物理记录、0 TOPP、success0/max_reward0；545项11,071,471B，TAR4,120,709B SHA4a2ba2a50f80c7f5d6f439c337900a729d96ddf97cad634dd631aec1465d35a9。CCI及Windows全成员/动作/物理链核验，源/权重/seed3408/plan a3f5a02e…不变。自然g/source_gate min/median/max .177734375/.2041015625/.2197265625，175次精确Gaussian0；alpha中位.2080078125，不混淆soft effective gate。
+
+两角色初态、实际物理、当前输入/共同Gaussian/首K32逐项独立匹配，11:35:16 LOCAL_PAIR_VERIFICATION确认holdout Full/null0/0，各原生700。此为单开发seed/条件的描述配对，通用技能缺失/false activation/NI仍未建立。Full本机验证首版status文字沿用null的542，仅显示标签有误，实际assert及hash始终545；原件/初版receipt保全，LOCAL_VERIFICATION_R2明确545和旧receiptSHA，不改科学检查或数据。原driver已进入seed3408 clean candidate-null，13:09:30截止不延长。所有新B数据晚于v17截止，下一稳定修订统一整合，不补写未完成clean配对，不替换Stage A中断未知角色。
