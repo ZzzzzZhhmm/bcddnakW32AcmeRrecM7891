@@ -2436,7 +2436,7 @@ rank0–6各完整H32、parent_recreated true、error null；七个独立下一�
 
 ### 23.197 核销已终态allocation，首次推进原计划中未准入的bt40
 
-原master仍在Nov12 18:00UTC硬截止内，预先列明十片/100对；前六片过期不等于剩余rb30/bt30/rb40/bt40已准入或整项研究结束。为继续固定样本，先核销rb00原allocation：云端独立确认UIDc1186e7f7fd24a5e9647e769a52ce0a8失败；实际runner21:11UTC后已终态exit1，记录reason scheduler_signal_2。13个attempt的全部文件逐一对照既有原件manifest，另外保全完整job_logs；原所有success0和unknown不改。
+原master仍在Nov12 18:00UTC硬截止内，预先列明十片/100对；前六片过期不等于剩余rb30/bt30/rb40/bt40已准入或整项研究结束。为继续固定样本，先核销rb00原allocation：云端独立确认UIDc1186e7f7fd24a5e9647e769a52ce0a8失败；实际runner22:11:38UTC已终态exit1，记录reason scheduler_signal_2。13个attempt的全部文件逐一对照既有原件manifest，另外保全完整job_logs；原所有success0和unknown不改。
 
 查明旧准入程序把runner的canonical JSON spec hash与缩进JSON原文件hash比较，导致真实终态无法核销。独立操作修订改为验证原runner的canonical spec hash、原始job文件hash分别绑定，保留原runner不变；三项运行中/未知exit/错spec拒绝检查通过。原冻结准入程序字节不改，核销v2证据单列`rb-00/release_canonical_v2.json`。第一操作在核销已完成、任何新分片时钟尚未创建前因Path类型错误退出；修正仅路径解析后继续，保留两个操作原件，未重复原任务。
 
@@ -2444,4 +2444,4 @@ bt40为原master预先登记、此前目录及任何create intent均不存在的
 
 22:46:06 CCI实际启动原case40 Full，monitor2532679/worker2532713，`cci_segment_iter26_v1`最多1新role、外层6000s；没有创建ACP重复任务。22:47实际campaign心跳持续，GPU尚0MiB、0完整生成，属于进程启动/加载阶段，不能称新GPU推理或结果。CCI四小时平台重启边界未核实，单次边界<4h且所有中断/unknown须保留。21项77,161B准入/核销/入口原件封存`ITER26_BT40_ADMISSION_ARCHIVE_V1`，TARc2b71eb32f9cefe799db070f224299fbf3114c16d01b465f7847b10d8c8286ed、manifest7ebd32525eb467bd51dc88e57d4c0e2dad2fe03f08afd3042d3b6f2e05ab1d5b；旧过期窗口未重开，新增准入不等于科学收益。
 
-原q96同一时点已13完整branch/10候选端点，正在rank9；新rank7/8晚于上一七候选归档，后续按原身份接收，不提前称全池完成。v21三回复/PDF/源码封存不变，增量3维护新准入与20项索引，全部P1–P5仍待证。
+原q96同一时点已13完整branch/10候选端点，正在rank9；新rank7/8晚于上一七候选归档，后续按原身份接收，不提前称全池完成。准入21原件另于本机22:50:12全成员独立验真；v21三回复/PDF/源码封存不变，增量3维护新准入与20项索引，全部P1–P5仍待证。
