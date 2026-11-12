@@ -2718,3 +2718,11 @@ v27+执行增量1维护最新20项映射，四成员包TARfee488f3e1d9128d411b0b
 07:15空闲4,260,970,496B，低于4GiB；07:19只读计划时4,258,918,400B。在完整AFS v26 TAR7e3ca714…及本机同一完整TAR中，逐一核验92个解包文件的原成员路径、size和hash，独立本机再次验证全部125,784,549B可恢复。计划c210b205d566effb7f67ed62d42c5a043b3faf4e2524b29f7874976a0a7977f3；查无活动进程使用旧写作目录、inode/mtime/hash均未变后，07:21:25按fsync journal只移除这些重复文件，原AFS完整TAR和本机原TAR、当前v27、科学原件/checkpoint/CAS及所有任务窗口不改。
 
 即时前后free同为4,258,127,872B，之后实际df为4,382,732,288B；共享卷和计量延迟可能影响净值，不把清理payload大小当即时净释放。保留marker、plan、本机独立proof、apply receipt和journal143b8e38fc31a1fa34aa393e7c335fcd6dea45fddd75f9fa8adf1c143189f083。后续仍按实时4GiB准入；旧v26解包缺失先从完整TAR恢复，不能当科学数据丢失或重跑模型。
+
+### 23.238 45Pooled完整验收，原顺序接续45Full及条件46Full
+
+45Pooled于07:27:27.029863UTC真实exit0、非bounded，完整1000原生命令/250H32/2000物理记录、success0/0TOPP。771原件18,270,558B双端`ITER32_BT45_POOLED_TERMINAL_V1`，TARb4a295cb1f75b567bc175bd55d43ab4ea63409bb3676d36fd3455ffaf91cbe45、manifestbe4d5eb803145dc8d5dc6900984e74f8daefbb2dd886ff98b754b2544b3c1738；本机逐成员、有限数值/动作生成/实际连续物理链核验。模型9c9c9124…、source87199cc6…/controller861004fa…仍为原冻结身份。累计39完整role/19固定0/0对/6unknown，45Pooled未配对，不计20对或最终100对SR/CI。
+
+原两role outer07:27:33正常exit0/terminal，07:30实际GPU无进程；该空档是单次调用到限，不是科学证据齐备。前角色全部原件验收、旧PID/GPU/两lease空闲与4GiB和原剩余9060秒门槛核查后，07:33:45.241925唯一启动`cci_segment_iter32_v1`，monitor2552827。原next_request从全部真实完成记录算出45Full→条件46Full；只用假想完成核对顺序，不假想结果。新operator plan3b30e47620d99ed8b60e5e4b5c495b63da69c0e51f2cdf072ffbf669927598ca，仍max2/9000秒outer/3600秒worker，原首次/10:44:53UTC截止、全部科学字段与未知保持。
+
+07:34:43实际worker2552833与心跳存活，0生成/0命令/GPU0MiB，开始加载，不能计作完成推理。后继46Full仍由同outer持有，勿在角色切换间重复派发。最新37槽审计`planning/evidence_release_status_20261112_1533.json` SHAe0aa12c7186a04f9f5e584517e599a712e6ca23b18f6ee03a26129a3a46f3d0a；最新20项执行映射`planning/issue_evidence_revision_matrix_20261112_1533.json` SHA27423891a93ae2f91a54a452a1b30fed48e6fe48261e3f1c00c1cf316f017c7e。原v27/15:15审计与所有真实结果保持；五组有利结论整体release仍false。

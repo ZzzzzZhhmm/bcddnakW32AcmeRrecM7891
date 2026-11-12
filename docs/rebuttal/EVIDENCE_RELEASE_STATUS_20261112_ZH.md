@@ -8,7 +8,7 @@
 
 北京时间2026年11月12日15:15:57直接SSH核查CCI：H100利用率95%，显存32,392MiB；原固定case45 Pooled worker2551183实际存活，139份生成动作、554条完整原生命令，07:15:52UTC心跳正常，尚无退出收据。任务在CCI进程中运行，不是新的ACP训练任务。result.json仍保留loading头，不能用该头判断真实进度；以保存的动作、物理记录和退出收据为准。当前outer仍拥有该角色，不重复创建。
 
-19个完整配对/38完整角色/6unknown是已经独立验收的数量；活动45Pooled尚未计入。原设计为100固定对、两个任务、一个配对训练种子，shared final3000模型，与原稿specialist基准分别报告。原bt40绝对截止Nov12 10:44:53UTC保持。
+15:15快照为19个完整配对/38完整角色/6unknown，活动45Pooled尚未计入。原设计为100固定对、两个任务、一个配对训练种子，shared final3000模型，与原稿specialist基准分别报告。原bt40绝对截止Nov12 10:44:53UTC保持。
 
 ## 剩余五组证据
 
@@ -39,3 +39,7 @@
 Git外`tmp/rebuttal/planning/evidence_release_status_20261112_1515.json`逐组对应37槽及20项原review映射，并清理旧状态文字中“physical still in progress”“q96 pool pending”等过时描述；v27封存材料不覆盖。该JSON SHA `9218598b9b097ff94ea2bf1b9dc8d084a67325ca250f6b1f71f1ffd7b374e364`。
 
 实际进程收据为实验根`ITER32_EXECUTION_INSPECTION_V1.json`。同父原q8证明、原固定配对收据、原review映射与数据注册表的hash在放行审计中逐一绑定。当前五组有利结论均未整体放行，稳定候选实证状态仍false。
+
+15:33接续更新：45Pooled已15:27:27真实exit0，1000命令/250H32/0TOPP/success0；771原件双端和本机完整物理链核验。当前39完整角色/19固定0/0对/6unknown，45Pooled未配对，不计第20对。15:27之后的GPU空档来自原单次两role调用正常结束，而非证据完成。15:33:45在原GPU/lease/4GiB/绝对截止核查后，按原next_request唯一启动45Full，条件后继46Full仍归同一新outer；15:34实际进程2552833和心跳存活，但0生成/0命令/GPU0MiB，属于开始加载，不称GPU推理已经完成。
+
+最新37槽审计改读`planning/evidence_release_status_20261112_1533.json`（e0aa12c7…）；最新20项执行映射为`planning/issue_evidence_revision_matrix_20261112_1533.json`（27423891…）。15:15审计及v27本体/所有原件保留。新增原件TARb4a295cb…、manifestbe4d5eb8…，新operator plan3b30e476…；原窗口不重置，仍无新增总体收益结论。
