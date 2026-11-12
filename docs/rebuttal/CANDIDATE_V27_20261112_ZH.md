@@ -24,3 +24,5 @@ Bbqv与Hh4E的重复固定状态诊断说明精简，关键不利主指标、零
 该候选封存时仍为37完整匹配角色/18固定0/0对/6unknown，100对设计尚未完成。06:25UTC原44Pooled worker2550067已49份真实生成/193条完整命令、心跳正常，原两role outer还持有条件45Pooled；不因result的旧loading头或角色切换空档重复派发。原10:44:53UTC截止及科学配置不变，后续真实终态通过独立增量记录。0新真机trial收到；ACP现有认证请求待完成。
 
 可审阅文本已完整，实证release仍为false。后续以`current_iteration.json`、真实退出收据、全轨迹及实验台账恢复；新证据经核验后再形成下一版。
+
+晚到执行增量1：44Pooled已06:44:57正常exit0，1000命令/250H32/0TOPP/success0，771项原件TAR10c22742…双端逐项/动作/实际物理链核验；与44Full初始identity和首query的图像/proprio/Gaussian/候选池精确。最新38完整角色/19固定0/0对/6unknown，原100对仍不完整。原同一outer已接续45Pooled，06:46实际worker2551183及心跳核查，加载不计完成；不得重复。最新20项映射见`responses/20261112_v27_execution_addendum1`，4成员manifestf6d51e45…/TARfee488f3…已06:48:27UTC AFS验真，原85项写作包和PDF保持。
