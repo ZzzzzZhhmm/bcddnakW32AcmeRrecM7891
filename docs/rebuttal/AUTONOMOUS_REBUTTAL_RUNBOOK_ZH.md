@@ -1,4 +1,8 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
+**Nov13 iter43最高优先恢复：累计82完整回合/41固定0–0配对；RB45唯一任务已转交CCI。** 原闲时ACP6561c8f110b54afea9a0c79c9450fae2因GPU不足从未启动runner，21:21:11UTC回读已停止；21:27:45CCI才启动相同冻结launch，launcher2587139/active child2587173。固定45Pooled显式第二次→条件45Full，首登记21:02/截止23:32:23.699406UTC保持，不恢复旧ACP、不重复角色、不自动第三次。BT4、BT32、RB35三个原阶段全部真实exit0，不能再按下文“对应策略仍在跑”行动。原PB85e q96与标准0GPU审计1ae仍23:15:38/23:25:38UTC，不重建。
+
+三项关闭预留尾窗已一次性核销2.5874595514GPUh，三个credited IDs生效；新RB45计入后119.8054115725/120GPUh、6槽。此为准入预留，不是账单，不可重复核销或重置旧时钟。六新回合4212原件与三个配对输入/物理链本机验真；RB35Full有1次TOPP观测错误，12历史unknown保留。封存v30/20项/17块/37整段pending、C.6固定75回合/15450replans保持；q48独立插入待q96一起合并完整编译。先读RESERVATION_AND_RB45_HANDOFF_20261113_ZH.md、台账23.290–292及iter43 current_iteration，旧时点仅作历史。
+
 **Nov13 iter42恢复优先：两路新增闲时ACP已实际运行，不再创建。** BT32Full显式第二次→32Pooled，UID38a8fb6c994d42a483f92f027e417d78，截止21:39:26UTC；RB35Pooled显式第二次→35Full，UID613e7ebe9c1b40669c6c3c4c406c8da0，截止21:42:51UTC。两路均cluster02/1GPU8CPU128GiB/重启0，真实runner19:57/19:58已启动，20:01仍加载0生成；不能把已分配/加载写成已推理。原signal2 unknown与3094/5603项旧inventory完整保留，源acca89资源等价/1106成员/科学AST验真，61Windows/91nativeCPU通过。每条只允许已核销的第二次，无自动第三次或重复条件后继；旧master/窗口及新BT首登记不重置。保守119.8928711239/120GPUh、最多6槽，后续申请前必须先核销真实剩余额度。
 
 BT3 Full完整验真后累计76角色/38个0–0对（原66+资源等价10），12历史unknown尝试不删。CCI同monitor已接4Full/条件4Pooled，21:30UTC；原PB85e q96/CPU1ae仍23:15:38/23:25:38UTC，不重建。封存v30 PDF/ZIP未改，20项/17块/37整段pending保持；新Bbqv/Hh4E已核验补充和q48插入片段独立，尚未合入PDF。C.6成本仍固定75回合/15450replans，不混为76。先读PARALLEL_OUTER_WINDOW_RECOVERY_20261113_ZH.md、台账23.283–287及新current_iteration；不要按下方旧“75/37、两任务未提交、BT3活动”快照行动。

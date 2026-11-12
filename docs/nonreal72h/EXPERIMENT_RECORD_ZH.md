@@ -3094,3 +3094,25 @@ CCI BT4 Full于20:20:43、ACP RB35 Pooled于20:32:15、ACP BT32 Full于20:38:41U
 17项Windows/原生CPU测试通过，44个既有冻结入口保持。实际审计18项输入封存7cccefe8957d96953e91611de1d8053face29e307d85b4e9956e7f6206f226de，manifest558ddd7bc878b82cd14156d961813388c71b4bdfe90c4adcac3c4b877d68f535；本机独立Decimal重算和逐字节校验一致。核销后的保守预留为117.3054115725/120，余2.6945884275；这是准入预留账，不是实际GPU账单或新GPU配额，不把排队误作算力。ITER43_RESERVATION_RECONCILIATION_V1此时标明尚未应用，应用须另存一次性收据与credited IDs，不能重复核销。
 
 计划在核销生效后用2.5GPUh独立闲时ACP恢复原RB45Pooled外层中断第二次→45Full，对应原next_request，保留旧161条已完成命令及一条无end命令的未知结局。不得以新重放推断旧最后命令的结果、自动第三次或替换样本。若准入，保守预留将为119.8054115725/120、并发最多6槽；本条尚未登记或创建该任务，不能写已运行。
+
+### 23.290 尾窗核销实际生效，RB45未启动ACP确认停止后转CCI
+
+20:59:51UTC唯一ITER43_CREDIT_APPLIED_V1将三个credited IDs入账，原119.8928711239→117.3054115725。原应用前审计的false保持历史身份，不覆盖；以后不能重复释放2.5874595514GPUh。新RB45独立21:02:23.699406→23:32:23.699406UTC登记2.5GPUh后119.8054115725/120、最多6槽。44既有冻结入口保持，旧master/所有原窗口不改。
+
+新闲时ACP warm-mf3k-rb40-tail-20261113-p43-idle、UID6561c8f110b54afea9a0c79c9450fae2于21:05提交一次，实际GPU不足Waiting、无Host/Pod IP和AFS runner。21:21:11浏览器回读已停止，之后核查阶段operator/job_logs为空、旧CCI终态且81080MiB空闲，两角色CPU typed预检exit0，才于21:27:45.885426启动同一冻结launch至CCI，launcher2587139、runner21:27:48/child2587173。首登记和23:32截止保持，未新增预留、未产生两边同时运行。21:29仍加载0生成；不能说已完成推理。唯一监控器拥有45Pooled显式第二次及条件45Full，不复制、不自动第三次。
+
+首个转交准入曾因CPU预检lease被持有而拒绝，无GPU副作用；释放后重新核查才启动。恢复中另一次纯CPU重复预检在最终唯一收据已存在处拒绝覆盖，原成功收据未变，无新策略forward/物理动作。保留ITER43_RB45_NATIVE_PREFLIGHTS_V1及实际CCI_REASSIGNMENT/浏览器停止原件。原RB45中断161命令和最后无end命令仍unknown，不从新重放填旧结局。
+
+### 23.291 三个对应策略完整验真，累计82回合/41固定0–0配对
+
+CCI BT4 Pooled21:03:46、ACP RB35 Full21:05:45、ACP BT32 Pooled21:20:21UTC真实exit0，分别1000/700/1000命令、250/175/250H32，success均0。RB35 Full记录1次TOPP观测错误，其他两者0；完整accepted物理链及正常官方终态原样保留，不删除错误、不推断新成功。三个阶段outer分别21:03:51/21:05:48/21:20:25 exit0，不再活动。
+
+新V2 TAR依次db7ed3ba50eeb343fb18fe616fd90310b4b576c706aa82b76120531720e210fc、3b374f3e3fac01046ffdaa617a6a645b58403728022725f968799772a15d82b7、6a09fcae1ca335864d155be52707c56f2ef05617f1d2e136a6d2b6a3f6ae8f03；manifest c7fe30e732f5510025e93cbf2380a1d38ad7f5caff7be6320537f320d145dc35、124911ade7e6d9de7e3991e2c4213b5e5d0f5e70d8a0cd9ea39fdeb74ed8fedd、a28843ef54bc554850aeeaf1d72862285b0b48e96a53be0d20cb4d8b4850a81e。与V1三对应角色合计4212原件，本机独立字节、H32有限性、qpos连续及begin/end实测链验证；三个配对初态、共同合同及首query图像/proprio/Gaussian/bank/候选payload精确。
+
+ITER43_ROLE_RAW_LOCAL_VERIFICATION_V2验收后82完整回合=原allocation66+资源等价16，41固定配对全0–0；12历史unknown尝试保留（cohort10/CCI加载1/guard1）。100对仍未完整，不支持优势或非劣效，也不替代原specialist结果。原件均Git外、本机及AFS保留，来源/模型/重置不变。
+
+### 23.292 写作保持封存v30，新增可审核补充与最新映射
+
+20意见/17块回复/37整段有利方向PENDING不因新增82/41放行。Bbqv/Hh4E的新增作者视角补充正面解释shared结果的范围、q48固定31/32完整与不利主指标、六Full精确对照和不可识别的交互标签；是审核补充，不冒称完整新版本或已经修改PDF。q96仍原唯一PB ACP85e运行，原0GPU审计1ae等待，不将候选分支重建的进行中计数当整池结果。
+
+封存v30 PDF89abaec1…、源ZIP12539cd3…及91项写作包保持；没有本轮新编译声明。C.6成本固定75回合/15450replans，不改为82；q48独立Markdown/LaTeX片段仍待q96终态后合入新完整候选并编译验收。新增矩阵/放行审计保留20项绑定和37个空值，原稿specialist、shared新实验、资格/工程检查分别呈现；新真机数据尚未回传。
