@@ -15,7 +15,7 @@ CPU进程的`CUDA_VISIBLE_DEVICES`为空，入口前后source digest均为`6b64c
 
 q96重新检查全部32个候选与36个H32终点、四个Full重复终点及父状态，重新计算MSE误差最大约2.78e-17；保留32个标签全0、干预前父状态已经倒下、预测未优于历史/常量参照的结果。不能把重复审计算成新增32个独立状态。
 
-配对审计逐轨迹核验得到20完整配对、41个已知角色结果，均无成功；另有6次已归档未知尝试。RB为12对、BT为8对。原固定100对未完整，`primary=null`；不报告最终优越性、自然缺失技能非劣效或原稿specialist复现。46Full随后已真实exit0，但尚不包含在上述09:09完整CPU审计计数中，不能混用统计截止。
+配对审计逐轨迹核验得到20完整配对、41个已知角色结果，均无成功；另有6次已归档未知尝试。RB为12对、BT为8对。原固定100对未完整，`primary=null`；不报告最终优越性、自然缺失技能非劣效或原稿specialist复现。更正报告成员说明：46Full已于08:58:16结束，包含在09:09报告的41角色中。10:21结束的46Pooled才是此后新增的唯一角色；不得将46Full重复加计。
 
 原件根`/mnt/afs/task3_2/L202500276_lwz/projects/WARM_evaluations/rebuttal_20261109_acp`（下称P）。22成员CPU包为`P/ITER33_CPU_RESULTS_ARCHIVE_V2/raw_cpu_results.tar.gz`，SHA `b3849cf322aa34eea78c432e2be8bec5f110ed0f451e50292a95e9ac8f5a4e2a`；manifest SHA `5d560fdeab5d874805e6ee5a66af6448335c0e09f47698322151d9fb1e1aa975`。V1包保留；V2额外收录q96独立核验与总结文件。工作站原件在项目`tmp/rebuttal/execution/20261112_iter33`，不入Git。
 

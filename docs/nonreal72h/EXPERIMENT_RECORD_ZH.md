@@ -2748,7 +2748,7 @@ q96独立重算全部32候选/36终点/4Full重复与父状态，最大重算误
 
 AFS09:20仅3.37GB。按既有清理授权，工作站从完整已保留CAS重建Full200原38,599,198,720B TAR SHA b2a7a0e2b0b4dd441a24e70f9bb6145ac49db3827321c890b672a60a0db035b6与七state26,450,308,543B；再次独立重读TAR和七文件，全部与原200→3000 parent_state_files及AFS七文件SHA一致。查无任何进程/FD使用旧state后，仅移出旧optim12,891,263,217B及model_state13,558,990,748B两raw副本，26,450,253,965逻辑字节。其他五小state、独立评测weight、当前Full/Pooled3000、原始轨迹、AFS/local CAS保持。原旧state目录先写STORAGE_LOCATOR_ITER33_V1及指向本机完整backup，恢复helper拒绝覆盖并逐字节验证。P/ITER33_FULL200_VERIFIED_STORAGE_MIGRATION_V1/receipt.json SHA5407991f8dbaf810f4a63ff6286c28b5623ed2e9879cfa35c886c051b666699c。即时free仍旧3.35GB，稍后df29.768GB；不把逻辑迁移大小当净空闲，原4GiB门保留。旧Full200 raw续训先恢复，当前final3000评测不受影响。
 
-前原两role CCI invocation08:58:22真实exit0；45Full08:15:55、46Full08:58:16各exit0/1000原生命令/250生成/success0。20对CPU报告包含45Full，不含随后完成的46Full，分别注明统计截止，不混计。09:38:11在GPU/两lease空闲、AFS恢复门槛和原时间预算通过后接续46Pooled，monitor2561344/worker2561350，仅max1role/outer3600+kill120，原10:44:53截止不改。09:50心跳/PID在、GPU24.6GB、0动作生成/0命令，AFS读取等待，属加载而非完成推理；P/ITER33_PARALLEL_EXECUTION_LIVE_V1.json记录实际状态。
+前原两role CCI invocation08:58:22真实exit0；45Full08:15:55、46Full08:58:16各exit0/1000原生命令/250生成/success0。更正：20对/41角色CPU报告已包含45Full和08:58:16结束的46Full；此后新增角色为46Pooled，不重复加计46Full。09:38:11在GPU/两lease空闲、AFS恢复门槛和原时间预算通过后接续46Pooled，monitor2561344/worker2561350，仅max1role/outer3600+kill120，原10:44:53截止不改。09:50心跳/PID在、GPU24.6GB、0动作生成/0命令，AFS读取等待，属加载而非完成推理；P/ITER33_PARALLEL_EXECUTION_LIVE_V1.json记录实际状态。
 
 本轮20项意见执行映射更新到planning/issue_evidence_revision_matrix_20261112_parallel.json。v27回复/PDF保持封存、37有利pending及五组整体放行false；资源提交、CPU核验与新科学证据严格分开。后续按三UID/真实Pod与CCI第46角色查验，完成后再统计，不因结果0或unknown换固定样本。
 
@@ -2764,3 +2764,18 @@ AFS09:20仅3.37GB。按既有清理授权，工作站从完整已保留CAS重建
 新supervisor只在旧46Pooled实际终态、进程/GPU/两lease空闲且全部旧原件归档后准入PB；旧角色失败/未知不改标签，原10:44:53UTC截止不改。新PB阶段首次真正准入才一次性写7200秒窗口（qualification最多2400秒，trace沿用同一截止），最迟11:00UTC准入/13:00UTC结束；无时钟重置、无自动样本替换。执行状态以current_iteration及P/original_PB_mechanism_stage_20261112_v1/operator.json为准；此条记录源码和方案准备，尚未宣称新PB模型推理/物理命令/后果准确率或修复收益。详见ORIGINAL_PB_DIRECT_MECHANISM_PROTOCOL_ZH.md；对应BB-W3/BB-Q2/HH-W5的P2，37个pending及v27封存PDF不改。
 
 10:07UTC三项ACP再次回读均启动中且未验证GPU分配，原同三UID/原窗口不改；不重复创建。CCI46Pooled10:20实际GPU94%/32,392MiB，物理记录已到983命令，心跳正常；尚未据尾记录冒认完整终态。
+
+
+### 23.243 第46Pooled真实完成并验收第21配对，纠正成员截止说明
+
+46Pooled原worker2561350于10:21:01.416581UTC真实结束，campaign worker10:21:13退出、outer10:21:18.459123 exit0，均非bounded。1000原生命令/250H32/0TOPP/success0，model9c9c9124…、source87199cc6…、controller861004fa…未改。45Full/46Full/46Pooled各771项共2313成员原件已由新PB supervisor在已知终态、GPU/PID/lease空闲后完整归档，随后本机独立逐成员、有限动作/连续qpos及真实物理命令链核验。TAR SHA分别051e59c7294030bf42033e17f0227888e2792cb4482df13e72878436e76b4fb4、00326ebd3a0764a7a4900489884b891409956529d2335c064e343fcabc68da97、2196a710c899a8ed45a78ff7087239c06be64d6046fc9626b737243aabe00389；均在P/original_PB_mechanism_stage_20261112_v1/predecessor_archives及本机iter34/PREDECESSOR_RAW。
+
+同46Full/Pooled初始identity和首query model_input/proprio/Gaussian/bank_rows/candidate_payload逐项精确。对照原CPU报告SHA316731eb…的真实attempt_audit，46Full明确已被计入09:09的41角色；旧文字“46Full随后、不含在CPU报告”有误，现纠正并保留Git历史/旧原始JSON。不能在41上再加Full及Pooled两个：新增唯一已知角色是46Pooled，累计42已验收角色/21固定0–0对/6旧unknown，100对尚未完整，无最终主统计。证明P/PREDECESSOR_LOCAL_VERIFICATION_V1.json，23.239原计数41/20本身正确。
+
+### 23.244 原稿PB新独立阶段真正准入，原CCI旧窗口未重置
+
+源码133b072df4b3cd03ad5fe11eff1b9f48b39f2857已推送并CCI离线FF，6旧冻结入口未变，新三脚本从Git原blob冻结于P/original_PB_stage_controller_133b072。qualification/trace/supervisor SHA分别b9f35cbd…、5e6f7735…、f913979d…；CPU计划绑定检查通过，无推理。新stage plan977aeb176b4cae7ebee007a4fef0e14e6d84e4d860763f6185a8eae7c583ebe4，qualification plan2c5f1a4dbdc55b1a3f8aa718e069edffcc5c09d5c8d08f55847f67fef21cebba，trace templatea1c5e6ac…，不根据新结果更改输入。
+
+10:26:25唯一monitor2563624派发；旧角色全部已知终态/PID/GPU/lease空闲和2313原件封存后，10:27:01.490719新PB阶段首次准入，截止12:27:01.490719UTC（7200秒）。原bt40首次/10:44:53截止、原100配对及所有unknown不改。新child2563662运行原稿PB12000固定首seed0；10:33:51 expert setup已准入，状态loading_original_full_policy，原native limit1500已实际核对，GPU14,000MiB、learned queries0/commands0；不能将expert setup/显存/资格阶段当成完整trial、预测准确率或修复。qualification成功后自动接同一绝对截止的全trace，未成功即保全失败不换seed。计数权威是qualification/trace各自operator；supervisor初始化query0不是实时累积计数。
+
+逐审稿人材料继续以封存v27为主，新增Git外20261112_v27_execution_addendum2：4内容成员+manifest，manifest SHA84c8f4956f85c3f8a33d5d2701bb45dc06821f17a6f177d2240108c0958bf239。含21配对执行说明、原稿PB作者视角P2插入稿和整段红色LaTeX待证材料；不加入封存PDF、不发布。已重核原v27 PDF与源码ZIP SHA、17评论块/20映射/37整段pending均不变，任何预测/修复有利方向仍未放行。

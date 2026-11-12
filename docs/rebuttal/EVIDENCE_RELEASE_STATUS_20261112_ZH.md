@@ -1,6 +1,8 @@
 # 11月12日证据与pending放行核查
 
-**09:50UTC执行增量：** 独立0GPU ACP原始审计现确认20固定0/0对/41已知角色/6unknown，原100对未齐/primary=null；46Full随后真实完成尚待单独验收，不能混进09:09报告。三项新1GPU ACP分片已创建，但BT30实际Pod缺GPU，均未证实科学runner；CCI第46Pooled仍加载。q96同32候选/36终点重算一致且保留全部不利比较，不是新增独立状态。新的20项问题执行映射位于planning/issue_evidence_revision_matrix_20261112_parallel.json；本页下方旧快照按时点保留，37有利命题仍不可整体回填。详细原件/资源及限制见ACP_PARALLEL_EXECUTION_20261112_ZH.md。
+**10:33UTC增量：** 46Pooled已实际完成且双端验收，累计42角色/21固定0–0对/6unknown。旧CPU41已含46Full，不重复计数。新PB原稿specialist阶段仅到expert准入和加载，尚无learned新命令/候选分支结果，不释放P2；三ACP未验证runner。37完整待证槽与v27 PDF/ZIP仍封存无变，见台账23.243–244。
+
+**09:50UTC执行增量：** 独立0GPU ACP原始审计现确认20固定0/0对/41已知角色/6unknown，原100对未齐/primary=null；更正：46Full在08:58结束，已包含在09:09的41角色中；10:21结束的46Pooled是之后唯一新增角色。三项新1GPU ACP分片已创建，但BT30实际Pod缺GPU，均未证实科学runner；CCI第46Pooled仍加载。q96同32候选/36终点重算一致且保留全部不利比较，不是新增独立状态。新的20项问题执行映射位于planning/issue_evidence_revision_matrix_20261112_parallel.json；本页下方旧快照按时点保留，37有利命题仍不可整体回填。详细原件/资源及限制见ACP_PARALLEL_EXECUTION_20261112_ZH.md。
 
 核查问题：是否实验已经完成，可以把理想结果段落的pending数值批量填入？
 
