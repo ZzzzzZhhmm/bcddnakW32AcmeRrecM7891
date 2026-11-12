@@ -1,5 +1,11 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**Nov12 iter36恢复覆盖旧快照：** 旧PB阶段已原13:15UTC真实截止归档，云成功不是整池完成：q8四H32为0–0，q48四H32父超额NA；q96两Full各17命令后TOPP invalid、raw32命令但父超额NA、最终旧Full中断unknown，不补H32/不重跑。第四个0GPU ACP UIDa2d7118029704b04b656a882ee7734fd真实完成三路剩余封存；新长闲时PB UID85e374b421a24794ae0e9f76d0257378已唯一提交，最多8小时/最迟Nov13 10UTC，原窗口不改。13:56事件实际为CPU/内存nodeSpec quota不足，无AFS runner；已查GPU最小规格8CPU/128GiB，无4CPU GPU规格，勿把全局5卡当已分配或重复创建。
+
+新7角色原件双端验收，累计原allocation48角色/23对；加BT47 Pooled资源等价角色为49/23，23对全0–0，BT47/RB31/RB41 Pooled未配对。旧7cohort unknown+独立CCI加载unknown1保持。CCI新13:49:40→16:19:40UTC资源段只接47Full/条件48Full，monitor2570134已启动，13:53在加载；原10:44:53窗口和master18:00不改，不能重复当前或后继。RB30/40继续实际活动，BT30唯一后继UID427e8…仍待runner。预留保守上界105.619GPUh/120、并发6不改。先读current_iteration的iter36及新LIVE，不沿用下方旧42/21、旧PB仍运行或CCI47Pooled活动描述。
+
+审阅面封存v27+执行增量5，20意见/17块/37整段pending未放行；作者口吻的协议澄清/已核验边界/整段待证文稿已备，PDF/ZIP未改。原件核验、固定样本、不利结果和未知保持。详见ACP_REMAINING_BRANCHES_20261112_ZH.md及台账23.255–258。
+
 **12:33UTC晚到权威增量：** CCI attempt002已实际75生成/296命令、100%/32,392MiB；RB30实际608命令/153生成，RB40实际368命令/93生成，ACP PB已进入q96资格。现四卡实际并行，不再沿用下方CCI/RB40 loading描述。PB q48在12:31 exit0，4H32/128分支命令、51原件双端验真；父目标2/7而计数已3/0，事前协议标签/repair/harm全部NA，不补0、不换query；数值后果仍保留。原q8为0–0，两query同一episode，完整K32池尚未完成。审阅面v27+执行增量3及4，37pending不放行。先读current_iteration及LIVE_V4、台账23.253；新完成角色须全原件/轨迹独立核验后才更新42角色/21对分母。
 
 **Nov12 iter35最新恢复（12:22UTC快照，覆盖下方旧状态）：** 作者已明确GPU目前只能闲时；defaults和原hourly automation已更新，勿再尝试标准GPU/重复问配额。PB factual1500命令/375生成真实结束、1149原件双端验真，false/25TOPP完整保留；新增0GPU ACP58.586秒三路并行封存96候选，35原件双端核验。新ACP PB UID50ea739accc14fc3a1030a64583d3eed已在cluster01真实运行，固定11:53:11→13:15UTC；q8 AABA12:04 exit0/4H32/128分支命令、三个Full重复精确，raw/Full进展0/0，51原件验真，不算修复。当前q48资格、q96未开始；容器PID61/898不是CCI PID，不可据本机/proc不存在误判重跑。

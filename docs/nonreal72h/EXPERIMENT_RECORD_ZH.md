@@ -2848,3 +2848,27 @@ q48资格于12:31:21.669720UTC真实exit0/非bounded；三Full与raw rank18各�
 本轮恢复后优先解决原13:15UTC窗口不足以完成三个K32池的问题，而不修改该窗口。新增剩余分支采集模式及独立最多8小时/1GPU监督器；只有原stage真实终态、lease释放、全部旧输出归档后才能准备新manifest/CPU预检和提交闲时ACP。新plan与原plan逐字段比较，候选、源、种子、所有inputs、H32/768维主指标均不准改变；只允许新输出目录及executor/resource元数据。已完整分支逐文件沿用、已中断分支保留未知且不重跑、只按原顺序执行从未开始的分支，三query均须交代，原AABA不合格者不得换样本。
 
 新资源边界另预注册一条Full控制anchor-continuation-final，使用原封存Full动作且端点必须精确重复原Full；它不替代旧未知，不增加候选或独立样本。Windows和CCI原生各65项针对性测试通过，覆盖唯一分支归类、未知不补零/不重试、原plan科学字段不可改变、旧stage必须终态、已有原件不可覆盖及有界8小时准入；只是工程准备，尚未宣称新GPU任务或新候选结果。所有原13:15时钟和旧BT/BRT不利结果保持，原37个pending不放行。
+
+### 23.255 原PB q96真实终态与无效Full控制独立验真
+
+旧ACP物理阶段按原13:15UTC截止有界退出；q96 child1732 exit−2、bounded=true，监督器13:15:07完成全部现存原件归档，云“成功”只表示监督器结束。q8/q48/q96整池均未运行。q96两个已封存Full各17条被接受命令后遇相同官方TOPP拒绝，为invalid_branch、observed_effect=None、任务标签未知；所选raw rank0完整32条，父计数5/1已超过2/7，进展NA。旧最终Full在前缀重建时被窗口中断，0已记录分支命令，仍unknown、不重跑、不由新控制替代。一个complete.json只说明收据完整，不能当完整H32。
+
+40项原q96 TAR SHA fc8e1d2924afe05da2e137aef6fabc6a5eebc3d1c973052c82f08391e6dc146c，双端逐成员及物理/计数链验真，raw端768维delta独立重算最大误差5.96e−8。旧stage17项和三query51/51/40项又分别封存至original_PB_remaining_prep_stage_20261112_v1/prior_archives并本机逐项重读。验证PB_TERMINAL_AND_PREP_LOCAL_VERIFICATION_V1.json。首次本机审计错误假定所有complete收据为H32，读取实际invalid后纠正审计断言，原科学输出未动；当前明确记录2invalid Full、1完整raw、1resource unknown，而非4完整干预。
+
+### 23.256 新七角色原件验收与同科学名单的资源等价核对
+
+RB30/RB40 Full与Pooled、RB31/RB41 Pooled各700命令/175生成，BT47 Pooled独立资源段1000命令/250生成均实际exit0、success0、TOPP0。七角色4,057原件在ITER36_NEW_TERMINAL_ARCHIVES_V1双端逐成员、qpos连续链、实际物理链、250/175个32×14模型动作核验。RB30和RB40分别新成0–0对；两策略初始identity、第一query观测/proprio/Gaussian/候选池精确。新增档案SHA依次见NEW_TERMINAL_LOCAL_VERIFICATION_V2.json：RB30Full f89ff750…、Pooled34b02e55…、RB31Pooled a0b25113…、RB40Full17d50a78…、Pooled3f862402…、RB41Pooled689efc7e…；BT47Pooled e3de4f3fb9718c1d40ea887c1dfbe3239920ba26a13404fb47fde814ec9de2bb。
+
+原allocation累计48角色/23对，加BT47 Pooled为49角色/23对；23对全0–0，未配对Pooled为BT47/RB31/RB41。BT47实际worker plan SHA170bc361…与原bt40 plan逐字段仅时间与资源登记改变，全部模型/源/roster/bank/推理/指标相同，本机RESOURCE_ONLY_EQUIVALENCE_LOCAL_VERIFICATION_V1.json再证；合并科学名单仍显式保留独立allocation身份。原7个cohort基础设施unknown与独立CCI加载unknown1保持，未补0；shared/final3000研究不替换原稿specialist，不据成功率地板作优越性或非劣效推断。完整100对尚未完成。
+
+### 23.257 真实0GPU剩余封存、长闲时PB与CCI新阶段
+
+canonical 6a7cc32及e23e634已英文提交/推送验证、CCI离线FF，13个原冻结入口不变。新控制器original_PB_remaining_controller_e23e634的collector SHA b47ae1e1f16668d78a149a9462a8fe470785adf1a9c86c6215832f97414afa87，supervisor375578cc…，helper31c96a95…；新增新边界pre Full与post Full，均须与原Full精确，且不替代旧未知。Windows及CCI原生最终各67项针对性工程测试通过；原65项记录是此前快照。
+
+新增标准0GPU/4CPU/16GiB ACP warm-pb-remain-prep-20261112-p36-cpu，UID a2d7118029704b04b656a882ee7734fd，实际13:42:24.272593→13:43:33.026843UTC，三CPU子进程并行预检exit0，0策略推理/0候选物理。旧完整/invalid收据逐文件沿用，q96旧unknown不重跑；三个query各31个从未执行候选与pool-final按原顺序。新GPU计划SHA ad42486a56a1cfb813ed8f73dc2894744cee985ffdc3a64aedb19be5fff59939，独立最多8小时/最迟Nov13 10UTC结束，原13:15窗口不改。唯一新闲时任务warm-pb-remaining-20261112-p36-idle，UID85e374b421a24794ae0e9f76d0257378，cluster02/1GPU8CPU128GiB/单副本/重启0，原镜像及AFS全回读。13:56实际Worker等待，事件CPU/内存nodeSpec quota不足、无AFS runner，不能当GPU推理。已核查两页规格，最小1GPU仍8CPU128GiB，无4CPU GPU选项；只准备过未提交的复制表单，没有第二个同stage任务。
+
+CCI前一BT47 Pooled完整退出/原件验真、原13:04:10窗口闭合后，独立13:49:40.529151→16:19:40.529151UTC登记47Full和条件48Full，原next_request次序、原bt40截止和master18:00保持。13:50 monitor2570134实际启动，13:53 launcher2570165/worker2570170/心跳实际、尚加载0生成，不能提前当完成。每角色3600秒/最多两角色，失败保留不自动再试。新plan be7e3f93…仅资源字段变，模型环境原目录已恢复。新增保守资源预留2.5h后总上界105.6193207178 GPUh低于120，最大并发6；它包含队列/间隔，不是实测GPU消耗。CCI后端重启时刻未验证，不能凭四小时推算删除或重跑unknown。
+
+### 23.258 执行增量5与材料一致性
+
+新增内部v27_execution_addendum5合并增量3/4必要事实，四内容成员+manifest SHAec8e6d0c090e3237a10d2d873912c9f4057fa6c0ccf6f878f03f903e4627d406，TAR SHA6c068c26774c425ed49f6c9942ac724cd9a3ff90e26892c0f4cb29849f210ce0。包含49角色/23对及全部零/NA/invalid/unknown、第一人称协议澄清、完整待证作者段、LaTeX插入及跨材料检查。P2方向与数值依赖段整体标PENDING；20意见/17回复块/37空槽不放行。封存v27 PDF c54d480a…/源码ZIP2fb41a92…保持，本轮未改完整论文，不声称重新编译。GPU默认仅闲时，纯CPU0GPU；无新增真机trial，无公开发布。
