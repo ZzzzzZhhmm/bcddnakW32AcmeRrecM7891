@@ -1,0 +1,9 @@
+# 固定匹配名单的独立资源amendment
+
+原formal campaign及各旧allocation的时钟、角色、结果、失败和unknown全部保持。BT00旧monitor正常退出但有从未启动的固定角色；不能把云成功当100对研究完成，也不能直接改旧截止。新的独立阶段须在物理执行前登记，复用已终态槽，最多3小时/3个原next_request角色，保守总预留不超过120GPUh、并发不超过6卡。只申请闲时GPU。
+
+`matched_native.require_deadline`对普通formal计划仍保持Nov12 18UTC上限。只有`warm.matched-prospective-resource-amendment.v1`登记逐项校验成功才允许独立后续窗口，最晚Nov13 10UTC。原plan和预算快照必须冻结SHA，前驱operator及runner必须已正常终态。旧角色完整清单不得遗漏任何unknown，下一序列必须由原次序推出，已有角色一律不重跑。新段输出与前驱分离。
+
+新plan仅允许时钟、登记引用及控制器身份不同；模型、训练数据/步数、全部输入、roster、bank、推理和指标字段相同。新控制器从旧冻结树复制，逐文件绑定SHA；仅matched_native.py中的时钟及资源校验函数可以不同，其余AST必须相同。真正加载的模型/物理代码不变，新的控制器SHA与allocation身份须显式报告，不能标成原旧控制器结果。合并前还要再次核对初始状态、首query输入/随机数/候选池和完整物理轨迹。
+
+第一次20UTC预备计划被旧控制器正确拒绝，目录和CPU错误收据保留，未创建GPU或attempt。后续必须使用已提交/推送/CCI同步的显式新代码、独立新目录和成功CPU预检，再提交唯一闲时任务；不通过修改活动快照或伪装旧源码绕过保护。该执行安排不自动关闭任何P1–P5证据缺口；负结果与未知照常记录。

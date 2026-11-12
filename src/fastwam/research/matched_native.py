@@ -64,8 +64,102 @@ def require_deadline(plan,now=None):
     if not 0<(end-first).total_seconds()<=ceiling:raise ValueError('Persistent resource window exceeds the declared phase')
     if now<first:raise ValueError('Admission precedes the frozen phase')
     if now>=end:raise TimeoutError('Original resource window expired;do not reset it')
-    if plan['phase']=='formal' and end>datetime(2026,11,12,18,tzinfo=timezone.utc):raise ValueError('Formal phase exceeds the fixed campaign ceiling')
+    if plan['phase']=='formal' and end>datetime(2026,11,12,18,tzinfo=timezone.utc):
+        if not _require_resource_amendment(plan,first,end):
+            raise ValueError('Formal phase exceeds the fixed campaign ceiling')
     return end.timestamp()
+
+def _require_resource_amendment(plan,first,end):
+    """Validate a separate resource stage; all original clocks stay immutable."""
+    import ast
+    ref=plan.get('prospective_resource_registration',{})
+    if not ref or file_sha(ref['path'])!=ref['sha256']:
+        return False
+    r=read_json(ref['path'])
+    if r.get('schema')!='warm.matched-prospective-resource-amendment.v1':
+        return False
+    ceiling=datetime(2026,11,12,18,tzinfo=timezone.utc)
+    if (r.get('original_windows_unchanged') is not True or r.get('prior_unknowns_not_retried') is not True
+        or r.get('stage_first_admitted_utc')!=plan['first_admitted_utc']
+        or r.get('stage_absolute_deadline_utc')!=plan['absolute_deadline_utc']
+        or r.get('old_master_deadline_unchanged')!=ceiling.isoformat()
+        or not 0<(end-first).total_seconds()<=10800
+        or end>datetime(2026,11,13,10,tzinfo=timezone.utc)):
+        raise ValueError('Invalid independent resource-amendment window')
+    original=r['original_plan']
+    if file_sha(original['path'])!=original['sha256']:
+        raise ValueError('Original formal plan changed')
+    base=read_json(original['path'])
+    allowed={'first_admitted_utc','absolute_deadline_utc','prospective_resource_registration',
+             'controller_code','controller_source_sha256'}
+    if (base.get('phase')!='formal' or datetime.fromisoformat(base['absolute_deadline_utc'])>ceiling
+        or any(base.get(k)!=plan.get(k) for k in set(base)|set(plan) if k not in allowed)):
+        raise ValueError('Resource amendment changed the fixed scientific plan')
+    terminal=r['predecessor_terminal']
+    if file_sha(terminal['path'])!=terminal['sha256']:
+        raise ValueError('Predecessor terminal receipt changed')
+    prior=read_json(terminal['path'])
+    if (prior.get('status') not in ('terminal_fixed_invocation_complete_or_window_bound','terminal_fixed_roles_invocation_complete')
+        or datetime.fromisoformat(prior['ended_utc'])>first):
+        raise ValueError('A prior or unknown invocation still owns this work')
+    exit_ref=r['predecessor_runner_exit']
+    if file_sha(exit_ref['path'])!=exit_ref['sha256'] or read_json(exit_ref['path']).get('exit_code')!=0:
+        raise ValueError('Predecessor process did not exit normally')
+    state_ref=r['previous_budget_state']
+    if file_sha(state_ref['path'])!=state_ref['sha256']:
+        raise ValueError('Previous budget state changed')
+    previous=read_json(state_ref['path'])['authoritative_active_execution']
+    hours=(end-first).total_seconds()/3600
+    if (r.get('max_concurrent_GPUs')!=6 or previous['max_concurrent_GPU_slots']!=6
+        or r.get('reuses_terminal_GPU_slot') is not True
+        or r.get('prior_reserved_upper_GPU_hours')!=previous['reserved_upper_GPU_hours']
+        or abs(r['combined_reserved_GPU_hours_upper_bound']-previous['reserved_upper_GPU_hours']-hours)>1e-9
+        or r['combined_reserved_GPU_hours_upper_bound']>120):
+        raise ValueError('Prospective resource amendment exceeds its existing envelope')
+    rows=[];bound_results=set()
+    for item in r['old_known_role_records']:
+        if file_sha(item['path'])!=item['sha256']:
+            raise ValueError('Old role evidence changed')
+        path=Path(item['path'])
+        if path.name=='result.json' and path.parent.name=='worker':
+            row=read_json(path);row['attempt_id']=path.parents[1].name;rows.append(row);bound_results.add(path.resolve())
+    actual={p.resolve() for root in r['old_inventory_roots'] for p in Path(root).rglob('worker/result.json')}
+    if actual!=bound_results:
+        raise ValueError('Old completed or unknown attempts were omitted')
+    sequence=r['fixed_role_sequence']
+    if not 0<len(sequence)<=3 or len({(c,role) for c,role in sequence})!=len(sequence):
+        raise ValueError('A bounded fixed role sequence is required')
+    old_keys={(row['episode_id'],row['role']) for row in rows}
+    for case,role in sequence:
+        if ((case,role) in old_keys or next_request(rows,base['case_ids'],known_terminal_attempts=r['old_unknown_attempts_preserved'])!=(case,role)):
+            raise ValueError('Resource stage retries or substitutes an existing role')
+        rows.append(dict(episode_id=case,role=role,status='complete_native'))
+    proof_ref=r['controller_resource_equivalence']
+    if file_sha(proof_ref['path'])!=proof_ref['sha256']:
+        raise ValueError('Controller equivalence proof changed')
+    proof=read_json(proof_ref['path']);old_root=Path(proof['original_controller']);new_root=Path(proof['amended_controller'])
+    if (str(old_root)!=base['controller_code'] or str(new_root)!=plan['controller_code']
+        or proof['original_controller_sha256']!=base['controller_source_sha256']
+        or proof['amended_controller_sha256']!=plan['controller_source_sha256']):
+        raise ValueError('Controller identities differ from the registered amendment')
+    files=proof['files'];special='src/fastwam/research/matched_native.py'
+    if ({p.relative_to(old_root).as_posix() for p in old_root.rglob('*') if p.is_file()}!=set(files)
+        or {p.relative_to(new_root).as_posix() for p in new_root.rglob('*') if p.is_file()}!=set(files)):
+        raise ValueError('Controller source membership changed')
+    for name,item in files.items():
+        if (Path(name).is_absolute() or '..' in Path(name).parts
+            or file_sha(old_root/name)!=item['original_sha256'] or file_sha(new_root/name)!=item['amended_sha256']
+            or (name!=special and item['original_sha256']!=item['amended_sha256'])):
+            raise ValueError('A scientific collector implementation changed')
+    def scientific_ast(path):
+        tree=ast.parse(path.read_text())
+        tree.body=[node for node in tree.body if not isinstance(node,(ast.FunctionDef,ast.AsyncFunctionDef))
+                   or node.name not in ('require_deadline','_require_resource_amendment')]
+        return ast.dump(tree,include_attributes=False)
+    if scientific_ast(old_root/special)!=scientific_ast(new_root/special):
+        raise ValueError('Resource amendment changed scientific collector code')
+    return True
+
 
 def validate_plan(plan):
     if plan.get('schema')!='warm.rebuttal.matched-native.v1' or plan.get('phase') not in ('recorded_dev','formal'):
