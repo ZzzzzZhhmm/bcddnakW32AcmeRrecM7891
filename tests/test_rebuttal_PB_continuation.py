@@ -37,7 +37,7 @@ def test_no_replacement_duplicate_unknown_retry_or_clock_reset(change):
     if change=='overlap':m['unstarted'].insert(0,'rank-1')
     if change=='missing':m['unknown']={}
     if change=='substitution':m['unstarted']=['another-rank']
-    if change=='unqualified':m['unknown']['rank-0']=m['completed'].pop('rank-0')
+    if change=='unqualified':m['unknown']['anchor-aa']=m['completed'].pop('anchor-aa')
     if change=='clock':m['prior_clock_reset']=True
     with pytest.raises(ValueError):M.require_inventory(m,ORDER)
 
@@ -45,6 +45,23 @@ def test_no_replacement_duplicate_unknown_retry_or_clock_reset(change):
 def test_remaining_order_is_fixed_before_outcomes():
     m=inventory();m['unknown']={};m['unstarted']=['anchor-pool-final','rank-1']
     with pytest.raises(ValueError,match='order'):M.require_inventory(m,ORDER)
+
+
+def test_old_interrupted_raw_or_final_control_remains_unknown_for_new_qualification():
+    m=inventory();m['unknown']['anchor-qual-final']=m['completed'].pop('anchor-qual-final')
+    assert 'anchor-qual-final' in M.require_inventory(m,ORDER)['unknown']
+    m['unknown']['anchor-qual-final'].update(directory='old',reason='timeout')
+    r=M.unknown_record(m,'anchor-qual-final','q')
+    assert r['observed_effect'] is None and r['parent_hashes'] is None
+
+
+def test_new_qualification_requires_exact_original_Full_repeats():
+    row=dict(parent_hashes={'p':1},endpoint_hashes={'p':2},endpoint_status='complete_horizon',
+        executed_steps=32,observed_effect=[0.0],independent_label={'applicable':0},
+        error=None,parent_progress={},endpoint_progress={},secondary_prefix4=None)
+    assert M.require_old_full_repeats(row,copy.deepcopy(row))
+    other=copy.deepcopy(row);other['endpoint_hashes']['p']=3
+    with pytest.raises(ValueError,match='controls differ'):M.require_old_full_repeats(row,other)
 
 
 def test_resource_plan_cannot_change_candidates_source_or_horizon(tmp_path):

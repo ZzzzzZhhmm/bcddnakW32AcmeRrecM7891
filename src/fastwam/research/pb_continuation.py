@@ -5,6 +5,7 @@ import json
 import shutil
 
 NEW_CONTROL='anchor-continuation-final'
+PRE_CONTROL='anchor-continuation-initial'
 
 
 def sha(path):
@@ -38,8 +39,8 @@ def require_inventory(manifest, order):
             or set.union(*groups) != set(order)
             or any(groups[i]&groups[j] for i in range(3) for j in range(i))):
         raise ValueError('Every original branch must be accounted for exactly once')
-    if not set(order[:4]) <= groups[0]:
-        raise ValueError('An interrupted original AABA must remain unqualified; do not replace it')
+    if not set(order[:2]) <= groups[0]:
+        raise ValueError('Two original repeated Full controls are required before new qualification')
     if pending != [n for n in order if n in groups[2]]:
         raise ValueError('Remaining branch order cannot depend on outcomes')
     for item in unknown.values():
@@ -47,6 +48,15 @@ def require_inventory(manifest, order):
         if count is not None and (type(count) is not int or not 0<=count<=32):
             raise ValueError('Interrupted command accounting must remain bounded and explicit')
     return manifest
+
+
+def require_old_full_repeats(a, aa):
+    keys=['parent_hashes','endpoint_hashes','endpoint_status','executed_steps',
+          'observed_effect','independent_label','error','parent_progress',
+          'endpoint_progress','secondary_prefix4']
+    if any(a[k]!=aa[k] for k in keys):
+        raise ValueError('Original repeated Full controls differ; do not qualify a new pool')
+    return True
 
 
 def bind_manifest(path, expected, plan, order, sealed_query_sha256):
