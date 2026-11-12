@@ -2796,3 +2796,9 @@ PB qualification于10:42:59.840904UTC写complete_one_original_replan_four_native
 新增PB专用CPU候选封存及物理pool采集器；原BT/BRT代码保持。q8→q48→q96先A-A-B-A、后全部有效rank，H32 uniform-mean DINO主指标与prefix4次指标、只读PB计数盲判、早成功删失和未知不补零均在分支执行前注册于ORIGINAL_PB_DIRECT_MECHANISM_PROTOCOL_ZH.md。Windows81通过/1条缺torch跳过、CCI原生82通过，均只是工程检查，尚无新PB候选端点。后续由0GPU进程冻结输入后再执行物理GPU阶段；原10:27→12:27阶段截止和旧全部时钟不改。
 
 11:31UTC ACP三GPU任务按原UID完整回读仍启动中、规格实际乘数0，AFS job_logs无新runner；两标准0GPU任务先前均真实exit0。保持三原排队allocation，不按“启动中”计GPU推理、不重复申请相同样本。v27封存PDF/20意见/17回复块/37整段pending保持；新的factual完整性不放行预测优越性或修复收益。
+
+### 23.247 新增ACP标准0GPU任务实际完成三路并行PB输入封存
+
+新任务warm-pb-seal-20261112-p35-cpu，UID f28faf99bbc244b6b131001d58dff645，标准资源/确切GPU0/vCPU4/16GiB/单副本/重启0，镜像与AFS均按已确认设置完整回读。11:39:50.956158→11:40:49.541799UTC真实exit0，用时58.586秒；三个独立CPU子进程并行冻结q8/q48/q96各32个有效候选和模型所选rank0/18/0、native动作、predicted/history descriptor及原件身份。未初始化CUDA、未跑新policy forward或候选物理分支。旧两CPU任务不重复执行；此项为第三个已知完成0GPU任务，不冒充新科学收益。
+
+执行源a1309700e7e32362202ae934f2aec14d4d4fbd4c已提交/推送验证，CCI离线FF后冻结于P/original_PB_pool_controller_a130970；原9个冻结入口逐项保持。CPU source digest d358b2135c81fa851cd432743df02d14a818cbe0ed39036fc463a2b0d5b336b9前后相同；job.json文件SHA ca9672b3f658c65112f228b9e0e26aff81519b31db83433bd0cccbdec848815b，runner规范化spec SHA 4b6960b6e7d4c0cf111efb760e514773e3e3ad3b49069cf31b8c2755b319bfd8（序列化不同，勿混称）。Git外P/original_PB_cpu_seal_stage_20261112_v1保存完整registration/plans/三退出收据/CPU_seal_complete及job_logs。新物理supervisor严格等待该CPU真实终态，三query先资格再pool、失败保留并继续其他固定query、不重跑未知分支；拟独立最多5400秒且不延长任何旧窗口。准备不算GPU启动，实际状态另行记录。
