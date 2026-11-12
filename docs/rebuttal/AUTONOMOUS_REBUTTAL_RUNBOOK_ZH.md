@@ -1,5 +1,7 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**Nov12 06:03UTC最新执行：** 44Full已05:59:07正常exit0，1000命令/250H32/0TOPP/success0；771原件8eacda13…双端完整验真。当前37完整role/18固定0/0对/6unknown，44Full尚未配对，不计19对。原两role outer真实exit0后，已06:03:23唯一准入`cci_segment_iter30_followup_v1`，monitor2550033，固定44Pooled及条件45Pooled仍由原next_request选择；max2/9000souter/3600sworker、原10:44:53UTC截止不变，不重复这两role。当前审阅面为v26+执行增量2，原92项包/PDF不改，37槽未释放。先查实际worker、heartbeat、轨迹、终态和outer是否仍占有后继，再继续；不要按下方旧44Full运行快照重复派发。
+
 **Nov12 05:43UTC评测终态锚点：** 43Full已05:16:42正常exit0、1000命令/250H32/0TOPP/success0；771原件TARbdd6b310…本机/AFS逐项验真，43Full/Pooled首query及初始identity精确。当前36完整role/18固定0/0对/6unknown，原100对仍未完成。原两role outer已进入44Full，05:40 worker2548324/heartbeat核验；monitor2547132仍拥有第二role，不能另起44Full。先看其真实终态/完整轨迹与outer收据，不因role切换空档重复派发。v26+晚到执行增量1为审阅面，原PDF/92项封存包不改，正文10页；37槽仍待证。
 
 **Nov12 05:41UTC存储第二阶段已完整核验：** 19个旧写作TAR.GZ现以AFS无损CAS存储，本机完整原容器全部保留；每个容器都从实际AFS块重建并验证外层原SHA后才分层物理副本，本机又独立核验19份全部块序及GZIP原字节。2,068,396,667B容器由1,073,509,158B新块表示；结束空闲4,701,954,048B，05:40实测4,795,224,064B。当前v26/科学原件/checkpoint/原训练CAS未改。旧写作解包路径或外层TAR不常驻，可按`writing_archive_cas_20261112_v1/INDEX.json`恢复；不要报成丢失数据或重跑实验。完整指引`STORAGE_TIERING_20261112_ZH.md`，源码`scripts/tier_rebuttal_writing_archives.py`，所有旧容器的身份保持。后续4GiB准入门槛仍按实时空间核查。

@@ -2682,3 +2682,9 @@ Git外双端`ITER30_WRITING_TIERING_PLAN_V1.json`、`ITER30_WRITING_TIERING_LOCA
 05:16:42.045419真实exit0、非bounded，完整1000命令/250H32/2000物理记录、success0/0TOPP。771原件18,225,497B在双端`ITER30_BT43_FULL_TERMINAL_V1`保全，TARbdd6b310f3f4b65a4444d8587fad4e3d7ac79064e3b9aebf6f656ec354df6b16、manifestb026e9d1995865d7d34fe94ff4b6251e0e805b29784d26bf46a7b74344a6eaac；本机05:43:45逐成员、动作/生成/独立物理链核验，与43Pooled首query图像/proprio/Gaussian/bankrows/candidate载荷及初始状态精确一致。累计36完整角色/18固定0/0对/6unknown，仍无最终100对SR/CI或收益/非劣效。
 
 原同一两role outer已自行按原counterbalanced顺序进入44Full，05:40:44 heartbeat和worker2548324核实。不得另起44Full或在其退出与outer收据之间重复派发；9000souter/3600sworker与原10:44:53UTC截止保持。v26封存写作包92成员及PDF不变，晚到执行用增量1更新20项映射；这些新增配对不填P1最终差值。当前原机制q8正面局部稳定性证据继续保留全部0完成标签，不与该matched cohort混为统计样本。
+
+### 23.233 44Full完整与原固定顺序的下一两role
+
+05:59:07.508220真实exit0、非bounded，完整1000命令/250H32/2000物理记录、success0/0TOPP。771原件18,127,074B在双端`ITER30_BT44_FULL_TERMINAL_V1`保全，TAR8eacda138ff3186e54a75fe2f8c4b4c080f3fbf8bf383749de96c2f9042cf24d、manifest70ce5e5732c1d46b7a7569b148421c23eaa0ca610ac79104c59e698b272cc028；本机06:01:46逐成员/动作/生成/独立物理链核验。当前37完整角色/18固定0/0对/6unknown，44Full未配对，不计第19对，不报告最终100对SR/CI或非劣效。
+
+原outer05:59:14真实exit0/非bounded，全部旧PID与GPU/lease空闲核查后，06:03:23.766704唯一准入`cci_segment_iter30_followup_v1`，monitor2550033；由原next_request从全部完成记录算出下一44Pooled及条件45Pooled。operator plan SHAb64ba0f6221c633c97d6650f00f2a5b4e1c63a5927f4f41afe62a8eb63d1f2db，launch SHA16c6c8fa…，science字段不变，max2/9000souter/3600sworker/原10:44:53UTC截止保持，未重试未知或按结果换样。v26+执行增量2更新20项执行映射；原92项包/完整PDF/全部待证论证不改。
