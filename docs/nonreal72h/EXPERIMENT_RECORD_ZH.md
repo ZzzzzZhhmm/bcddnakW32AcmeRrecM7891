@@ -2779,3 +2779,10 @@ AFS09:20仅3.37GB。按既有清理授权，工作站从完整已保留CAS重建
 10:26:25唯一monitor2563624派发；旧角色全部已知终态/PID/GPU/lease空闲和2313原件封存后，10:27:01.490719新PB阶段首次准入，截止12:27:01.490719UTC（7200秒）。原bt40首次/10:44:53截止、原100配对及所有unknown不改。新child2563662运行原稿PB12000固定首seed0；10:33:51 expert setup已准入，状态loading_original_full_policy，原native limit1500已实际核对，GPU14,000MiB、learned queries0/commands0；不能将expert setup/显存/资格阶段当成完整trial、预测准确率或修复。qualification成功后自动接同一绝对截止的全trace，未成功即保全失败不换seed。计数权威是qualification/trace各自operator；supervisor初始化query0不是实时累积计数。
 
 逐审稿人材料继续以封存v27为主，新增Git外20261112_v27_execution_addendum2：4内容成员+manifest，manifest SHA84c8f4956f85c3f8a33d5d2701bb45dc06821f17a6f177d2240108c0958bf239。含21配对执行说明、原稿PB作者视角P2插入稿和整段红色LaTeX待证材料；不加入封存PDF、不发布。已重核原v27 PDF与源码ZIP SHA、17评论块/20映射/37整段pending均不变，任何预测/修复有利方向仍未放行。
+
+
+### 23.245 原稿PB实际一replan/四命令资格通过，独立CPU复核并自动进入全trace
+
+PB qualification于10:42:59.840904UTC写complete_one_original_replan_four_native_commands，10:43:08.702445真实exit0/非bounded，实际learned replan1/原生命令4，H32×14动作有限；source前后4a1d05cb…与checkpointa765d987…保持。四步末原task_success_flag=false，不据此估计SR。初始RGB/qpos、首输出、event-adapter输出、qpos前后链、articulation物理状态及八个隐藏计数/标志只读记录在13项完整原件。P/original_PB_mechanism_stage_20261112_v1/archives/qualification.tar.gz SHA7babc1f7bb439bf3331010abcccc3f799aea7988c22f771f28961ce71be1e6f6，AFS/本机逐成员核验；另独立原生CPU进程CUDA_VISIBLE_DEVICES空，重新读取真实stored action形状32×14/finite、event hook1、四步qpos连续，不跑forward/训练/GPU。证明ITER34_PB_QUALIFICATION_CPU_RECOMPUTATION_V1.json及PB_QUALIFICATION_LOCAL_VERIFICATION_V1.json。
+
+同一supervisor已自动进入全factual trace，10:45:31实际child2564395存活、状态loading_original_full_policy，学习queries0/commands0；不重复已通过资格，不重置原10:27→12:27:01固定新阶段窗口。下一道门是独立fresh episode初始RGB/qpos、首模型输出、四步实际物理及计数状态完全匹配，当前尚未确认，不提前当完整episode或候选后果/修复收益。原shared研究42角色/21固定0–0对/6unknown保持，PB资格不加入其分母。v27 PDF/源码ZIP及37整段pending仍不放行。
