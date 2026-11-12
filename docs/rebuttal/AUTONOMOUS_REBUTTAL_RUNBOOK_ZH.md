@@ -1,4 +1,10 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
+**Nov13 iter41最新恢复：v30完整候选与关键资源guard修复已验收。** C.6/表33新增75完整回合、15450replan的真实日志成本，Hh4E W2/结尾联动；完整原工程+干净ZIP47页/主文10页、0undefined/overfull、41–47直接验看/其余40页像素同，91项19:04UTC AFS验真。20意见/17块/37整段pending不放行，原v29封存。读CANDIDATE_V30_NATIVE_COST_ZH.md及最新current_iteration。
+
+旧v3 BT3 Full165命令/42生成到3000秒超时，155原件已验真，None结果保留。每步重复1106源码准入校验实测10.7秒；新factory一次完整准入后只查同一绝对时钟，1000次0.000111秒，Windows44/native74通过。新collector77a1a6d6仅资源函数/worker budget变化，其他模型/物理/指标AST同；显式核销后新CCI段18:51→21:30UTC接同case3 Full第二次→4Full→4Pooled，monitor2581475/worker2581509。旧20UTC/master18UTC及所有原件不改，保守116.2928711239/120GPUh、6槽；不要按下方旧11a0f860阶段快照重复派发，也不能自动第三次尝试。
+
+完整75角色/37个0–0对不变（原66+资源等价9），10cohort unknown、CCI加载1、独立guard1分列。PB q48整池31/32 H32、rank26invalid、六Full精确，父超额使全部interaction标签NA；主指标0.050580/0.050316/0.015519不利，391原件已双端/本机验真。其已核验Markdown/LaTeX补充片段独立保存，尚未合入v30 PDF；不冒称已改稿。原唯一PB ACP85e374已接q96至23:15:38UTC，原0GPU审计1ae90等待至23:25:38UTC。新成本CPU72dac已真实exit0，不重建。台账23.276–281与iter41为恢复入口，GPU只闲时、CPU标准0GPU，作者新真机材料仍未回传。
+
 **Nov13 iter40最新恢复：同一冻结BT00剩余阶段已从确认停止的排队ACP转交CCI。** 原CCI49Full于17:46正常结束；新ACP fb7af049…实际GPU不足/无runner，17:54回读已停止后才于17:54:47启动相同v3 launch（launcher2578700/worker2578762）。固定3Full→4Full→4Pooled仍由同一monitor拥有；17:34准入/20UTC截止不改，不重复原ACP或CCI角色。新控制器11a0f860…仅资源函数改变，原模型/物理核心87199cc6…保持；1106源码成员双端/本机AST等价验真，Windows19/native49通过。原19冻结入口、旧master18UTC/所有窗口不改，保守113.6448450425/120GPUh、最多6槽；GPU只闲时，CPU标准0GPU。
 
 本轮九个完整角色6057原件验真后累计75完整角色/37个0–0对（原allocation66+资源等价9），BT3 Pooled尚未配对。原三个匹配ACP在17:59按18UTC减30秒外层timeout退出，BT32Full、RB35/45Pooled三个新增unknown的299原件已保存；cohort unknown10+独立CCI加载unknown1，不补0、不自动重试。RB45最后一条begin无end的命令结局未知。不能把旧result loading头当实时进度或把新中断误当模型失败；以ITER40_UNKNOWN_LOCAL_VERIFICATION_V2为准。
