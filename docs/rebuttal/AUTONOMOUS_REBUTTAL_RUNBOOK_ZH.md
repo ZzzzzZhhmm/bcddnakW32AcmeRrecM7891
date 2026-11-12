@@ -1,5 +1,7 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**Nov12新PB直接机制准备：** 新增原稿PB12000/source47277首seed0的qualification→原生1500步trace协议及supervisor，Windows/CCI各49测试通过。旧46Pooled真实终态/空闲和原件封存后才能开始新PB阶段，7200秒固定新窗口、最迟11:00UTC准入/13:00结束，不能重置旧10:44:53UTC窗口。官方PB成功检查会改计数/按钮，取证必须只读计数，禁止额外调用改变任务。当前是否真正已派发/运行看current_iteration.original_PB_mechanism_stage及Git外operator，勿将准备/等待当GPU推理。原q8/q96不重跑；v27/37pending不动，见台账23.242及ORIGINAL_PB_DIRECT_MECHANISM_PROTOCOL_ZH.md。
+
 **Nov12 09:57UTC实时补充：** CCI46Pooled现GPU100%/32,384MiB、17生成/66完整命令、PID/心跳正常，已开始原生推理；不是下文09:50的加载状态。三新ACP仍无科学runner；以ITER33_PARALLEL_EXECUTION_LIVE_V2.json为准，不重复派发。
 
 **Nov12 09:50UTC并行执行优先恢复：** 新三ACP GPU分片bt30/rb30/rb40已提交并绑定UID，当前实际GPU分配未验证；BT30 Pod实际FailedScheduling GPU不足，标准创建先前实际限额不足，另一集群01e闲时0卡。不要把全局8卡/启动中当推理，也不要重复申请同分片。两标准0GPU/4CPU16GiB任务已实际exit0并独立验收22成员；matched09:09报告20固定0/0对/41已知role/6unknown，不含稍后46Full。CCI09:38仅接续46Pooled，PID2561350/monitor2561344，原10:44:53UTC截止、max1role/outer3600+kill120不变；09:50仍AFS加载0命令。旧Full200两个raw副本26.45GB在本机TAR/7state独立重读及AFS对照后分层，CAS/评测weight/final3000/所有科学原件保留，旧raw续训需按locator恢复；最新AFS29.768GB，4GiB门不改。先读current_iteration.parallel_execution_iter33和ACP_PARALLEL_EXECUTION_20261112_ZH.md、台账23.239–241；新20项映射*parallel.json，v27/37pending/发表门均不变。标准GPU配额协调问题已异步问作者，不重复问登录/真机原录像。

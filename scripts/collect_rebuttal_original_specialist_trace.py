@@ -12,6 +12,7 @@ import argparse,dataclasses,datetime,hashlib,importlib,importlib.util,json,os,pi
 TRACE_PROTOCOLS={
  'warm.original-specialist-factual-trace.v1':('blocks_ranking_try','blocks_ranking_try-s3407-v1',14000,600,0),
  'warm.original-specialist-factual-trace.native-BT.v2':('battery_try','battery_try-s3407-v1',12000,1000,0),
+ 'warm.original-specialist-factual-trace.native-PB.v4':('press_button','press_button-s3407-v2',12000,1500,0),
  'warm.original-specialist-factual-trace.cohort-case0.v3':('battery_try','battery_try-s3407-v1',12000,1000,340800000),
 }
 
@@ -21,7 +22,9 @@ def validate_trace_plan(plan):
  if (plan.get('physical_seed')!=physical_seed or plan.get('max_native_commands')!=cap or plan.get('capture_replans')!=[8,48,96]
      or plan.get('qualified_original_run')!=run or plan.get('checkpoint_step')!=step):
   raise ValueError('Original fixed task/checkpoint/seed/horizon/probes differ')
- if task=='battery_try' and (plan.get('task_name')!=task or plan.get('root_seed')!=3407):raise ValueError('Native BT task binding is required')
+ if task in ('battery_try','press_button') and (plan.get('task_name')!=task or plan.get('root_seed')!=3407):raise ValueError('Native task/root binding is required')
+ if task=='press_button' and type(plan.get('physical_seed')) is not int:raise ValueError('PB physical seed must be an integer')
+ if task=='press_button' and (plan.get('original_source_commit')!='47277e58624366506ee032f4ad27560c7e4bdd19' or plan.get('original_source_sha256')!='4a1d05cb548f16bf6a9b239082b02d4697aa8e8c1f43c2f5d8ffbaec196462fd' or plan.get('checkpoint_sha256')!='a765d987b2df0d228782980592c39aaed0e837040c7f6f48c905e4641f79c285'):raise ValueError('Original PB source/checkpoint binding differs')
  if plan['schema'].endswith('cohort-case0.v3'):
   if plan.get('cohort_case_id')!=0 or plan.get('roster_sha256')!='612cb5d1728b2bebef7c09ee61bd50933c64821be31e1df0a7aa475b61d666b8':
    raise ValueError('Exact pre-frozen BT cohort case0 binding required')
@@ -30,6 +33,13 @@ def validate_trace_plan(plan):
 def physical_joint_values(env):
  return [dict(name=art.name,qpos=art.get_qpos().tolist(),qvel=art.get_qvel().tolist()) for art in env.scene.get_all_articulations()]
 
+def press_button_task_state(env):
+ # Do not call the stateful official check_success() for an audit observation.
+ names=('card_id_1','card_id_2','press_cnt_1','press_cnt_2','press_cnt_check_button',
+        'press_flag_1','press_flag_2','press_flag_check_button')
+ values={n:getattr(env,n) for n in names}
+ return {n:v.item() if hasattr(v,'item') else v for n,v in values.items()}
+
 
 def main():
  parser=argparse.ArgumentParser(description=__doc__)
@@ -37,7 +47,10 @@ def main():
  parser.add_argument('--expected-plan-sha256',required=True)
  cli=parser.parse_args();assert hashlib.sha256(cli.plan.read_bytes()).hexdigest()==cli.expected_plan_sha256
  plan=json.loads(cli.plan.read_text());expected_task=validate_trace_plan(plan)
- is_cohort=plan['schema'].endswith('cohort-case0.v3')
+ is_cohort=plan['schema'].endswith('cohort-case0.v3');is_native=expected_task in ('battery_try','press_button')
+ if expected_task=='press_button':
+  import fcntl
+  lease=(Path(plan['evidence_root'])/'original_specialist_native_execution.worker.lock').open('a');fcntl.flock(lease,fcntl.LOCK_EX|fcntl.LOCK_NB)
  P=Path(plan['evidence_root']);C=Path(plan['original_source']);H=Path(plan['reference_controller'])
  CORE_SHA=plan['original_source_sha256'];COMMIT=plan['original_source_commit'];SIM_SHA=plan['simulator_source_sha256']
  out=Path(plan['output']);assert out.parent==P and not out.exists();out.mkdir()
@@ -67,7 +80,7 @@ def main():
   preflight=Path(plan['runtime_preflight']);qualified=json.loads((preflight/'execution.json').read_text());assert qualified['static_contracts_passed'] and qualified['encoder_runtime_matches']
   args=json.loads((preflight/'runtime_args.json').read_text());args['warm_telemetry_path']=str(out/'full-telemetry.jsonl')
   assert args['task_name']==expected_task
-  if expected_task=='battery_try' and args['seed']!=3407:raise ValueError('Original BT fixed evaluation root seed differs')
+  if is_native and args['seed']!=3407:raise ValueError('Original BT fixed evaluation root seed differs')
   (out/'runtime_args.json').write_text(json.dumps(args,indent=2)+'\n')
   asset_plan=json.loads((P/'resumable_rb_cases0003_0009_v1_plan.json').read_text());runtime=Path(plan['rmbench_runtime'])
   os.environ.update(HF_HUB_OFFLINE='1',HF_DATASETS_OFFLINE='1',TRANSFORMERS_OFFLINE='1',DIFFSYNTH_SKIP_DOWNLOAD='true',DIFFSYNTH_MODEL_BASE_PATH=asset_plan['model_root'],WANDB_MODE='disabled',WARM_IMMUTABLE_ASSET_HASH_CACHE='1',TOKENIZERS_PARALLELISM='false',PYTHONDONTWRITEBYTECODE='1',PYTHONNOUSERSITE='1',OMP_NUM_THREADS='4',MKL_NUM_THREADS='4',OPENBLAS_NUM_THREADS='4')
@@ -99,7 +112,7 @@ def main():
   state['status']='fixed_seed_expert_setup_only';save();print('stage=fixed_seed_expert_setup_only',flush=True)
   random.seed(physical_seed);np.random.seed(physical_seed);torch.manual_seed(physical_seed);torch.cuda.manual_seed_all(physical_seed)
   env.setup_demo(**cfg);expert_info=entry['expert_info'] if is_cohort else env.play_once()
-  if expected_task=='battery_try' and env.step_lim!=1000:raise ValueError('Original BT native horizon differs')
+  if is_native and env.step_lim!=plan['max_native_commands']:raise ValueError('Original native horizon differs')
   accepted=True if is_cohort else bool(env.plan_success and env.check_success());state['fixed_expert_setup_accepted']=accepted
   if is_cohort:state.update(cohort_case_id=0,pre_frozen_cohort_sha256=plan['roster_sha256'],expert_admission_source='Existing expert-only frozen cohort;no new expert replay or policy-based admission.')
   (out/'expert_setup_metadata.json').write_text(json.dumps(expert_info,indent=2,default=lambda x:x.tolist() if hasattr(x,'tolist') else str(x))+'\n');save()
@@ -128,6 +141,10 @@ def main():
    assert set(previous.files)==set(raw)|{'native_qpos'}
    assert all(np.array_equal(previous[k],v) for k,v in {**raw,'native_qpos':qpos}.items()),'Initial native observation differs from qualification'
   state['initial_observation_exact_to_qualification']=True
+  if expected_task=='press_button':
+   initial=press_button_task_state(env)
+   assert initial==json.loads((qualification/'initial_identity.json').read_text())['task_state_audit_only']
+   state['hidden_PB_counter_state_audited_only_not_policy_input']=True
   (out/'initial_identity.json').write_text(json.dumps(dict(instruction=instruction,cameras={k:sha256_array(v) for k,v in raw.items()},qpos_sha256=sha256_array(qpos),task=args['task_name'],candidate_seed=physical_seed),indent=2)+'\n')
   actual_runtime=legacy.current_encoder_runtime(args['warm_dino_device']);(out/'actual_encoder_runtime_before_query.json').write_text(json.dumps(actual_runtime,indent=2)+'\n');assert sha256_canonical_json(actual_runtime)==policy.contract.encoder_runtime_sha256
   def cpu(value):
@@ -171,7 +188,7 @@ def main():
   with np.load(qualification/'native_prefix_qpos.npz',allow_pickle=False) as previous:
    prefix_before=previous['before'].copy();prefix_after=previous['after'].copy()
   qualified_physical=None
-  if expected_task=='battery_try':
+  if is_native:
    qualified_physical=json.loads((qualification/'native_prefix_physical.json').read_text())
    observer_source=Path(plan['native_TOPP_observer_source'])
    assert sha(observer_source)==plan['native_TOPP_observer_source_sha256']=='49888eb2854b29d6f5f384e394aaf91847dd9ebfdf9e89f6bc51fb1f8152dd4d'
@@ -188,29 +205,34 @@ def main():
    for index in range(plan['max_native_commands']):
     if datetime.datetime.now(datetime.timezone.utc)>=deadline:raise TimeoutError('Original factual-trace resource window expired;do not reset or replace seed')
     frame_now=index;obs=env.get_obs();before=legacy.factual_joint_state(obs).copy()
-    physical_before=physical_joint_values(env) if expected_task=='battery_try' else None
+    physical_before=physical_joint_values(env) if is_native else None
+    task_before=press_button_task_state(env) if expected_task=='press_button' else None
     if not policy.queue:
      np.savez_compressed(out/f'replan-{index//4:04d}.npz',**legacy.factual_cameras(obs),native_qpos=before)
      policy._replan(obs,env)
     prior_native_count=int(env.take_action_cnt)
     if topp_observer is not None:topp_observer.errors.clear()
     policy.step(env,obs);after=legacy.factual_joint_state(env.get_obs()).copy()
-    if expected_task=='battery_try' and env.take_action_cnt!=prior_native_count+1:raise RuntimeError('Official native command counter did not advance once')
+    if is_native and env.take_action_cnt!=prior_native_count+1:raise RuntimeError('Official native command counter did not advance once')
     assert len(command_capture)==index+1
     row=dict(index=index,command=command_capture[-1].tolist(),command_dtype=str(command_capture[-1].dtype),before=before.tolist(),after=after.tolist(),eval_success=bool(env.eval_success),take_action_cnt=int(env.take_action_cnt))
+    if expected_task=='press_button':
+     row.update(task_state_before=task_before,task_state_after=press_button_task_state(env))
     if physical_before is not None:
      row.update(physical_before=physical_before,physical_after=physical_joint_values(env),observed_TOPP_errors=topp_observer.errors.copy())
      if index<4:
       reference=qualified_physical[index]
       if row['physical_before']!=reference['physical_before'] or row['physical_after']!=reference['physical_after'] or row['observed_TOPP_errors']!=reference['observed_TOPP_errors']:
        raise RuntimeError('First four measured native commands differ from BT qualification')
+      if expected_task=='press_button' and (row['task_state_before']!=reference['task_state_before'] or row['task_state_after']!=reference['task_state_after']):
+       raise RuntimeError('First four PB counters or flags differ from qualification')
     stream.write(json.dumps(row)+'\n');stream.flush()
     state['native_commands']+=1
     if index<4:assert np.array_equal(before,prefix_before[index]) and np.array_equal(after,prefix_after[index]),'Qualified native prefix changed'
     state.update(last_frame=index,captured_probe_replans=sorted(captured),success_flag=bool(env.eval_success));save()
     if env.eval_success:break
-  if expected_task=='battery_try' and not env.eval_success and env.take_action_cnt!=env.step_lim:raise RuntimeError('Incomplete native BT trajectory;outcome remains unknown')
-  state.update(status='complete_fixed_original_factual_episode',source_sha256_after=identity.source_digest(C),ended_utc=stamp(),success_flag=bool(env.eval_success),termination='native_success' if env.eval_success else ('official_native_1000_limit' if expected_task=='battery_try' else 'fixed_600_command_cap'),probe_status={str(q):'sealed_before_execution' if q in captured else 'not_reached_no_replacement' for q in sorted(capture_queries)},independent_candidate_labels=0,independent_source_episodes=1,original_DEV_selected_step='unverified',original_accuracy_reproduction=False)
+  if is_native and not env.eval_success and env.take_action_cnt!=env.step_lim:raise RuntimeError('Incomplete native BT trajectory;outcome remains unknown')
+  state.update(status='complete_fixed_original_factual_episode',source_sha256_after=identity.source_digest(C),ended_utc=stamp(),success_flag=bool(env.eval_success),termination='native_success' if env.eval_success else (f"official_native_{plan['max_native_commands']}_limit" if is_native else 'fixed_600_command_cap'),probe_status={str(q):'sealed_before_execution' if q in captured else 'not_reached_no_replacement' for q in sorted(capture_queries)},independent_candidate_labels=0,independent_source_episodes=1,original_DEV_selected_step='unverified',original_accuracy_reproduction=False)
   assert state['source_sha256_after']==CORE_SHA
   save();print(json.dumps(state),flush=True)
  except BaseException as exc:

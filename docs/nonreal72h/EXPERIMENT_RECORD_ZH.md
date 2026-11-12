@@ -2753,3 +2753,14 @@ AFS09:20仅3.37GB。按既有清理授权，工作站从完整已保留CAS重建
 本轮20项意见执行映射更新到planning/issue_evidence_revision_matrix_20261112_parallel.json。v27回复/PDF保持封存、37有利pending及五组整体放行false；资源提交、CPU核验与新科学证据严格分开。后续按三UID/真实Pod与CCI第46角色查验，完成后再统计，不因结果0或unknown换固定样本。
 
 09:57:18UTC实际增量：46Pooled GPU100%/32,384MiB、17生成/66完整命令、无JSON残尾，PID/心跳正常；先前09:50加载描述已由此真实推理进度取代，未计新增完整角色。三新ACP分片job_logs仍均无runner；空闲29,764,497,408B，原窗口/0结果/unknown不变，原件ITER33_PARALLEL_EXECUTION_LIVE_V2.json。
+
+
+### 23.242 原稿PB specialist固定首状态的原生命令/完整轨迹流水线准备
+
+本轮不重跑已完成q96/原q8。针对P2缺口，以原稿运行press_button-s3407-v2/12000、source47277e5（source SHA4a1d05cb…，weighta765d987…）、原root3407和seed协议首值0准备独立PB补充取证。CPU核验seed文件200项/首值0，SHAee29037b74c4ee65358ccbab91549e1aa0e5e05e75226b646cf07b4aca0be221。保留原DEV选步unverified，不冒称原准确率复现；不改变模型/候选/阈值/原生步数/成功定义，也不按结果换seed或query。
+
+新增PB专用一replan+四实际命令qualification与native-PB.v4 full trace协议，1500原生上限，固定q8/48/96，初始RGB/qpos、首模型输出及前四物理命令需精确匹配。发现官方PB check_success会更新计数并重置按钮，故额外取证仅读取计数/标志，不新增调用，不把隐藏任务状态提供给policy；资格/full trace均核对同一四步的计数/标志，防止审计改变被测历史。BRT/BT既有协议保持。Windows首次新增fcntl全局导入失败已保留，改为仅Linux执行入口导入；随后Windows和原生CCI各49项测试通过，不当新机制结果。
+
+新supervisor只在旧46Pooled实际终态、进程/GPU/两lease空闲且全部旧原件归档后准入PB；旧角色失败/未知不改标签，原10:44:53UTC截止不改。新PB阶段首次真正准入才一次性写7200秒窗口（qualification最多2400秒，trace沿用同一截止），最迟11:00UTC准入/13:00UTC结束；无时钟重置、无自动样本替换。执行状态以current_iteration及P/original_PB_mechanism_stage_20261112_v1/operator.json为准；此条记录源码和方案准备，尚未宣称新PB模型推理/物理命令/后果准确率或修复收益。详见ORIGINAL_PB_DIRECT_MECHANISM_PROTOCOL_ZH.md；对应BB-W3/BB-Q2/HH-W5的P2，37个pending及v27封存PDF不改。
+
+10:07UTC三项ACP再次回读均启动中且未验证GPU分配，原同三UID/原窗口不改；不重复创建。CCI46Pooled10:20实际GPU94%/32,392MiB，物理记录已到983命令，心跳正常；尚未据尾记录冒认完整终态。

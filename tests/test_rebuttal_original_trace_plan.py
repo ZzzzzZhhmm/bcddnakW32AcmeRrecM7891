@@ -31,3 +31,28 @@ def test_pre_frozen_cohort_has_separate_protocol_from_extra_diagnostic0():
 def test_original_cohort_trace_cannot_replace_its_fixed_start_or_roster(key,value):
     plan=cohort();plan[key]=value
     with pytest.raises(ValueError):M.validate_trace_plan(plan)
+
+
+def press_button():
+    return dict(schema='warm.original-specialist-factual-trace.native-PB.v4',
+        task_name='press_button',qualified_original_run='press_button-s3407-v2',
+        checkpoint_step=12000,max_native_commands=1500,root_seed=3407,
+        physical_seed=0,capture_replans=[8,48,96],
+        original_source_commit='47277e58624366506ee032f4ad27560c7e4bdd19',
+        original_source_sha256='4a1d05cb548f16bf6a9b239082b02d4697aa8e8c1f43c2f5d8ffbaec196462fd',
+        checkpoint_sha256='a765d987b2df0d228782980592c39aaed0e837040c7f6f48c905e4641f79c285')
+
+
+def test_PB_is_separate_from_shared_and_BT_models():
+    assert M.validate_trace_plan(press_button())=='press_button'
+
+
+@pytest.mark.parametrize('key,value',[
+    ('max_native_commands',1000),('checkpoint_step',3000),
+    ('qualified_original_run','battery_try-s3407-v1'),('physical_seed',340800000),
+    ('physical_seed',False),('root_seed',3408),('task_name','battery_try'),
+    ('original_source_commit','f77c633'),('original_source_sha256','shared-stage'),
+    ('checkpoint_sha256','b0669047'),('capture_replans',[0,8,48])])
+def test_PB_cannot_borrow_a_different_model_or_select_a_different_state(key,value):
+    plan=press_button();plan[key]=value
+    with pytest.raises(ValueError):M.validate_trace_plan(plan)
