@@ -2656,3 +2656,29 @@ V2在原窗口内04:23:25.623077完整、runnerexit0，三条H32/96命令、每�
 明确固定12,000-update机制fixture与原DEV选点准确率范围，历史shared加载失败以准确模型/过去时表达。R2/R3未封存PDF/ZIP及hash留在Git外staging档案；最后精炼历史句避免q96表漂入D.2，原数据无变。完整原工程和独立干净ZIP均含BibTeX四遍重编译46页/主文10页，全46页文本一致；42–46直接验看，最终43再验，其余45页与已审版像素一致；前41页对v25像素一致，0undefined/overfull、45继承字体warning。匿名、内部待证标识与第11页原AI use statement保持。
 
 PDF SHA f5766b90fa0ecc0b37e76ae05f52fcedd8299417d3f609f8e76ffc3894999957，source ZIP2e2e269caca0197a042c33e66d222006071b185fe76ce3e2c603e73ade50b9bb。92项125,784,549B写作包在本机及04:58:45UTC AFS逐成员/解包验证，`writing_candidates/20261112_v26` TAR7e3ca714f591c11e8f4aab2f6c253f335e73c1007c501586c84bae53d395f81d、manifestb584b204f428e1b5bb2a3a7eb91036fe691627c10cbbc8b3bb7beeeda1aadbbe。未发布、实证release false；0新真机trial，ACP现有认证请求仍待答。
+
+### 23.230 AFS跌破容量线后的可恢复冗余分层
+
+05:05:59 AFS空闲3,070,431,232B，05:07约2.81GB，计划核验前约2.42GB，低于4GiB准入门槛；case43Full仍真实运行、05:05已569个command_end/143个保存动作文件，不以result旧loading头误判为未运行。此为共享卷容量变化，独立于模型效果。
+
+按作者已授权的“先保存、再清理”，本机盘点21份完整包共2,230,310,323B，其中19份AFS对端共2,068,396,667B实际纳入清理，双端逐字节hash匹配。计划ad6469db733047b1487885df5c6911d8b81174201b4eababf3ed7ada47f8e472逐一绑定1442个冗余解包文件到完整封存TAR成员；本机再独立读取每个成员核对size/hash，05:17全部通过后才执行。所有目标严格限定在旧`writing_candidates`目录，排除当前v26；核查无活动进程使用、文件size/mtime/ino与hash未变后逐文件写journal再unlink，未知或不匹配文件不清理。
+
+05:18:11移除2,302,804,661B冗余payload，卷空闲快照从2,421,985,280B变为4,358,467,584B；净变化受共享卷并发写入影响，不能把payload大小当卷空闲净增。所有AFS封存TAR前后hash保持、本机原件/封存包均保留，当前v26、唯一科学原始证据、checkpoint、CAS、全部任务参数/原窗口未改。旧版本解包目录留下`TIERED_EXTRACTION_20261112.json`与恢复映射，不再要求其临时解包树常驻。
+
+Git外双端`ITER30_WRITING_TIERING_PLAN_V1.json`、`ITER30_WRITING_TIERING_LOCAL_VERIFICATION_V1.json`、`ITER30_WRITING_TIERING_APPLY_JOURNAL_V1.jsonl`及`ITER30_WRITING_TIERING_APPLY_RECEIPT_V1.json`记录完整恢复与执行链，journal SHAe2c6aaeba2b48afe640b25920f01c8b9a664d58c5c69bfbae53ce05966fcf366。`restore_tiered_writing_v1.py`默认dry-run，可按folder/relative-file恢复原字节；apply要求恢复后仍有4GiB余量。恢复线上旧副本不是重跑实验；本机版本文件一直可读。空闲刚回到4GiB线上，余量仍小，后续任务准入须按实测重新核查。
+
+### 23.231 旧写作容器进一步无损CAS化，原外层hash可精确恢复
+
+共享卷继续写入，第一阶段后很快又低于4GiB。先只读验证v24/v25容器能用原GZIP header/trailer和zlib1.3.2逐字节重建，再对19个旧写作包执行内容寻址分层；每个实际AFS块写入后读回校验，完整原TAR hash及重建GZIP外层原hash均精确后，才分层旧冗余物理TAR文件。本机完整原容器始终保留，当前v26、科学原件/模型checkpoint/既有训练CAS与所有任务/窗口未改。
+
+05:37:25完成：19容器2,068,396,667B以1,073,509,158B新AFS块表示，空闲快照从3,808,178,176B到4,701,954,048B，05:40:48实测4,795,224,064B。净空闲受共享卷并发写入影响。新根`writing_archive_cas_20261112_v1`的INDEX SHAdf89294c113935c7665d669e0e2d7df745915ceb31b48548a7586444c83ce930，journal SHAea94d1f7768fe129c94bded809d7bc40a61188827ce116c20e58b83337a9edf8，已执行源码SHAefd5878a98044838b87f7ee6f5f891ccb13cb51cc397a61f8a7c031c6c56e98a。
+
+本机05:41:29独立读取19份完整原容器，对全部CAS顺序块逐个验证size/hash、原TAR hash、GZIP配方，重建字节均与原容器完全一致；AFS也已分别从实际存储块完整恢复。另独立CLI在/tmp重建v25整个容器，05:45:37真实exit0、外层SHA3757c283c225fd09a6be8b0efea5f21dd714daa1d19bf07103e0ec521c0662e0精确，验证后只清除该可重建临时测试读本。旧目录明确标记TIERED及恢复manifest；旧外层路径现在是可恢复的逻辑地址，不以缺物理副本判为数据丢失。
+
+操作器默认dry-run、apply拒绝覆盖；本机与AFS保留INDEX/manifests/收据/日志和未分层的旧包。完整恢复指引见`docs/rebuttal/STORAGE_TIERING_20261112_ZH.md`，单成员restore也支持新CAS。所有原始外层checksum保持，未生成新实验数据或改变任何论文数值。
+
+### 23.232 case43 Full正常终态，固定配对增至18
+
+05:16:42.045419真实exit0、非bounded，完整1000命令/250H32/2000物理记录、success0/0TOPP。771原件18,225,497B在双端`ITER30_BT43_FULL_TERMINAL_V1`保全，TARbdd6b310f3f4b65a4444d8587fad4e3d7ac79064e3b9aebf6f656ec354df6b16、manifestb026e9d1995865d7d34fe94ff4b6251e0e805b29784d26bf46a7b74344a6eaac；本机05:43:45逐成员、动作/生成/独立物理链核验，与43Pooled首query图像/proprio/Gaussian/bankrows/candidate载荷及初始状态精确一致。累计36完整角色/18固定0/0对/6unknown，仍无最终100对SR/CI或收益/非劣效。
+
+原同一两role outer已自行按原counterbalanced顺序进入44Full，05:40:44 heartbeat和worker2548324核实。不得另起44Full或在其退出与outer收据之间重复派发；9000souter/3600sworker与原10:44:53UTC截止保持。v26封存写作包92成员及PDF不变，晚到执行用增量1更新20项映射；这些新增配对不填P1最终差值。当前原机制q8正面局部稳定性证据继续保留全部0完成标签，不与该matched cohort混为统计样本。
