@@ -3116,3 +3116,13 @@ ITER43_ROLE_RAW_LOCAL_VERIFICATION_V2验收后82完整回合=原allocation66+资
 20意见/17块回复/37整段有利方向PENDING不因新增82/41放行。Bbqv/Hh4E的新增作者视角补充正面解释shared结果的范围、q48固定31/32完整与不利主指标、六Full精确对照和不可识别的交互标签；是审核补充，不冒称完整新版本或已经修改PDF。q96仍原唯一PB ACP85e运行，原0GPU审计1ae等待，不将候选分支重建的进行中计数当整池结果。
 
 封存v30 PDF89abaec1…、源ZIP12539cd3…及91项写作包保持；没有本轮新编译声明。C.6成本固定75回合/15450replans，不改为82；q48独立Markdown/LaTeX片段仍待q96终态后合入新完整候选并编译验收。新增矩阵/放行审计保留20项绑定和37个空值，原稿specialist、shared新实验、资格/工程检查分别呈现；新真机数据尚未回传。
+
+### 23.293 CCI加载期工作负载重启：原件封存，修正未来准入检查
+
+21:37检查发现原RB45三个进程已不存在、GPU空；进一步只读观测bootstrap2587515/start_ticks1421648249，实际21:33:45.223041UTC启动，晚于旧monitor末次心跳21:33:42.017620，两跨节点lease已空。PID1是长期pause，不能用于四小时workload年龄。原runner/worker仍字面running/loading/null且缺失退出收据，属于过时原件，不据此宣称活跃、正常退出或策略失败。
+
+第二次RB45 Pooled仅0query/0生成/0物理，未有typed加载完成收据；45Full从未启动。29原件TAR b3f6c12dba8341af6f1e7229c03c7496126fe850622d06d0bb8d9b9d54910f19/manifest f0b9674b821177583a914ee6e3086a225884e2f372909c78883e4b59d6906715均本机逐字节验真。ITER43_CCI_RESET_ADJUDICATION_V1与LOCAL_VERIFICATION_V1保留原running/null及无exit；无自动第三次，不恢复已停ACP、不按结果替换case、不跳过条件启动Full。
+
+完整科学分母仍82回合/41个0–0对；历史matched unknown尝试新增本次重启加载1，合计13（原cohort10/旧CCI加载1/guard1/本次加载1）。119.8054115725/120GPUh预留保持，三项旧credit不能重复应用，也不因本次未知退出自行退回新阶段预留。原时钟、全部49冻结入口及原件保持。
+
+本次空闲GPU转交漏核验剩余workload重启窗口，新增只读cci_window作准入修正：观察唯一bootstrap的PID/start ticks/年龄，只保存命令hash；拒绝PID1时钟、身份不明/过期观测，以及任务+退出收据余量不能放进保守4小时窗口的请求。17Windows/17nativeCPU通过；实际新bootstrap年龄543秒，7200+180秒仅CPU工程校验，无GPU新派发。临时native测试包首次namespace解析失败停在collection，隔离包入口修正后通过，不计科学回合。原PB ACP85e的q96仍进展到rank20，原0GPU1ae继续等待；20项映射与补充材料增加本次未知边界，37有利pending不填。

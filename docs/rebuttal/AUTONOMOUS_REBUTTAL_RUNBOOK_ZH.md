@@ -1,4 +1,6 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
+**Nov13 iter43后续中断覆盖下文：RB45 CCI已无活动进程，禁止按旧running重试。** 21:33:45UTC新workload bootstrap启动，旧心跳停在21:33:42；旧三个PID消失/两lease空闲/GPU空。RB45第二次Pooled仅loading/null、0生成/0物理，Full未启动；29原件已双端/本机封存，原running及缺失exit不改。新增重启加载unknown1后历史13，完整仍82/41。没有自动第三次、恢复旧ACP或跳过条件运行Full；119.8054115725预留不自行退回。新增只读CCI工作负载时钟准入，17Windows/17nativeCPU通过；必须用bootstrap而非PID1 pause，要求任务+退出收据余量及新鲜身份，不能只看GPU空闲。唯一GPU流水线现为原PB85e q96，0GPU1ae仍等待；原23:15:38/23:25:38UTC截止不变。先读CCI_RESTART_ADMISSION_20261113_ZH.md、台账23.293及最新iter43 post-restart状态，旧21:29/v1安装收据为历史快照。
+
 **Nov13 iter43最高优先恢复：累计82完整回合/41固定0–0配对；RB45唯一任务已转交CCI。** 原闲时ACP6561c8f110b54afea9a0c79c9450fae2因GPU不足从未启动runner，21:21:11UTC回读已停止；21:27:45CCI才启动相同冻结launch，launcher2587139/active child2587173。固定45Pooled显式第二次→条件45Full，首登记21:02/截止23:32:23.699406UTC保持，不恢复旧ACP、不重复角色、不自动第三次。BT4、BT32、RB35三个原阶段全部真实exit0，不能再按下文“对应策略仍在跑”行动。原PB85e q96与标准0GPU审计1ae仍23:15:38/23:25:38UTC，不重建。
 
 三项关闭预留尾窗已一次性核销2.5874595514GPUh，三个credited IDs生效；新RB45计入后119.8054115725/120GPUh、6槽。此为准入预留，不是账单，不可重复核销或重置旧时钟。六新回合4212原件与三个配对输入/物理链本机验真；RB35Full有1次TOPP观测错误，12历史unknown保留。封存v30/20项/17块/37整段pending、C.6固定75回合/15450replans保持；q48独立插入待q96一起合并完整编译。先读RESERVATION_AND_RB45_HANDOFF_20261113_ZH.md、台账23.290–292及iter43 current_iteration，旧时点仅作历史。
