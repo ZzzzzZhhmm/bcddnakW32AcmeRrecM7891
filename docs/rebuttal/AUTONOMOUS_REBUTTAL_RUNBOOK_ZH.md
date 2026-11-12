@@ -1,5 +1,11 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**Nov12 02:05UTC最新锚点：原case41 Full已完整，当前outer正在case42 Full，勿重复。** 新Full于01:53:51正常exit0、1000命令/250H32、success0/0TOPP；775项原件TARc3fd029f…/manifestf3d70b28…已双端/本机独立核验。累计32完整角色/16对全0/0/6unknown。原monitor2537277/campaign2537278继续，当前worker2538267；原bt40 10:44:53UTC截止不改。q96固定rank23–28六H32/标签0新档案20342759…已双端核验，累计29候选归档；原不利父状态/全0/07:16UTC截止不改，整池未完成，不提前填主指标。
+
+**原代际候选撤回入口已完成CPU工程资格，尚无新GPU/物理撤回证据。** 新helper只在一次显式推理内同时撤去提案source与候选conditioning，保留回合历史、自然gate见证与检索metadata；对f77和472两份原v3代码各23项CPU检查通过。首轮重复调用错误消息检查失败及修复完整保留。见`ORIGINAL_SPECIALIST_WITHDRAWAL_20261112_ZH.md`；下一步真实checkpoint Full精确GPU重现/全生成器不变性成功后，才可事先封存并执行同父null。不能把CPU fixture当真实GPU资格，不能重新打开旧shared-q8窗口。
+
+**PB旧加载证明已找回，不再重复装载。** 原step12000 Nov10严格v3加载通过收据已存在，本轮source/config只读核验；DEV选中step与在线能力仍未恢复。PB容量16/8、原生cap1500，在线合同准备由其472原代码及显式matrix root3407完成，保留所有准备失败。原v23三回复/PDF/ZIP封存不变；后续执行增量独立更新20项映射。ACP登录请求已发，待作者恢复，不重复请求或复制未知云任务。具体收据以本轮current_iteration安装及台账23.210–213为准。
+
 **Nov12 01:13UTC接续优先锚点：原固定两role段已启动，不重复case41 Full或case42 Full。** case41Pooled实际01:09:01正常exit0、1000命令/250H32/0TOPP/success0，777原件TAR23f1571f…/manifest259b11a0…双端与本机验真。累计31完整role/15完整对全0/0/6unknown，新Pooled尚未配对。当前`cci_segment_iter28_followup_v1`，monitor2537277/campaign2537278/worker2537283，原case41Full正在加载；最多2个原固定role，第二个仅在前一角色被原控制器验收后按冻结顺序选择case42Full。该段01:11:24准入前已独立核销旧进程/GPU/两lease及前终态，不是新ACP复制。
 
 **新段操作上限有前瞻身份，原研究时钟不变：** 01:01:52已冻结`ITER28_TWO_ROLE_OPERATOR_PLAN_V1.json` SHA f29feed7…，只设置单次invocation≤2role/9000s（含kill9120<4h），原每role3600s、科学配置/样本/模型/顺序/6slot/120GPUh及bt40首次22:44:53→10:44:53绝对截止不改。原入口adb5ba9b…已CPU验证2role可准入、3role拒绝；未知退出仍停止、禁止自动重试，不能按新段重置资源窗。当前0生成/0物理为加载，不称新完成角色。后续先看该outer、实际worker、exit和完整结果；即使第一角色结束，outer仍可能正运行第二角色，勿只因前一worker消失就另起任务。

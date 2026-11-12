@@ -2514,3 +2514,27 @@ ACP界面本轮已显示登录超时，保留三个原tab及草稿，记录AUTHE
 前Pooled全部777原件独立核验，旧三个PID/GPU/两lease均释放后，01:11:24.337945唯一启动`cci_segment_iter28_followup_v1`，monitor2537277/campaign2537278/worker2537283，当前case41Full加载，第一角色被原控制器验收后才按冻结next_request选择case42Full。新launch SHA16c6c8fa12b398cc65a4dc80cf09ff8706a69dabacccdfd48c47db3f0788e6be；科学入口adb5ba9b…/修订dfaa351a…/plan44c23a4b…逐字节不改。未知退出仍停止，不自动重试；两role cap不能误写成两角色已完成。01:13仅527MiB/0生成/0物理，为进程加载阶段。当前outer存活时不能因前一worker结束而另起同一角色。
 
 新内部`responses/20261112_v23_execution_addendum1`三文件维护20项映射及31/15/6unknown、q96已归档23/实际24的独立快照，manifest48171396e64f491c0aee3ffd53b937fe35453e867d4c8bd0f2350e134dd86e23。原v23三回复、PDF、源码ZIP与89成员包不动，P1–P5整段及37空槽保持待证；最新索引及双端当前状态以本轮安装收据为准。
+
+### 23.210 原case41 Full完整终态与第16个固定0/0配对
+
+Full实际Nov12 01:53:51.570553UTC正常exit0、非bounded，1000命令/250H32/2000物理记录完整，success0、0TOPP。775原件18,243,550B封存本机`execution/20261112_iter29/ITER29_BT41_FULL_TERMINAL_V1`及AFS同名目录，TAR c3fd029f4345274bb9cc212f2a2733f908b2a3b05edbd4d05bea566814da9226、manifest f3d70b283c799937e039b57f4c43d83eba5e35857fbc82394d73937c594a253d；双端及本机02:04:23逐成员/动作/生成/独立物理状态链验真。科学source87199cc6…/controller861004fa…/Full权重b0669047…不改。累计32完整role/16完整对全0/0/6unknown，不产生100对最终SR/CI、收益或非劣效。
+
+该Full在原两role outer内完成；原控制器随即按冻结顺序选择case42Full，worker2538267。原monitor2537277/campaign2537278仍存活，禁止因前worker消失而重复提交case42。原bt40首次22:44:53→Nov12 10:44:53UTC、每role3600s与outer9000s不变；case42完整验收前不能计第33role或第17对。
+
+### 23.211 原q96六个晚到候选独立接收
+
+固定rank23–28各完整H32、parent_recreated true、endpoint error null；六项独立下一交互标签均0。60原件38,951,486B在本机/AFS`ITER29_Q96_COMPLETED_DELTA_V1`保全，TAR20342759ea86c3f9f9b54671cbfc55d3d8f46f7a5ec3561dbe531d4f1e8ad05b、manifest3e1f4109d9919b2b6675666ae0b49dd7ae5b3c1ef1f6cc582629f57eaf4e7ee6；本机02:04:24全成员与H32端点再验真。累计29个独立候选端点已归档，仍是一个固定source/query的相关候选，不能当29回合。父状态在干预前已掉落、全部0标签与原support不变；07:16:01UTC原截止保持，原全池尚未完成，不先计算完整池主指标。
+
+### 23.212 原v3双通路撤回入口的CPU工程资格
+
+在CCI实现显式、单次推理、eval/no-grad限定的`legacy_gate_intervention.py`，原源文件SHA d89796cc…限定到v3/timing4与Full/clean。干预仅把实际GateOutput probability置零，同时检查初始化精确等于共同Gaussian、候选条件精确为query-only gist与零候选tokens；保留自然gate与原选择metadata，不改checkpoint，不把强制撤回称为自然缺失技能检测。异常清理自己的hooks/override，检查参数/buffer版本不变。
+
+对原f77c633与47277e5不可变代码分别使用其原小型CPU fixture完成23项检查，含候选扰动不变、回合历史敏感性、Full前后精确恢复及拒绝训练/梯度/重复调用/外部hook。首轮重复调用虽被gist计数守卫拒绝，但错误消息不符导致qualifier失败；修复为方法入口即拒绝，原失败另存`ITER29_LEGACY_CPU_V1_FAILURE_AND_CORRECTION.json`。两份通过收据为`ITER29_ORIGINAL_V3_CPU_QUALIFICATION_V2.json`与`ITER29_ORIGINAL_472_CPU_QUALIFICATION_V1.json`，本机/AFS均保全；helper SHA b8378876c066ef8b6a9b66a06634f8c69f9df78e1902e8534828775d2bf5bf3b、qualifier d8e0ed778de2dee74a9bcf786a55cff62c32f987c94af29841ae3abe6541b4da。
+
+0真实checkpoint新加载、0GPU动作生成、0物理分支；仅为原代际干预入口工程资格，不填P2/P3或宣称修复收益。下一步必须用原固定query完成真实GPU Full精确重现、完整生成器不变性与动作事先封存，再做同父Full/null/Full。不得把新版shared开关直接套旧模型或重开旧已到期窗口。详见`ORIGINAL_SPECIALIST_WITHDRAWAL_20261112_ZH.md`。
+
+### 23.213 恢复既有PB加载证明，避免重复读入12GB
+
+只读核验发现PB step12000已Nov10 07:56完成原v3严格加载；权重前后SHA a765d987b2df0d228782980592c39aaed0e837040c7f6f48c905e4641f79c285，6,776,526,408参数，0推理。原9项档案TAR90071fee…/manifest619b3f1c…与原operator仍在，不能沿用“尚未完成模型加载”的旧判断，也无需重跑。Nov12本轮重新核对原47277e5源码SHA4a1d05cb…与config SHA32b8d678…，不再次读取12GB权重。DEV选中step、完整在线推理资格与原稿SR逐次绑定仍未知，不能把加载通过称为行为复现。
+
+新只读清单`ITER29_ORIGINAL_PB_BINDING_INVENTORY_V1.json`在本机/AFS保全。PB实际recent-event capacity16、summary8、原生cap1500，与BT20/1000分开。当前静态在线bundle准备仍须原代码严格验证，不涉及新模型/阈值/训练；准备过程的错误和其修复单独保留，不当科学结果。
