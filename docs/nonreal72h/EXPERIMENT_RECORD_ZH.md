@@ -3142,3 +3142,21 @@ D.2页45–46和Bbqv/Hh4E加入41完整配对双方均0、82角色=66原allocati
 ### 23.295 v31完整写作包实际AFS验真
 
 22:06:42.714136UTC，93成员在AFS writing_candidates/20261113_v31/verified逐项字节/长度/SHA验证，实际收据ITER44_V31_AFS_VERIFICATION_V1。包TAR48e46da5…/manifest16c34093…、PDF7991f986…/源ZIP7e85d21e…与本机一致；原q48 TAR/manifest和CPU审计hash复核，49冻结入口全部保持，0新增GPU/物理动作。47页/主文10页、20项/17块/37整段pending不变，q48已在封存PDF、q96未写结果，公开发布门false。当前实测AFS可用9,206,452,224B，4GiB门保持，不清理科学原件。
+
+### 23.296 PB q96在原窗口结束，保留32完整候选与未闭合Full控制
+
+原23:15:38.613729UTC窗口不改，q96 child exit1，父阶段23:16:15结束归档；0GPU审计23:16:33正常封闭，但all_three_verified=false、q96为incomplete_physical_query_retained且primary_metrics=None，不能把工程exit0当整池科学完成。364原件TAR a7a8668a6c409e196fa651519757691a137bcfeaabdcf2d212490e2650987c0c，manifest b9c151adac576c689b162577625fa12c1532586fab2fba1dc3255b5a6ed071c8，native audit 0d5a649252105f1c087166f07b40d7fb1848de9976f8363e3521dab75de8777c均保全；49冻结入口不变。
+
+本机逐字节重读364原件、封存预测/动作、全部物理parent与accepted链、DINO四token变化后，32候选均完整H32、无candidate invalid或infra-unknown；共同32支持的原定义centered MSE预测/历史/常量为0.1409787616445115/0.14036396689169034/0.04916554084652247，未胜两个参照。该CPU-only partial audit独立保存为ITER45_PB96_PARTIAL_CANDIDATE_LOCAL_VERIFICATION_V1，不将native未放行结果伪称完整协议通过或替换主指标。父counts[5,1]相对targets[2,7]已超额，全部candidate及repair/harm标签None。
+
+三条已保存Full终态（anchor-a/aa/continuation-initial）逐项相同，均17accepted命令后TOPP invalid，无H32 Full effect。旧qual-final infrastructure unknown保留，pool-final已启动但未保存终态，continuation-final在截止前未启动。1075条已记录branch命令=32×32+3×17；不从相同控制推填缺失端点。旧控制目录的唯一原件另存3c4ecf1d…/manifest，明确不把它混入matched13unknown分母。候选描述性度量、已知无效控制、未知控制和未启动控制分列。
+
+原q8/q48 archive重新独立验证各391成员，原primary数值完全相同；此为解析器/证据检查，无新GPU或物理动作。q96已验真Markdown/LaTeX片段独立保留，尚未并入封存v31。Full H32 diagnostic持有32步不重规划，部署只执行4步后重规划；不把这项开环控制拒绝解释为闭环总体SR。82完整matched角色/41个0–0对及其13unknown尝试保持，37整段理想论证不放行。
+
+### 23.297 纠正新增PB取证的namespace解释，冻结独立扩展协议
+
+只读核对原PBseed文件SHA ee29037b74c4ee65358ccbab91549e1aa0e5e05e75226b646cf07b4aca0be221，shape[100,2] int64；首行[0,340800000]。源码validate_official_seed_namespace及bundle builder确认第一列ordinal、第二列candidate lower bound，actual expert-admitted seed另行记录。既有诊断明确使用physical0、完整1500步/375replans/success false，不能将展平首scalar0误解为该命名空间首个正式accepted状态；其所有结果和原件保持，不静默替换为新seed。
+
+新协议PB_NAMESPACE_EXTENSION_20261113_ZH按候选340800000起冻结最先expert-admitted的两个case，名单生成时0 learned queries，保存所有setup拒绝；runtime错误停止，不按策略成败换样本。新增namespace解析/选择模块13项CPU检查通过，独立roster collector不加载策略；实现/原生验证尚在推进，未运行roster或申请新GPU。
+
+此扩展另有事前资源上界：roster最多0.5GPUh、两个ACP各10GPUh，新增20.5；原阶段119.8054115725/120及旧窗口/credit不变，新累计上界140.3054115725、总cap144及最多6并发。该新增阶段尚未准入，不将计划预留写成实际运行或计费；资格通过后方可冻结新source snapshots并提交闲时任务，统一最晚Nov13 11UTC结束，为23CST稳定候选留4h。所有旧模型/权重/数值设置和四token主指标保持，DEV点仍未恢复。
