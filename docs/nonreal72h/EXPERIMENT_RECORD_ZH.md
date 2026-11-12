@@ -2920,3 +2920,13 @@ PB活动任务使用原冻结e23e634控制器，collector SHA b47ae1e1f16668d78a
 BT00独立资源段case2 Full于15:42:28.558085、BT30原科学plan的唯一抢占后继case30 Full于15:48:12.769180UTC正常exit0/非bounded；各1000命令/250生成/success0/TOPP0。两套原件分别777/771成员，TAR SHA ff6bc3a9a5ab91ae13ed347e64b7c63249006d7a852b6838cac36475a593b108、acf029971cf05d02fd3c59ab9f410745e5aa4a7550c4359ac18a90d23dff3848，保存在ITER38_TWO_BT_ROLE_ARCHIVES_V2，双端逐成员及本机每条qpos/物理连续链、32×14模型动作/源/权重独立验真。BT00新旧plan在本机重新比对，仅时间/资源引用三字段不同，全部科学模型/名单/bank/指标相同；旧资源窗没有重开。
 
 ITER38_ROLE_RAW_LOCAL_VERIFICATION_V2.json给出累计59=原allocation55+资源等价4，28完整0–0对，未配对Full为BT2/BT30/BT48。BT30旧抢占unknown仍保留，不因新完整同角色结果而删去；7cohort unknown+独立CCI加载unknown1不变。BT00/BT30各自自动进入同case Pooled，不重复派发。完整固定100对仍未完成，37个有利待证槽不放行。23.262的57/28是较早封存截止，不覆盖或删除；最新恢复以本节及iter38 V2审计为准。
+
+### 23.266 Press Button q8固定整池终态及独立双端审计
+
+新PB闲时任务q8于16:14:20.924245UTC正常exit0/非bounded，原32个有效候选全部按既定rank实际尝试、没有按结果替换。23个完整H32端点，rank11/15/21/22/23/24/25/26/27共9条官方TOPP invalid，标签与H32 effect均None，不能补0或称32个完整H32。六个Full控制均完整32命令，parent/endpoint/计数/effect精确重复。23个可判候选标签全0，Full0，原模型选中rank0与Full为0–0，无修复/损害。38条分支共1029条被接受命令；三个预定PB query来自同一个factual episode。
+
+原监督器档案original_PB_remaining_resource_stage_20261112_v1/archives/q8.tar.gz有391项，SHA f9cc7a0b7fd2becb54c92bb82798527968ce8c7ec8128c2a827f173409075f43，manifest SHA1aaa9d2b88d3579bd3dc1d2abf268034dca93e133dce8ca542a4a068f3adaa77，AFS与本机独立逐成员重读。共同23个完整H32上predicted/historical/constant centered MSE为0.05752075196651331/0.05726427266543125/0.016586037349708788；predicted−historical为+0.000256479301082059，predicted−constant为+0.04093471461680452。主指标未胜过两个参照；绝对MSE0.1360417662/0.1362536328的轻微改善不能替换预定centered主指标。required query effect未记录，constant absolute MSE保留None，无群体CI/SR推断。
+
+新增只读CPU审计器在CCI独立overlay完成原件、sealed动作/预测、每条accepted物理/任务链、盲判标签、相同Full端点、原四token均匀DINO delta与固定支持指标重算；本机不依赖该实现再次从TAR重算，最大delta误差7.45e−8，数值一致。ITER39_PB_Q8_POOL_LOCAL_VERIFICATION_V1.json与ITER39_NATIVE_Q8_AUDIT_V1.json保存证明；实际新GPU样本仍只有原q8整池，审计不增加样本或独立episode。原模型/源/step/descriptor绑定保持，新的纯CPU审计源与实验源分开。Windows和原生CCI各10项针对性工程测试通过；纯CPU生成CSV/LaTeX行/实际指标图，无Torch/模拟器导入。q48已按原顺序接续、q96仍由同一ACP拥有；不取消或拆分当前任务，原23:15:38UTC窗口不变。37个有利待证槽仍不放行。
+
+正式冻结前再加入两个中断退出保护用例：即使operator已写complete，exit−15或bounded退出也不能自动放行完整测量。最终Windows/CCI各12项通过；较早10项及原q8开发证明保留，不覆盖。该修正只影响新的纯CPU审计器，不更改活动GPU入口或原科学结果。
