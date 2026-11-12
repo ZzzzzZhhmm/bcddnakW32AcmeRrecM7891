@@ -1,4 +1,10 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
+**Nov13 iter40最新恢复：同一冻结BT00剩余阶段已从确认停止的排队ACP转交CCI。** 原CCI49Full于17:46正常结束；新ACP fb7af049…实际GPU不足/无runner，17:54回读已停止后才于17:54:47启动相同v3 launch（launcher2578700/worker2578762）。固定3Full→4Full→4Pooled仍由同一monitor拥有；17:34准入/20UTC截止不改，不重复原ACP或CCI角色。新控制器11a0f860…仅资源函数改变，原模型/物理核心87199cc6…保持；1106源码成员双端/本机AST等价验真，Windows19/native49通过。原19冻结入口、旧master18UTC/所有窗口不改，保守113.6448450425/120GPUh、最多6槽；GPU只闲时，CPU标准0GPU。
+
+本轮九个完整角色6057原件验真后累计75完整角色/37个0–0对（原allocation66+资源等价9），BT3 Pooled尚未配对。原三个匹配ACP在17:59按18UTC减30秒外层timeout退出，BT32Full、RB35/45Pooled三个新增unknown的299原件已保存；cohort unknown10+独立CCI加载unknown1，不补0、不自动重试。RB45最后一条begin无end的命令结局未知。不能把旧result loading头当实时进度或把新中断误当模型失败；以ITER40_UNKNOWN_LOCAL_VERIFICATION_V2为准。
+
+PB仍原唯一ACP 85e374…运行q48→q96，23:15:38UTC截止；标准0GPU审计1ae90…已核验q8并等待至23:25:38UTC。封存v29的88项/PDF/ZIP重新SHA验真，20意见/17块/37整段pending及不利主指标保持，无论文内容改动或新编译。先读新current_iteration、EXECUTION_RESOURCE_HANDOFF_20261113_ZH.md和台账23.270–275，真实终态/轨迹验真后才更新75/37；不要按下方旧五ACP活动快照派发。
+
 **Nov13凌晨iter39最高优先：v29完整候选已验收。** PB q8原32候选全尝试、23完整H32/9TOPP invalid，六Full精确、raw/Full0–0；共同23支持主指标0.057521/0.057264/0.016586未优于两个参照，invalid不补0。391原件双端/本机独立重算，真实数据已同步Bbqv W3/Q2、Hh4E W5和论文D.1。完整原工程+干净ZIP46页/主文10页、0undefined/overfull、43–46页实际验看/其余42像素一致；20意见/17块/37整段pending未放行。原v28封存，读CANDIDATE_V29_PB_POOL_ZH.md及新current_iteration。
 
 新7角色验真后累计66完整角色/33个0–0对（原allocation60+资源等价6），旧7cohort unknown+CCI加载unknown1保留。CCI48Pooled已16:22:50终态并自动进入49Pooled，条件49Full仍归同一monitor；BT2/30 Pooled终态后进入3/31 Pooled，RB33/43完整后进入34/44 Full，勿重复。五原闲时ACP和CCI各自窗口不改，master18UTC，PB固定23:15:38UTC；6GPU槽、保守111.2164462419/120GPUh保持。
