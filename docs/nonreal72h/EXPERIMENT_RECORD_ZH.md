@@ -3126,3 +3126,19 @@ ITER43_ROLE_RAW_LOCAL_VERIFICATION_V2验收后82完整回合=原allocation66+资
 完整科学分母仍82回合/41个0–0对；历史matched unknown尝试新增本次重启加载1，合计13（原cohort10/旧CCI加载1/guard1/本次加载1）。119.8054115725/120GPUh预留保持，三项旧credit不能重复应用，也不因本次未知退出自行退回新阶段预留。原时钟、全部49冻结入口及原件保持。
 
 本次空闲GPU转交漏核验剩余workload重启窗口，新增只读cci_window作准入修正：观察唯一bootstrap的PID/start ticks/年龄，只保存命令hash；拒绝PID1时钟、身份不明/过期观测，以及任务+退出收据余量不能放进保守4小时窗口的请求。17Windows/17nativeCPU通过；实际新bootstrap年龄543秒，7200+180秒仅CPU工程校验，无GPU新派发。临时native测试包首次namespace解析失败停在collection，隔离包入口修正后通过，不计科学回合。原PB ACP85e的q96仍进展到rank20，原0GPU1ae继续等待；20项映射与补充材料增加本次未知边界，37有利pending不填。
+
+### 23.294 v31合入已验真PB q48和41对部分结果，完整编译与科学核心自审
+
+原PB12000/q48第23.281已核验391原件（TAR8e29b807f86874bde7dbb77fb896a6c0e7f455e4dd0ad36812930500998b4df5，manifest0e6d151147b42ec1cd3408dcd86136b076a20f35df6afe68c787ec397d6bdf98）的完整数值/标签现合入v31 D.1/表39/页45：32尝试、31完整、rank26invalid26命令；centered MSE预测/历史/常量0.050580/0.050316/0.015519，共同31支持，不利主指标不改。六Full精确、父count3>target2使全部interaction/repair/harm为NA，1210物理命令含controls，q8/q48同episode依赖明确。不再把“已有独立片段”误写成“已合稿”；本条是真正完整工程合入。
+
+D.2页45–46和Bbqv/Hh4E加入41完整配对双方均0、82角色=66原allocation+16资源等价；13unknown尝试与reset对分母区分，100对未完成、无优势/非劣效推断。rkWY没有新可支持结论，逐字保持。全部原strength感谢、作者口吻和已完成修订总结核对，20项原字段/序号/hash、17块拼接与37整段PENDING保持。C.6固定75回合/15450replans，不改成82。
+
+原工程与干净ZIP均BibTeX+四遍编译、47页/主文10页、全页文本精确，0undefined/overfull。45–47直接视觉验收，前44页与封存v30像素完全相同；只去掉D.6前不必要换页以避免近空白附录页，旧表数值/公式/九图及RGB、匿名性/AI声明保持。PDF7991f98653d3b32743ef7d7dcfac64e71a9d617645ced7bbcc486310a3e792e3，源ZIP7e85d21e25a8c1c21ab6be03a056cb49423bf0d67696ccf01846b948ee08bde2。48页r2/其ZIP和独立编译件另存本机，不覆盖v30。
+
+93项V31_WRITING_PACKET_V1本机逐字节验真，TAR48e46da50a248d7a4c37956d212e77387b0520e5d19dc3b446af6502160032d7，manifest16c34093832aa439a2ac5e6afc588808da62df100becde867a523e3c9f778902；AFS写作保存及49冻结入口核查以实际验真收据为准。回复目录新增SELF_REVIEW_V31_ZH，分别审视原贡献/监督/局部稳定性/新PB不利结果/公平输入与成功地板/成本/真机主张；不以语气或自评分填补证据。未发布或正式上传，37整段有利方向不放行。
+
+22:01UTC真实进展为原唯一PB ACP85e的q96 rank23父重建，原0GPU1ae等待物理终态；23:15:38/23:25:38UTC不改、无新GPU或CPU任务创建。CCI没有活动角色，旧R45未知、49冻结入口、119.8054115725预留和一次性credit保持；q96完整结果/失败/未知和审计闭合后，从v31统一接下一版。
+
+### 23.295 v31完整写作包实际AFS验真
+
+22:06:42.714136UTC，93成员在AFS writing_candidates/20261113_v31/verified逐项字节/长度/SHA验证，实际收据ITER44_V31_AFS_VERIFICATION_V1。包TAR48e46da5…/manifest16c34093…、PDF7991f986…/源ZIP7e85d21e…与本机一致；原q48 TAR/manifest和CPU审计hash复核，49冻结入口全部保持，0新增GPU/物理动作。47页/主文10页、20项/17块/37整段pending不变，q48已在封存PDF、q96未写结果，公开发布门false。当前实测AFS可用9,206,452,224B，4GiB门保持，不清理科学原件。
