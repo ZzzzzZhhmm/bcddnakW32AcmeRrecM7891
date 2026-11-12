@@ -2786,3 +2786,13 @@ AFS09:20仅3.37GB。按既有清理授权，工作站从完整已保留CAS重建
 PB qualification于10:42:59.840904UTC写complete_one_original_replan_four_native_commands，10:43:08.702445真实exit0/非bounded，实际learned replan1/原生命令4，H32×14动作有限；source前后4a1d05cb…与checkpointa765d987…保持。四步末原task_success_flag=false，不据此估计SR。初始RGB/qpos、首输出、event-adapter输出、qpos前后链、articulation物理状态及八个隐藏计数/标志只读记录在13项完整原件。P/original_PB_mechanism_stage_20261112_v1/archives/qualification.tar.gz SHA7babc1f7bb439bf3331010abcccc3f799aea7988c22f771f28961ce71be1e6f6，AFS/本机逐成员核验；另独立原生CPU进程CUDA_VISIBLE_DEVICES空，重新读取真实stored action形状32×14/finite、event hook1、四步qpos连续，不跑forward/训练/GPU。证明ITER34_PB_QUALIFICATION_CPU_RECOMPUTATION_V1.json及PB_QUALIFICATION_LOCAL_VERIFICATION_V1.json。
 
 同一supervisor已自动进入全factual trace，10:45:31实际child2564395存活、状态loading_original_full_policy，学习queries0/commands0；不重复已通过资格，不重置原10:27→12:27:01固定新阶段窗口。下一道门是独立fresh episode初始RGB/qpos、首模型输出、四步实际物理及计数状态完全匹配，当前尚未确认，不提前当完整episode或候选后果/修复收益。原shared研究42角色/21固定0–0对/6unknown保持，PB资格不加入其分母。v27 PDF/源码ZIP及37整段pending仍不放行。
+
+### 23.246 原稿PB1500命令真实完成并双端封存，固定三query待候选物理验证
+
+原PB12000/source47277、root3407/首physical seed0的factual trace于11:26:48.067302UTC完成原生1500命令/375次Full生成，11:27:19 supervisor已完整归档，实际GPU进程退出。初始RGB/qpos、首模型输出和四步实际物理/计数与独立qualification精确；本机已重读1149全部成员并验证每个SHA/字节、375个32×14有限动作、1500步qpos/实际物理/隐藏计数连续链。TAR在P/original_PB_mechanism_stage_20261112_v1/archives/trace.tar.gz及本机iter35/PB_trace.tar.gz，SHA cf8668071561d5efd9067ed862b7c597aa5da7ee625302d1da8ae13d4a32ba60。原固定q8/q48/q96均在执行前封存，三前缀TOPP错误均0；全1500命令中25条原生TOPP拒绝完整保留，未隐藏或重采样。
+
+官方终态success=false；最终按钮目标2/7、实际5/1、确认计数11。保留此不利单episode，不将其加入shared100配对，不冒称原稿准确率复现、候选修复或新SR。验证证明ITER35_PB_FACTUAL_TERMINAL_V1.json与PB_FACTUAL_LOCAL_VERIFICATION_V1.json；后者首次读取qualification错误地假定存在native_trace.jsonl，已按真实native_prefix_physical.json和qpos.npz布局修正，再独立通过，未改变科学原件。
+
+新增PB专用CPU候选封存及物理pool采集器；原BT/BRT代码保持。q8→q48→q96先A-A-B-A、后全部有效rank，H32 uniform-mean DINO主指标与prefix4次指标、只读PB计数盲判、早成功删失和未知不补零均在分支执行前注册于ORIGINAL_PB_DIRECT_MECHANISM_PROTOCOL_ZH.md。Windows81通过/1条缺torch跳过、CCI原生82通过，均只是工程检查，尚无新PB候选端点。后续由0GPU进程冻结输入后再执行物理GPU阶段；原10:27→12:27阶段截止和旧全部时钟不改。
+
+11:31UTC ACP三GPU任务按原UID完整回读仍启动中、规格实际乘数0，AFS job_logs无新runner；两标准0GPU任务先前均真实exit0。保持三原排队allocation，不按“启动中”计GPU推理、不重复申请相同样本。v27封存PDF/20意见/17回复块/37整段pending保持；新的factual完整性不放行预测优越性或修复收益。
