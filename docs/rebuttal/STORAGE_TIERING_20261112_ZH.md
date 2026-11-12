@@ -26,3 +26,14 @@ python scripts/tier_rebuttal_writing_archives.py \
 当前候选已更新为v27。07:15UTC AFS再次低于4GiB，第三阶段只处理已成为旧版的`writing_candidates/20261112_v26/verified`：92项125,784,549B逐一验证能从完整AFS TAR和本机完整TAR恢复，计划SHAc210b205…及独立收据齐全后才按journal移除重复解包文件。完整v26 TAR SHA7e3ca714…、当前v27及全部科学原件/checkpoint/CAS前后不变，v26目录留下`TIERED_EXTRACTION_20261112_V26.json`及恢复映射。需要恢复时，把保留的完整TAR解包到一个新的空目录，并按保留manifest逐成员核验；无需重跑实验。
 
 07:21:25的即时卷快照前后均4,258,127,872B，之后实测4,382,732,288B；保留原快照，不把125,784,549B的重复文件大小当即时卷空闲净增。完整plan/proof/journal/receipt分别为实验根的`ITER32_V26_REDUNDANCY_*_V1`与journal，journal SHA143b8e38fc31a1fa34aa393e7c335fcd6dea45fddd75f9fa8adf1c143189f083。
+
+
+## 第四阶段：旧Full200 raw副本的独立保全与恢复
+
+11月12日09:20UTC AFS仅3.37GB。本机`C:/Users/admin/.cache/warm-rebuttal-full200-state-iter33-v1/full200_byte_exact.tar`完整38,599,198,720B，原SHA b2a7a0e2b0b4dd441a24e70f9bb6145ac49db3827321c890b672a60a0db035b6；从保留CAS重建并解出7个state，再独立重读TAR和7文件，与AFS及原200→3000 plan逐项一致。本机原件和独立proof位于execution/20261112_iter33/FULL200_LOCAL_{REBUILD,INDEPENDENT_VERIFICATION}_V1.json。
+
+只迁出P/matched_training_update200_v1/full-s3407/checkpoints/state/step_000200/pytorch_model下两旧raw文件：bf16_zero_pp_rank_0_mp_rank_00_optim_states.pt（12,891,263,217B，SHA236c932fca5d005ee9451c86dca47dd83e4b1e3e298dbbb9a646483e38435db4）和mp_rank_00_model_states.pt（13,558,990,748B，SHAa5fdf1c0d9071eb53c887c6a74544fc43117c752717692409ef4877dd07b7322）。7文件均在本机extracted/原名，完整AFS/local压缩CAS不动；五小state、所有评测weight及final3000不动。原state目录先写STORAGE_LOCATOR_ITER33_V1.json，不能把迁移当数据丢失或静默更改历史manifest。
+
+需要旧Full200 raw恢复时，先将上述两文件按原pytorch_model相对路径暂存到有空间的独立目录（例如CCI临时盘），再用P/ITER33_FULL200_VERIFIED_STORAGE_MIGRATION_V1/restore_full200_raw_state_v1.py --staging STAGING_DIRECTORY。该helper逐项核对原SHA/size，拒绝覆盖现存原路径，检查AFS可容纳两文件和1GiB余量，再原子恢复两个原名。恢复helper的--help检查已通过，尚未实际回填，勿宣称重新恢复过原状态。
+
+移出26,450,253,965逻辑字节；即时free3.35GB因共享卷计量延迟未变，09:50df实际29,768,081,408B。保留所有原快照；4GiB后续准入门不变。完整迁移收据P/ITER33_FULL200_VERIFIED_STORAGE_MIGRATION_V1/receipt.json SHA5407991f8dbaf810f4a63ff6286c28b5623ed2e9879cfa35c886c051b666699c。

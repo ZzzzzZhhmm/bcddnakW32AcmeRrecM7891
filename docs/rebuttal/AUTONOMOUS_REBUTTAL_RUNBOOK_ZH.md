@@ -1,5 +1,9 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**Nov12 09:57UTC实时补充：** CCI46Pooled现GPU100%/32,384MiB、17生成/66完整命令、PID/心跳正常，已开始原生推理；不是下文09:50的加载状态。三新ACP仍无科学runner；以ITER33_PARALLEL_EXECUTION_LIVE_V2.json为准，不重复派发。
+
+**Nov12 09:50UTC并行执行优先恢复：** 新三ACP GPU分片bt30/rb30/rb40已提交并绑定UID，当前实际GPU分配未验证；BT30 Pod实际FailedScheduling GPU不足，标准创建先前实际限额不足，另一集群01e闲时0卡。不要把全局8卡/启动中当推理，也不要重复申请同分片。两标准0GPU/4CPU16GiB任务已实际exit0并独立验收22成员；matched09:09报告20固定0/0对/41已知role/6unknown，不含稍后46Full。CCI09:38仅接续46Pooled，PID2561350/monitor2561344，原10:44:53UTC截止、max1role/outer3600+kill120不变；09:50仍AFS加载0命令。旧Full200两个raw副本26.45GB在本机TAR/7state独立重读及AFS对照后分层，CAS/评测weight/final3000/所有科学原件保留，旧raw续训需按locator恢复；最新AFS29.768GB，4GiB门不改。先读current_iteration.parallel_execution_iter33和ACP_PARALLEL_EXECUTION_20261112_ZH.md、台账23.239–241；新20项映射*parallel.json，v27/37pending/发表门均不变。标准GPU配额协调问题已异步问作者，不重复问登录/真机原录像。
+
 **Nov12 07:33UTC实际接续：** 45Pooled07:27:27真实exit0、1000命令/250H32/0TOPP/success0，771项b4a295cb…双端及本机实际物理链验收；39完整role/19固定0/0对/6unknown，45Pooled未配对。不将原两role invocation到限后的GPU空档解释为研究完成。原next_request从全部完成记录重新计算45Full→条件46Full，07:33:45唯一`cci_segment_iter32_v1`准入，monitor2552827、worker2552833，07:34实际进程/心跳存活、0生成/0命令/GPU0MiB（开始加载），同outer还拥有后继46Full，不能重复。新operator plan3b30e476…，原10:44:53UTC截止、9000souter/3600sworker及科学字段不变。最新20项映射和37槽审计在`planning/*_20261112_1533.json`，五组有利结论仍不放行；看当前state/实际轨迹，勿沿用旧45Pooled活动快照。
 
 **Nov12 07:15UTC直接核查与放行审计：** CCI H100实际95%/32,392MiB，45Pooled worker2551183真实139生成/554完整命令、心跳正常，当前原两role outer仍持有，未终态不能重复。GPU并非空闲；result旧loading头不可当真实进度。19固定0/0对/38完整role/6unknown为已验收数，原100对未完整。37槽归P1–P5（6/12/8/5/6），不能整体回填有利结论；原q8局部稳定性和全部strict0、原q96完整不利结果与实际成本已在v27。见EVIDENCE_RELEASE_STATUS_20261112_ZH.md及新Git外放行JSON。原所有时钟不改，07:15 AFS低于4GiB；已双端逐成员证明v26旧解包可恢复，07:21仅清理92个旧写作重复文件，完整归档/currentv27/原实验/checkpoint/CAS不动。即时free回报有延迟，之后实测4,382,732,288B，后续仍按实时4GiB准入。

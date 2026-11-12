@@ -2726,3 +2726,30 @@ v27+执行增量1维护最新20项映射，四成员包TARfee488f3e1d9128d411b0b
 原两role outer07:27:33正常exit0/terminal，07:30实际GPU无进程；该空档是单次调用到限，不是科学证据齐备。前角色全部原件验收、旧PID/GPU/两lease空闲与4GiB和原剩余9060秒门槛核查后，07:33:45.241925唯一启动`cci_segment_iter32_v1`，monitor2552827。原next_request从全部真实完成记录算出45Full→条件46Full；只用假想完成核对顺序，不假想结果。新operator plan3b30e47620d99ed8b60e5e4b5c495b63da69c0e51f2cdf072ffbf669927598ca，仍max2/9000秒outer/3600秒worker，原首次/10:44:53UTC截止、全部科学字段与未知保持。
 
 07:34:43实际worker2552833与心跳存活，0生成/0命令/GPU0MiB，开始加载，不能计作完成推理。后继46Full仍由同outer持有，勿在角色切换间重复派发。最新37槽审计`planning/evidence_release_status_20261112_1533.json` SHAe0aa12c7186a04f9f5e584517e599a712e6ca23b18f6ee03a26129a3a46f3d0a；最新20项执行映射`planning/issue_evidence_revision_matrix_20261112_1533.json` SHA27423891a93ae2f91a54a452a1b30fed48e6fe48261e3f1c00c1cf316f017c7e。原v27/15:15审计与所有真实结果保持；五组有利结论整体release仍false。
+
+
+### 23.239 按作者要求新增ACP纯CPU任务并完成独立原始证据审计
+
+11月12日实际提交两项标准0GPU/4vCPU/16GiB任务，cluster02、确认镜像/AFS、各1副本/重启0。q96任务UID a3946661617843e0a83122efe9035912于08:51:19–08:51:46 UTC exit0；matched任务UID078a0be9d9294a6e87baae23f07c74d1于09:06:02–09:09:57 exit0。CPU CUDA_VISIBLE_DEVICES为空，入口source前后6b64cc5bd9f93b780cee5ffa64f4e77195d6f1363ceec30d43787693111144cb；spec canonical SHA分别20e8cff543f0233dc3e25af4b97b67a3b997ced2769a7a03f477244528eae936、468a3f78052ec09e4fc9af757fbc55401760ba7940f78a3bf25b1ef1f3fd4243。CCI canonical3cdebbee本地Git archive冻结，无运行程序Git远端访问。
+
+q96独立重算全部32候选/36终点/4Full重复与父状态，最大重算误差2.78e-17；32标签全0、父已倒下、centered预测MSE0.17000183889870682/历史0.16482099214548013/常量0.14489814162091014。保留全部不利比较，不将重复核验当新增独立状态。matched原始轨迹审计报告SHA316731eb3a33e04fa8a8df347b4f9c65a5ee7a24aa0d5aadadf78933754b1e9e：RB12对/BT8对，20完整0/0对、41已知角色结果、6已归档unknown；固定100对未齐、primary=null。原shared3407/final3000、source87199cc6…/controller861004fa…、Full b0669047…/Pooled9c9c9124…不变；不能当原稿specialist结果、收益或自然missing-skill非劣效。
+
+双端22成员原件包P/ITER33_CPU_RESULTS_ARCHIVE_V2/raw_cpu_results.tar.gz SHAb3849cf322aa34eea78c432e2be8bec5f110ed0f451e50292a95e9ac8f5a4e2a，manifest5d560fdeab5d874805e6ee5a66af6448335c0e09f47698322151d9fb1e1aa975；工作站逐成员再验全部22项。V1包保留；V2补收录q96独立verification和summary。实际输出、run_manifest、source/spec、输入/时间/失败均留Git外execution/20261112_iter33及P/parallel_20261112_iter33，不上传Git。此证据关闭重复重算/轨迹完整性检查，未关闭P1/P2有利总体命题。
+
+### 23.240 实际申请三个GPU分片，标准限额与闲时GPU不足分别保留
+
+09:19 UTC标准1GPU8CPU128GiB创建实际限额不足后才转闲时。BT30–39 UID1868612385df4b8d85ed85c9866656e7（warm-mf3k-bt30-20261112-p33b-idle）、RB30–39 UID64f51463275f4795bab6eff333c4392d、RB40–49 UID230090418b9a45e6a3c70c9b52a85210已创建/读回，各1GPU8CPU128GiB/1副本/0重启、确认镜像/AFS。属于原100固定对此前未首次准入的三个分片，不改病例、模型、任务原生步数和成功标准；共同worker上限3600秒用于双方。三分片首次09:14:11/09:38:45/09:38:47，原master18:00UTC截止不改，6slot/120GPUh不改；原先失败/未知/截止不改。
+
+准入前，对BT00/RB10/BT10云终态、实际进程/lease与全原件归档显式核销；RB30/RB40旧开发预留在17/2214项归档后释放，所有0结果和加载失败保留。释放是资源占用核销，不是科学未知值判定。相关P/ITER33_BT00_ALLOCATION_RELEASE_V1与ITER33_NATIVE_AND_OLD_ALLOCATION_RELEASE_V1保留旧marker和完整恢复依据。首个BT30 allocation3d061596…因界面AFS名称尚未加载而主动停止，完整回读确认其原配置正确；09:30云端已停止，09:37无科学runner，原件保留。未改变旧截止，随后只创建上述唯一后继p33b。未改变状态的启动操作也有独立回读，未据未知结果重复创建。
+
+09:46实际BT30 Pod仅等待：FailedScheduling“4200 | 29/29 nodes in VC match job | insufficient resource: nvidia.com/gpu 1”。09:48另一集群01e闲时0卡，02全局8卡不等于本工作空间可分配。三项ACP不能写成正在执行GPU推理；没有已验证新科学runner。标准配额协调问题已异步发作者，CCI/CPU继续；不为未调度分片再造同名/新名任务。具体UI原件与UID绑定见P/acp-parallel-three-gpu-identity-v1.json、acp-parallel-bt30-pod-events-read-v2.json与ACP_PARALLEL_EXECUTION_20261112_ZH.md。
+
+### 23.241 保全旧Full200副本恢复存储，CCI只接续原第46个Pooled角色
+
+AFS09:20仅3.37GB。按既有清理授权，工作站从完整已保留CAS重建Full200原38,599,198,720B TAR SHA b2a7a0e2b0b4dd441a24e70f9bb6145ac49db3827321c890b672a60a0db035b6与七state26,450,308,543B；再次独立重读TAR和七文件，全部与原200→3000 parent_state_files及AFS七文件SHA一致。查无任何进程/FD使用旧state后，仅移出旧optim12,891,263,217B及model_state13,558,990,748B两raw副本，26,450,253,965逻辑字节。其他五小state、独立评测weight、当前Full/Pooled3000、原始轨迹、AFS/local CAS保持。原旧state目录先写STORAGE_LOCATOR_ITER33_V1及指向本机完整backup，恢复helper拒绝覆盖并逐字节验证。P/ITER33_FULL200_VERIFIED_STORAGE_MIGRATION_V1/receipt.json SHA5407991f8dbaf810f4a63ff6286c28b5623ed2e9879cfa35c886c051b666699c。即时free仍旧3.35GB，稍后df29.768GB；不把逻辑迁移大小当净空闲，原4GiB门保留。旧Full200 raw续训先恢复，当前final3000评测不受影响。
+
+前原两role CCI invocation08:58:22真实exit0；45Full08:15:55、46Full08:58:16各exit0/1000原生命令/250生成/success0。20对CPU报告包含45Full，不含随后完成的46Full，分别注明统计截止，不混计。09:38:11在GPU/两lease空闲、AFS恢复门槛和原时间预算通过后接续46Pooled，monitor2561344/worker2561350，仅max1role/outer3600+kill120，原10:44:53截止不改。09:50心跳/PID在、GPU24.6GB、0动作生成/0命令，AFS读取等待，属加载而非完成推理；P/ITER33_PARALLEL_EXECUTION_LIVE_V1.json记录实际状态。
+
+本轮20项意见执行映射更新到planning/issue_evidence_revision_matrix_20261112_parallel.json。v27回复/PDF保持封存、37有利pending及五组整体放行false；资源提交、CPU核验与新科学证据严格分开。后续按三UID/真实Pod与CCI第46角色查验，完成后再统计，不因结果0或unknown换固定样本。
+
+09:57:18UTC实际增量：46Pooled GPU100%/32,384MiB、17生成/66完整命令、无JSON残尾，PID/心跳正常；先前09:50加载描述已由此真实推理进度取代，未计新增完整角色。三新ACP分片job_logs仍均无runner；空闲29,764,497,408B，原窗口/0结果/unknown不变，原件ITER33_PARALLEL_EXECUTION_LIVE_V2.json。

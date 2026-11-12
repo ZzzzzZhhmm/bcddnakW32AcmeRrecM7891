@@ -19,5 +19,27 @@
   },
   "development": "CCI: edit, validate, synchronize and freeze source before ACP execution.",
   "execution": "CCI for suitable single-GPU jobs shorter than4h; ACP for longer or parallel work.",
+  "resource_profiles": {
+    "cpu_audit": {
+      "resource_type": "standard",
+      "cluster": "computing_cluster_01e_02",
+      "gpus": 0,
+      "vcpus": 4,
+      "memory_gib": 16,
+      "replicas": 1,
+      "maximum_restarts": 0,
+      "verified_actual_cpu_runs_on": "2026-11-12",
+      "console_location": "GPU node specification table, page 2; CPU node tab currently has no specifications. Verify GPU count is exactly zero."
+    },
+    "single_gpu_evaluation": {
+      "gpus": 1,
+      "vcpus": 8,
+      "memory_gib": 128,
+      "replicas": 1,
+      "maximum_restarts": 0,
+      "resource_type": "standard_first_then_idle_after_actual_quota_refusal",
+      "availability": "Recheck workspace quota and actual pod scheduling events; global free-card totals do not prove allocatable GPUs."
+    }
+  },
   "submission_rule": "Verify actual job identity and resource state after submission; never resubmit an uncertain create action."
 }
