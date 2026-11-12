@@ -28,8 +28,32 @@ def validate_plan(p):
     omitted=p.get('omitted_query_accounting',{})
     if set(map(int,omitted))!=set([8,48,96])-set(queries):
         raise ValueError('Every omitted fixed query requires explicit accounting')
-    if any(v.get('reason') not in ('original_AABA_not_complete','no_remaining_new_work') for v in omitted.values()):
+    if any(v.get('reason') not in ('original_AABA_not_complete','no_remaining_new_work',
+                                  'independently_owned_fixed_query') for v in omitted.values()):
         raise ValueError('Queries cannot be omitted because of their scientific outcomes')
+    for query, item in omitted.items():
+        if item['reason']!='independently_owned_fixed_query':
+            continue
+        ref=item.get('ownership',{})
+        if (set(ref)!={'path','sha256'} or
+                not any(row==ref for row in p.get('inputs',[])) or
+                H.sha(ref['path'])!=ref['sha256']):
+            raise ValueError('Independent ownership must be a bound immutable input')
+        owner=H.read(ref['path'])
+        if (owner.get('schema')!='warm.original-PB-fixed-query-ownership.v1' or
+                owner.get('query')!=int(query) or
+                owner.get('original_queries')!=[8,48,96] or
+                owner.get('complete_outcome_claimed_here') is not False or
+                Path(owner['stage_root']).resolve()==Path(p['stage_root']).resolve()):
+            raise ValueError('Independent ownership cannot change the fixed cohort or claim completion')
+        query_ref=owner['query_plan']
+        if H.sha(query_ref['path'])!=query_ref['sha256']:
+            raise ValueError('Independently owned query plan changed')
+        query_plan=H.read(query_ref['path'])
+        if (query_plan['query_replan']!=int(query) or
+                query_plan['output']!=owner['output'] or
+                query_plan['continuation_resource_stage']!=owner['stage_root']):
+            raise ValueError('Independent ownership differs from the sealed query plan')
     if Path(p['stage_root']).resolve()==Path(p['old_stage_root']).resolve():
         raise ValueError('The original resource stage must be preserved')
     return p
