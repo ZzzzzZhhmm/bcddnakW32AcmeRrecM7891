@@ -22,3 +22,7 @@ python scripts/tier_rebuttal_writing_archives.py \
 单独恢复旧解包成员可用实验根下`restore_tiered_writing_v1.py`，指定`--folder`和可选`--relative-file`，默认dry-run；该工具支持从完整TAR或新CAS读取。恢复前查实时空间，保留新CAS及所有未核销失败。
 
 第二阶段结束空闲快照4,701,954,048B，随后实测约4.80GB；共享卷并发写入会改变净空闲，因此冗余payload/容器的分层大小不能当成卷空闲净增。后续准入继续核查原4GiB门槛。
+
+当前候选已更新为v27。07:15UTC AFS再次低于4GiB，第三阶段只处理已成为旧版的`writing_candidates/20261112_v26/verified`：92项125,784,549B逐一验证能从完整AFS TAR和本机完整TAR恢复，计划SHAc210b205…及独立收据齐全后才按journal移除重复解包文件。完整v26 TAR SHA7e3ca714…、当前v27及全部科学原件/checkpoint/CAS前后不变，v26目录留下`TIERED_EXTRACTION_20261112_V26.json`及恢复映射。需要恢复时，把保留的完整TAR解包到一个新的空目录，并按保留manifest逐成员核验；无需重跑实验。
+
+07:21:25的即时卷快照前后均4,258,127,872B，之后实测4,382,732,288B；保留原快照，不把125,784,549B的重复文件大小当即时卷空闲净增。完整plan/proof/journal/receipt分别为实验根的`ITER32_V26_REDUNDANCY_*_V1`与journal，journal SHA143b8e38fc31a1fa34aa393e7c335fcd6dea45fddd75f9fa8adf1c143189f083。

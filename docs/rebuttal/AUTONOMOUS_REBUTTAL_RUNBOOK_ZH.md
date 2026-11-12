@@ -1,5 +1,7 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**Nov12 07:15UTC直接核查与放行审计：** CCI H100实际95%/32,392MiB，45Pooled worker2551183真实139生成/554完整命令、心跳正常，当前原两role outer仍持有，未终态不能重复。GPU并非空闲；result旧loading头不可当真实进度。19固定0/0对/38完整role/6unknown为已验收数，原100对未完整。37槽归P1–P5（6/12/8/5/6），不能整体回填有利结论；原q8局部稳定性和全部strict0、原q96完整不利结果与实际成本已在v27。见EVIDENCE_RELEASE_STATUS_20261112_ZH.md及新Git外放行JSON。原所有时钟不改，07:15 AFS低于4GiB；已双端逐成员证明v26旧解包可恢复，07:21仅清理92个旧写作重复文件，完整归档/currentv27/原实验/checkpoint/CAS不动。即时free回报有延迟，之后实测4,382,732,288B，后续仍按实时4GiB准入。
+
 **Nov12 06:48UTC最新执行：** 44Pooled真实06:44:57 exit0、1000命令/250H32/0TOPP/success0，771原件10c22742…双端及本机动作/实际物理链核验，44Full/Pooled初始identity与首query图像/proprio/Gaussian/候选池精确。当前38完整角色/19固定0/0对/6unknown，100对未完成，不填最终收益/CI。原同一两role outer2550033/2550036已进入第二角色45Pooled，06:46worker2551183/心跳核实，加载0生成不当完成；不要另起45Pooled。待outer真实终态/GPU/两lease/4GiB/原10:44:53UTC截止核查后再按原next_request继续。当前审阅面v27+执行增量1，4成员包fee488f3…于06:48:27 AFS验真；原85项写作包/PDF不改。先读current_iteration与台账23.235，不沿用旧44Pooled运行描述。
 
 **Nov12 06:39UTC写作锚点：v27为最新完整候选。** 三位感谢开场准确承接各自原review真实认可，we/our逐项交流、结尾整合实际修订；20源字段绑定/17评论块/37完整待证槽保持。主文4.7接入已核验的原模型单状态Full/null/Full稳定性对照；原方法/九图/全部旧表和公式、q96/shared不利结果不变。完整原工程及独立干净ZIP46页/主文含结论10页、全页文本相同，新第10页直接验看、其余45页与v26像素相同，0undefined/overfull；85项包2342896e…本机及06:38:57UTC AFS逐项验真，`writing_candidates/20261112_v27`。见CANDIDATE_V27及AUTHOR_DIALOGUE_STANDARD_ZH。实验仍由原44Pooled/条件45Pooled两role outer持有；06:25真实193命令/49生成、心跳正常，不重复当前或后继，原10:44:53UTC截止保持。37完整角色/18固定0/0对/6unknown是已验收数；只在真实终态与全轨迹核验后更新。未发布，37槽不放行。

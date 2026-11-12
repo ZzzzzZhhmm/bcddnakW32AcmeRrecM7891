@@ -2706,3 +2706,15 @@ PDF SHA c54d480a0dc90f0a1c144b66e4caee9cf6194ceec1536f5c0e63db646f2f7d50；sourc
 与已验44Full初始identity及首query当前输入/proprio/Gaussian/bankrows/candidate载荷精确一致；独立配对收据`ITER31_CASE44_PAIR_INDEPENDENT_IDENTITY_V1.json`。累计38完整角色/19固定0/0对/6unknown，原100对研究尚未完整，无最终SR差值/CI、收益或非劣效结论。原outer仍拥有第二角色，已自动按冻结顺序进入45Pooled；06:46:42 worker2551183与GPU518MiB/心跳核验，加载0新生成/0命令，不计完成。没有另行创建任务，原bt40首次/10:44:53UTC截止、9000souter/3600sworker及全部科学字段保持。
 
 v27+执行增量1维护最新20项映射，四成员包TARfee488f3e1d9128d411b0b1a11320fec504ba3aa9f06b423b017874f7d4d172c、manifestf6d51e456b9808decb2113a0568ccaf72d1a04b1fd2267bbee7c3bfa610ed281，06:48:27UTC AFS逐项/解包验真；原85项写作包、完整PDF和所有37整段待证论证不覆盖。AFS06:46空闲4,494,422,016B，仍高于4GiB但余量小，后续按实时容量准入，不删除checkpoint/原件/CAS。
+
+### 23.236 实际GPU运行与五组pending放行核查
+
+作者询问GPU是否已空闲、证据是否补齐。07:15:57UTC直接SSH核验H10095%/32,392MiB，原45Pooled worker2551183及原outer2550033/2550036存活，139份生成动作/554条完整命令、07:15:52 heartbeat，暂无exit。result仍为旧loading头，按实际轨迹确认正在执行；未重复创建或按未完成输出计新增角色。已验收保持38完整role/19固定0/0对/6unknown，原100对和10:44:53UTC截止不改。收据`ITER32_EXECUTION_INSPECTION_V1.json`，来源仍为模型9c9c9124…、source87199cc6…/controller861004fa…。
+
+37个空槽按P1/P2/P3/P4/P5为6/12/8/5/6，没有任意一个cohort结果被理想值替代。原q8完整同父稳定性证据/strict0、q96完整不利主比较与效率数据已经纳入v27；剩余同信息完整差值/区间、总体修复/最终成功、自然absence与错误激活、作者新真机/扩库数据仍不齐。原v27注册表和20项执行映射中的过时状态另在新放行审计中精确更正，不覆盖封存材料，也不把“已完成”解释成“结果有利”。Git外`planning/evidence_release_status_20261112_1515.json` SHA9218598b9b097ff94ea2bf1b9dc8d084a67325ca250f6b1f71f1ffd7b374e364，绑定所有依据的原路径/hash；五组有利结论整体release false。详见EVIDENCE_RELEASE_STATUS_20261112_ZH.md。
+
+### 23.237 仅分层已验证可恢复的旧v26写作解包
+
+07:15空闲4,260,970,496B，低于4GiB；07:19只读计划时4,258,918,400B。在完整AFS v26 TAR7e3ca714…及本机同一完整TAR中，逐一核验92个解包文件的原成员路径、size和hash，独立本机再次验证全部125,784,549B可恢复。计划c210b205d566effb7f67ed62d42c5a043b3faf4e2524b29f7874976a0a7977f3；查无活动进程使用旧写作目录、inode/mtime/hash均未变后，07:21:25按fsync journal只移除这些重复文件，原AFS完整TAR和本机原TAR、当前v27、科学原件/checkpoint/CAS及所有任务窗口不改。
+
+即时前后free同为4,258,127,872B，之后实际df为4,382,732,288B；共享卷和计量延迟可能影响净值，不把清理payload大小当即时净释放。保留marker、plan、本机独立proof、apply receipt和journal143b8e38fc31a1fa34aa393e7c335fcd6dea45fddd75f9fa8adf1c143189f083。后续仍按实时4GiB准入；旧v26解包缺失先从完整TAR恢复，不能当科学数据丢失或重跑模型。
