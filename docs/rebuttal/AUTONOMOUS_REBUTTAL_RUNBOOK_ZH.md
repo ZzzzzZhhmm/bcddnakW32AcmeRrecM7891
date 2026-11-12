@@ -1,5 +1,11 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**Nov12 02:30UTC写作与运行最新锚点：v24已整版封存验收，旧v23不覆盖。** 三位原review认可优点的开场、we/our与已完成修订结尾保持；rkWY正面重申支持范围内的贡献，Hh4E去重复/多余负面自评。论文4.7以作者视角分别连接适用、修复、完整成功与自然撤回的测量；45页/主文10，完整及干净ZIP编译全部页文本一致，第10页直接验看、余44像素一致，原图/表/数字/公式不删。原v23已有AI use statement，已核对源码和PDF第11页，v24原样保留，别重复新增。93成员包TAR62cc1593…/manifest06c76d93…已02:25:09 AFS验真；P1–P5整段/37槽仍待证。见CANDIDATE_V24_20261112_ZH.md。
+
+**当前case42 Full仍在原两role outer内，不能重复。** 02:26实际629命令/158生成、GPU100%；32角色/16配对全0/0/6unknown是已验收计数，未计活动case42。monitor2537277/campaign2537278/worker2538267及原bt40 10:44:53UTC截止保持；原q96已31候选/rank31活动，29候选已独立归档，晚到rank29/30待接收，原07:16:01UTC不改。真实终态后验全轨迹和exit，先核销outer与两lease再续原下一角色。ACP认证请求仍待作者，无重复创建。
+
+**原PB在线静态资格也已完成，但0新推理。** root3407/容量16/8由原472代码构建，原全部static validator与实际encoder runtime精确通过，15项原件档案745072cd…双端保全。V1沿用BT hash被拒、V2不支持--seed被拒均保留，V3用显式matrix成功，不改数值validators。原代际撤回入口各23CPU检查与控制器49435b0/source205f541a…已冻结，仍需真实GPU Full精确回放/整个生成器资格及同状态物理对照；PB DEV选点未知不变。详见台账23.214–215，后续current_iteration安装收据优先。
+
 **Nov12 02:05UTC最新锚点：原case41 Full已完整，当前outer正在case42 Full，勿重复。** 新Full于01:53:51正常exit0、1000命令/250H32、success0/0TOPP；775项原件TARc3fd029f…/manifestf3d70b28…已双端/本机独立核验。累计32完整角色/16对全0/0/6unknown。原monitor2537277/campaign2537278继续，当前worker2538267；原bt40 10:44:53UTC截止不改。q96固定rank23–28六H32/标签0新档案20342759…已双端核验，累计29候选归档；原不利父状态/全0/07:16UTC截止不改，整池未完成，不提前填主指标。
 
 **原代际候选撤回入口已完成CPU工程资格，尚无新GPU/物理撤回证据。** 新helper只在一次显式推理内同时撤去提案source与候选conditioning，保留回合历史、自然gate见证与检索metadata；对f77和472两份原v3代码各23项CPU检查通过。首轮重复调用错误消息检查失败及修复完整保留。见`ORIGINAL_SPECIALIST_WITHDRAWAL_20261112_ZH.md`；下一步真实checkpoint Full精确GPU重现/全生成器不变性成功后，才可事先封存并执行同父null。不能把CPU fixture当真实GPU资格，不能重新打开旧shared-q8窗口。
