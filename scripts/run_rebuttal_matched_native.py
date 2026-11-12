@@ -201,7 +201,7 @@ def main():
         status='loading_typed_policy',success=None,queries=[],started_utc=datetime.datetime.now(datetime.timezone.utc).isoformat(),
         generated_commands_executed=0,engineering_only=plan['phase']=='recorded_dev')
     M.atomic_json(out/'runtime_args.json',runtime);M.atomic_json(out/'result.json',result);policy=None
-    def budget():M.require_deadline(plan)
+    budget=M.make_deadline_budget(plan)
     try:
         torch.cuda.set_per_process_memory_fraction(float(plan.get('memory_fraction',.75)))
         policy=RMBenchWarmPolicy(runtime);typed=M.typed_policy_receipt(policy,plan,cli.role)

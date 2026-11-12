@@ -69,6 +69,17 @@ def require_deadline(plan,now=None):
             raise ValueError('Formal phase exceeds the fixed campaign ceiling')
     return end.timestamp()
 
+def make_deadline_budget(plan,*,clock=None):
+    """Verify immutable admission once, then check the same clock per command."""
+    import time
+    absolute_end=require_deadline(plan)
+    clock=time.time if clock is None else clock
+    def budget():
+        if clock()>=absolute_end:
+            raise TimeoutError('Original resource window expired;do not reset it')
+    return budget
+
+
 def _require_resource_amendment(plan,first,end):
     """Validate a separate resource stage; all original clocks stay immutable."""
     import ast
@@ -76,10 +87,13 @@ def _require_resource_amendment(plan,first,end):
     if not ref or file_sha(ref['path'])!=ref['sha256']:
         return False
     r=read_json(ref['path'])
-    if r.get('schema')!='warm.matched-prospective-resource-amendment.v1':
+    version=r.get('schema');v2=version=='warm.matched-prospective-resource-amendment.v2'
+    if version!='warm.matched-prospective-resource-amendment.v1' and not v2:
         return False
     ceiling=datetime(2026,11,12,18,tzinfo=timezone.utc)
-    if (r.get('original_windows_unchanged') is not True or r.get('prior_unknowns_not_retried') is not True
+    if (r.get('original_windows_unchanged') is not True
+        or (not v2 and r.get('prior_unknowns_not_retried') is not True)
+        or (v2 and r.get('explicit_inspected_unknown_retry') is not True)
         or r.get('stage_first_admitted_utc')!=plan['first_admitted_utc']
         or r.get('stage_absolute_deadline_utc')!=plan['absolute_deadline_utc']
         or r.get('old_master_deadline_unchanged')!=ceiling.isoformat()
@@ -99,12 +113,37 @@ def _require_resource_amendment(plan,first,end):
     if file_sha(terminal['path'])!=terminal['sha256']:
         raise ValueError('Predecessor terminal receipt changed')
     prior=read_json(terminal['path'])
-    if (prior.get('status') not in ('terminal_fixed_invocation_complete_or_window_bound','terminal_fixed_roles_invocation_complete')
+    allowed_terminal=('terminal_fixed_invocation_complete_or_window_bound','terminal_fixed_roles_invocation_complete')
+    if v2:allowed_terminal+=('failed_or_interrupted_preserve_all',)
+    if (prior.get('status') not in allowed_terminal
         or datetime.fromisoformat(prior['ended_utc'])>first):
         raise ValueError('A prior or unknown invocation still owns this work')
     exit_ref=r['predecessor_runner_exit']
-    if file_sha(exit_ref['path'])!=exit_ref['sha256'] or read_json(exit_ref['path']).get('exit_code')!=0:
+    if (file_sha(exit_ref['path'])!=exit_ref['sha256']
+        or read_json(exit_ref['path']).get('exit_code') is None
+        or (not v2 and read_json(exit_ref['path']).get('exit_code')!=0)):
         raise ValueError('Predecessor process did not exit normally')
+    adjudications={}
+    if v2:
+        ref=r['unknown_adjudication']
+        if file_sha(ref['path'])!=ref['sha256']:raise ValueError('Unknown adjudication changed')
+        adjudication=read_json(ref['path'])
+        if (adjudication.get('schema')!='warm.matched-terminal-unknown-adjudication.v1'
+            or adjudication.get('old_outputs_retained') is not True
+            or adjudication.get('cause')!='resource_admission_validation_repeated_per_command'
+            or adjudication.get('terminal')!=terminal or adjudication.get('runner_exit')!=exit_ref
+            or datetime.fromisoformat(adjudication['inspected_utc'])>first):
+            raise ValueError('Explicit inspected terminal resource failure is required')
+        for item in adjudication['retry_entries']:
+            for name in ('result','exit','archive'):
+                if file_sha(item[name]['path'])!=item[name]['sha256']:raise ValueError('Adjudicated raw evidence changed')
+            value=read_json(item['result']['path']);ex=read_json(item['exit']['path']);key=(item['case_id'],item['role'])
+            if (key in adjudications or value.get('success') is not None
+                or value.get('status') not in ('loading_typed_policy','unknown_runtime_or_interruption')
+                or (value['episode_id'],value['role'])!=key or ex.get('exit_code') in (None,0)
+                or datetime.fromisoformat(ex['ended_utc'])>first):
+                raise ValueError('Unknown role is active, duplicated, known, or foreign')
+            adjudications[key]=item
     state_ref=r['previous_budget_state']
     if file_sha(state_ref['path'])!=state_ref['sha256']:
         raise ValueError('Previous budget state changed')
@@ -122,18 +161,29 @@ def _require_resource_amendment(plan,first,end):
             raise ValueError('Old role evidence changed')
         path=Path(item['path'])
         if path.name=='result.json' and path.parent.name=='worker':
-            row=read_json(path);row['attempt_id']=path.parents[1].name;rows.append(row);bound_results.add(path.resolve())
+            row=read_json(path);row['attempt_id']=path.parents[1].name;row['_resource_result_path']=str(path);rows.append(row);bound_results.add(path.resolve())
     actual={p.resolve() for root in r['old_inventory_roots'] for p in Path(root).rglob('worker/result.json')}
     if actual!=bound_results:
         raise ValueError('Old completed or unknown attempts were omitted')
     sequence=r['fixed_role_sequence']
     if not 0<len(sequence)<=3 or len({(c,role) for c,role in sequence})!=len(sequence):
         raise ValueError('A bounded fixed role sequence is required')
-    old_keys={(row['episode_id'],row['role']) for row in rows}
+    old_keys={(row['episode_id'],row['role']) for row in rows};used_adjudications=set()
     for case,role in sequence:
-        if ((case,role) in old_keys or next_request(rows,base['case_ids'],known_terminal_attempts=r['old_unknown_attempts_preserved'])!=(case,role)):
+        key=(case,role)
+        if key in old_keys:
+            old_rows=[row for row in rows if (row['episode_id'],row['role'])==key];item=adjudications.get(key)
+            if (not v2 or item is None or len(old_rows)!=1
+                or len(old_rows)>=base.get('max_attempts_per_role',2)
+                or old_rows[0].get('success') is not None
+                or old_rows[0]['_resource_result_path']!=item['result']['path']
+                or old_rows[0]['attempt_id'] not in r['old_unknown_attempts_preserved']):
+                raise ValueError('Resource stage retries a known or unadjudicated role')
+            used_adjudications.add(key)
+        if next_request(rows,base['case_ids'],known_terminal_attempts=r['old_unknown_attempts_preserved'])!=(case,role):
             raise ValueError('Resource stage retries or substitutes an existing role')
         rows.append(dict(episode_id=case,role=role,status='complete_native'))
+    if v2 and used_adjudications!=set(adjudications):raise ValueError('Adjudication does not match the exact fixed sequence')
     proof_ref=r['controller_resource_equivalence']
     if file_sha(proof_ref['path'])!=proof_ref['sha256']:
         raise ValueError('Controller equivalence proof changed')
@@ -144,22 +194,35 @@ def _require_resource_amendment(plan,first,end):
         or proof['original_controller_sha256']!=base['controller_source_sha256']
         or proof['amended_controller_sha256']!=plan['controller_source_sha256']):
         raise ValueError('Controller identities differ from the registered amendment')
-    files=proof['files'];special='src/fastwam/research/matched_native.py'
+    files=proof['files'];special='src/fastwam/research/matched_native.py';worker='scripts/run_rebuttal_matched_native.py'
+    worker_budget=proof.get('resource_worker_budget_validation')=='once_at_admission_clock_per_command'
     if ({p.relative_to(old_root).as_posix() for p in old_root.rglob('*') if p.is_file()}!=set(files)
         or {p.relative_to(new_root).as_posix() for p in new_root.rglob('*') if p.is_file()}!=set(files)):
         raise ValueError('Controller source membership changed')
     for name,item in files.items():
         if (Path(name).is_absolute() or '..' in Path(name).parts
             or file_sha(old_root/name)!=item['original_sha256'] or file_sha(new_root/name)!=item['amended_sha256']
-            or (name!=special and item['original_sha256']!=item['amended_sha256'])):
+            or (name!=special and not (name==worker and worker_budget) and item['original_sha256']!=item['amended_sha256'])):
             raise ValueError('A scientific collector implementation changed')
     def scientific_ast(path):
         tree=ast.parse(path.read_text())
         tree.body=[node for node in tree.body if not isinstance(node,(ast.FunctionDef,ast.AsyncFunctionDef))
-                   or node.name not in ('require_deadline','_require_resource_amendment')]
+                   or node.name not in (('require_deadline','_require_resource_amendment','make_deadline_budget') if worker_budget
+                                        else ('require_deadline','_require_resource_amendment'))]
         return ast.dump(tree,include_attributes=False)
     if scientific_ast(old_root/special)!=scientific_ast(new_root/special):
         raise ValueError('Resource amendment changed scientific collector code')
+    if worker_budget:
+        def worker_ast(path):
+            tree=ast.parse(path.read_text());main=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='main')
+            old=ast.parse('def budget():M.require_deadline(plan)').body[0]
+            new=ast.parse('budget=M.make_deadline_budget(plan)').body[0];seen=0
+            for i,node in enumerate(main.body):
+                if ast.dump(node,include_attributes=False)==ast.dump(new,include_attributes=False):main.body[i]=old;seen+=1
+                elif ast.dump(node,include_attributes=False)==ast.dump(old,include_attributes=False):seen+=1
+            if seen!=1:raise ValueError('Resource budget is missing or changed beyond its clock guard')
+            return ast.dump(tree,include_attributes=False)
+        if worker_ast(old_root/worker)!=worker_ast(new_root/worker):raise ValueError('Native scientific execution changed')
     return True
 
 

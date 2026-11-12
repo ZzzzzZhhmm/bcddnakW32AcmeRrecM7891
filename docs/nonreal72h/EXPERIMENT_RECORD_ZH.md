@@ -3000,3 +3000,19 @@ ITER40_ROLE_RAW_LOCAL_VERIFICATION_V2.json累计75完整角色/37固定0–0对�
 为补充效率问题的实际执行成本，新增native_timing_audit与只读CLI，固定审计当前已验真75个完整角色/37对的现有telemetry，不加载模型/模拟器、不增添GPU样本。绑定每条replan的原result/telemetry/exit SHA、checkpoint、core源码、首状态和query输入/候选/随机数；重复、缺行、foreign query、负值/NaN/无穷及unknown端点不静默过滤或补值。所有完整角色均纳入固定快照，不按success筛选；中断和未运行仍单列。
 
 拟输出all/first/steady的日志wall-clock中位数与p95及逐条CSV/LaTeX，明确pipeline计时含检索、生成、动作处理与研究证据capture，排除模型加载和物理执行；pipeline减检索的余项不能命名为纯模型/单模块开销。该已记录轨迹的描述性audit不替代100-DEV同输入效率对照，不声称异构ACP/CCI硬件已匹配、不做query级CI、不据zero-success作SR/非劣效推断。Windows13项工程检查通过；尚未提交新的CPU云任务或产生正式统计值。
+
+### 23.277 标准0GPU任务完成原生collector时延审计并独立重算
+
+唯一新CPU任务warm-native-time-20261113-p41-cpu，UID72dac884fe69496d85d35c325635218c，cluster02标准0GPU/4CPU/16GiB/单副本/重启0；镜像、AFS、启动命令逐项云回读。18:27:11.823395→18:27:21.494127UTC实际exit0，CUDA_VISIBLE_DEVICES为空，实际source37baa019f63ea60f7f3b5f75d73322b197a6b6473cbe3c2456fb148651631fa8前后相同。75完整角色、37对和15450条replan（首75、后15375）全部按固定快照纳入，10cohort unknown+独立CCI unknown1保留，不按success筛选。第一次准备器仅枚举已有result文件，漏数无result的历史unknown；CPU assertion停止后，v2补齐全部attempt元记录再冻结，未覆盖科学原件或创建额外任务。
+
+Battery Try Full/Pooled的首query中位数1921.8/1898.6ms、steady中位数697.5/692.0ms、steady p95770.1/761.4ms，分别15/16完整回合和3750/4000replans；Rearrange Blocks两角色各22回合/3850replans，首1923.6/1936.2、steady691.1/695.5、p95850.6/897.3ms。243成员/225原输入文件在ITER41_NATIVE_TIMING_RAW_V1.tar.gz封存，TAR df7ce6d864d3d717ad25ae793e0733b5aeff4df0d5a13d9f7d349998d2556a14、manifest ccd6c6d321f93cefb1d99e8879162647ffe2b865a7feeda7244e7304e0669ada；本机逐字节/原query绑定与独立NumPy分位数、均值等重算全精确，最大差0。
+
+这些是已有native日志中明确边界的action-ready区间，包含in-call query/action capture；模型加载、telemetry落盘、after-call context归档、每命令资源guard及物理执行在计时外。历史CCI/ACP硬件等价/独占未证实，后续状态是各策略自身轨迹，因此保留原100同输入DEV成本作为公平比较，不将此次描述性成本当生产控制频率、硬件匹配加速、模块因果开销或新GPU结果。新CPU审计0GPU不增加原113.6448450425/120GPUh预留。13项Windows/原生测试与实际source/输入哈希已保存；37整段有利pending不放行。
+
+### 23.278 定位独立资源guard的每命令AFS重复验真开销并修复热路径
+
+CCI BT3 Full实际持续有生成与accepted物理命令，但速率异常低。源码核对发现budget在每条物理命令都重新调用require_deadline，独立资源校验因而每次重读旧/新1106源码文件及历史角色。对实际冻结v3 plan的原生只读CPU探针测得单次完整准入校验10.713880秒，足以解释每步额外等待；这不是模型推理或物理失败证据。未改活动11a0f860快照或原3000秒/20UTC窗口。
+
+新增make_deadline_budget在准入时完成原全部source/输入/终态/资源核验，此后每命令检查同一个绝对截止。实际单次新准入10.428442秒，随后1000次时钟检查0.000110740秒，未做policy/simulator调用。原时间边界保持，未缓存或跳过准入证据本身。未来独立控制器的源码等价证明只允许native main内的budget定义变为该factory，其他AST与原模型/物理/指标源码须相同。
+
+另为该已诊断的collector资源开销引入显式v2 unknown核销：必须绑定真实终态/非零退出、原unknown结果与完整归档、检查时刻及精确固定next_request；只允许一个已保留unknown的同角色第二次尝试，不跳样本、替换已知结果或第三次重试。旧v1仍禁止重跑unknown，普通formal旧18UTC上限不变。Windows44项通过；原生回归及实际10.7秒探针收据保存于ITER41_CLOCK_BUDGET_*。新修复此时尚未替换任何活动程序或生成新科学结果，正式补跑须等旧阶段真实终态与原件验收后独立登记。
