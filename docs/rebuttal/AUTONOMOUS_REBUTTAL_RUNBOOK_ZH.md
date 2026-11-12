@@ -1,5 +1,7 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**12:33UTC晚到权威增量：** CCI attempt002已实际75生成/296命令、100%/32,392MiB；RB30实际608命令/153生成，RB40实际368命令/93生成，ACP PB已进入q96资格。现四卡实际并行，不再沿用下方CCI/RB40 loading描述。PB q48在12:31 exit0，4H32/128分支命令、51原件双端验真；父目标2/7而计数已3/0，事前协议标签/repair/harm全部NA，不补0、不换query；数值后果仍保留。原q8为0–0，两query同一episode，完整K32池尚未完成。审阅面v27+执行增量3及4，37pending不放行。先读current_iteration及LIVE_V4、台账23.253；新完成角色须全原件/轨迹独立核验后才更新42角色/21对分母。
+
 **Nov12 iter35最新恢复（12:22UTC快照，覆盖下方旧状态）：** 作者已明确GPU目前只能闲时；defaults和原hourly automation已更新，勿再尝试标准GPU/重复问配额。PB factual1500命令/375生成真实结束、1149原件双端验真，false/25TOPP完整保留；新增0GPU ACP58.586秒三路并行封存96候选，35原件双端核验。新ACP PB UID50ea739accc14fc3a1030a64583d3eed已在cluster01真实运行，固定11:53:11→13:15UTC；q8 AABA12:04 exit0/4H32/128分支命令、三个Full重复精确，raw/Full进展0/0，51原件验真，不算修复。当前q48资格、q96未开始；容器PID61/898不是CCI PID，不可据本机/proc不存在误判重跑。
 
 RB30 UID64f51463275f4795bab6eff333c4392d已实际156命令/40生成，RB40 UID230090418b9a45e6a3c70c9b52a85210已runner/worker加载，不能按下方旧三任务排队描述重复创建。BT30旧UID186861…已真实调度后遭signal15抢占/无结果；18原件验真后唯一新闲时后继UID427e8b34f97c4dbe96b0030a5717efe3，retry_iter35_v1，原plan/11:32首次/18:00截止不改，回读启动中*0。max同角色2尝试，不自动第三次重试。原cohort unknown旧6+此抢占1=7，均保留，不补0。

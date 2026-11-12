@@ -2834,3 +2834,11 @@ BT30旧UID1868612385df4b8d85ed85c9866656e7已在11:32:14分配并启动，11:33:
 ### 23.252 写作增量和放行状态随真实新证据更新
 
 内部v27_execution_addendum3包含PB q8真实0–0观察、三query整段待证作者回复、待证LaTeX插入和跨材料审计。4内容成员+manifest SHA73aee9b82032f33cd0b8031cccea4e48ce1d55efeefe825de5d5c140d1a127ce，TAR SHA41cdd9036614f54983e3e63dc8fba98e08ddd7717a40da4f00c7fec514bb356b。原封存v27 PDF SHA c54d480a…与源码ZIP2fb41a92…保持；本次未修改完整文稿或声称重编译。所有新定性有利方向及数值依赖整段PENDING，20意见/17回复块/37待证槽均不放行。等待完整池和配对结果后再联动更新论文真实表格、回复结论及完整编译PDF；无新增真机材料回传。
+
+### 23.253 PB q48晚到结果完整验真；四张GPU已实际并行执行
+
+q48资格于12:31:21.669720UTC真实exit0/非bounded；三Full与raw rank18各完整H32共128分支命令，同父/重复Full端点、计数及768维effect精确，raw物理端点不同。分支前目标2/7、实际已3/0，依事前规则该parent不可逆超额，四分支标签与repair/harm全部NA；不是0、不是候选导致的失败、不是修复，不更换query。51原件TAR0c7eaefa9e39372954558c133df14f36b216da4e6d9b08394e0e6df9db81f452双端逐项核验，独立DINO delta重算最大误差2.24e−8以下，证明PB_Q48_LOCAL_VERIFICATION_V1.json。q48的H32后果仍保留给既定候选预测比较；与q8同属一个factual episode，不增加独立episode数。q96自动后继已开始，整池仍待证。
+
+12:33:07UTC权威LIVE_V4：CCI attempt002已75生成/296命令、GPU100%/32,392MiB；RB30已153生成/608命令；RB40已93生成/368命令；ACP PB正在q96资格，现四卡真实并行。不能再按旧CCI/RB40加载快照判断。BT30新闲时后继仍待实际runner确认；旧7个cohort unknown与独立CCI加载unknown1保持。已验收P1分母仍42角色/21固定0–0对，未将尚未独立审核的新终态提前计入。
+
+内部执行增量4为增量3的必读补充：两内容成员+manifest SHAa26378376d2117e9377401ca1fad04779d068f5d36d7e3eed2a8089ab012db77，TAR SHA8bcc45a91987379e07601a73c652f2297a9566e5d694e6691fb17ac7341fcf94。含q48真实NA说明与待后续完整证据讨论整合的LaTeX段，原v27和增量3不覆盖，37整段pending未放行。未来资源只补固定未执行项；须保留原时钟、旧unknown和累计6GPU/120GPUh预算，不能直接重置原计划。
