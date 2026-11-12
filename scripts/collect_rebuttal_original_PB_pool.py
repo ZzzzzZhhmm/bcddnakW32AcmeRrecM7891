@@ -16,7 +16,7 @@ def write(p,v):
 def stamp():return datetime.datetime.now(datetime.timezone.utc).isoformat()
 
 def main():
- ap=argparse.ArgumentParser(description=__doc__);ap.add_argument('--plan',type=Path,required=True);ap.add_argument('--expected-plan-sha256',required=True);ap.add_argument('--preflight-only',action='store_true');ap.add_argument('--admission',type=Path);ap.add_argument('--expected-admission-sha256');ap.add_argument('--qualify-only',action='store_true');ap.add_argument('--resume-known-terminal',action='store_true');cli=ap.parse_args();assert sha(cli.plan)==cli.expected_plan_sha256;p=B.validate_plan(rd(cli.plan))
+ ap=argparse.ArgumentParser(description=__doc__);ap.add_argument('--plan',type=Path,required=True);ap.add_argument('--expected-plan-sha256',required=True);ap.add_argument('--preflight-only',action='store_true');ap.add_argument('--admission',type=Path);ap.add_argument('--expected-admission-sha256');ap.add_argument('--qualify-only',action='store_true');ap.add_argument('--resume-known-terminal',action='store_true');ap.add_argument('--continuation-manifest',type=Path);ap.add_argument('--expected-continuation-sha256');cli=ap.parse_args();assert sha(cli.plan)==cli.expected_plan_sha256;p=B.validate_plan(rd(cli.plan))
  import fcntl
  C,H,runtime,source,out=[Path(p[k]) for k in ['original_source','reference_controller','rmbench_runtime','factual_source','output']];assert not out.is_relative_to(C) and not out.is_relative_to(H);out.mkdir(exist_ok=True)
  lease=(out/'campaign.lock').open('a');fcntl.flock(lease,fcntl.LOCK_EX|fcntl.LOCK_NB)
@@ -73,6 +73,10 @@ def main():
    with np.load(out/'sealed_arrays.npz',allow_pickle=False) as z:
     assert np.array_equal(z['predicted'],predicted) and np.array_equal(z['historical'],historical) and np.array_equal(z['valid'],valid) and all(np.array_equal(z[n],a) for n,a in actions.items())
   else:np.savez_compressed(out/'sealed_arrays.npz',predicted=predicted,historical=historical,valid=valid,**actions);write(sf,seal)
+  continuation=None;Q=None
+  if cli.continuation_manifest:
+   assert cli.expected_continuation_sha256 and not cli.qualify_only and not cli.resume_known_terminal
+   Q=load('PB_remaining_branch_adoption',Path(__file__).resolve().parents[1]/'src/fastwam/research/pb_continuation.py');continuation=Q.bind_manifest(cli.continuation_manifest,cli.expected_continuation_sha256,p,order,sha(sf));Q.adopt_completed(continuation,out,query_id=f'original-pb12000-seed0-q{q}',verifier=read_verified_branch);B.immutable_json(out/'continuation_receipt.json',dict(manifest_sha256=cli.expected_continuation_sha256,adopted_completed=list(continuation['completed']),retained_unknown=list(continuation['unknown']),remaining_original_order=continuation['unstarted'],new_boundary_full_control=Q.NEW_CONTROL,new_control_action_sha256=seal['action_hashes']['anchor-a'],old_clock_reset=False));state['continuation_manifest_sha256']=cli.expected_continuation_sha256;order=order+[Q.NEW_CONTROL];actions[Q.NEW_CONTROL]=refined
   if cli.preflight_only:
    assert not torch.cuda.is_initialized();state.update(status='complete_PB_CPU_input_seal',CUDA_initialized=False,branch_order=order,candidate_branches_executed=0);save();return
   assert cli.admission and cli.expected_admission_sha256 and sha(cli.admission)==cli.expected_admission_sha256
@@ -107,8 +111,12 @@ def main():
   assert prefix_parents[0]==prefix_parents[1];B.immutable_json(out/'prefix_qualification.json',dict(status='two_exact_native_prefixes_before_branch_truth',query=q,commands_each=frame,parent_hashes=prefix_parents[0],candidate_endpoints=0))
   records={}
   for name in order:
-   budget();branch=out/'branches'/name;branch.mkdir(parents=True,exist_ok=True);done=list(branch.glob('attempt-*/complete.json'));assert len(done)<=1
-   if done:row=read_verified_branch(done[0].parent,query_id=query_id,branch_id=name);assert row['sealed_query_sha256']==sha(sf)
+   budget()
+   if continuation and name in continuation['unknown']:
+    records[name]=Q.unknown_record(continuation,name,query_id);B.immutable_json(out/(name+'_retained_unknown.json'),records[name]);state.update(status='retaining_old_unknown_without_rerun',completed_branches=list(records));save();continue
+   branch=out/'branches'/name;branch.mkdir(parents=True,exist_ok=True);done=list(branch.glob('attempt-*/complete.json'));assert len(done)<=1
+   if done:
+    row=read_verified_branch(done[0].parent,query_id=query_id,branch_id=name);assert row['sealed_query_sha256']==sha(sf) and row['parent_hashes']==prefix_parents[0]
    else:
     existing=list(branch.glob('attempt-*'));assert not existing,'An unresolved physical branch must be archived/adjudicated before any retry';attempt=branch/'attempt-001';attempt.mkdir();write(attempt/'attempt.json',dict(branch=name,actual_pid=os.getpid(),utc=stamp()));state.update(status='recreating_parent',active_branch=name);save();parent,ph=parent_scene(name);assert ph==prefix_parents[0]
     (attempt/'parent.pickle').write_bytes(pickle.dumps(parent,protocol=4));parent_progress=B.observe(env);before_feature=teacher.encode(env.get_obs());assert state_hashes(native_parent(env,env.get_obs()))==ph;np.save(attempt/'parent_dino_spatial.npy',before_feature,allow_pickle=False)
@@ -138,7 +146,7 @@ def main():
   candidates=[dict(candidate_id=f'rank-{rank}',valid=True,horizon=32,predicted_effect=predicted[rank].tolist(),historical_effect=historical[rank].tolist(),observed_effect=records[f'rank-{rank}']['observed_effect'],endpoint_status=records[f'rank-{rank}']['endpoint_status'],executed_steps=records[f'rank-{rank}']['executed_steps'],applicable=records[f'rank-{rank}']['independent_label']['applicable']) for rank in np.flatnonzero(valid)]
   data=dict(task='press_button',cohort=f'originalPB12000_seed0_q{q}',descriptor='uniform_mean_DINO_delta',required_effect_available=False,candidates=candidates);metrics=centered_effect_metrics(data)
   if 'constant_query' in metrics['references']:metrics['references']['constant_query']['absolute_mse']=None;metrics['references']['constant_query']['absolute_mse_unavailable_reason']='Required query effect not recorded;only centered constant comparison is identified'
-  B.immutable_json(out/'candidate_effects.json',data);B.immutable_json(out/'centered_effects.json',metrics);assert identity.source_digest(C)==B.CORE_SHA256 and identity.source_digest(H)==p['reference_controller_sha256'];state.update(status='complete_original_PB_fixed_query_pool',complete_candidate_endpoints=metrics['complete_endpoints'],unknown_candidate_endpoints=metrics['valid_candidates']-metrics['complete_endpoints'],new_policy_generations=0,population_effect_estimated=False,ended_utc=stamp());save()
+  B.immutable_json(out/'candidate_effects.json',data);B.immutable_json(out/'centered_effects.json',metrics);assert identity.source_digest(C)==B.CORE_SHA256 and identity.source_digest(H)==p['reference_controller_sha256'];state.update(status='complete_original_PB_fixed_query_pool',complete_candidate_endpoints=metrics['complete_endpoints'],unknown_candidate_endpoints=metrics['valid_candidates']-metrics['complete_endpoints'],new_policy_generations=0,population_effect_estimated=False,post_pool_final_anchor_verified=records[Q.NEW_CONTROL if continuation else 'anchor-pool-final']['endpoint_status']!='unknown_terminal_infrastructure',additional_resource_boundary_control=Q.NEW_CONTROL if continuation else None,retained_infrastructure_unknown_branches=list(continuation['unknown']) if continuation else [],ended_utc=stamp());save()
  except BaseException as exc:
   state.update(status='failed_or_interrupted_preserve_all',error=repr(exc),traceback=traceback.format_exc(),ended_utc=stamp());save();raise
  finally:
