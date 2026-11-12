@@ -2994,3 +2994,9 @@ ITER40_ROLE_RAW_LOCAL_VERIFICATION_V2.json累计75完整角色/37固定0–0对�
 299项完整原件在ITER40_NEW_UNKNOWN_ARCHIVES_V2封存，双端及本机逐成员/32×14有限动作/部分物理状态链重读通过。TAR SHA依次96e5a864e47a5bd1ca08baf77474c7e137fd4240873a1cc1d522966616b2cbb8、4a9c69e7145b59d112bd9c0d3516b3ef8b5b845e4c376d18eaa6d4c9ba8a0c94、234214fe3931a970ab77a79b099682b319cae34493c39769851d9a6225a8d628。第一次工程封存器误将两个RB路径当retry目录，CPU assertion停止且仅留下空V1目录；V2按实际唯一最新runner核验后完成，不覆盖V1或科学原件。
 
 原7个cohort unknown加新3个为10，独立CCI加载unknown1另列；累计完整角色/配对仍75/37，不加0标签、不自动第三次重试、不重置旧窗口。新的独立BT00 CCI窗口20UTC、PB23:15:38UTC与0GPU审计23:25:38UTC保持；任何补跑须先逐项核销终态、原固定角色和次数，再独立事前登记算力与资源等价，不能删除这三个中断。v29的88项写作包重新逐SHA验真、20源意见/17块/37整段pending保持，PDF和ZIP未改，未声称新编译或新实验收益。
+
+### 23.276 新增只读0GPU原生collector时延审计实现
+
+为补充效率问题的实际执行成本，新增native_timing_audit与只读CLI，固定审计当前已验真75个完整角色/37对的现有telemetry，不加载模型/模拟器、不增添GPU样本。绑定每条replan的原result/telemetry/exit SHA、checkpoint、core源码、首状态和query输入/候选/随机数；重复、缺行、foreign query、负值/NaN/无穷及unknown端点不静默过滤或补值。所有完整角色均纳入固定快照，不按success筛选；中断和未运行仍单列。
+
+拟输出all/first/steady的日志wall-clock中位数与p95及逐条CSV/LaTeX，明确pipeline计时含检索、生成、动作处理与研究证据capture，排除模型加载和物理执行；pipeline减检索的余项不能命名为纯模型/单模块开销。该已记录轨迹的描述性audit不替代100-DEV同输入效率对照，不声称异构ACP/CCI硬件已匹配、不做query级CI、不据zero-success作SR/非劣效推断。Windows13项工程检查通过；尚未提交新的CPU云任务或产生正式统计值。
