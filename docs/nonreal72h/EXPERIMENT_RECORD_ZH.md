@@ -2872,3 +2872,25 @@ CCI前一BT47 Pooled完整退出/原件验真、原13:04:10窗口闭合后，独
 ### 23.258 执行增量5与材料一致性
 
 新增内部v27_execution_addendum5合并增量3/4必要事实，四内容成员+manifest SHAec8e6d0c090e3237a10d2d873912c9f4057fa6c0ccf6f878f03f903e4627d406，TAR SHA6c068c26774c425ed49f6c9942ac724cd9a3ff90e26892c0f4cb29849f210ce0。包含49角色/23对及全部零/NA/invalid/unknown、第一人称协议澄清、完整待证作者段、LaTeX插入及跨材料检查。P2方向与数值依赖段整体标PENDING；20意见/17回复块/37空槽不放行。封存v27 PDF c54d480a…/源码ZIP2fb41a92…保持，本轮未改完整论文，不声称重新编译。GPU默认仅闲时，纯CPU0GPU；无新增真机trial，无公开发布。
+
+### 23.259 又三角色原件验真，52角色/26固定配对
+
+RB31 Full于14:17:53、RB41 Full于14:21:45UTC正常exit0，各700命令/175生成/546原件；BT47 Full于14:31:11.886715UTC正常exit0，1000命令/250生成/775原件。三者success0、TOPP0，本机/AFS逐成员、qpos连续链、模型动作与实际物理链独立验真。档案在ITER37_NEW_TERMINAL_ARCHIVES_V1，SHA分别5175b2767617c8458c56565e8631968557d0f112ce5bb329930b69ec66c63c1e、4d407d9ea9cc57cf9027f1e4721bdb3696b7325a35f669eb388f3ebe9eb7f41c、aea10a8ac9c14977a57c24750b1cda8a2c451e8c808fe512831715f917771094。NEW_TERMINAL_LOCAL_VERIFICATION_V2.json保留各外层/manifest哈希与退出、源/模型/计数。
+
+三者与已验Pooled构成新0–0对，初始identity、common_contract、首query观测/proprio/Gaussian/候选池精确。BT47 Full与Pooled虽资源plan哈希不同，但先前逐字段等价证明只改资源字段，原件不改标，分配身份保留。累计原allocation50完整角色+两个资源等价CCI角色=52，26完整配对全0–0，8个matched基础设施unknown不补0。固定100对尚未完整，不得回填优越性或非劣效。旧13:49→16:19:40UTC两角色CCI outer已进入48Full，14:51真实120命令/31生成；旧loading头不代表实时进度。RB30/40继续case32/42，尚未审计的新终态不加计。
+
+### 23.260 v28两路自审修复实验身份歧义并完整编译
+
+原Battery Try specialist q8/q96与新的Press Button q8/q96不是同一任务或状态；v27部分回复只写original-specialist q96，未来并入PB数据会歧义。v28三回复、4.7和D.1标题/图表caption/起句明确task/model/query。旧shared q8 seal与online contract实际核对为rearrange_blocks/seed3407/Full权重b0669047…，不是原v8权重或PB。Bbqv W1分开收益分布与条件rollout区间，所有数值token保持；三位真实strength、作者口吻、感谢与修订总结、20源字段hash/ordinal、17评论块和37整段pending均保持。原方法/全部旧表数值/公式/九图及新增原RGB不变。
+
+完整原LaTeX工程及独立干净ZIP均含BibTeX四遍编译，46页/主文含结论10页，全页文本一致，0undefined/overfull、45既有字体warning；10/42/43/44/45页直接验看，其余41页逐像素相同。PDF SHA6e4873c4d9f47c7aff032d211e7c58a97b80d85a67d5c2e6d55f5598d540f534，源码ZIP bbd5531d386a006192118d64fdbf6807fe222250a148d40d80d2cbc30df358e8。85项包TAR4f15302b854c1334fcd0db2b5087307a2124d37a097ac1f217eb390294daa524、manifest f612a27a4def006b45b689fbf53ac953d33c3c8e25dca827b3b08aaf14b4a384，14:53:11UTC AFS逐项重读验真，writing_candidates/20261112_v28。封存v27不覆盖，37槽不放行，未发布。
+
+本机第一版编辑保真守卫发现删掉了一个M(1)指代的数字token，恢复该指代后通过；第一版17块重建守卫误删Thank you后空格，纠正验证器字符串后全部通过，原回复数据未改变。另发现复制矩阵顶层仍遗留旧18对/37角色，v28按明确截止时间修正为25/51；随后BT47 Full晚到属于另一次独立验收，最新执行映射用26/52，封存候选的14:28截止不覆盖。科学核心与全文分别审阅，不用AI分数代替保真核验。
+
+### 23.261 第六GPU槽在另一集群申请原BT00从未执行角色
+
+新独立资源阶段matched_BT00_unstarted_resource_stage_iter37_v1只执行原固定名单从未开始的角色。原bt00窗口已Nov11 22:14:31结束；逐项核对旧5条attempt实际为4个完整0结果和1个−15/0输出加载中断，该unknown已有之后同角色完整结果但原unknown保留。未把5条attempt误当5个完整角色：初始准备守卫在登记和创建前阻止此假设，读取真实退出后按原next_request计算2Full、2Pooled、3Pooled、3Full、4Full。没有按结果换样本、没有重跑旧unknown、没有改原window或master18UTC。
+
+新plan SHA9d4ea5bbdea6638fd32bc92655963071e9d10592ee5b6569736767c21f760dac仅时间/资源引用与原plan不同；native模型、两权重、bank、source、roster、动作/指标和原bt00独立runtime完全相同，老campaign/worker lease已核查空闲。14:43:18.336599→18:00UTC固定资源窗；每角色最多3600秒，余窗不足3900秒不开始，最多5角色；中断保留、无自动重试。CPU validate-only exit0、0policy forward；生成operator SHA193b8d2ffb3ce268b51c2bbd11b58eebd700fcb3dc6c309a31ed1740771b22ee，外层spec b9f77f66…/launch9b1028a3…，运行程序只用冻结本地source，不访问Git远端。
+
+14:47唯一提交warm-mf3k-bt00-remain-20261112-p37-idle，UIDa61db50720a241ef9f3a852495231db3，cluster01闲时1GPU/8CPU/128GiB/单副本/重启0，确认镜像/AFS原配置完整回读；14:48排队*0、无AFS runner，不算推理。cluster01实际0空GPU但CPU充足，02余卡8但CPU仅14且有nodeSpec碎片/配额等待；跨集群保留不同资源瓶颈，不重复同stage。含CCI1、两活动RB、PB排队1、BT30排队1及此新任务共6GPU槽，总保守预留108.8975605514/120GPUh，不再无界申请第七槽。PB优先级修改按钮实际disabled，未修改、未绕过；原PB85e374…及BT30后继427e8…继续保留。

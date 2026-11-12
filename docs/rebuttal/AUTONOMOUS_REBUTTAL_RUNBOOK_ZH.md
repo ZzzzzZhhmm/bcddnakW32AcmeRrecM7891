@@ -1,5 +1,11 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**Nov12 iter37最新恢复：v28完整候选已验收。** 三位回复及论文明确shared Rearrange Blocks q8、Battery Try specialist q8/q96，避免与新PB同名query混淆；BB-W1分段、所有数值/表格/公式/图/整段pending保持。完整原工程与干净ZIP46页/主文10页，全页文本一致，5页直接验看、其余41像素相同，0undefined/overfull；85项包14:53UTC AFS验真。20项/17块/37整段pending不放行。读CANDIDATE_V28_TASK_IDENTITY_ZH.md和新current_iteration；旧v27封存。
+
+已独立验收RB31/RB41 Full与BT47 Full三个新角色，累计52角色/26个0–0配对；原allocation50角色与资源等价CCI两角色明确区分，旧7cohort unknown+独立CCI加载unknown1保持。CCI同一outer已14:31进入48Full，14:51实测120命令/31生成，原16:19:40UTC截止，不重复当前或后继。RB30/40原ACP继续case32/42，晚到新终态先验真再加计。
+
+新唯一BT00剩余阶段UIDa61db50720a241ef9f3a852495231db3，cluster01闲时1GPU8CPU128GiB，按全部旧5项记录（4已知/1已保存加载unknown且同角色后来完整）推导原next_request，只2Full→2Pooled→3Pooled→3Full→4Full；14:43:18→18UTC固定新资源窗，旧Nov11 22:14窗不动、不重跑旧unknown。CPU validate-only通过，创建回读排队*0；第六GPU槽，保守总预留108.89756/120，不能再无界添加第七槽。cluster01无空GPU、02有余卡但CPU碎片/配额不足，不能按全局余卡认定可推理。PB唯一85e374…与BT30唯一427e8…仍保留；PB优先级修改实际disabled，未更改。先查真实runner/LIVE/退出/完整轨迹，不重复创建。
+
 **Nov12 iter36恢复覆盖旧快照：** 旧PB阶段已原13:15UTC真实截止归档，云成功不是整池完成：q8四H32为0–0，q48四H32父超额NA；q96两Full各17命令后TOPP invalid、raw32命令但父超额NA、最终旧Full中断unknown，不补H32/不重跑。第四个0GPU ACP UIDa2d7118029704b04b656a882ee7734fd真实完成三路剩余封存；新长闲时PB UID85e374b421a24794ae0e9f76d0257378已唯一提交，最多8小时/最迟Nov13 10UTC，原窗口不改。13:56事件实际为CPU/内存nodeSpec quota不足，无AFS runner；已查GPU最小规格8CPU/128GiB，无4CPU GPU规格，勿把全局5卡当已分配或重复创建。
 
 新7角色原件双端验收，累计原allocation48角色/23对；加BT47 Pooled资源等价角色为49/23，23对全0–0，BT47/RB31/RB41 Pooled未配对。旧7cohort unknown+独立CCI加载unknown1保持。CCI新13:49:40→16:19:40UTC资源段只接47Full/条件48Full，monitor2570134已启动，13:53在加载；原10:44:53窗口和master18:00不改，不能重复当前或后继。RB30/40继续实际活动，BT30唯一后继UID427e8…仍待runner。预留保守上界105.619GPUh/120、并发6不改。先读current_iteration的iter36及新LIVE，不沿用下方旧42/21、旧PB仍运行或CCI47Pooled活动描述。
