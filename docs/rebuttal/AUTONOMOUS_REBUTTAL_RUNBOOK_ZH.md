@@ -1,4 +1,9 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
+**Nov13凌晨iter39最高优先：v29完整候选已验收。** PB q8原32候选全尝试、23完整H32/9TOPP invalid，六Full精确、raw/Full0–0；共同23支持主指标0.057521/0.057264/0.016586未优于两个参照，invalid不补0。391原件双端/本机独立重算，真实数据已同步Bbqv W3/Q2、Hh4E W5和论文D.1。完整原工程+干净ZIP46页/主文10页、0undefined/overfull、43–46页实际验看/其余42像素一致；20意见/17块/37整段pending未放行。原v28封存，读CANDIDATE_V29_PB_POOL_ZH.md及新current_iteration。
+
+新7角色验真后累计66完整角色/33个0–0对（原allocation60+资源等价6），旧7cohort unknown+CCI加载unknown1保留。CCI48Pooled已16:22:50终态并自动进入49Pooled，条件49Full仍归同一monitor；BT2/30 Pooled终态后进入3/31 Pooled，RB33/43完整后进入34/44 Full，勿重复。五原闲时ACP和CCI各自窗口不改，master18UTC，PB固定23:15:38UTC；6GPU槽、保守111.2164462419/120GPUh保持。
+
+新唯一标准0GPU/4CPU/16GiB审计任务UID1ae90ef25fac4730a0ac38ba1405df73已16:31:52真实运行并完成q8核验，等待原q48/q96终态；CPU绝对截止23:25:38UTC，不加载Torch/模拟器或增添GPU样本。source928110a已push/CCI离线FF，17旧冻结入口未动，活动PB仍e23e634。先查实际心跳/退出/轨迹/原件，新的终态必须验真后才加到66/33。台账23.266–269与Git外iter39为恢复入口；纯CPU0GPU，后续GPU只闲时，无需再问配额或旧真机录像。
 **Nov12 iter38恢复优先：五个ACP闲时任务已实际运行。** AFS与15:42浏览器回读确认PB85e374、BT30唯一427e8、BT00a61db及两RB均已启动；不再按旧三任务排队快照复制任务。PB实际15:15:38→23:15:38UTC，旧13:15窗口/无效/unknown保持，未取消或拆分。新q8 pre Full逐字节重复旧Full，rank11接受10步后TOPP invalid，H32 effect/标签None；整池仍运行，不能填P2。
 
 首批晚到五角色及BT2/BT30 Full双端原件/物理链验收后累计59角色/28个0–0配对（原allocation55+资源等价4，BT2/30/48 Full尚未配对）；RB32两策略各TOPP1，余三新角色TOPP0。旧7cohort unknown+独立CCI加载unknown1保持。CCI旧两角色outer已正常终态，新独立15:40:52→18UTC阶段只拥有48Pooled→49Pooled→49Full，monitor2573512；每角色3000s/余窗至少3150s，失败无自动重试。复用CCI槽，5ACP+CCI共6槽，保守111.2164462419/120GPUh；旧窗口/master不重置。先读新current_iteration/ITER38_LIVE与台账23.262–265，不重复当前角色及自动后继。
