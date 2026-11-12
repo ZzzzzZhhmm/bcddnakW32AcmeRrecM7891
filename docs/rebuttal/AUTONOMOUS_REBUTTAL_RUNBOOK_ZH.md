@@ -1,5 +1,21 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**Nov12 04:58UTC当前锚点：v26为最新完整候选。** 原q8 Full/Null/Full三物理H32已04:23:25完整、runnerexit0；96命令、三父与原控制精确，Full/Null/repeat最低电池高度0.759883/0.311422/0.759883m，既有0.70m谓词显示Full避掉落、Null掉落、Full恢复；三strict标签0，单query局部稳定性，不称总体SR/自然撤回。55原件TARa3da55a1…双端逐项/动作/测量链/效应与typed值核验，pickle往返task/robot/rng元数据差异及失败保留，原实时hash检查未改。新图取原始RGB。不要重跑已经完成的q8生成/物理或q96整池。
+
+v26三位相关回复与D.1图6/表33联动，we/our、原review真实感谢开场、逐项回答与实际修订总结保持；20项/17块/37空槽。原主文/九图/方法/旧表数据和所有不利结果保留，历史shared失败语句精准区分模型/时态。完整原工程及干净ZIP46页/主文10页、全页文本一致，42–46视觉检查、前41页对v25像素相同，0undefined/overfull。92项写作包7e3ca714…本机与04:58:45UTC AFS验真，`writing_candidates/20261112_v26`，仍内部待证、未发布。
+
+匹配研究35完整role/17固定0/0对/6unknown。新两role outer已04:34:33准入case43Full，monitor2547132、worker2547138，04:55心跳/实际GPU分配核验；它还拥有条件后继44Full，不能在两个worker间重复派发。原bt40 10:44:53UTC窗、9000souter/3600sworker、所有科学字段保持。AFS约14.2GB大于4GiB门槛，未删唯一原件。ACP认证请求仍待，0新真机trial；原固定完整SR、自然缺失技能与总体修复仍未关闭。下一轮优先真实终态/完整链封存，再扩展原已注册q48/q96上下文与原PB固定DEV资格，不能用新状态替换旧结果。
+
+**Nov12 04:20UTC最新接续，覆盖下方loading观察：** 原q8 specialist四次GPU资格04:02:35真实exit0，Full原动作/wrapper源精确、同Gaussian显式Null、withdrawn候选扰动不变性与最终Full/source恢复全部通过，参数/buffer未改。25项原件TAR300b68c6…双端独立核验；query gist保留、候选tokens归零。原q8同父物理新模式3fff92c已提交/推送并冻结source469b3fb7…，0额外策略推理。V1遗漏原graphics_env.sh而renderer初始化exit1、0父/0命令，失败档案1d73f490…保留；renderer真实probe通过后V2恢复原图形环境，04:09:22→04:54:22UTC原窗口不改，job2545391，04:19已执行anchor-a。先查V2真实终态/完整链，Full必须匹配原pool再允许Null；不重提或放松检查。
+
+case43 Pooled04:05:37正常exit0，1000命令/250H32/2000物理记录、success0/0TOPP，771项TAR7d05beaa…双端逐项核验。累计35完整角色/17固定0/0对/6unknown；case43 Full未配对。原两role outer已真实终态，下一按原counterbalanced controller为43Full，随后44Full；须等新物理job所有者退出/独立封存并检查GPU与lease后准入，原bt40 10:44:53UTC截止不重置。v25执行补充1更新20项执行映射和已核验withdrawal英文followup，原94项写作包/PDF不覆盖。仍无最终100对SR、自然missing-skill可靠性或总体修复收益。详见台账23.225–23.226。
+
+**Nov12 04:00UTC最新锚点：** v25已将完整q96整池证据纳入三回复/论文D.1表35，保持经原review核对的感谢开场、we/our、20项/17块/37空槽及实际修订总结；主文/原方法/九图/旧表格和不利证据保留。完整原工程与干净ZIP45页/主文10页，42–45直接验看、其余41页像素一致。94成员写作包3757c283…本机与AFS逐项核验，`writing_candidates/20261112_v25`；仍为内部待证候选，未发布。
+
+原q8真实历史和完整context恢复已通过，29项档案cb88e06a…双端核验，0策略/物理。新的原checkpoint Full→Null→withdrawn不变性→Full阶段03:47:12准入、04:37:12UTC截止，冻结240806e/source0d112320…、job2543783/worker2543789；03:59仍loading、0完成推理。必须先精确Full再封存Null，失败不放松数值/ownership/权重不变检查；原retrieval/shared窗口不重置。matched case43 Pooled仍归原两role outer2540822/2540824/worker2542679，勿重复；34角色/17对全0/0/6unknown，case43 Full应等所有当前GPU所有者终态且原窗口准入，不能只看一个worker退出。原bt40 10:44:53UTC截止保持。
+
+ACP实际导航重定向IAM登录，原重登请求待答，不重提未知job。登录页快照意外含自动填充字段，本地保存页面内容已清除，后续只记录认证状态/origin且先guard再observe；不得复制到AFS/Git。原q96真实exit0/32完整不要再跑。作者独立真机采集0新trial收到。后续以新`current_iteration.json`、真实退出收据及台账23.219–23.224恢复。
+
 **Nov12 03:14UTC接续：原q8历史重构已通过，不必为取历史重跑8次模型推理。** 原controller/记忆代码重放8条已记录factual输出及32条原命令，9个history snapshot和全部动作/更新hash精确；0模型/检索/GPU/仿真。原件`ITER30_ORIGINAL_Q8_HISTORY_CPU_V1`，history NPZ1346e51b…；query CPU preflight V2原processor/proprio也通过，V1 typed-stats错误与修复保留。下一步只做一次原相机的合法fresh retrieval来核对原step/context/payload/image/seed，再转原source context；完整GPU Full/null仍待资格，不能复用历史capability或填零。见ORIGINAL_QUERY_CONTEXT_RECOVERY_20261112_ZH.md与台账23.219。CCI原case42Pooled/后继case43Pooled的两role outer继续，不重复；q96已终态不重跑。
 
 **Nov12 02:48UTC实际终态与下一段：原q96整池已完成，不再续跑。** runner02:40:22真实exit0、32候选/0未知、四Full精确、36分支同父；376项全量原件TAR546a0356…/manifest84bc6080…双端保全，本机02:46独立复算。原uniform-mean主指标pred/history/constant centered MSE0.170002/0.164821/0.144898，pred未优于参照；全部strict标签0，raw/Full0/0，原干预前掉落/单query/无null范围保持。constant absolute因缺实际requirement仍不可得。原07:16UTC窗口已由真实完成收尾，不能再等待旧rank31或重新派任务。

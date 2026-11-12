@@ -1,5 +1,31 @@
 # 原BT q8事实输入恢复
 
+## 04:58 UTC最终接续：完整物理对照进入v26
+
+V2三分支04:23:25完整、runnerexit0，96原生命令。Full、显式candidate-null、Full repeat的最低电池高度0.759883/0.311422/0.759883m；既有0.70m谓词为未掉落/掉落/未掉落，三strict下一交互完成标签均0。三个父状态及Full原端点/效应、最后Full端点/效应精确。首次固定窗口由实际完成收尾，不再重跑。
+
+55原件14,163,126B保存在双端`ITER30_ORIGINAL_NULL_PHYSICS_COMPLETE_ARCHIVE_V1`，TAR `a3da55a1787785d6d3ba936c72ea263277d17f1f812bea891bc55fd214e74faa`、manifest `471718c70926d69ed5bfdf963377548aea81ba6f3edcd244b8d088fb086719ae`。独立CPU初稿将pickle往返后task/robot/rng子对象重序列化hash当成必然相同而拒绝；typed值/数组dtype、shape、bytes对原parent及重复Full端点全部精确，物理pose/像素/独立joints等其他hash精确，原运行时全部statehash比较未改。两个诊断、失败脚本和未成功的dtype元数据视图均保留，未强行恢复元数据hash；最终按原件语义、96动作/实际物理链、原prefix及0误差效应核验通过。
+
+原始head RGB和独立高度表已纳入v26回复及论文D.1图6/表33；Fullrepeat像素也与Full精确。结论限定为原训练run固定12,000-update机制fixture的一个状态，支持受控复用的局部稳定性作用，不能替代总体任务SR/自然缺失技能。完整原LaTeX及干净ZIP46页/主文10页通过，92项写作包7e3ca714…双端核验。所有早前失败与旧窗口保持。
+
+## 04:20 UTC：原checkpoint动作资格完整，物理对照恢复运行
+
+四次真实策略推理04:02:31完成、runner04:02:35 exit0，冻结控制器source前后`0d112320…`一致。原Full H32动作及wrapper源字段精确；同Gaussian显式withdrawal生成、候选扰动不变性、最终Full动作/source恢复均通过，全部参数/buffer版本与对象拓扑保持。25项538,744B原件双端逐成员验证，TAR `300b68c60d611819e1517b4da8461364491263b289723fb404c141692d71efaf`、manifest `ccecbb0d00ed33c08bf4a3b376b98c89cbebfc7b334754b868372b2c5ba2db5c`。独立CPU核验明确保留query gist、只令候选conditioning为零；初稿误检全部conditioning为零的断言失败及旧脚本另行保留，未重跑GPU或更改动作。
+
+原生动作seal SHA `948c7f49bd44313fbdb8571344d25321039bd7734e5e149981505055bd26a436`；native动作NPZ `bc8f0eea87e261a2651bcadadf3f845347364b1d7baf78acee7095cd6480e5a4`在看到任何新Null物理结果前封存。
+
+同父物理Full/Null/Full专用模式在CCI实现、CPU实际输入预检通过后提交并推送`3fff92c45066435fa3094bcd7968d9447a822eb3`，冻结source `469b3fb7b6072bcdf9a27f52d23c1d3530000b5ef35bc17c306a21c6ecd81c8a`，入口 `2cd14fc5608116b5d8759916ebb0458ce56cda35125fb1b5ff769d4c007b0722`。原K32默认路径不改，新模式先要求Full与原q8的parent、endpoint、effect及任务读数精确，才执行封存的Null，最后再次Full。
+
+V1因启动器未source原graphics_env.sh，在renderer创建处真实exit1，0父状态/0实验命令。失败TAR `1d73f490c98212533188ac3eda5fcbac4fe54f2a5bc5050fa10b8463abb29df3`保留；独立renderer probe通过后，V2恢复原图形环境SHA `a3c1ce1ac195c02a7ed5bc497285b42e84c14ca9e3748db17f165bd2a6b63cdd`，相同科学设置和04:09:22.510431→04:54:22.510431UTC首次窗口保持。V2 job2545391，04:19已在anchor-a执行真实封存动作。新物理终态尚未核验；自然missing-skill和总体收益仍须各自直接证据。
+
+## 04:00 UTC最新接续
+
+历史CPU重构、V2真实fresh retrieval及旧失败共29项原件在双端逐成员核验，TAR `cb88e06aea06c5bbf360bde57d0877659a6e4b868112f090e2fe18ace9d554bb`。原图像/proprio/context key/候选/prompt/seed、候选行/valid/cosine hash全部精确；BF16 context `0fcf50d58fd6c8dcbdbc649c97b99c71c3172a5f3b2bf8c1b141299503e77659`，binding `725f6f6e1dec8cdb68a96b50e66ef626693297e6e22b5ad292a221eced22670a`。fresh ownership保持，原计时仅用于独立metadata digest复核，未伪造旧capability；恢复阶段0策略加载/推理/物理命令。
+
+下一generation阶段用冻结240806e/source `0d11232092edb4896b80072664da16a21d0e62b7dfee34a46751fb924e3e5469`、入口 `4c8c52e7746cd0cf92b13b25946a325758d8d3fbcf43453d43b4491c42c313c1`。03:47:12.314717至04:37:12.314717UTC是新阶段首次窗口，不重置旧retrieval/shared-null。job2543783/worker2543789，03:59:22仍加载原checkpoint，0完成推理/0物理。
+
+顺序固定Full、显式candidate-null、withdrawn候选扰动不变性、Full-final，最多四次。Full先与原H32及wrapper源字段精确一致；withdrawal同时去除候选source/conditioning，保留历史、原权重与common Gaussian；最后Full动作/source精确恢复，全部参数/buffer对象拓扑和版本保持。工程扰动无物理分支；通过也不等于自然missing-skill或收益。Git外输出`ITER30_ORIGINAL_FULL_NULL_GENERATION_V1`及`iter30_original_generation_job_logs`。失败先保全，不放松检查、不换状态。
+
 原`infer_kwargs.pt`对NumPy数组只保存类型标记；不能据此直接构造完整source context。本轮使用原f77不可变代码恢复实际历史，原记录不改，也不填零或伪造历史online capability。
 
 ## 已通过的真实记录核验

@@ -2602,3 +2602,57 @@ q8 snapshot c0282bd0eabee3d30e40c9cb68beb07f64e55ee83cbc11a1eb5c99a24547392c，1
 ### 23.222 case42 Pooled完整，累计17个固定0/0配对
 
 Pooled03:22:25.669965UTC正常exit0、非bounded，1000命令/250H32/2000物理记录、success0/0TOPP。771原件18,232,245B在双端`ITER30_BT42_POOLED_TERMINAL_V1`保全，TAR627035fae0d2bc8aadc9462f1ddf8b30214874f4da0b116a9197111f2a3b4816、manifest57e6a70ff3d4bc212ba3b94291ff682da36812314b6a6cea194928d2561346c6；本机03:42:54逐成员/动作/生成/独立物理链验真，首图像/proprio/Gaussian/候选与原Full精确匹配。累计34完整role/17对全0/0/6unknown，仍无最终100对SR/CI或收益/非劣效。原两role outer已按冻结顺序进入case43 Pooled，worker2542679，不能另起同一角色；原bt40 10:44:53UTC窗与参数不改。
+
+### 23.223 v25作者对话、完整q96与原工程验收
+
+三位感谢开场经原review strength核验，保留we/our、逐项直接回答及真实修订总结。20项/17评论块/37空槽有完整原review溯源。q96从interim更新为32候选/0unknown、四次精确Full与全部严格标签0，原descriptor共同支持centered MSE 0.170002/0.164821/0.144898、absolute 0.211722/0.205980纳入D.1表35，并同步Bbqv W3/Q2和Hh4E W5。constant absolute未捕获、干预前掉落、依赖性、无同父null范围明确。其余主文/九图/原方法/公式/旧表数据保持。
+
+完整原工程和独立干净ZIP含BibTeX四遍编译45页/主文10页，所有页文本一致；42–45页直接验看，其余41页像素一致，0undefined/overfull、45继承字体warning，匿名及原AI use statement保留。PDF SHA8df62ab4811ad831f72fb28e9f4c7db66104f5c91b2531714c7d50d2132f69f3，source ZIP2cab23bf6b023959dfe6e0ce37085a7b7985fe018c1dc7df8ccab9671e9980f4。94项123,962,579B在本机和04:00:12UTC AFS逐成员/解包核验，`writing_candidates/20261112_v25` TAR3757c283c225fd09a6be8b0efea5f21dd714daa1d19bf07103e0ec521c0662e0、manifest809e03373c5f5c82cb8d3b8c625e791b94a131ef9981350c7784ba928d9d2578。原v24保留，未发布，实证release false。
+
+### 23.224 原q8 checkpoint实际GPU资格已启动，尚在加载
+
+29项context恢复档案03:59:09本机逐成员核验通过，TARcb88e06a…、manifest81361b57…与23.221的AFS原件一致。03:40:36 CPU实际输入preflight通过、0CUDA。冻结240806e/source0d112320…、入口4c8c52e7…于03:47:12.314717UTC独立准入原checkpoint Full→显式Null→withdrawn候选扰动→Full-final，截止04:37:12.314717，最多4次推理/0物理，Torch fraction0.45、入场空闲48,688MiB、AFS大于4GiB。job2543783/worker2543789，03:59:22实际仍loading_original_checkpoint_policy、0完成推理。真实run manifest、原权重27c137d6…和binding725f6f6e…已绑定；显存分配或加载不写成资格通过。
+
+先精确复现原Full动作及wrapper源字段，再允许Null；双路径withdrawal保留历史和common Gaussian；扰动仅工程不变性、0物理；最后Full和所有权重/buffer版本/拓扑精确恢复。失败保全、停止，不放松原validator或换query。Git外`ITER30_ORIGINAL_FULL_NULL_GENERATION_V1`及`iter30_original_generation_job_logs`。自然missing-skill、P2修复收益与P3行为可靠性仍待直接证据。
+
+ACP实际导航再次重定向IAM登录，既有作者重登请求仍待答，无新创建/重提。登录页快照意外含浏览器自动填充字段，已清除本地保存页面内容；访问收据仅保留认证状态/登录origin，后续先guard再observe。未使用登录字段，也未将其纳入Git、AFS或实验原件。
+
+### 23.225 原q8四次真实GPU动作资格完整，已独立封存
+
+04:02:31完整Full→显式Null→withdrawn候选扰动→Full-final；runner04:02:35.259167真实exit0，source0d112320…前后一致。原Full H32与wrapper源字段精确，同Gaussian、withdrawn候选内容不变性、最后Full动作/source恢复、全部参数/buffer版本与对象拓扑保持均通过。显式Null保留query gist，只令候选conditioning为零，source精确等于Gaussian；自然撤回未据此认定。
+
+25原件538,744B在双端`ITER30_ORIGINAL_GENERATION_COMPLETE_ARCHIVE_V1`逐成员/动作验真，TAR300b68c60d611819e1517b4da8461364491263b289723fb404c141692d71efaf、manifestccecbb0d00ed33c08bf4a3b376b98c89cbebfc7b334754b868372b2c5ba2db5c。seal948c7f49bd44313fbdb8571344d25321039bd7734e5e149981505055bd26a436、native动作NPZbc8f0eea87e261a2651bcadadf3f845347364b1d7baf78acee7095cd6480e5a4。独立CPU审计初稿误将所有conditioning要求为零而断言失败；旧检查脚本及`ITER30_GENERATION_CPU_AUDIT_FAILURE_V1.json`保留，按原模型query-gist/候选两段分别核验后通过，未重跑GPU/改动作。这里只支持原固定query的实现与零影响干预，4次推理/0物理，不填自然missing-skill或修复收益。
+
+物理模式在CCI实现、CPU实际q8输入preflight通过，原默认K32路径不变。英文提交/推送3fff92c45066435fa3094bcd7968d9447a822eb3，CCI离线FF并冻结source469b3fb7b6072bcdf9a27f52d23c1d3530000b5ef35bc17c306a21c6ecd81c8a/入口2cd14fc5608116b5d8759916ebb0458ce56cda35125fb1b5ff769d4c007b0722；5个既有冻结入口保持。新阶段首次04:09:22.510431→04:54:22.510431UTC，最多三分支96命令、不新增策略生成。
+
+V1启动器遗漏原成功任务的graphics_env.sh，renderer创建处真实exit1，0父状态/0实验命令，`ITER30_ORIGINAL_NULL_PHYSICS_FAILURE_V1_ARCHIVE` TAR1d73f490c98212533188ac3eda5fcbac4fe54f2a5bc5050fa10b8463abb29df3保留。独立真实renderer probe通过，V2恢复图形环境a3c1ce1a…，不改科学输入、原窗口不重置；04:16:14准入job2545391，plan SHA c74bc61c15b730a1a104ad1e4bdd317c653dabb26fc6505a016312e753abacf8，04:19正在anchor-a物理执行。须先精确匹配原Full父/端点/效应，之后才Null/最终Full；目前没有核验新物理结果。
+
+### 23.226 case43 Pooled完整，累计35角色/17固定对
+
+04:05:37.258366正常exit0、非bounded，1000命令/250H32/2000物理记录、success0/0TOPP。771原件18,202,301B在双端`ITER30_BT43_POOLED_TERMINAL_V1`保全，TAR7d05beaa1ff9bdb54c043b560c8bf0ca571f31d274c5b0f1b71f373676392874、manifest938d20ba1cc3660fa60414ada623f70476b58312f838fbacf6d08ddcd5f172bd；本机04:16:49逐成员、动作/生成/独立物理链通过。累计35完整role/17对全0/0/6unknown，本case还缺Full，不计第18对，不报告最终100对SR、CI、收益或非劣效。
+
+原两role outer已真实terminal/invocation limit，不再重复43Pooled。下一43Full/44Full仍由原counterbalanced controller选择；待新物理任务真实终态及独立封存、GPU/lease空闲后准入，原bt40 10:44:53UTC截止不变。v25执行补充1保留20项源绑定问题映射，加入4次GPU资格和最新35角色；P2/P3整段有利结论及37槽仍不释放，原94项写作包与PDF保持封存。
+
+### 23.227 原q8同父Full/null/Full完整，获得局部稳定性直接证据
+
+V2在原窗口内04:23:25.623077完整、runnerexit0，三条H32/96命令、每条32命令事实prefix。所有parent与原固定q8精确，Full先匹配原pool端点/效应后才运行Null，最后Full端点/效应复现。Full/Null/repeat最低电池高度0.759883/0.311422/0.759883m，原已声明z<0.70m谓词对应未掉落/掉落/未掉落；三者strict下一交互完成全0。Full在此固定状态避免Null发生的掉落，是局部稳定性作用，不当作总体修复率、完整任务SR或自然missing-skill可靠性。
+
+55原件14,163,126B在双端`ITER30_ORIGINAL_NULL_PHYSICS_COMPLETE_ARCHIVE_V1`保全，TARa3da55a1787785d6d3ba936c72ea263277d17f1f812bea891bc55fd214e74faa、manifest471718c70926d69ed5bfdf963377548aea81ba6f3edcd244b8d088fb086719ae；本机04:34:19逐成员、seal动作、96命令/实际关节测量链、32prefix、原rubric与独立均值效应重算通过，最大误差0。原sourceff32342d…、reference7a0ce894…、执行controller469b3fb7…前后保持。4策略推理的seal与此前25项档案独立绑定，物理阶段0新策略生成。
+
+额外CPU审计V1在重新pickle已unpickle的task/robot/rng子对象hash处失败；原实时statehash和全部原parent/Full endpoint匹配并未失败。独立诊断显示typed值和array dtype/shape/bytes对原parent/重复Full全部精确，其余physics/pose/像素/joints等hash精确；dtype元数据重绑定视图未恢复旧hash，作为未成功诊断原样保留，不用于篡改原件或宣称hash恢复。最终审计显式保留这些元数据差异，核对所有原parent/Full typed值、Null实际物理链与原标签，未放松原执行时validator。相关两个诊断和初稿审计均在55项中。
+
+四组原始head RGB导出到`ITER30_ORIGINAL_Q8_VISUAL_EVIDENCE_V1`，逐个像素/NPY/PNG来源hash绑定，Fullrepeat像素精确。论文用共同parent/Full/Null三个原记录画面；图像没有生成或重建，结果标签采用独立物体坐标。figure SHA2c7bc1f664fdc60125037e1dbf8137dfbd8eabc461210d36531fe03a222793c1。
+
+### 23.228 原顺序43Full启动，独立固定窗口不重置
+
+原两role段及所有物理所有者真实终态、原件双端验真且GPU/lease空闲后，04:34:33.508702准入唯一`cci_segment_iter30_v1`，monitor2547132，随后campaign/worker实际启动，04:55:29 worker2547138及GPU/heartbeat核验。固定下一43Full，条件后继44Full，由原next_request计算；最多2role、9000秒outer/3600秒worker，原bt40首次Nov11 22:44:53.565472/截止Nov12 10:44:53.565472保持，原master与旧六窗口不改。operator plan SHAeccab820d60297eb5a76b974108591974eb746b818e12d34d636527e557961ea，launch SHA16c6c8fa…，model/controller/修改预算wrapper及amendment身份与23.222相同。
+
+35完整role/17固定0/0对/6unknown不变，43Full未终态不纳入第18对。4:55看到28594MiB主GPU及renderer子进程，只说明真实分配，不当作完成SR；result中loading字样是未更新终态头，实际进度需检查保存generation/physical记录。AFS可用14,215,880,704B，大于4GiB准入，不删除原件。后继44Full仍归同一outer，不在43Full退出至44加载间重复派发。
+
+### 23.229 v26将原q8直接证据与作者交流整合并验收
+
+三位回复的source-checked具体感谢开场、we/our、逐项回答与实际修订结尾保持；20原字段/序号/hash绑定、17评论块、37空槽通过。原q8同父稳定性与实施资格联动BbqvW3/Q2、rkWYQ2、Hh4EW5及D.1图6/表33。rkWY原review缺失技能问题实际为Q2，纠正先前私有followup前言Q3别名；未完成非空bank实验明确为protocol。原主文/九图/方法/公式/旧表数据与全部不利结果保留，P1–P5定性和数值整段待证。
+
+明确固定12,000-update机制fixture与原DEV选点准确率范围，历史shared加载失败以准确模型/过去时表达。R2/R3未封存PDF/ZIP及hash留在Git外staging档案；最后精炼历史句避免q96表漂入D.2，原数据无变。完整原工程和独立干净ZIP均含BibTeX四遍重编译46页/主文10页，全46页文本一致；42–46直接验看，最终43再验，其余45页与已审版像素一致；前41页对v25像素一致，0undefined/overfull、45继承字体warning。匿名、内部待证标识与第11页原AI use statement保持。
+
+PDF SHA f5766b90fa0ecc0b37e76ae05f52fcedd8299417d3f609f8e76ffc3894999957，source ZIP2e2e269caca0197a042c33e66d222006071b185fe76ce3e2c603e73ade50b9bb。92项125,784,549B写作包在本机及04:58:45UTC AFS逐成员/解包验证，`writing_candidates/20261112_v26` TAR7e3ca714f591c11e8f4aab2f6c253f335e73c1007c501586c84bae53d395f81d、manifestb584b204f428e1b5bb2a3a7eb91036fe691627c10cbbc8b3bb7beeeda1aadbbe。未发布、实证release false；0新真机trial，ACP现有认证请求仍待答。
