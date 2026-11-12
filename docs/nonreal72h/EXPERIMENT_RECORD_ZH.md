@@ -3052,3 +3052,9 @@ canonical da8a4fc已commit/push并离线同步CCI。新的资源等价控制器7
 Windows56项、CCI独立CPU overlay86项通过；CUDA为空、policy/simulator调用0、32原冻结入口前后保持。原生收据ITER42_CLOSED_WINDOW_NATIVE_TESTS_V1.json绑定module dce6da12cfd9be7dbc2d03d905a7ee40b1f043314778511643468fa6ad480d76。拟在现有6槽/120GPUh内以两路各1.8GPUh的闲时ACP接BT30与RB30原顺序未尝试角色，保守上界拟119.8928711239GPUh；此处只是工程准备，尚未创建任务或得到新科学结果。原CCI77与PB e23e634活动快照、全部旧窗口不变。
 
 CCI原case3 Full第二次已19:37:24正常exit0，并由同monitor接4Full；完整原件尚待独立验真，本条不提前增加75角色/37对的已核验计数。
+
+### 23.284 对原18UTC外层中断允许显式同角色第二次尝试
+
+准备器首轮在CPU阶段错误假定后两个未尝试角色属于同一case而停止；ITER42_PREPARATION_INSPECTION_V1.json保留真实原顺序，无新增资源登记、GPU动作或云任务，源快照未覆盖。复核后优先采用现有v2的显式unknown核销，以原next_request接BT32Full、32Pooled和RB35Pooled、35Full，补齐原固定reset的双方，而非按结果选择后续case。旧两角色没有完整结局，不能计作模型失败；原unknown与原件永久保留。
+
+新增外层窗口核销条件必须同时核对原plan截止、实际runner scheduler_signal_2、距截止180秒内的真实结束、worker信号退出和事后检查时刻；不能把policy退出、已知结果或未核销unknown当可重试。只允许同一已冻结case/role的第二次尝试，仍禁止自动第三次；模型、指标、原样本和旧窗口不改。61项Windows及91项CCI原生CPU检查通过，32原冻结入口保持；准备后仍须完整绑定归档、source等价证明、两路独立预算，再逐一提交闲时ACP。本条不把排队/准备视作已运行或新增统计结果。

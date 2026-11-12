@@ -131,10 +131,18 @@ def _require_resource_amendment(plan,first,end):
         adjudication=read_json(ref['path'])
         if (adjudication.get('schema')!='warm.matched-terminal-unknown-adjudication.v1'
             or adjudication.get('old_outputs_retained') is not True
-            or adjudication.get('cause')!='resource_admission_validation_repeated_per_command'
+            or adjudication.get('cause') not in ('resource_admission_validation_repeated_per_command','fixed_outer_resource_window_expired')
             or adjudication.get('terminal')!=terminal or adjudication.get('runner_exit')!=exit_ref
             or datetime.fromisoformat(adjudication['inspected_utc'])>first):
             raise ValueError('Explicit inspected terminal resource failure is required')
+        expired=adjudication['cause']=='fixed_outer_resource_window_expired'
+        if expired:
+            runner=read_json(exit_ref['path']);old_end=datetime.fromisoformat(base['absolute_deadline_utc'])
+            if (prior.get('deadline_utc')!=base['absolute_deadline_utc']
+                or runner.get('reason')!='scheduler_signal_2'
+                or abs((datetime.fromisoformat(runner['end_utc'])-old_end).total_seconds())>180
+                or not datetime.fromisoformat(prior['ended_utc'])<=datetime.fromisoformat(adjudication['inspected_utc'])<=first):
+                raise ValueError('The original outer-window termination is not verified')
         for item in adjudication['retry_entries']:
             for name in ('result','exit','archive'):
                 if file_sha(item[name]['path'])!=item[name]['sha256']:raise ValueError('Adjudicated raw evidence changed')
@@ -144,6 +152,9 @@ def _require_resource_amendment(plan,first,end):
                 or (value['episode_id'],value['role'])!=key or ex.get('exit_code') in (None,0)
                 or datetime.fromisoformat(ex['ended_utc'])>first):
                 raise ValueError('Unknown role is active, duplicated, known, or foreign')
+            if expired and (ex.get('exit_code') not in (-15,-2,130,143)
+                            or abs((datetime.fromisoformat(ex['ended_utc'])-old_end).total_seconds())>180):
+                raise ValueError('A policy failure is not an outer-window interruption')
             adjudications[key]=item
     state_ref=r['previous_budget_state']
     if file_sha(state_ref['path'])!=state_ref['sha256']:

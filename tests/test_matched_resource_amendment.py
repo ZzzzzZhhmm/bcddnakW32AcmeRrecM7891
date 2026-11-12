@@ -109,6 +109,25 @@ def test_unknown_adjudication_cannot_bypass_terminal_or_retry_limits(amended,cor
     with pytest.raises((ValueError,RuntimeError)):run(p)
 
 
+@pytest.mark.parametrize('bad',[None,'wrong_signal','wrong_boundary','policy_exit','early_inspection'])
+def test_outer_window_retry_requires_the_actual_administrative_boundary(amended,bad):
+    item,a=make_inspected_unknown(amended);p,r,path,*_=amended
+    base=M.read_json(r['original_plan']['path']);base.update(first_admitted_utc='2026-11-12T06:00:00+00:00',absolute_deadline_utc='2026-11-12T18:00:00+00:00');r['original_plan']=save(Path(r['original_plan']['path']),base)
+    p.update(first_admitted_utc='2026-11-12T18:20:00+00:00');r['stage_first_admitted_utc']=p['first_admitted_utc'];r['combined_reserved_GPU_hours_upper_bound']=100+5/3
+    r['predecessor_terminal']=save(Path(r['predecessor_terminal']['path']),dict(status='failed_or_interrupted_preserve_all',deadline_utc=base['absolute_deadline_utc'],ended_utc='2026-11-12T17:59:35+00:00'))
+    runner=dict(exit_code=1,reason='scheduler_signal_2',end_utc='2026-11-12T17:59:36+00:00')
+    if bad=='wrong_signal':runner['reason']='policy_error'
+    if bad=='wrong_boundary':runner['end_utc']='2026-11-12T17:30:00+00:00'
+    r['predecessor_runner_exit']=save(Path(r['predecessor_runner_exit']['path']),runner)
+    item['exit']=save(Path(item['exit']['path']),dict(exit_code=1 if bad=='policy_exit' else -15,ended_utc='2026-11-12T17:59:34+00:00'))
+    a.update(cause='fixed_outer_resource_window_expired',terminal=r['predecessor_terminal'],runner_exit=r['predecessor_runner_exit'],inspected_utc='2026-11-12T17:00:00+00:00' if bad=='early_inspection' else '2026-11-12T18:10:00+00:00')
+    r['unknown_adjudication']=save(Path(r['unknown_adjudication']['path']),a);bind(p,r,path)
+    from datetime import datetime,timezone
+    if bad is None:assert M.require_deadline(p,datetime(2026,11,12,18,30,tzinfo=timezone.utc))>0
+    else:
+        with pytest.raises(ValueError):M.require_deadline(p,datetime(2026,11,12,18,30,tzinfo=timezone.utc))
+
+
 @pytest.mark.parametrize('scientific_change',[False,True])
 def test_only_the_budget_guard_can_change_in_worker_source(amended,scientific_change):
     p,r,path,new,proof,pref=amended;old=Path(proof['original_controller']);rel='scripts/run_rebuttal_matched_native.py'
