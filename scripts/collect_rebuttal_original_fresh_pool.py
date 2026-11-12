@@ -127,6 +127,9 @@ def main():
     parser.add_argument('--expected-plan-sha256', required=True)
     parser.add_argument('--resume-known-terminal', action='store_true')
     parser.add_argument('--qualify-only', action='store_true', help='Stop after the fixed four-branch A-A-B-A;retain the same sealed plan for the later pool')
+    parser.add_argument('--null-generation-seal', type=Path)
+    parser.add_argument('--expected-null-generation-seal-sha256')
+    parser.add_argument('--preflight-only', action='store_true')
     cli = parser.parse_args()
     import fcntl
     sha = lambda p: hashlib.sha256(Path(p).read_bytes()).hexdigest()
@@ -134,6 +137,32 @@ def main():
     stamp = lambda: datetime.datetime.now(datetime.timezone.utc).isoformat()
     assert sha(cli.plan) == cli.expected_plan_sha256
     plan = read(cli.plan)
+    null_seal = None
+    if cli.null_generation_seal is not None:
+        assert sha(cli.null_generation_seal) == cli.expected_null_generation_seal_sha256
+        null_seal = read(cli.null_generation_seal)
+        assert null_seal['schema'] == 'warm.original-q8-explicit-null-action-seal.v1'
+        assert null_seal['query'] == 8 and null_seal['frame'] == 32
+        assert all(null_seal[k] is True for k in ['Full_actions_and_wrapper_source_fields_exact',
+            'Full_null_Gaussian_exact','withdrawn_generator_candidate_invariance_exact',
+            'final_Full_actions_and_source_exact','model_parameters_and_buffers_unchanged',
+            'explicit_intervention','synthetic_variation_has_no_physical_branch','before_any_new_null_truth'])
+        assert null_seal['physical_branches'] == 0 and null_seal['policy_inferences'] == 4
+        assert null_seal['natural_withdrawal_established'] is False
+        study = plan['null_study'];base_path = Path(study['base_plan'])
+        assert sha(base_path) == study['base_plan_sha256']
+        base = read(base_path)
+        assert base['schema'] == BT_POOL_SCHEMA and base['query_replan'] == 8
+        for key,value in base.items():
+            if key not in ['output','first_admitted_utc','absolute_deadline_utc','inputs']:
+                assert plan[key] == value, key
+        assert null_seal['checkpoint_sha256'] == base['checkpoint_sha256']
+        previous = Path(base['output'])
+        assert read(previous/'operator.json')['status'] == 'complete_original_fixed_query_pool'
+        assert sha(previous/'branches/anchor-a/attempt-001/complete.json') == study['original_anchor_complete_sha256']
+        assert sha(Path(study['generation_archive'])) == study['generation_archive_sha256']
+    elif plan.get('null_study') is not None:
+        raise ValueError('Explicit null seal required for the registered withdrawal sub-study')
     os.environ.update(HF_HUB_OFFLINE='1',TRANSFORMERS_OFFLINE='1',HF_DATASETS_OFFLINE='1',DIFFSYNTH_SKIP_DOWNLOAD='true',DIFFSYNTH_MODEL_BASE_PATH=plan['model_root'],TOKENIZERS_PARALLELISM='false')
     protocol=validate_original_pool_plan(plan);task=protocol['task'];physical_seed=protocol['physical_seed'];is_BT=protocol['is_BT']
     query = int(plan['query_replan']); selected = int(plan['selected_rank']); frame = query * 4
@@ -221,6 +250,18 @@ def main():
         order += [f'rank-{r}' for r in np.flatnonzero(valid) if r != selected]
         order += ['anchor-pool-final']
         actions = {name: refined if name.startswith('anchor-') else native[name] for name in order}
+        if null_seal is not None:
+            assert is_BT and query == 8
+            native_file = cli.null_generation_seal.parent/'sealed_native_actions.npz'
+            assert sha(native_file) == null_seal['sealed_native_actions_sha256']
+            with np.load(native_file,allow_pickle=False) as sealed_null:
+                assert set(sealed_null.files) == {'Full','candidate-null','Full-final'}
+                assert np.array_equal(sealed_null['Full'],refined) and np.array_equal(sealed_null['Full-final'],refined)
+                null_actions = sealed_null['candidate-null'].copy()
+            assert null_actions.shape == (32,14) and null_actions.dtype == np.float32 and np.isfinite(null_actions).all()
+            order = ['anchor-a','candidate-null','anchor-final']
+            actions = {'anchor-a':refined,'candidate-null':null_actions,'anchor-final':refined}
+            original_anchor = read_verified_branch(previous/'branches/anchor-a/attempt-001',query_id=query_id,branch_id='anchor-a')
         # Exact source bank is checked before any new physical truth.
         bank = Path(args['warm_bank_directory']); manifest = read(bank/'manifest.json')
         assert sha(bank/'manifest.json') == contract['bank_manifest_sha256']
@@ -247,6 +288,12 @@ def main():
             independent_BT_rubric=plan.get('next_interaction_rubric') if is_BT else None,
             rng_protocol='Restore the sealed source pre-forward Python/NumPy/Torch RNG at each query parent;no physical unpack.')
         if not is_BT:seal.pop('independent_BT_rubric',None)
+        if null_seal is not None:
+            seal.update(study='original_same_parent_Full_explicit_null_Full',
+                null_generation_seal_sha256=cli.expected_null_generation_seal_sha256,
+                original_query_plan_sha256=study['base_plan_sha256'],
+                original_anchor_complete_sha256=study['original_anchor_complete_sha256'],
+                new_candidate_endpoints=0,natural_withdrawal_established=False,independent_source_states=1)
         if (out/'sealed_query.json').exists():
             assert read(out/'sealed_query.json') == seal
             with np.load(out/'sealed_arrays.npz', allow_pickle=False) as saved:
@@ -255,6 +302,11 @@ def main():
         else:
             np.savez_compressed(out/'sealed_arrays.npz', predicted=predicted, historical=historical, valid=valid, **actions)
             atomic_json(out/'sealed_query.json', seal)
+        if cli.preflight_only:
+            assert not torch.cuda.is_initialized()
+            operator.update(status='complete_CPU_original_branch_input_preflight',physical_branches=0,
+                branch_order=order,CUDA_initialized=False,null_generation_seal_verified=null_seal is not None)
+            save();print(json.dumps(operator));return
         os.environ.update(HF_HUB_OFFLINE='1',TRANSFORMERS_OFFLINE='1',HF_DATASETS_OFFLINE='1',DIFFSYNTH_SKIP_DOWNLOAD='true',TOKENIZERS_PARALLELISM='false')
         torch.manual_seed(3407); torch.cuda.manual_seed_all(3407); torch.cuda.set_per_process_memory_fraction(.12)
         operator['status'] = 'loading_original_frozen_teacher'; save()
@@ -376,6 +428,9 @@ def main():
                 seal_branch(attempt,row); row=read_verified_branch(attempt,query_id=row['query_id'],branch_id=name)
                 env.close_env(clear_cache=True); env=None
             records[name]=row
+            if null_seal is not None and name == 'anchor-a':
+                assert all(row[k] == original_anchor[k] for k in ['parent_hashes','endpoint_hashes','observed_effect',
+                    'endpoint_status','executed_steps','BT_parent_progress','BT_endpoint_progress']), 'Original Full control differs;stop before null truth'
             if name.startswith('anchor-') and name!='anchor-a':
                 assert row['endpoint_status']=='complete_horizon' and row['endpoint_hashes']==records['anchor-a']['endpoint_hashes'] and row['observed_effect']==records['anchor-a']['observed_effect'], 'Repeated Full endpoint/effect differs'
             if name=='anchor-qual-final':
@@ -392,6 +447,22 @@ def main():
                 save(); print(json.dumps(operator),flush=True); return
             operator.update(status='collecting_fixed_pool',complete_branches=len(records),independent_candidate_endpoints=sum(k.startswith('rank-') and r['endpoint_status']=='complete_horizon' for k,r in records.items()),completed_branches=list(records)); save()
             print(json.dumps(dict(branch=name,status=row['endpoint_status'],steps=row['executed_steps'],completed=len(records))),flush=True)
+        if null_seal is not None:
+            full_row,null_row,final_row = (records[n] for n in order)
+            summary = dict(scope='One prespecified original specialist query;dependent branches,not population SR',
+                query=query,source_states=1,branch_order=order,branch_endpoints={n:r['endpoint_status'] for n,r in records.items()},
+                strict_labels={n:r['independent_label']['applicable'] for n,r in records.items()},
+                object_fell_below_table={n:r['BT_endpoint_progress']['object_fell_below_table'] for n,r in records.items()},
+                original_Full_parent_endpoint_effect_exact=True,final_Full_endpoint_effect_exact=True,
+                Full_null_endpoint_physics_different=full_row['endpoint_hashes']['physics']!=null_row['endpoint_hashes']['physics'],
+                natural_withdrawal_established=False,population_efficacy_estimated=False,policy_generations=0,
+                null_generation_seal_sha256=cli.expected_null_generation_seal_sha256)
+            atomic_json(out/'same_parent_withdrawal_summary.json',summary)
+            assert identity.source_digest(C)==plan['original_source_sha256'] and identity.source_digest(H)==plan['reference_controller_sha256']
+            operator.update(status='complete_original_same_parent_withdrawal',ended_utc=stamp(),complete_branches=len(records),
+                independent_source_states=1,new_candidate_endpoints=0,physical_commands=sum(r['executed_steps'] for r in records.values()),
+                original_source_sha256_after=identity.source_digest(C),reference_controller_sha256_after=identity.source_digest(H))
+            save();print(json.dumps(dict(operator=operator,summary=summary)),flush=True);return
         assembled=dict(task=task,cohort=f'original_BT12000_cohort_case0_q{query}' if is_BT else f'original_fixed14k_seed0_q{query}',descriptor='uniform_mean_DINO_delta',required_effect_available=False,candidates=[])
         for rank in np.flatnonzero(valid):
             row=records[f'rank-{rank}']; assembled['candidates'].append(dict(candidate_id=f'rank-{rank}',valid=True,horizon=32,predicted_effect=predicted[rank].tolist(),historical_effect=historical[rank].tolist(),observed_effect=row['observed_effect'],endpoint_status=row['endpoint_status'],executed_steps=row['executed_steps'],applicable=row['independent_label']['applicable'] if is_BT else None))
