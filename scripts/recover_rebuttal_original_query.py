@@ -110,10 +110,27 @@ def main():
         state.update(status='fresh_owned_retrieval_ready',retriever_created=True);save();budget()
         retriever.begin_episode(0);qid=retriever.make_query_id(32);assert dataclasses.asdict(qid)==original['query_id']
         step=retriever.retrieve(qid,cameras,task_description='battery_try',prompt=prompt,proprio=proprio)
-        for key in ['step_sha256','context_key_sha256','candidate_payload_sha256','model_input_sha256','proprio_sha256','prompt_sha256','derived_seed']:
-            assert getattr(step,key)==original[key],key
         telemetry=torch.load(S/'probes/q0008/model_output.pt',map_location='cpu',weights_only=True)['warm_online_telemetry']['retrieval']
+        record=next(x for x in (json.loads(line) for line in (S/'full-telemetry.jsonl').read_text().splitlines()) if x['kind']=='replan' and x['frame_index']==32)
+        from fastwam.memory.online_retrieval import _step_digest
+        witness=dict(original_record_sha256=original['step_sha256'],fresh_record_sha256=step.step_sha256,
+            actual_scientific_fields={k:getattr(step,k) for k in ['context_key_sha256','candidate_payload_sha256','model_input_sha256','proprio_sha256','prompt_sha256','derived_seed']},
+            actual_latency=dict(step.telemetry),original_latency=telemetry['latency_s'])
+        (out/'retrieval_identity_witness.json').write_text(json.dumps(witness,indent=2))
+        for key,value in witness['actual_scientific_fields'].items():assert value==original[key],key
         assert step.bank_rows.tolist()==telemetry['bank_rows'] and step.candidate_valid_mask.tolist()==telemetry['candidate_valid_mask']
+        assert step.cosine_scores.tolist()==telemetry['cosine_scores']
+        assert dict(step.raw_camera_sha256)==record['raw_camera_sha256'] and dict(step.processed_camera_sha256)==record['processed_camera_sha256']
+        # Pure metadata hashing only: no historical BoundOnlineStep is created,
+        # and the fresh owned step is never mutated or given old timing values.
+        metadata=SimpleNamespace(**{f.name:getattr(step,f.name) for f in dataclasses.fields(step) if f.name!='_capability'})
+        metadata.telemetry=dict(telemetry['latency_s'])
+        replayed_original_digest=_step_digest(metadata)
+        assert replayed_original_digest==original['step_sha256'], 'non-timing record metadata differs'
+        witness.update(all_scientific_inputs_exact=True,original_metadata_digest_exact_with_original_timing=True,
+            replayed_original_metadata_sha256=replayed_original_digest,fresh_step_unchanged=True,
+            original_source_step_timing_is_not_overwritten=True)
+        (out/'retrieval_identity_witness.json').write_text(json.dumps(witness,indent=2))
         # This consumes only the fresh step created above, through its public
         # original ownership validator. No historical capability is rebuilt.
         facts=retriever.validate_and_gather_candidate_facts(step,prompt=step.prompt,proprio=step.proprio,input_image=step.model_input)
@@ -130,7 +147,7 @@ def main():
         np.savez_compressed(out/'recovered_query_inputs.npz',model_input=np.array(step.model_input,copy=True),proprio=np.array(step.proprio,copy=True),context_key=np.array(step.context_key,copy=True))
         binding=dict(schema='warm.original-q8-authenticated-context-recovery.v1',query=8,frame=32,
             original_source_sha256=expected,checkpoint_sha256=contract.warm_checkpoint_sha256,
-            original_online_step_sha256=step.step_sha256,original_model_input_sha256=step.model_input_sha256,
+            original_online_step_sha256=original['step_sha256'],fresh_retrieval_step_sha256=step.step_sha256,only_record_latency_differs=True,original_model_input_sha256=step.model_input_sha256,
             original_proprio_sha256=step.proprio_sha256,original_context_key_sha256=step.context_key_sha256,
             original_candidate_payload_sha256=step.candidate_payload_sha256,derived_seed=int(step.derived_seed),prompt=step.prompt,
             history_receipt_sha256=sha(H/'operator.json'),history_arrays_sha256=history_proof['history_arrays'],
@@ -145,7 +162,7 @@ def main():
         assert sum(p.stat().st_size for p in out.rglob('*') if p.is_file())<32*1024**2
         assert torch.cuda.max_memory_allocated()<6*1024**3
         state.update(status='complete_original_q8_authenticated_factual_context_recovery',full_factual_context_recovered=True,
-            original_step_and_all_input_payload_hashes_exact=True,original_source_unchanged=True,
+            original_scientific_input_payload_hashes_exact=True,original_record_metadata_digest_reconstructed=True,fresh_record_identity_preserved=True,original_source_unchanged=True,
             recovery_binding_sha256=sha(out/'recovery_binding.json'),peak_allocated_bytes=torch.cuda.max_memory_allocated(),ended_utc=now().isoformat())
         save();print(json.dumps(state))
     except BaseException as error:

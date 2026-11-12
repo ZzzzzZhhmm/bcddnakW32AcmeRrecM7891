@@ -12,8 +12,10 @@
 
 ## 接续：受控的只读检索恢复
 
-下一步仅对原同一相机/qpos快照签发一个新的、合法归属的retriever step，使用原DINO、bank、合同和GPU数值环境。要求step digest、CLS context key、candidate payload、图像、proprio、prompt、seed及候选行全部与原记录精确匹配。通过原所有权validator读取候选事实；它只消费当前新签发的step，不重建或复用历史capability。
+下一步仅对原同一相机/qpos快照签发一个新的、合法归属的retriever step，使用原DINO、bank、合同和GPU数值环境。CLS context key、candidate payload、图像、proprio、prompt、seed、候选行、cosine以及原/处理相机hash均须精确匹配。原step digest还绑定实测latency，新的合法记录可有不同digest；保留两个记录ID，并用恢复的科学字段和原记录latency仅重算原metadata hash，要求精确恢复旧digest。该hash计算不构造BoundOnlineStep、不修改fresh step，也不向旧step填入新值。候选事实通过fresh step的原所有权validator读取；不重建或复用历史capability。
 
 原`_context_from_online_facts`是无模型参数计算的转换函数，可将已核验的当前事实与恢复历史转换为原BF16 source context，供后续显式研究kernel使用。当前完整context与真实checkpoint Full GPU回放尚未通过；CPU资格不能替代它们。
 
 只读GPU阶段必须从新冻结控制器运行，单次retrieval，0策略推理/0物理命令，明确时间/存储/显存上限，保护正在运行的固定Full/Pooled任务。失败、未知或输入不匹配均保留并阻止后续null物理执行，不按结果另选query。
+
+首次GPU恢复于03:20:10UTC真实exit1，因研究guard错误要求包含latency的step digest精确相同而停止，0策略/物理命令；冻结source674e730不修改。原hash函数源码核对与CPU实际记录重算均证明该字段绑定latency：原e79a6707…精确恢复，只改metadata副本的total_s即改变digest。修正的是研究guard对记录身份的要求，原模型、科学数组hash、数值环境和所有权validators均不变；原03:18:53→03:38:53窗口保持。
