@@ -88,7 +88,8 @@ def _require_resource_amendment(plan,first,end):
         return False
     r=read_json(ref['path'])
     version=r.get('schema');v2=version=='warm.matched-prospective-resource-amendment.v2'
-    if version!='warm.matched-prospective-resource-amendment.v1' and not v2:
+    v3=version=='warm.matched-prospective-resource-amendment.v3'
+    if version!='warm.matched-prospective-resource-amendment.v1' and not (v2 or v3):
         return False
     ceiling=datetime(2026,11,12,18,tzinfo=timezone.utc)
     if (r.get('original_windows_unchanged') is not True
@@ -114,14 +115,14 @@ def _require_resource_amendment(plan,first,end):
         raise ValueError('Predecessor terminal receipt changed')
     prior=read_json(terminal['path'])
     allowed_terminal=('terminal_fixed_invocation_complete_or_window_bound','terminal_fixed_roles_invocation_complete')
-    if v2:allowed_terminal+=('failed_or_interrupted_preserve_all',)
+    if v2 or v3:allowed_terminal+=('failed_or_interrupted_preserve_all','failed_or_interrupted')
     if (prior.get('status') not in allowed_terminal
         or datetime.fromisoformat(prior['ended_utc'])>first):
         raise ValueError('A prior or unknown invocation still owns this work')
     exit_ref=r['predecessor_runner_exit']
     if (file_sha(exit_ref['path'])!=exit_ref['sha256']
         or read_json(exit_ref['path']).get('exit_code') is None
-        or (not v2 and read_json(exit_ref['path']).get('exit_code')!=0)):
+        or (not (v2 or v3) and read_json(exit_ref['path']).get('exit_code')!=0)):
         raise ValueError('Predecessor process did not exit normally')
     adjudications={}
     if v2:
@@ -165,12 +166,71 @@ def _require_resource_amendment(plan,first,end):
     actual={p.resolve() for root in r['old_inventory_roots'] for p in Path(root).rglob('worker/result.json')}
     if actual!=bound_results:
         raise ValueError('Old completed or unknown attempts were omitted')
+    attempted=set()
+    if v3:
+        # A closed outer window does not turn an unknown into a failure or free
+        # its reset for substitution. Continue only the untouched original
+        # schedule, retaining every started role in the fixed study's frame.
+        inventory_ref=r['terminal_inventory']
+        if (r.get('new_roles_only_never_attempted') is not True
+            or r.get('all_old_invocations_terminal') is not True
+            or file_sha(inventory_ref['manifest']['path'])!=inventory_ref['manifest']['sha256']
+            or file_sha(inventory_ref['archive']['path'])!=inventory_ref['archive']['sha256']):
+            raise ValueError('A complete preserved terminal inventory is required')
+        inventory=read_json(inventory_ref['manifest']['path'])
+        roots=[Path(root) for root in r['old_inventory_roots']]
+        actual_files={str(p.resolve()) for root in roots for p in root.rglob('*') if p.is_file()}
+        if (inventory.get('schema')!='warm.matched-terminal-inventory.v1'
+            or inventory.get('roots')!=r['old_inventory_roots']
+            or set(inventory['files'])!=actual_files):
+            raise ValueError('Terminal inventory omits old raw evidence')
+        for name,item in inventory['files'].items():
+            if file_sha(name)!=item['sha256'] or Path(name).stat().st_size!=item['bytes']:
+                raise ValueError('Preserved terminal raw evidence changed')
+        import tarfile
+        archived={item['member']:item for item in inventory['files'].values()}
+        if len(archived)!=len(inventory['files']):raise ValueError('Duplicate terminal archive members')
+        with tarfile.open(inventory_ref['archive']['path']) as stream:
+            members=stream.getmembers()
+            if (len(members)!=len(archived) or {m.name for m in members}!=set(archived)
+                or any(not m.isfile() or Path(m.name).is_absolute() or '..' in Path(m.name).parts for m in members)):
+                raise ValueError('Terminal archive omits preserved raw evidence')
+            for member in members:
+                value=stream.extractfile(member).read();item=archived[member.name]
+                if len(value)!=item['bytes'] or hashlib.sha256(value).hexdigest()!=item['sha256']:
+                    raise ValueError('Terminal archive raw bytes differ')
+        unknown=[]
+        for root in roots:
+            for meta in root.rglob('attempt.json'):
+                item=read_json(meta);attempt=meta.parent;ex=read_json(attempt/'exit.json')
+                if type(ex.get('exit_code')) is not int or datetime.fromisoformat(ex['ended_utc'])>first:
+                    raise ValueError('An old attempt still has no known terminal exit')
+                key=(item['case_id'],item['role'])
+                if key[0] not in base['case_ids'] or key[1] not in ROLES:
+                    raise ValueError('Terminal attempt belongs to a foreign schedule')
+                attempted.add(key)
+                result=attempt/'worker/result.json'
+                value=read_json(result) if result.exists() else None
+                if value is None or value.get('status') not in ('complete_native','identifiable_policy_failure'):
+                    if value and value.get('success') is not None:
+                        raise ValueError('Unknown terminal result acquired a success label')
+                    unknown.append(attempt.name)
+        if set(unknown)!=set(r['old_unknown_attempts_preserved']) or len(unknown)!=len(r['old_unknown_attempts_preserved']):
+            raise ValueError('All terminal unknown attempts must remain explicit')
+        if any((row['episode_id'],row['role']) not in attempted for row in rows):
+            raise ValueError('A terminal result lacks its original attempt metadata')
     sequence=r['fixed_role_sequence']
     if not 0<len(sequence)<=3 or len({(c,role) for c,role in sequence})!=len(sequence):
         raise ValueError('A bounded fixed role sequence is required')
     old_keys={(row['episode_id'],row['role']) for row in rows};used_adjudications=set()
     for case,role in sequence:
         key=(case,role)
+        if v3:
+            untouched=[(c,s) for c in base['case_ids'] for s in (ROLES if c%2==0 else tuple(reversed(ROLES))) if (c,s) not in attempted]
+            if not untouched or key!=untouched[0]:
+                raise ValueError('Only the next never-attempted original role may continue')
+            attempted.add(key)
+            continue
         if key in old_keys:
             old_rows=[row for row in rows if (row['episode_id'],row['role'])==key];item=adjudications.get(key)
             if (not v2 or item is None or len(old_rows)!=1
