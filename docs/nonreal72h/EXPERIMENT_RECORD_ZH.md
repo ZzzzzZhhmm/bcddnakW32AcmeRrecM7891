@@ -2576,3 +2576,11 @@ Full实际02:36:16.320068UTC正常exit0、非bounded，1000命令/250H32/2000物
 只读检查原BT case0/q8的`infer_kwargs.pt`：原capture函数对numpy数组仅存`unserialized_type`标记，包含image/proprio/候选/回合历史字段；不能把这些标记当完整tensor context，更不能用零填补。实际旧相机/qpos、逐次模型动作、事实world/VAE输出、检索行与hash等仍保留，但完整context恢复尚未核验。原稿结果与已完成分支不受该工程检查改写；本轮未越级执行GPU null或新的物理分支。
 
 Git外`ITER29_ORIGINAL_BT_Q8_PAYLOAD_OUTLINE_V1.json`保存实际字段/shape与标记。下一资格应在独立冻结collector中正确保存numpy和实际source context，或用原策略/内存路径重建；先精确复现原固定前缀、输入hash及Full H32再封存null。不能伪造/重用已消费的online capability，也不能按新结果另挑状态。两个原代码的23CPU检查只是入口资格，尚不能释放P2/P3的行为证据。
+
+### 23.219 原q8历史已通过真实记录CPU重构
+
+03:05:34UTC原f77 controller/OnlineRetrospectiveEpisodeMemory在0模型/0retriever/0GPU/0仿真条件下，重建原case0/q8之前8个已记录factual world/VAE观测和32条实际命令。9个query身份、每次history evidence、8次factual update以及32条环境/归一化模型动作hash均与原日志精确一致；原源码ff32342d…与所有输入前后不变。不是新回合或新成功率，也未填P2/P3。
+
+q8 snapshot c0282bd0eabee3d30e40c9cb68beb07f64e55ee83cbc11a1eb5c99a24547392c，16历史tokens/8条summary，recovered_history.npz SHA1346e51bd60e573c8f6eaf8d7ba5e858671a829ca41368b877cdc1baf09ecfe0；原件在双端Git外`ITER30_ORIGINAL_Q8_HISTORY_CPU_V1`。这恢复的是过去历史，完整当前source context与真实GPU Full重现仍待核验。
+
+03:13:38原query CPU preflight V2通过，原typed stats loader、processor、M1 recipe和proprio hash精确匹配，0CUDA初始化。V1在任何GPU/策略加载前因原始JSON列表不适合processor normalizer而TypeError退出；改用原部署`_stable_stats`，原normalizer和数值validators不变，失败元数据`ITER30_ORIGINAL_Q8_STATIC_CPU_V1_FAILURE.json`保留。下一步在冻结代码上做仅一次合法fresh retrieval，精确核对原step/载荷/输入hash，仍不运行策略或物理分支。见`ORIGINAL_QUERY_CONTEXT_RECOVERY_20261112_ZH.md`。

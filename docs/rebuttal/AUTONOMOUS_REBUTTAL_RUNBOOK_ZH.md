@@ -1,5 +1,7 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**Nov12 03:14UTC接续：原q8历史重构已通过，不必为取历史重跑8次模型推理。** 原controller/记忆代码重放8条已记录factual输出及32条原命令，9个history snapshot和全部动作/更新hash精确；0模型/检索/GPU/仿真。原件`ITER30_ORIGINAL_Q8_HISTORY_CPU_V1`，history NPZ1346e51b…；query CPU preflight V2原processor/proprio也通过，V1 typed-stats错误与修复保留。下一步只做一次原相机的合法fresh retrieval来核对原step/context/payload/image/seed，再转原source context；完整GPU Full/null仍待资格，不能复用历史capability或填零。见ORIGINAL_QUERY_CONTEXT_RECOVERY_20261112_ZH.md与台账23.219。CCI原case42Pooled/后继case43Pooled的两role outer继续，不重复；q96已终态不重跑。
+
 **Nov12 02:48UTC实际终态与下一段：原q96整池已完成，不再续跑。** runner02:40:22真实exit0、32候选/0未知、四Full精确、36分支同父；376项全量原件TAR546a0356…/manifest84bc6080…双端保全，本机02:46独立复算。原uniform-mean主指标pred/history/constant centered MSE0.170002/0.164821/0.144898，pred未优于参照；全部strict标签0，raw/Full0/0，原干预前掉落/单query/无null范围保持。constant absolute因缺实际requirement仍不可得。原07:16UTC窗口已由真实完成收尾，不能再等待旧rank31或重新派任务。
 
 **CCI case42Pooled已按原次序继续，禁止重复。** case42Full02:36:16完整1000/250/0TOPP、success0，777原件95462735…/5ebe7043…双端独立验收；累计33角色/16对全0/0/6unknown，尚无第17对。新`cci_segment_iter29_v1`02:40:11唯一准入monitor2540822/worker2540828，最多2role，下一case43Pooled由原控制器在验收首role后选择。原bt40 10:44:53UTC、3600s/9000s与科学入口不变；操作计划7f04c607…事前冻结，旧outer/GPU/两lease已核销，不复制ACP。
