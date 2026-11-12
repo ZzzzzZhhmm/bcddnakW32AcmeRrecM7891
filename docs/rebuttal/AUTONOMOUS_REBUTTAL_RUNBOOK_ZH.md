@@ -1,5 +1,7 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**Nov12 06:39UTC写作锚点：v27为最新完整候选。** 三位感谢开场准确承接各自原review真实认可，we/our逐项交流、结尾整合实际修订；20源字段绑定/17评论块/37完整待证槽保持。主文4.7接入已核验的原模型单状态Full/null/Full稳定性对照；原方法/九图/全部旧表和公式、q96/shared不利结果不变。完整原工程及独立干净ZIP46页/主文含结论10页、全页文本相同，新第10页直接验看、其余45页与v26像素相同，0undefined/overfull；85项包2342896e…本机及06:38:57UTC AFS逐项验真，`writing_candidates/20261112_v27`。见CANDIDATE_V27及AUTHOR_DIALOGUE_STANDARD_ZH。实验仍由原44Pooled/条件45Pooled两role outer持有；06:25真实193命令/49生成、心跳正常，不重复当前或后继，原10:44:53UTC截止保持。37完整角色/18固定0/0对/6unknown是已验收数；只在真实终态与全轨迹核验后更新。未发布，37槽不放行。
+
 **Nov12 06:03UTC最新执行：** 44Full已05:59:07正常exit0，1000命令/250H32/0TOPP/success0；771原件8eacda13…双端完整验真。当前37完整role/18固定0/0对/6unknown，44Full尚未配对，不计19对。原两role outer真实exit0后，已06:03:23唯一准入`cci_segment_iter30_followup_v1`，monitor2550033，固定44Pooled及条件45Pooled仍由原next_request选择；max2/9000souter/3600sworker、原10:44:53UTC截止不变，不重复这两role。当前审阅面为v26+执行增量2，原92项包/PDF不改，37槽未释放。先查实际worker、heartbeat、轨迹、终态和outer是否仍占有后继，再继续；不要按下方旧44Full运行快照重复派发。
 
 **Nov12 05:43UTC评测终态锚点：** 43Full已05:16:42正常exit0、1000命令/250H32/0TOPP/success0；771原件TARbdd6b310…本机/AFS逐项验真，43Full/Pooled首query及初始identity精确。当前36完整role/18固定0/0对/6unknown，原100对仍未完成。原两role outer已进入44Full，05:40 worker2548324/heartbeat核验；monitor2547132仍拥有第二role，不能另起44Full。先看其真实终态/完整轨迹与outer收据，不因role切换空档重复派发。v26+晚到执行增量1为审阅面，原PDF/92项封存包不改，正文10页；37槽仍待证。
