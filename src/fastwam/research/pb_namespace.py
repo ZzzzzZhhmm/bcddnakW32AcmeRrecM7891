@@ -76,10 +76,51 @@ def bind_case(binding):
     if sha(reference['path'])!=reference['sha256']:raise ValueError('Frozen expert roster changed')
     roster=read(reference['path']);case=binding['namespace_case_id']
     if type(case) is not int or case not in (0,1):raise ValueError('Only the first two admitted case IDs are allowed')
-    if roster['status']!='qualified_original_PB_namespace_roster' or roster['learned_policy_queries']!=0 or roster['namespace_file_sha256']!=NAMESPACE_SHA256:
+    if roster['status']!='qualified_original_PB_namespace_roster' or roster['learned_policy_queries']!=0 or roster['namespace_file_sha256']!=NAMESPACE_SHA256 or roster['registration_sha256']!=binding['namespace2_registration']['sha256']:
         raise ValueError('Not a closed expert-only roster')
     seeds=first_admitted(roster['admission_records'],np.load(registration['namespace_file'],allow_pickle=False))
     entries=roster['entries'];entry=entries[case]
     if any(entry[key]!=seeds[case][key] for key in seeds[case]) or binding['physical_seed']!=entry['seed']:
         raise ValueError('Fixed source case or admitted physical seed differs')
     return registration,entry
+
+
+SCHEMAS=dict(qualification='warm.original-PB-namespace2-qualification.v1',
+    factual='warm.original-specialist-factual-trace.namespace2-PB.v1',
+    pool='warm.original-PB-namespace2-fresh-pool.v1')
+
+
+def validate_execution_binding(plan,kind):
+    """Resolve a case only from its pre-policy roster and private native paths."""
+    if plan.get('schema')!=SCHEMAS[kind]:raise ValueError('Different namespace execution schema')
+    registration,entry=bind_case(plan)
+    private=Path(registration['phase_root'])/f"case{entry['case_id']:02d}"
+    if Path(plan['rmbench_runtime'])!=private/'runtime' or Path(plan['native_worker_lease'])!=private/'native.worker.lock':
+        raise ValueError('Parallel cases must own separate native runtimes and leases')
+    leaf={'qualification':'qualification','factual':'factual','pool':f"pool-q{plan.get('query_replan',-1):04d}"}[kind]
+    if Path(plan['output'])!=private/leaf:raise ValueError('Case output escaped its prospectively assigned directory')
+    if kind=='pool':
+        reference=plan['namespace2_factual_plan']
+        if sha(reference['path'])!=reference['sha256'] or reference['sha256']!=plan['factual_source_plan_sha256']:
+            raise ValueError('Original factual plan changed')
+        factual=read(reference['path']);validate_execution_binding(factual,'factual')
+        for key in ['namespace2_registration','namespace2_roster','namespace_case_id','physical_seed','rmbench_runtime','native_worker_lease']:
+            if factual[key]!=plan[key]:raise ValueError('Pool and factual case bindings differ')
+        if Path(plan['factual_source'])!=Path(factual['output']):raise ValueError('Pool consumes a different factual source')
+    return registration,entry
+
+
+def require_initial(plan,observation,instruction,physical,task_state):
+    _,entry=bind_case(plan);expected=entry['initial_identity']
+    actual=dict(observation_arrays=observation_identity(observation),instruction=instruction,
+                physical_initial=physical,task_state_audit_only=task_state)
+    if actual!=expected:raise ValueError('Learned initial state differs from the two expert-roster reset observations')
+    return dict(namespace_case_id=entry['case_id'],namespace_roster_sha256=plan['namespace2_roster']['sha256'],
+                namespace_registration_sha256=plan['namespace2_registration']['sha256'],
+                original_namespace_initial_identity_exact=True)
+
+
+def query_id(plan):
+    if plan.get('schema')==SCHEMAS['pool']:
+        return f"original-pb12000-ns2-case{plan['namespace_case_id']}-seed{plan['physical_seed']}-q{plan['query_replan']}"
+    return f"original-pb12000-seed0-q{plan['query_replan']}"

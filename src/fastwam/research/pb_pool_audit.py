@@ -116,8 +116,17 @@ def verify_metrics(data, frozen):
     return result
 
 
-def audit_pool(root, *, query, plan_sha256):
+def audit_pool(root, *, query, plan_sha256, namespace_plan=None):
     root = Path(root)
+    namespace=None
+    if namespace_plan is not None:
+        from . import pb_namespace as namespace
+        from .pb_mechanism import validate_plan
+        validate_plan(namespace_plan)
+        if namespace_plan['query_replan']!=query or Path(namespace_plan['output'])!=root:
+            raise ValueError('Namespace audit consumes a different fixed case/query')
+    source_plan_sha=namespace_plan['factual_source_plan_sha256'] if namespace else TRACE_PLAN_SHA256
+    query_id=namespace.query_id(namespace_plan) if namespace else f'original-pb12000-seed0-q{query}'
     operator = read(root / 'operator.json')
     if operator['status'] != 'complete_original_PB_fixed_query_pool' or operator['query'] != query or operator['plan_sha256'] != plan_sha256:
         raise ValueError('A live, incomplete, or foreign query cannot release metrics')
@@ -125,7 +134,7 @@ def audit_pool(root, *, query, plan_sha256):
     if (query not in (8, 48, 96) or seal['query'] != query or seal['primary_horizon'] != 32
             or seal['descriptor'] != 'original_uniform_mean_DINO_delta_v1'
             or seal['required_effect_available'] or seal['population_success_rate_available']
-            or seal['checkpoint_sha256'] != WEIGHT_SHA256 or seal['source_plan_sha256'] != TRACE_PLAN_SHA256
+            or seal['checkpoint_sha256'] != WEIGHT_SHA256 or seal['source_plan_sha256'] != source_plan_sha
             or seal['before_any_new_branch_truth'] is not True):
         raise ValueError('Fixed query or measurement scope differs')
     seal_hash = sha(root / 'sealed_query.json')
@@ -139,9 +148,16 @@ def audit_pool(root, *, query, plan_sha256):
         for name, a in actions.items():
             if a.shape != (32, 14) or a.dtype != np.float32 or not np.isfinite(a).all() or array_sha(a) != seal['action_hashes'][name]:
                 raise ValueError('Candidate action seal differs')
-    continuation = read(root / 'continuation_receipt.json')
-    sequence = ['anchor-continuation-initial'] + seal['branch_order'] + ['anchor-continuation-final']
-    actions.update({name: actions['anchor-a'] for name in ['anchor-continuation-initial', 'anchor-continuation-final']})
+    if namespace:
+        if (root/'continuation_receipt.json').exists():raise ValueError('Fresh namespace controls cannot adopt an old pool')
+        continuation=dict(retained_unknown=[],original_AABA_complete=True)
+        sequence=seal['branch_order']
+        expected=['anchor-a','anchor-aa',f"rank-{seal['selected_rank']}",'anchor-qual-final']+[f'rank-{rank}' for rank in np.flatnonzero(valid) if rank!=seal['selected_rank']]+['anchor-pool-final']
+        if sequence!=expected:raise ValueError('Namespace fresh Full control or candidate order differs')
+    else:
+        continuation = read(root / 'continuation_receipt.json')
+        sequence = ['anchor-continuation-initial'] + seal['branch_order'] + ['anchor-continuation-final']
+        actions.update({name: actions['anchor-a'] for name in ['anchor-continuation-initial', 'anchor-continuation-final']})
     records, delta_errors, statuses = {}, {}, {}
     for name in sequence:
         if name in continuation['retained_unknown']:
@@ -149,7 +165,7 @@ def audit_pool(root, *, query, plan_sha256):
             if row['endpoint_status'] != 'unknown_terminal_infrastructure' or row['observed_effect'] is not None or row['independent_label']['applicable'] is not None or not row['resource_interruption_preserved']:
                 raise ValueError('An old interrupted branch was replaced or imputed')
         else:
-            row, error = verify_branch(root, name, actions[name], seal_hash, f'original-pb12000-seed0-q{query}')
+            row, error = verify_branch(root, name, actions[name], seal_hash, query_id)
             delta_errors[name] = error
         records[name] = row
         statuses[name] = dict(status=row['endpoint_status'], accepted_commands=row['executed_steps'], label=row['independent_label']['applicable'])
@@ -161,7 +177,7 @@ def audit_pool(root, *, query, plan_sha256):
         if row['parent_hashes'] != base['parent_hashes'] or (name.startswith('anchor-') and any(row[k] != base[k] for k in same)):
             raise ValueError('Parents or repeated Full controls differ')
     data = read(root / 'candidate_effects.json')
-    if (data['task'] != 'press_button' or data['cohort'] != f'originalPB12000_seed0_q{query}'
+    if (data['task'] != 'press_button' or data['cohort'] != (query_id if namespace else f'originalPB12000_seed0_q{query}')
             or data['descriptor'] != 'uniform_mean_DINO_delta' or data['required_effect_available'] is not False):
         raise ValueError('Candidate table measurement scope differs')
     candidates = data['candidates']

@@ -9,6 +9,7 @@ import argparse,datetime,hashlib,importlib,importlib.util,json,multiprocessing a
 def load(name,path):
  s=importlib.util.spec_from_file_location(name,path);m=importlib.util.module_from_spec(s);s.loader.exec_module(m);return m
 B=load('pinned_PB_mechanism',Path(__file__).resolve().parents[1]/'src/fastwam/research/pb_mechanism.py')
+N=load('PB_namespace_binding',Path(__file__).resolve().parents[1]/'src/fastwam/research/pb_namespace.py')
 def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
 def rd(p):return json.loads(Path(p).read_text())
 def write(p,v):
@@ -49,8 +50,12 @@ def main():
   assert sha(C/'src/fastwam/models/warm/retrospection_model.py')==p['original_model_module_sha256']
   for module in ['fastwam.memory.online_retrieval','fastwam.models.warm.retrospection_model','experiments.rmbench.warm_policy.policy_core']:assert Path(sys.modules[module].__file__).resolve().is_relative_to(C)
   setup=load('PB_native_setup',H/'scripts/qualify_rebuttal_rmbench_task.py');assert setup.source_identity(runtime)['sha256']==p['simulator_source_sha256']
-  full=rd(source/'operator.json');trace=[json.loads(x) for x in (source/'native_trace.jsonl').read_text().splitlines()];q=p['query_replan'];selected=p['selected_rank'];frame=q*4;B.validate_source(full,trace,q)
-  if any(r.get('observed_TOPP_errors') for r in trace[:frame]):raise ValueError('Recorded factual prefix has TOPP rejections;requires a separate exact two-pass rejection audit before branch truth')
+  full=rd(source/'operator.json');trace=[json.loads(x) for x in (source/'native_trace.jsonl').read_text().splitlines()];q=p['query_replan'];selected=p['selected_rank'];frame=q*4;B.validate_source(full,trace,q,p)
+  is_namespace=p['schema']==N.SCHEMAS['pool']
+  if is_namespace:
+   assert p['recorded_prefix_TOPP_policy']=='exact_original_executor_and_error_history_twice'
+   if cli.continuation_manifest or cli.qualify_only or cli.resume_known_terminal:raise ValueError('New namespace pools require one fresh complete control order;no adopted or resumed branches')
+  elif any(r.get('observed_TOPP_errors') for r in trace[:frame]):raise ValueError('Recorded factual prefix has TOPP rejections;requires a separate exact two-pass rejection audit before branch truth')
   args=rd(source/'runtime_args.json');contract=rd(args['warm_online_contract_path']);assert args['task_name']=='press_button' and args['seed']==3407 and contract['warm_checkpoint_sha256']==B.WEIGHT_SHA256
   probe=source/f'probes/q{q:04d}';event=torch.load(probe/'event_adapter.pt',map_location='cpu',weights_only=False);model=torch.load(probe/'model_output.pt',map_location='cpu',weights_only=False)
   valid=event['candidate_valid_mask'].numpy()[0];assert valid.shape==(32,) and valid.dtype==np.bool_ and valid[selected];assert int(model['warm_retrospection']['selected_candidate_index'])==selected
@@ -66,7 +71,7 @@ def main():
     if valid[j]:assert dict(dataset_id=bytes(utf8[offsets[r]:offsets[r+1]]).decode(),dataset_index=int(z['_event_dataset_index'][r]),episode_index=int(z['_event_episode_index'][r]),start_frame=int(z['_event_start_frame'][r]))==ids[j]
    historical=_mean_effect(torch.from_numpy(z['effect_post'][rows]-z['effect_pre'][rows])).float().numpy()
   assert historical.shape==(32,768)
-  seal=dict(query=q,frame=frame,selected_rank=selected,descriptor='original_uniform_mean_DINO_delta_v1',source_plan_sha256=B.TRACE_PLAN_SHA256,checkpoint_sha256=B.WEIGHT_SHA256,rubric=B.RUBRIC,before_any_new_branch_truth=True,branch_order=order,original_valid_ranks=np.flatnonzero(valid).tolist(),action_hashes={n:sha256_array(a) for n,a in actions.items()},predicted_sha256=sha256_array(predicted),historical_sha256=sha256_array(historical),source_inputs=p['inputs'],primary_horizon=32,secondary_prefix=4,required_effect_available=False,population_success_rate_available=False)
+  seal=dict(query=q,frame=frame,selected_rank=selected,descriptor='original_uniform_mean_DINO_delta_v1',source_plan_sha256=p['factual_source_plan_sha256'],checkpoint_sha256=B.WEIGHT_SHA256,rubric=B.RUBRIC,before_any_new_branch_truth=True,branch_order=order,original_valid_ranks=np.flatnonzero(valid).tolist(),action_hashes={n:sha256_array(a) for n,a in actions.items()},predicted_sha256=sha256_array(predicted),historical_sha256=sha256_array(historical),source_inputs=p['inputs'],primary_horizon=32,secondary_prefix=4,required_effect_available=False,population_success_rate_available=False)
   sf=out/'sealed_query.json'
   if sf.exists():
    assert rd(sf)==seal
@@ -76,7 +81,7 @@ def main():
   continuation=None;Q=None
   if cli.continuation_manifest:
    assert cli.expected_continuation_sha256 and not cli.qualify_only and not cli.resume_known_terminal
-   Q=load('PB_remaining_branch_adoption',Path(__file__).resolve().parents[1]/'src/fastwam/research/pb_continuation.py');continuation=Q.bind_manifest(cli.continuation_manifest,cli.expected_continuation_sha256,p,order,sha(sf));Q.adopt_completed(continuation,out,query_id=f'original-pb12000-seed0-q{q}',verifier=read_verified_branch);continued_anchor=read_verified_branch(out/'branches/anchor-a/attempt-001',query_id=f'original-pb12000-seed0-q{q}',branch_id='anchor-a');continued_repeat=read_verified_branch(out/'branches/anchor-aa/attempt-001',query_id=f'original-pb12000-seed0-q{q}',branch_id='anchor-aa');Q.require_old_full_repeats(continued_anchor,continued_repeat);B.immutable_json(out/'continuation_receipt.json',dict(manifest_sha256=cli.expected_continuation_sha256,adopted_completed=list(continuation['completed']),retained_unknown=list(continuation['unknown']),remaining_original_order=continuation['unstarted'],new_boundary_full_controls=[Q.PRE_CONTROL,Q.NEW_CONTROL],new_control_action_sha256=seal['action_hashes']['anchor-a'],original_AABA_complete=all(n in continuation['completed'] for n in order[:4]),old_clock_reset=False));state['continuation_manifest_sha256']=cli.expected_continuation_sha256;order=[Q.PRE_CONTROL]+order+[Q.NEW_CONTROL];actions[Q.PRE_CONTROL]=refined;actions[Q.NEW_CONTROL]=refined
+   Q=load('PB_remaining_branch_adoption',Path(__file__).resolve().parents[1]/'src/fastwam/research/pb_continuation.py');continuation=Q.bind_manifest(cli.continuation_manifest,cli.expected_continuation_sha256,p,order,sha(sf));Q.adopt_completed(continuation,out,query_id=N.query_id(p),verifier=read_verified_branch);continued_anchor=read_verified_branch(out/'branches/anchor-a/attempt-001',query_id=N.query_id(p),branch_id='anchor-a');continued_repeat=read_verified_branch(out/'branches/anchor-aa/attempt-001',query_id=N.query_id(p),branch_id='anchor-aa');Q.require_old_full_repeats(continued_anchor,continued_repeat);B.immutable_json(out/'continuation_receipt.json',dict(manifest_sha256=cli.expected_continuation_sha256,adopted_completed=list(continuation['completed']),retained_unknown=list(continuation['unknown']),remaining_original_order=continuation['unstarted'],new_boundary_full_controls=[Q.PRE_CONTROL,Q.NEW_CONTROL],new_control_action_sha256=seal['action_hashes']['anchor-a'],original_AABA_complete=all(n in continuation['completed'] for n in order[:4]),old_clock_reset=False));state['continuation_manifest_sha256']=cli.expected_continuation_sha256;order=[Q.PRE_CONTROL]+order+[Q.NEW_CONTROL];actions[Q.PRE_CONTROL]=refined;actions[Q.NEW_CONTROL]=refined
   if cli.preflight_only:
    assert not torch.cuda.is_initialized();state.update(status='complete_PB_CPU_input_seal',CUDA_initialized=False,branch_order=order,candidate_branches_executed=0);save();return
   assert cli.admission and cli.expected_admission_sha256 and sha(cli.admission)==cli.expected_admission_sha256
@@ -84,19 +89,32 @@ def main():
   deadline=datetime.datetime.fromisoformat(admission['absolute_deadline_utc']);assert datetime.datetime.now(datetime.timezone.utc)<deadline
   def budget():
    if datetime.datetime.now(datetime.timezone.utc)>=deadline:raise TimeoutError('Fixed PB physical-pool window expired;preserve original clock')
-  guard_lease=(Path(p['evidence_root'])/'original_specialist_native_execution.worker.lock').open('a');fcntl.flock(guard_lease,fcntl.LOCK_EX|fcntl.LOCK_NB)
+  guard_lease=(Path(p['native_worker_lease']) if p['schema']==N.SCHEMAS['pool'] else Path(p['evidence_root'])/'original_specialist_native_execution.worker.lock').open('a');fcntl.flock(guard_lease,fcntl.LOCK_EX|fcntl.LOCK_NB)
   torch.manual_seed(3407);torch.cuda.manual_seed_all(3407);torch.cuda.set_per_process_memory_fraction(.12);teacher=FrozenFactualEffectReader.from_source_runtime(args,contract);B.immutable_json(out/'reader_receipt.json',teacher.receipt)
   assets=rd(Path(p['evidence_root'])/'resumable_rb_cases0003_0009_v1_plan.json');sys.path[:0]=[str(runtime),str(runtime/'description/utils'),assets['curobo_source']];os.chdir(runtime)
   from generate_episode_instructions import generate_episode_descriptions
-  cls=getattr(importlib.import_module('envs.press_button'),'press_button');cfg=setup.resolved_config(runtime,'press_button',0);assert cfg==rd(source/'native_config.json');expert=rd(source/'expert_setup_metadata.json');initial=rd(source/'initial_identity.json');rng=pickle.loads((probe/'sampling_rng_before.pkl').read_bytes());query_id=f'original-pb12000-seed0-q{q}'
+  cls=getattr(importlib.import_module('envs.press_button'),'press_button');cfg=setup.resolved_config(runtime,'press_button',p['physical_seed']);cfg.update(now_ep_num=p['namespace_case_id']) if p['schema']==N.SCHEMAS['pool'] else None;assert cfg==rd(source/'native_config.json');expert=rd(source/'expert_setup_metadata.json');initial=rd(source/'initial_identity.json');rng=pickle.loads((probe/'sampling_rng_before.pkl').read_bytes());query_id=N.query_id(p)
   def source_observation(path,obs):
    with np.load(path,allow_pickle=False) as z:require_observation({k:z[k] for k in z.files},{**factual_cameras(obs),'native_qpos':factual_joint_state(obs)})
   def physical():return [{k:v.tolist() if hasattr(v,'tolist') else v for k,v in r.items()} for r in physical_joint_state(env)]
+  if is_namespace:
+   observer_path=Path(p['native_TOPP_observer_source']);assert sha(observer_path)==p['native_TOPP_observer_source_sha256']=='49888eb2854b29d6f5f384e394aaf91847dd9ebfdf9e89f6bc51fb1f8152dd4d'
+   observer_module=load('PB_namespace_prefix_observer',observer_path)
+  class ExactRecordedPrefix:
+   # Replay the recorded official command, including any original rejection.
+   # New branch commands retain the stricter OfficialQposGuard below.
+   def __init__(self,environment):self.env=environment;self.observer=observer_module.TOPPObserver(environment)
+   def __enter__(self):self.observer.__enter__();return self
+   def step(self,command):
+    index=int(self.env.take_action_cnt);self.observer.errors.clear();self.env.take_action(command.copy(),action_type='qpos')
+    if self.observer.errors!=trace[index]['observed_TOPP_errors']:raise ValueError('Recorded factual TOPP history differs')
+    return int(self.env.take_action_cnt)==index+1
+   def __exit__(self,*args):return self.observer.__exit__(*args)
   def parent_scene(label):
    nonlocal env
-   budget();random.seed(0);np.random.seed(0);torch.manual_seed(0);torch.cuda.manual_seed_all(0);env=cls();env.setup_demo(**cfg);assert env.step_lim==1500 and type(env.scene.physx_system).__name__=='PhysxCpuSystem'
+   budget();physical_seed=p['physical_seed'];random.seed(physical_seed);np.random.seed(physical_seed);torch.manual_seed(physical_seed);torch.cuda.manual_seed_all(physical_seed);env=cls();env.setup_demo(**cfg);assert env.step_lim==1500 and type(env.scene.physx_system).__name__=='PhysxCpuSystem'
    text=str(np.random.choice(generate_episode_descriptions('press_button',[expert['info']],100)[0]['unseen']));assert text==initial['instruction'];env.set_instruction(instruction=text);source_observation(source/'initial_observation.npz',env.get_obs());prefix=[]
-   with OfficialQposGuard(env) as guard:
+   with (ExactRecordedPrefix(env) if is_namespace else OfficialQposGuard(env)) as guard:
     for i,command in enumerate(commands[:frame]):
      budget();before=factual_joint_state(env.get_obs()).copy();p0=physical();s0=B.observe(env)['native_state'];assert guard.step(command);after=factual_joint_state(env.get_obs()).copy();s1=B.observe(env)['native_state'];p1=physical();row=trace[i]
      assert np.array_equal(before,np.asarray(row['before'],dtype=before.dtype)) and np.array_equal(after,np.asarray(row['after'],dtype=after.dtype)) and int(env.take_action_cnt)==i+1
@@ -150,7 +168,7 @@ def main():
   if continuation:
    B.immutable_json(out/'selected_raw_refined_PB_contrast.json',B.repair(records,selected));B.immutable_json(out/'continuation_measurement_controls.json',dict(original_unknowns_not_replaced=True,original_AABA_complete=all(n in continuation['completed'] for n in ['anchor-a','anchor-aa',f'rank-{selected}','anchor-qual-final']),new_pre_Full_exact_to_original=True,new_post_Full_exact_to_original=True))
   candidates=[dict(candidate_id=f'rank-{rank}',valid=True,horizon=32,predicted_effect=predicted[rank].tolist(),historical_effect=historical[rank].tolist(),observed_effect=records[f'rank-{rank}']['observed_effect'],endpoint_status=records[f'rank-{rank}']['endpoint_status'],executed_steps=records[f'rank-{rank}']['executed_steps'],applicable=records[f'rank-{rank}']['independent_label']['applicable']) for rank in np.flatnonzero(valid)]
-  data=dict(task='press_button',cohort=f'originalPB12000_seed0_q{q}',descriptor='uniform_mean_DINO_delta',required_effect_available=False,candidates=candidates);metrics=centered_effect_metrics(data)
+  data=dict(task='press_button',cohort=(N.query_id(p) if p['schema']==N.SCHEMAS['pool'] else f'originalPB12000_seed0_q{q}'),descriptor='uniform_mean_DINO_delta',required_effect_available=False,candidates=candidates);metrics=centered_effect_metrics(data)
   if 'constant_query' in metrics['references']:metrics['references']['constant_query']['absolute_mse']=None;metrics['references']['constant_query']['absolute_mse_unavailable_reason']='Required query effect not recorded;only centered constant comparison is identified'
   B.immutable_json(out/'candidate_effects.json',data);B.immutable_json(out/'centered_effects.json',metrics);assert identity.source_digest(C)==B.CORE_SHA256 and identity.source_digest(H)==p['reference_controller_sha256'];state.update(status='complete_original_PB_fixed_query_pool',complete_candidate_endpoints=metrics['complete_endpoints'],unknown_candidate_endpoints=metrics['valid_candidates']-metrics['complete_endpoints'],new_policy_generations=0,population_effect_estimated=False,post_pool_final_anchor_verified=records[Q.NEW_CONTROL if continuation else 'anchor-pool-final']['endpoint_status']!='unknown_terminal_infrastructure',additional_resource_boundary_control=Q.NEW_CONTROL if continuation else None,retained_infrastructure_unknown_branches=list(continuation['unknown']) if continuation else [],ended_utc=stamp());save()
  except BaseException as exc:

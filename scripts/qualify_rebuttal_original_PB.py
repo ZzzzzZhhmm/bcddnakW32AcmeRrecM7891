@@ -7,6 +7,9 @@ this initial observation, first model output, and four physical commands exactly
 from pathlib import Path
 import argparse,dataclasses,datetime,hashlib,importlib,importlib.util,json,os,sys,traceback
 
+spec=importlib.util.spec_from_file_location('PB_namespace_binding',Path(__file__).resolve().parents[1]/'src/fastwam/research/pb_namespace.py')
+N=importlib.util.module_from_spec(spec);spec.loader.exec_module(N)
+
 P=Path('/mnt/afs/task3_2/L202500276_lwz/projects/WARM_evaluations/rebuttal_20261109_acp')
 C=P/'historical_specialist_source_47277e5/code';H=P/'controller_eb70b41/code'
 CORE_SHA='4a1d05cb548f16bf6a9b239082b02d4697aa8e8c1f43c2f5d8ffbaec196462fd'
@@ -16,7 +19,10 @@ SIM_SHA='a97e308ca053c3aeb1bfec8e3c4c4f550aac7f6ae753e36bbce82e9522292379'
 PB_PROTOCOL=dict(schema='warm.original-PB-first-state-qualification.v1',task_name='press_button',qualified_original_run='press_button-s3407-v2',checkpoint_step=12000,root_seed=3407,physical_seed=0,native_limit=1500,qualification_queries=1,qualification_commands=4,checkpoint_sha256='a765d987b2df0d228782980592c39aaed0e837040c7f6f48c905e4641f79c285')
 
 def validate_qualification_plan(plan):
- if any(type(plan.get(k)) is not type(v) or plan.get(k)!=v for k,v in PB_PROTOCOL.items()):raise ValueError('Original PB task/run/checkpoint/seed/horizon or engineering scope differs')
+ expected=dict(PB_PROTOCOL)
+ if plan.get('schema')==N.SCHEMAS['qualification']:
+  _,entry=N.validate_execution_binding(plan,'qualification');expected.update(schema=N.SCHEMAS['qualification'],physical_seed=entry['seed'])
+ if any(type(plan.get(k)) is not type(v) or plan.get(k)!=v for k,v in expected.items()):raise ValueError('Original PB task/run/checkpoint/seed/horizon or engineering scope differs')
  if plan.get('original_source_sha256')!=CORE_SHA or plan.get('original_source_commit')!=COMMIT:raise ValueError('Original PB frozen model source differs')
  return plan
 
@@ -32,19 +38,20 @@ def main():
  parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--plan',type=Path,required=True);parser.add_argument('--expected-plan-sha256',required=True);parser.add_argument('--preflight-only',action='store_true');parser.add_argument('--admission',type=Path);parser.add_argument('--expected-admission-sha256');cli=parser.parse_args()
  sha_plan=hashlib.sha256(cli.plan.read_bytes()).hexdigest();assert sha_plan==cli.expected_plan_sha256
  binding=validate_qualification_plan(json.loads(cli.plan.read_text()))
+ is_namespace=binding['schema']==N.SCHEMAS['qualification'];entry=N.bind_case(binding)[1] if is_namespace else None
  for item in binding['small_inputs']:
   assert hashlib.sha256(Path(item['path']).read_bytes()).hexdigest()==item['sha256']
  pre=P/'ITER29_ORIGINAL_PB12000_RUNTIME_STATIC_PREFLIGHT_V1';v=json.loads((pre/'execution.json').read_text());args_static=json.loads((pre/'runtime_args.json').read_text())
  assert v['checkpoint_sha256']==PB_PROTOCOL['checkpoint_sha256'] and v['static_contracts_passed'] and v['encoder_runtime_matches']
  assert args_static['task_name']=='press_button' and args_static['seed']==3407 and args_static['action_horizon']==32 and args_static['replan_steps']==4
- out=P/'original_pb12000_first_state_qualification_v1'
+ out=Path(binding['output']) if is_namespace else P/'original_pb12000_first_state_qualification_v1'
  if cli.preflight_only:
   assert not out.exists();print(json.dumps(dict(status='PB_fixed_binding_preflight_only',model_inference_queries=0,model_updates=0,physics_commands=0,plan_sha256=sha_plan)));return
  assert cli.admission and cli.expected_admission_sha256 and hashlib.sha256(cli.admission.read_bytes()).hexdigest()==cli.expected_admission_sha256
  admission=json.loads(cli.admission.read_text());assert admission['qualification_plan_sha256']==sha_plan and admission['original_windows_unchanged'] and admission['schema']=='warm.original-PB-new-stage-admission.v1'
  deadline=datetime.datetime.fromisoformat(admission['absolute_deadline_utc']);assert datetime.datetime.now(datetime.timezone.utc)<deadline
  import fcntl
- lease=(P/'original_specialist_native_execution.worker.lock').open('a');fcntl.flock(lease,fcntl.LOCK_EX|fcntl.LOCK_NB)
+ lease=(Path(binding['native_worker_lease']) if is_namespace else P/'original_specialist_native_execution.worker.lock').open('a');fcntl.flock(lease,fcntl.LOCK_EX|fcntl.LOCK_NB)
  assert not out.exists();out.mkdir()
  stamp=lambda:datetime.datetime.now(datetime.timezone.utc).isoformat()
  sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
@@ -58,7 +65,7 @@ def main():
   preflight=P/'ITER29_ORIGINAL_PB12000_RUNTIME_STATIC_PREFLIGHT_V1';qualified=json.loads((preflight/'execution.json').read_text());assert qualified['static_contracts_passed'] and qualified['encoder_runtime_matches']
   args=json.loads((preflight/'runtime_args.json').read_text());args['warm_telemetry_path']=str(out/'full-telemetry.jsonl')
   (out/'runtime_args.json').write_text(json.dumps(args,indent=2)+'\n')
-  plan=json.loads((P/'resumable_rb_cases0003_0009_v1_plan.json').read_text());runtime=P.parent/'rebuttal_20261108_p0/rmbench_runtime'
+  plan=json.loads((P/'resumable_rb_cases0003_0009_v1_plan.json').read_text());runtime=Path(binding['rmbench_runtime']) if is_namespace else P.parent/'rebuttal_20261108_p0/rmbench_runtime'
   os.environ.update(HF_HUB_OFFLINE='1',HF_DATASETS_OFFLINE='1',TRANSFORMERS_OFFLINE='1',DIFFSYNTH_SKIP_DOWNLOAD='true',DIFFSYNTH_MODEL_BASE_PATH=plan['model_root'],WANDB_MODE='disabled',WARM_IMMUTABLE_ASSET_HASH_CACHE='1',TOKENIZERS_PARALLELISM='false',PYTHONDONTWRITEBYTECODE='1',PYTHONNOUSERSITE='1',OMP_NUM_THREADS='4',MKL_NUM_THREADS='4',OPENBLAS_NUM_THREADS='4')
   sys.path[:0]=[str(C/'src'),str(C),plan['curobo_source']]
   import torch,numpy as np,random,multiprocessing as mp
@@ -81,14 +88,16 @@ def main():
   for relative in instruction_files:assert sha(runtime/relative)==sha(official/relative),str(relative)
   state['instruction_source_sha256']={str(f):sha(runtime/f) for f in instruction_files}
   protocol=np.load(args['warm_initial_states_path'],allow_pickle=False);assert protocol.dtype.kind in 'iu' and protocol.size>0
-  physical_seed=int(protocol.reshape(-1)[0]);assert physical_seed==binding['physical_seed']==0
+  physical_seed=entry['seed'] if is_namespace else int(protocol.reshape(-1)[0]);assert physical_seed==binding['physical_seed']
   state.update(candidate_seed=physical_seed,seed_protocol_sha256=sha256_array(protocol),seed_selection='First scalar of original candidate namespace;no outcome-based replacement.')
-  cfg=setup.resolved_config(runtime,args['task_name'],physical_seed);(out/'native_config.json').write_text(json.dumps(cfg,indent=2)+'\n')
+  cfg=setup.resolved_config(runtime,args['task_name'],physical_seed)
+  if is_namespace:cfg['now_ep_num']=entry['case_id'];state['seed_selection']='First-two prospectively expert-admitted namespace cases;not flattened ordinal or policy-outcome selection.'
+  (out/'native_config.json').write_text(json.dumps(cfg,indent=2)+'\n')
   children_before={x.pid for x in mp.active_children()};env=getattr(importlib.import_module('envs.'+args['task_name']),args['task_name'])()
   state['status']='fixed_seed_expert_setup_only';save();print('stage=fixed_seed_expert_setup_only',flush=True)
   random.seed(physical_seed);np.random.seed(physical_seed);torch.manual_seed(physical_seed);torch.cuda.manual_seed_all(physical_seed)
-  env.setup_demo(**cfg);assert env.step_lim==1500;expert_info=env.play_once()
-  accepted=bool(env.plan_success and env.check_success());state['fixed_expert_setup_accepted']=accepted
+  env.setup_demo(**cfg);assert env.step_lim==1500;expert_info=entry['expert_info'] if is_namespace else env.play_once()
+  accepted=True if is_namespace else bool(env.plan_success and env.check_success());state['fixed_expert_setup_accepted']=accepted
   (out/'expert_setup_metadata.json').write_text(json.dumps(expert_info,indent=2,default=lambda x:x.tolist() if hasattr(x,'tolist') else str(x))+'\n');save()
   env.close_env()
   if not accepted:raise RuntimeError('First fixed candidate seed rejected by original expert setup;no replacement admitted')
@@ -101,6 +110,10 @@ def main():
   descriptions=generate_episode_descriptions(args['task_name'],[expert_info['info']],100)[0]['unseen'];instruction=str(np.random.choice(descriptions));env.set_instruction(instruction=instruction)
   state.update(expert_history_provided_to_policy=False,instruction_metadata_source='Original evaluator expert-setup template metadata;learned episode reset afterwards,no expert actions or future effects in model history.')
   obs=env.get_obs();raw=legacy.factual_cameras(obs);qpos=legacy.factual_joint_state(obs)
+  if is_namespace:
+   native=[dict(name=art.name,qpos=art.get_qpos().tolist(),qvel=art.get_qvel().tolist()) for art in env.scene.get_all_articulations()]
+   state.update(N.require_initial(binding,obs,instruction,native,press_button_task_state(env)))
+   state['scope']='One original-PB12000 replan and four native commands on a prospectively fixed expert-admitted namespace case;engineering qualification only.'
   np.savez_compressed(out/'initial_observation.npz',**raw,native_qpos=qpos)
   (out/'initial_identity.json').write_text(json.dumps(dict(instruction=instruction,cameras={k:sha256_array(v) for k,v in raw.items()},qpos_sha256=sha256_array(qpos),task=args['task_name'],candidate_seed=physical_seed,task_state_audit_only=press_button_task_state(env)),indent=2)+'\n')
   actual_runtime=legacy.current_encoder_runtime(args['warm_dino_device']);(out/'actual_encoder_runtime_before_query.json').write_text(json.dumps(actual_runtime,indent=2)+'\n');assert sha256_canonical_json(actual_runtime)==policy.contract.encoder_runtime_sha256
@@ -120,6 +133,7 @@ def main():
    if state['inference_queries']!=0:raise RuntimeError('Only one fixed replan admitted')
    value=old_infer(*a,**kw);torch.save(cpu(value),out/'original_model_output.pt');state['inference_queries']+=1;return value
   policy.model.infer_action=infer_observer
+  if is_namespace:policy._next_episode_index=entry['case_id']
   policy.reset();state['status']='one_original_replan';save();print('stage=one_original_replan',flush=True);policy._replan(obs,env)
   assert state['inference_queries']==1;torch.save(captures,out/'event_adapter_outputs.pt')
   state.update(status='executing_fixed_prefix',event_hook_calls=len(captures),hook_return_modified=False);save()

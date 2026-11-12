@@ -14,6 +14,8 @@
 
 每source仍取预定q8/48/96，未达到则记unreached，不改query。每query在truth前封存全部K32原候选/预测/历史效果/Full/RNG/context，并独立reset重放原factual前缀；不用physics unpack。Full A-A-selected proposal-A及pool-final共四个Full控制，保留全部32候选和所有invalid/unknown。原四token均值DINO delta、H32共同支持centered主指标及原计数rubric不变；早成功的H32 censoring明确保留。
 
+新增case的前缀资格事前明确：两次完整重放原官方executor的命令、qpos、全部物理关节、RGB、PB计数与TOPP错误记录，逐项精确；原事实前缀若已有TOPP拒绝，该原记录也须精确重现，不能跳过命令或清空错误。新候选分支仍用原严格OfficialQposGuard，发生TOPP拒绝即invalid，不将前缀的等价观测规则用于放宽新分支。旧physical0协议和已知拒绝不改。
+
 不同source各有private runtime、cache、lease和output；两个闲时ACP并行，无任务自动重启。资格、整episode、候选效果、修复及总体成功各自有独立范围。两个新增source不能替代完整任务评测、多训练种子或大样本总体repair率。
 
 ## 新增资源阶段
@@ -24,4 +26,6 @@ roster须通过CCI剩余bootstrap窗口准入；长source/pool任务交ACP，GPU
 
 ## 当前状态
 
-协议已书面固定，namespace解析与expert-only选择检查正在实现。新GPU资源尚未申请，新roster尚未运行；以Git外注册/实际进程及收据更新本段。原q96在23:15:38UTC原窗口结束，原件/退出/CPU审计另行核对，不因本扩展改写。
+2026-11-12 23:39:21UTC一次准入expert-only roster，23:45:14正常exit0。最先两个候选340800000/340800001均expert-admitted；case0/1的两次独立初态精确，目标count分别[5,3]/[3,6]。8原件已归档，roster SHA e6a07363…、TAR7f5c839c…；名单冻结时learned queries=0。expert setup确实执行物理动作，不称0物理动作。原49冻结入口保持。原q96已按原截止结束，32候选完整但Full控制未闭合，不因本扩展改写。
+
+每case的显式seed/ordinal、private runtime/lease、1replan4命令资格、完整factual、fresh36分支pool、0GPU离线审计适配已实现；110Windows/110native CPU和五个原生CLI导入通过。尚未启动新learned source或创建ACP任务，资格/提交/实际运行须继续以Git外收据更新。第一次roster派发在Popen后仅写收据的dict重复key报错，既有唯一进程经只读恢复确认，未再次派发；实际exit0与原始收据一并保全。

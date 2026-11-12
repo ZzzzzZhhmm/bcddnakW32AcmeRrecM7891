@@ -3160,3 +3160,15 @@ D.2页45–46和Bbqv/Hh4E加入41完整配对双方均0、82角色=66原allocati
 新协议PB_NAMESPACE_EXTENSION_20261113_ZH按候选340800000起冻结最先expert-admitted的两个case，名单生成时0 learned queries，保存所有setup拒绝；runtime错误停止，不按策略成败换样本。新增namespace解析/选择模块13项CPU检查通过，独立roster collector不加载策略；实现/原生验证尚在推进，未运行roster或申请新GPU。
 
 此扩展另有事前资源上界：roster最多0.5GPUh、两个ACP各10GPUh，新增20.5；原阶段119.8054115725/120及旧窗口/credit不变，新累计上界140.3054115725、总cap144及最多6并发。该新增阶段尚未准入，不将计划预留写成实际运行或计费；资格通过后方可冻结新source snapshots并提交闲时任务，统一最晚Nov13 11UTC结束，为23CST稳定候选留4h。所有旧模型/权重/数值设置和四token主指标保持，DEV点仍未恢复。
+
+### 23.298 新PB namespace expert名单实际闭合，两个独立source工程核验
+
+23:39:21.385UTC在新bootstrap2587515/start_ticks1421648249核验剩余6863.94秒后，一次派发1800秒expert-only roster、原截止00:09:21保持。runner2590787/timeout2590788，23:45:14.663真实exit0；case0/1最先候选340800000/340800001均通过expert setup，无拒绝跳过、learned queries=0、两次独立reset全部RGB/native qpos/物理关节/instruction/PB hidden counter精确，初始目标分别[5,3]/[3,6]。这是expert资格，不是策略成功率；expert确有物理setup动作，不写成0物理。
+
+原始8成员在AFS逐项归档核验，roster e6a07363f3c9c2fcdc4097ae7a3e57ca92fa010fff7c2c6614ba33a797625e0b；TAR7f5c839c2499184a6f384ad9324095ada41ec3cf9b29a88bea050ef34a436fd3；manifest663a3aa7670226c933c67d5c4b5b582b59cd0b741f30a7a4ad9c17a39616d529。实际注册f9a9a8e1…/准入ceb4ab7d…、TERMINAL_V1和LAUNCH_RECOVERY_V1保留。派发后外层仅写receipt的dict重复key异常，原进程已启动；只读确认原runner/child后恢复新收据，无再次Popen、无双跑，原异常保留。
+
+新增阶段在本机与AFS current_iteration事前独立登记20.5GPUh上界，原119.8054115725/120和3个旧credit保持，总140.3054115725/144；这是预留而非账单，不自动退款或重启RB45。双端当前state85885216…、旧8ba06812…独立备份。原PB q96/0GPU审计均已终态；v31封存写作不改，37整段有利论证仍不放行。
+
+新code显式绑定两个原PB12000 namespace case的seed/ordinal、private runtime/output/lease，保持原47277 source4a1…、weighta765…、bank/归一化/数值与H32/prefix4不变。learned1replan4命令资格→fresh完整1500或official success事实→固定q8/48/96→每query32候选+4Full，未达到不替换。新source前缀须两次精确重现原TOPP错误历史；候选新分支仍原严格guard、TOPP拒绝即invalid。新增0GPU auditor只读核验archive/物理链/DINO/标签/原主指标，不把工程完成当科学收益。
+
+110Windows/110native CPU通过，五个原生CLI help导入exit0；原生收据ITER45_NAMESPACE_EXECUTION_NATIVE_CPU_V1，overlay415ac142…，全部49旧冻结入口保持。首次Windows collection只因stage在顶层导入POSIX fcntl而失败，移至实际main后通过；没有策略forward或物理动作。此时新learned source未运行、两路GPU ACP和0GPU任务未创建。AFS实测由9.2GB降至约4.3GB（共享盘动态变化），保留4GiB任务准入及512MiB运行保护，不删科学原件。

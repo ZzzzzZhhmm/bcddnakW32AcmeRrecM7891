@@ -8,6 +8,9 @@ and raw checkpoints stay outside Git. A failed fixed seed is never replaced.
 from pathlib import Path
 import argparse,dataclasses,datetime,hashlib,importlib,importlib.util,json,os,pickle,sys,traceback
 
+spec=importlib.util.spec_from_file_location('PB_namespace_binding',Path(__file__).resolve().parents[1]/'src/fastwam/research/pb_namespace.py')
+N=importlib.util.module_from_spec(spec);spec.loader.exec_module(N)
+
 
 TRACE_PROTOCOLS={
  'warm.original-specialist-factual-trace.v1':('blocks_ranking_try','blocks_ranking_try-s3407-v1',14000,600,0),
@@ -17,8 +20,11 @@ TRACE_PROTOCOLS={
 }
 
 def validate_trace_plan(plan):
- if plan.get('schema') not in TRACE_PROTOCOLS:raise ValueError('Unknown original factual trace protocol')
- task,run,step,cap,physical_seed=TRACE_PROTOCOLS[plan['schema']]
+ if plan.get('schema')==N.SCHEMAS['factual']:
+  _,entry=N.validate_execution_binding(plan,'factual');task,run,step,cap,physical_seed='press_button','press_button-s3407-v2',12000,1500,entry['seed']
+ else:
+  if plan.get('schema') not in TRACE_PROTOCOLS:raise ValueError('Unknown original factual trace protocol')
+  task,run,step,cap,physical_seed=TRACE_PROTOCOLS[plan['schema']]
  if (plan.get('physical_seed')!=physical_seed or plan.get('max_native_commands')!=cap or plan.get('capture_replans')!=[8,48,96]
      or plan.get('qualified_original_run')!=run or plan.get('checkpoint_step')!=step):
   raise ValueError('Original fixed task/checkpoint/seed/horizon/probes differ')
@@ -47,17 +53,19 @@ def main():
  parser.add_argument('--expected-plan-sha256',required=True)
  cli=parser.parse_args();assert hashlib.sha256(cli.plan.read_bytes()).hexdigest()==cli.expected_plan_sha256
  plan=json.loads(cli.plan.read_text());expected_task=validate_trace_plan(plan)
+ is_namespace=plan['schema']==N.SCHEMAS['factual']
  is_cohort=plan['schema'].endswith('cohort-case0.v3');is_native=expected_task in ('battery_try','press_button')
  if expected_task=='press_button':
   import fcntl
-  lease=(Path(plan['evidence_root'])/'original_specialist_native_execution.worker.lock').open('a');fcntl.flock(lease,fcntl.LOCK_EX|fcntl.LOCK_NB)
+  lease=(Path(plan['native_worker_lease']) if is_namespace else Path(plan['evidence_root'])/'original_specialist_native_execution.worker.lock').open('a');fcntl.flock(lease,fcntl.LOCK_EX|fcntl.LOCK_NB)
  P=Path(plan['evidence_root']);C=Path(plan['original_source']);H=Path(plan['reference_controller'])
  CORE_SHA=plan['original_source_sha256'];COMMIT=plan['original_source_commit'];SIM_SHA=plan['simulator_source_sha256']
- out=Path(plan['output']);assert out.parent==P and not out.exists();out.mkdir()
+ out=Path(plan['output']);assert (is_namespace or out.parent==P) and not out.exists();out.mkdir()
  qualification=Path(plan['qualification_root']);qualified_operator=json.loads((qualification/'operator.json').read_text())
  assert qualified_operator['status']=='complete_one_original_replan_four_native_commands'
  assert hashlib.sha256((qualification/'operator.json').read_bytes()).hexdigest()==plan['qualification_operator_sha256']
  entry=None
+ if is_namespace:entry=N.bind_case(plan)[1]
  if is_cohort:
   roster_file=Path(plan['roster']);assert hashlib.sha256(roster_file.read_bytes()).hexdigest()==plan['roster_sha256']
   roster=json.loads(roster_file.read_text());assert roster['status']=='qualified_first50_expert_admitted_reset_roster' and len(roster['entries'])==50
@@ -105,15 +113,17 @@ def main():
   for relative in instruction_files:assert sha(runtime/relative)==sha(official/relative),str(relative)
   state['instruction_source_sha256']={str(f):sha(runtime/f) for f in instruction_files}
   protocol=np.load(args['warm_initial_states_path'],allow_pickle=False);assert protocol.dtype.kind in 'iu' and protocol.size>0
-  physical_seed=entry['seed'] if is_cohort else int(protocol.reshape(-1)[0]);assert physical_seed==plan['physical_seed']
+  physical_seed=entry['seed'] if (is_cohort or is_namespace) else int(protocol.reshape(-1)[0]);assert physical_seed==plan['physical_seed']
   state.update(candidate_seed=physical_seed,seed_protocol_sha256=sha256_array(protocol),seed_selection='Previously frozen all50 cohort case0;not replacement of the separate ineligible diagnostic0.' if is_cohort else 'First scalar of original candidate namespace;no outcome-based replacement.')
-  cfg=setup.resolved_config(runtime,args['task_name'],physical_seed);(out/'native_config.json').write_text(json.dumps(cfg,indent=2)+'\n')
+  cfg=setup.resolved_config(runtime,args['task_name'],physical_seed)
+  if is_namespace:cfg['now_ep_num']=entry['case_id'];state['seed_selection']='First-two expert-admitted namespace cases,chosen before any learned policy trial.'
+  (out/'native_config.json').write_text(json.dumps(cfg,indent=2)+'\n')
   children_before={x.pid for x in mp.active_children()};env=getattr(importlib.import_module('envs.'+args['task_name']),args['task_name'])()
   state['status']='fixed_seed_expert_setup_only';save();print('stage=fixed_seed_expert_setup_only',flush=True)
   random.seed(physical_seed);np.random.seed(physical_seed);torch.manual_seed(physical_seed);torch.cuda.manual_seed_all(physical_seed)
-  env.setup_demo(**cfg);expert_info=entry['expert_info'] if is_cohort else env.play_once()
+  env.setup_demo(**cfg);expert_info=entry['expert_info'] if (is_cohort or is_namespace) else env.play_once()
   if is_native and env.step_lim!=plan['max_native_commands']:raise ValueError('Original native horizon differs')
-  accepted=True if is_cohort else bool(env.plan_success and env.check_success());state['fixed_expert_setup_accepted']=accepted
+  accepted=True if (is_cohort or is_namespace) else bool(env.plan_success and env.check_success());state['fixed_expert_setup_accepted']=accepted
   if is_cohort:state.update(cohort_case_id=0,pre_frozen_cohort_sha256=plan['roster_sha256'],expert_admission_source='Existing expert-only frozen cohort;no new expert replay or policy-based admission.')
   (out/'expert_setup_metadata.json').write_text(json.dumps(expert_info,indent=2,default=lambda x:x.tolist() if hasattr(x,'tolist') else str(x))+'\n');save()
   env.close_env()
@@ -127,6 +137,7 @@ def main():
   descriptions=generate_episode_descriptions(args['task_name'],[expert_info['info']],100)[0]['unseen'];instruction=str(np.random.choice(descriptions));env.set_instruction(instruction=instruction)
   state.update(expert_history_provided_to_policy=False,instruction_metadata_source='Original evaluator expert-setup template metadata;learned episode reset afterwards,no expert actions or future effects in model history.')
   obs=env.get_obs();raw=legacy.factual_cameras(obs);qpos=legacy.factual_joint_state(obs)
+  if is_namespace:state.update(N.require_initial(plan,obs,instruction,physical_joint_values(env),press_button_task_state(env)))
   if is_cohort:
    observed={k:sha256_array(np.asarray(v['rgb'])) for k,v in obs['observation'].items() if 'rgb' in v};observed['native_qpos']=sha256_array(np.asarray(obs['joint_action']['vector']))
    assert observed==entry['initial_identity']['observation_arrays'] and instruction==entry['initial_identity']['instruction']
@@ -183,7 +194,9 @@ def main():
     torch.save(cpu(value),qdir/'model_output.pt');captured.add(query)
     (qdir/'probe_seal.json').write_text(json.dumps(dict(query=query,frame_index=frame_now,utc=stamp(),before_any_new_branch_truth=True,independent_candidate_labels=0),indent=2)+'\n')
    state['inference_queries']+=1;return value
-  policy.model.infer_action=infer_observer;policy.reset()
+  policy.model.infer_action=infer_observer
+  if is_namespace:policy._next_episode_index=entry['case_id']
+  policy.reset()
   state['status']='collecting_fixed_original_factual_episode';save()
   with np.load(qualification/'native_prefix_qpos.npz',allow_pickle=False) as previous:
    prefix_before=previous['before'].copy();prefix_after=previous['after'].copy()
