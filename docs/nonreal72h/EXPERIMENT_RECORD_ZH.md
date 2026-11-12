@@ -2966,3 +2966,5 @@ BT00旧资源段于17:05:56.963169UTC正常结束，云回读成功、run_manife
 新资源段最多3小时、最多3个从未执行的原角色，复用已终态GPU槽，维持6卡/120GPUh；原master和所有旧窗口不改，新最迟截止Nov13 10UTC。该机制是受作者已有计算资源授权的执行安排，不改变科学方法、样本、checkpoint或主指标。Windows资源/启动检查18项通过；依赖Torch的旧测试在Windows环境缺包，转原生CCI执行，不能将收集错误算通过。具体新资源申请与实际结果待后续独立收据确认，未把工程准备写成已运行实验。
 
 原生CCI最终48项相关回归通过（资源保护、旧native协议及启动），CUDA_VISIBLE_DEVICES为空。首次原生overlay未复制scripts，两个导入失败被保留；补齐同一canonical脚本后重新执行48项全部通过。未更改模型/实验输出来消除测试错误。
+
+真实plan第二轮CPU预检还发现旧manifest只有controller_source_sha256，没有controller_code路径字段。修正新登记对原路径的独立绑定，同时保留旧manifest所有字段和hash；新增实际旧格式回归，Windows最终19项通过。第二个未运行目录及源等价证明完整保留，仍无GPU/物理attempt，不能计作科学失败或已消耗的新GPU阶段。

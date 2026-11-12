@@ -138,7 +138,9 @@ def _require_resource_amendment(plan,first,end):
     if file_sha(proof_ref['path'])!=proof_ref['sha256']:
         raise ValueError('Controller equivalence proof changed')
     proof=read_json(proof_ref['path']);old_root=Path(proof['original_controller']);new_root=Path(proof['amended_controller'])
-    if (str(old_root)!=base['controller_code'] or str(new_root)!=plan['controller_code']
+    if (str(old_root)!=r['original_controller_root']
+        or ('controller_code' in base and str(old_root)!=base['controller_code'])
+        or str(new_root)!=plan['controller_code']
         or proof['original_controller_sha256']!=base['controller_source_sha256']
         or proof['amended_controller_sha256']!=plan['controller_source_sha256']):
         raise ValueError('Controller identities differ from the registered amendment')
