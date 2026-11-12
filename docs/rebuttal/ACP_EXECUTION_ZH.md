@@ -1,6 +1,6 @@
 # WARM rebuttal：CCI开发与ACP运行
 
-作者于2026-11-09确认可申请ACP算力，标准资源优先，标准GPU配额不足时再使用闲时资源。CCI用于修改、测试和冻结代码，也可运行适合单卡且小于4小时的任务；ACP只运行准备好的快照。自动填写的默认配置见`configs/nonreal/rebuttal_acp_defaults.json`。
+作者于2026-11-12明确目前只能使用闲时GPU；这覆盖11月9日的标准GPU优先偏好。后续GPU申请直接选择闲时，不反复尝试标准GPU或重复索取配额。0GPU的CPU任务已在标准资源实际完成，继续使用已验证的0GPU/4vCPU/16GiB配置。CCI用于修改、测试和冻结代码，也可运行适合单卡且小于4小时的任务；ACP只运行准备好的快照。自动填写的默认配置见`configs/nonreal/rebuttal_acp_defaults.json`。
 
 - 私有镜像：`ccr-zhicheng-02/lwz_wam:lwz-workspace-20261029145800`。
 - AFS：`afs-p3-01e`，子目录`/`挂载到`/mnt/afs`，以当前用户权限读写。

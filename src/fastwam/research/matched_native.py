@@ -36,6 +36,19 @@ def file_sha(path):
 
 def read_json(path):return json.loads(Path(path).read_text(encoding='utf-8'))
 
+def bind_local_model_root(plan, environment):
+    """Make a direct typed worker use the same local assets as its campaign."""
+    root = Path(plan['model_root'])
+    if not root.is_absolute() or not root.is_dir():
+        raise ValueError('The frozen local model root is missing or relative')
+    configured = environment.get('DIFFSYNTH_MODEL_BASE_PATH')
+    if configured and Path(configured).resolve() != root.resolve():
+        raise ValueError('Launch model root differs from the frozen plan')
+    if not configured:
+        environment['DIFFSYNTH_MODEL_BASE_PATH'] = str(root)
+    return root
+
+
 def atomic_json(path,value):
     import os,uuid
     path=Path(path);temp=path.with_name(path.name+'.atomic-'+uuid.uuid4().hex)

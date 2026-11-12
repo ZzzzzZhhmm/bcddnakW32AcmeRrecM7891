@@ -4,7 +4,9 @@
   "region": "cn-sh-01",
   "zone": "cn-sh-01z",
   "workspace": "p3-spatial-intelligence",
-  "resource_preference": ["standard", "idle_if_standard_gpu_quota_is_insufficient"],
+  "resource_preference": ["idle_for_gpu", "standard_for_zero_gpu_cpu"],
+  "gpu_resource_confirmed_by_user_on": "2026-11-12",
+  "gpu_resource_rule": "The author currently has idle GPU resources only. Do not attempt standard GPU creation again unless the author changes this constraint.",
   "image": {
     "source": "private",
     "namespace": "ccr-zhicheng-02",
@@ -37,8 +39,8 @@
       "memory_gib": 128,
       "replicas": 1,
       "maximum_restarts": 0,
-      "resource_type": "standard_first_then_idle_after_actual_quota_refusal",
-      "availability": "Recheck workspace quota and actual pod scheduling events; global free-card totals do not prove allocatable GPUs."
+      "resource_type": "idle",
+      "availability": "Recheck actual idle pod scheduling events and both confirmed clusters; global free-card totals do not prove allocatable GPUs."
     }
   },
   "submission_rule": "Verify actual job identity and resource state after submission; never resubmit an uncertain create action."

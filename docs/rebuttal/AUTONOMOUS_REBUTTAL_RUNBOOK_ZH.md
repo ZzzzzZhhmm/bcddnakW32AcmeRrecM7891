@@ -1,5 +1,13 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**Nov12 iter35最新恢复（12:22UTC快照，覆盖下方旧状态）：** 作者已明确GPU目前只能闲时；defaults和原hourly automation已更新，勿再尝试标准GPU/重复问配额。PB factual1500命令/375生成真实结束、1149原件双端验真，false/25TOPP完整保留；新增0GPU ACP58.586秒三路并行封存96候选，35原件双端核验。新ACP PB UID50ea739accc14fc3a1030a64583d3eed已在cluster01真实运行，固定11:53:11→13:15UTC；q8 AABA12:04 exit0/4H32/128分支命令、三个Full重复精确，raw/Full进展0/0，51原件验真，不算修复。当前q48资格、q96未开始；容器PID61/898不是CCI PID，不可据本机/proc不存在误判重跑。
+
+RB30 UID64f51463275f4795bab6eff333c4392d已实际156命令/40生成，RB40 UID230090418b9a45e6a3c70c9b52a85210已runner/worker加载，不能按下方旧三任务排队描述重复创建。BT30旧UID186861…已真实调度后遭signal15抢占/无结果；18原件验真后唯一新闲时后继UID427e8b34f97c4dbe96b0030a5717efe3，retry_iter35_v1，原plan/11:32首次/18:00截止不改，回读启动中*0。max同角色2尝试，不自动第三次重试。原cohort unknown旧6+此抢占1=7，均保留，不补0。
+
+CCI原bt40旧窗口已封闭；仅为原名单从未运行的case47 Pooled登记独立新资源段11:59:10→13:04:10UTC，原master18:00不变，源/模型/roster/指标未改。第一次遗漏模型资源目录的加载失败0query/0命令已18原件双端保全；环境修正后的attempt002_corrected_model_root/monitor2567058已12:09接续，3129秒上限及同13:04截止。12:22实测24,555MiB、0生成/仍加载；此失败是独立新段unknown1，不混成cohort结果。先查实际heartbeat/progress/exit再动作，不能在新段重复case47或重开旧窗口。
+
+审阅面为封存v27+执行增量3；42已验收角色/21固定0–0对、100对未完整，PB单状态0–0不能关闭P2。20项映射/放行JSON及current_iteration的iter35为权威；17块/37整段PENDING维持。优先完成真实三query/整池和匹配角色、保全每个失败；任何后续资源阶段都须独立事前登记、保留旧时钟/未知/累计6GPU及120GPUh预算，不能直接把旧deadline改成未来或按结果换样本。参见台账23.246–252。
+
 **Nov12 10:45UTC接续门已更新：** 原稿PB资格10:42:59通过、10:43:08 exit0，1次learned replan/4条真实命令，13原件7babc1f7…双端验真；独立原生CPU已重新核对32×14有限动作及四步qpos链，不跑新forward。当前唯一child2564395为自动后继full factual trace，加载中，原12:27:01UTC截止不改。不要重复qualification；下一步先核对fresh初始观测/首输出/四物理与计数完全复现，再收固定q8/48/96及1500步全轨迹。资格不填P2候选预测/修复/SR，shared分母仍42role/21对/6unknown。看current_iteration和23.245，勿沿用下文旧qualPID2563662在加载的快照。
 
 **Nov12 10:33UTC最高优先恢复：** 46Pooled10:21完成/1000命令/250H32/0TOPP/0success、旧outerexit0，2313旧角色原件双端核验，42已知role/21固定0–0对/6unknown。原09:09的41角色已包含46Full，旧“不含”文字已纠正，勿重复加计。当前CCI已换原稿PB新独立阶段：monitor2563624、child2563662，10:27→12:27UTC固定新窗口，资格loading/learnedqueries0，原bt40旧10:44:53窗口不改。先读PB stage/operator及qual/operator；资格成功才自动接1500步trace和固定q8/48/96。不要按下文旧46Pooled在跑描述重复派发47或第二PB；不要相信supervisor初始化query0为实时计数。三ACP仍未验证runner。v27/37pending保持，execution_addendum2已做源PDF/ZIP/17块一致性检查，见23.243–244和current_iteration。
