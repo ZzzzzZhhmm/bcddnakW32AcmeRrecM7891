@@ -1,4 +1,9 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
+**Nov12 iter38恢复优先：五个ACP闲时任务已实际运行。** AFS与15:42浏览器回读确认PB85e374、BT30唯一427e8、BT00a61db及两RB均已启动；不再按旧三任务排队快照复制任务。PB实际15:15:38→23:15:38UTC，旧13:15窗口/无效/unknown保持，未取消或拆分。新q8 pre Full逐字节重复旧Full，rank11接受10步后TOPP invalid，H32 effect/标签None；整池仍运行，不能填P2。
+
+首批晚到五角色及BT2/BT30 Full双端原件/物理链验收后累计59角色/28个0–0配对（原allocation55+资源等价4，BT2/30/48 Full尚未配对）；RB32两策略各TOPP1，余三新角色TOPP0。旧7cohort unknown+独立CCI加载unknown1保持。CCI旧两角色outer已正常终态，新独立15:40:52→18UTC阶段只拥有48Pooled→49Pooled→49Full，monitor2573512；每角色3000s/余窗至少3150s，失败无自动重试。复用CCI槽，5ACP+CCI共6槽，保守111.2164462419/120GPUh；旧窗口/master不重置。先读新current_iteration/ITER38_LIVE与台账23.262–265，不重复当前角色及自动后继。
+
+封存v28/PDF/ZIP不变，必读ACP_PARALLEL_RUNNING_20261112_ZH.md执行增量；20意见/17块/37整段pending均未放行。新4fd3607跨阶段query独占引用仅工程能力/17项双环境测试，不用于当前PB；活动源e23e634和原16冻结入口不变。后续真实完整证据到手后再联动修改论文、回复及完整编译。
 
 **Nov12 iter37最新恢复：v28完整候选已验收。** 三位回复及论文明确shared Rearrange Blocks q8、Battery Try specialist q8/q96，避免与新PB同名query混淆；BB-W1分段、所有数值/表格/公式/图/整段pending保持。完整原工程与干净ZIP46页/主文10页，全页文本一致，5页直接验看、其余41像素相同，0undefined/overfull；85项包14:53UTC AFS验真。20项/17块/37整段pending不放行。读CANDIDATE_V28_TASK_IDENTITY_ZH.md和新current_iteration；旧v27封存。
 

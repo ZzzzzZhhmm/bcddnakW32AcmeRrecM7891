@@ -2894,3 +2894,29 @@ RB31 Full于14:17:53、RB41 Full于14:21:45UTC正常exit0，各700命令/175生�
 新plan SHA9d4ea5bbdea6638fd32bc92655963071e9d10592ee5b6569736767c21f760dac仅时间/资源引用与原plan不同；native模型、两权重、bank、source、roster、动作/指标和原bt00独立runtime完全相同，老campaign/worker lease已核查空闲。14:43:18.336599→18:00UTC固定资源窗；每角色最多3600秒，余窗不足3900秒不开始，最多5角色；中断保留、无自动重试。CPU validate-only exit0、0policy forward；生成operator SHA193b8d2ffb3ce268b51c2bbd11b58eebd700fcb3dc6c309a31ed1740771b22ee，外层spec b9f77f66…/launch9b1028a3…，运行程序只用冻结本地source，不访问Git远端。
 
 14:47唯一提交warm-mf3k-bt00-remain-20261112-p37-idle，UIDa61db50720a241ef9f3a852495231db3，cluster01闲时1GPU/8CPU/128GiB/单副本/重启0，确认镜像/AFS原配置完整回读；14:48排队*0、无AFS runner，不算推理。cluster01实际0空GPU但CPU充足，02余卡8但CPU仅14且有nodeSpec碎片/配额等待；跨集群保留不同资源瓶颈，不重复同stage。含CCI1、两活动RB、PB排队1、BT30排队1及此新任务共6GPU槽，总保守预留108.8975605514/120GPUh，不再无界申请第七槽。PB优先级修改按钮实际disabled，未修改、未绕过；原PB85e374…及BT30后继427e8…继续保留。
+
+### 23.262 五个晚到角色原件独立验真：57角色、28个固定配对
+
+RB32 Full/Pooled分别14:51:44/15:25:45、RB42 Full/Pooled分别14:54:56/15:28:01、CCI BT48 Full于15:13:09UTC正常退出。RB四角色各700命令/175生成/546原件；BT48 Full为1000命令/250生成/775原件。五者success均0；RB32两角色各保留1次TOPP错误，RB42两角色与BT48 Full为0，不能把该批统写为0TOPP。原件位于ITER38_LATE_ROLE_ARCHIVES_V1，TAR SHA依上述顺序为24018d55fc231ff9236ca06e83bd089d9b9181d58cb4d3e5f0b5d8496d467b8c、db64ce1af3d565f23389a979404015ec486802e8ac1df5a54d63d7c345932fe9、b754cda60b3fce48af55fa7991b4618fa83d12133ab226cc131c3ef128ee1144、2338e15c2f46f03b61a09b7a69fbeee2854abce4503e6619fc44e97bab23d0a1、5344014a57f97240ad9ac022aadca9f7e298875595bd713f654612f88d599f42。
+
+全部TAR/manifest已双端重读；本机逐项核对模型/评估器/控制器SHA、每个有限32×14模型动作、qpos连续链、每条accepted物理命令、退出和命令上限。RB32/RB42两新配对的初始状态、共同协议、首query观测/proprio/Gaussian/候选池相同。ITER38_ROLE_RAW_LOCAL_VERIFICATION_V1.json记录57完整角色=原allocation54+资源等价CCI3，28完整配对均0–0，BT48 Full暂未配对。旧7cohort unknown与独立CCI加载unknown1保持；该shared/final3000补充研究不替换原稿specialist，完整100对尚未完成，不从成功率地板推导优越性或非劣效。
+
+### 23.263 五个ACP闲时任务已真实运行；CCI独立接续最后固定角色
+
+实际AFS runner显示BT00于15:00:44.868923、BT30唯一后继于15:06:32.600926、PB剩余分支于15:15:38.613729UTC准入。15:42:55浏览器只读回读五个唯一ACP任务全部运行中，分别为a61db50720a241ef9f3a852495231db3、427e8b34f97c4dbe96b0030a5717efe3、85e374b421a24794ae0e9f76d0257378、RB30的64f51463275f4795bab6eff333c4392d、RB40的230090418b9a45e6a3c70c9b52a85210；均沿用闲时配置，无新标准GPU请求。BT00真实976命令/245生成、BT30真实756/190；RB33/RB43正加载固定后继，PB已按顺序进入q8 rank13。不是把排队计作推理。PB原8h窗口实际15:15:38→23:15:38UTC，旧13:15窗口和所有旧unknown保持。原先考虑的迁移在停止前核查时发现任务已真实运行，因此未点停止、未取消、未复制第二个PB任务。
+
+CCI原两角色outer已正常终态、lease释放/GPU实测0MiB后，15:40:52.011514UTC登记新的独立资源阶段matched_never_started_CCI_final_roles_stage_iter38_v1，唯一monitor2573512于15:41:11启动。17条已知旧角色的退出/结果逐SHA绑定，原next_request只导出48Pooled→49Pooled→49Full，不按结果选样本、不重跑旧加载unknown。新plan SHA9c25421dd0aaaafebaed1300a01981421bb251e051fcc9add89310eeb09d63fe与原bt40 plan逐字段只改时间/资源登记；原模型、bank、名单、源、动作、指标不变。旧13:49→16:19:40窗口不改，新段独立止于原master18UTC；每角色3000秒、余窗不足3150秒不开始，失败保留且无自动重试。新保守预留2.3188856906h，总上界111.2164462419/120GPUh；复用终态CCI槽，最大6槽不变。15:41实测启动加载，0生成；不能提前计入57角色。后端四小时重启时刻未核实，任何中断必须保留未知。
+
+### 23.264 PB新边界控制复现与无效候选保全；工程能力不冒充科学结果
+
+PB活动任务使用原冻结e23e634控制器，collector SHA b47ae1e1f16668d78a149a9462a8fe470785adf1a9c86c6215832f97414afa87；本轮未替换入口。q8新pre Full与旧Full已完成H32，parent/endpoint pickle、DINO、命令字节完全相同，物理/任务连续链及768维delta在本机独立重算，最大误差2.98e−8。Full进展仍0；新增rank11接受10命令后官方TOPP拒绝，endpoint_status=invalid_branch，H32 effect及标签均None，不能补为失败0或当完整H32。仅三个已封存分支共27项原件归档ITER38_PB_BOUNDARY_SUBSET_V1，TAR b79fec4a7393236e29c9e5e1868a339d6190a1467a876758eefa0bc9b10dfe77，manifest 8f8a0c04d534b57f032c62b3750145b8e12d05523d9d977a87aab439682fe2af；ITER38_PB_BOUNDARY_SUBSET_LOCAL_VERIFICATION_V1.json双端保全。活动整池尚未完成，这个子集不发布主指标。
+
+新增canonical 4fd3607670167e9a4aa14fccdbcac97e0d50bac3，允许未来资源阶段显式引用由另一冻结阶段独占的固定query，要求输入SHA绑定、相同query plan且不得自称已完成或与owner重叠。Windows与CCI各17项工程测试通过，英文提交/推送验证、CCI离线FF；旧16个冻结入口未变。新能力只封存到PB_owned_query_supervisor_4fd3607，SHA52745e03e43ee227e53c0c2ef28ed258f80b0c76a2067603e84ae3bdd6268aad；现有ACP仍独占q8/q48/q96，未拆分、未部署此能力、未新增科学样本。
+
+本轮保持完整封存v28论文/回复/PDF/源码ZIP；只更新执行增量和20项问题映射。17评论块/37整段PENDING及五组有利结论均不放行，无新增真机数据回传、未公开发布。完整新数据完成并独立验真后再联动修改数值、方向和完整论文编译，不能用上述加载/工程通过/部分H32替代实验证据。
+
+### 23.265 晚到BT2/BT30 Full验收：59完整角色、28固定配对
+
+BT00独立资源段case2 Full于15:42:28.558085、BT30原科学plan的唯一抢占后继case30 Full于15:48:12.769180UTC正常exit0/非bounded；各1000命令/250生成/success0/TOPP0。两套原件分别777/771成员，TAR SHA ff6bc3a9a5ab91ae13ed347e64b7c63249006d7a852b6838cac36475a593b108、acf029971cf05d02fd3c59ab9f410745e5aa4a7550c4359ac18a90d23dff3848，保存在ITER38_TWO_BT_ROLE_ARCHIVES_V2，双端逐成员及本机每条qpos/物理连续链、32×14模型动作/源/权重独立验真。BT00新旧plan在本机重新比对，仅时间/资源引用三字段不同，全部科学模型/名单/bank/指标相同；旧资源窗没有重开。
+
+ITER38_ROLE_RAW_LOCAL_VERIFICATION_V2.json给出累计59=原allocation55+资源等价4，28完整0–0对，未配对Full为BT2/BT30/BT48。BT30旧抢占unknown仍保留，不因新完整同角色结果而删去；7cohort unknown+独立CCI加载unknown1不变。BT00/BT30各自自动进入同case Pooled，不重复派发。完整固定100对仍未完成，37个有利待证槽不放行。23.262的57/28是较早封存截止，不覆盖或删除；最新恢复以本节及iter38 V2审计为准。
