@@ -1,5 +1,11 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**Nov12 00:53UTC当前锚点：v23已封存验真，20项不再用通用证据说明代替逐项自审。** `responses/20261112_v23_issue_specific`每项绑定原review note/field/ordinal/hash，逐项列出原主张、已回答子问题、原报告/新证据、剩余直接实验及真实PDF位置。三位真实优点开场、we/our及已完成修订结尾保留；Bbqv以M(n)及任务证据起笔再回应小幅总体差值。MemoryWAM成本与LIBERO复现分开，官方公开main的代码发布仍pending已保存固定commit/README/tree，不能用Pooled冒充。论文Wilson置信水平改为nominal，原数据/九图/公式/表格保留。45页/主文10，完整与干净ZIP重编译、变化43/44/45直接验看，另42页像素不变。89成员包TAR99f68449…/manifest98a6d0b7…已本机及00:52:58 AFS逐成员/解包验真；P1–P5及37槽未填，不发布。详见CANDIDATE_V23_20261112_ZH.md及台账23.203–206。
+
+**真实活动角色是case41 Pooled，勿沿用人工“Full”描述：** case40 Pooled已00:12:41完整1000命令/250H32、success0，777原件双端验真并与Full首输入/共同噪声/候选池精确一致。累计30角色/15对全0/0/6unknown。00:27:30唯一续段`cci_segment_iter28_v1`，monitor2535716/campaign2535717/worker2535722；冻结控制器按奇数case交替Pooled优先正确执行，admission文字错写Full另保留并单独纠正，未改科学顺序或重启。00:52实际340完整物理命令/86生成、32,392MiB/95%GPU。下一原角色由冻结next_request计算；终态核验前不重复。
+
+**ACP界面认证已过期，AFS仍可持续查验：** 当前已明确显示“登录超时，请重新登录”，作者收到异步登录请求，现有tab/草稿保留；不凭旧界面称当前cloud状态已核实。q96同一00:52 AFS仍25branch/22候选端点、rank22重建，07:16UTC截止不变。新rank14–18五项50原件TAR3659c7ed…/manifest564185ec…双端与本机验真，累计20候选独立归档；晚到rank19/21另待接收，整池未完。保留原不利父状态/全部0/unknown，不填全池主指标或修复率。当前canonical及原时钟以新current_iteration安装收据为准。
+
 **Nov11 23:43UTC最新锚点：v22已完整验收，原v21不动。** 当前三位作者对话回复`responses/20261112_v22_count_precision`覆盖20项/17块，保持逐review真实优点感谢开场、we/our与具体修订结尾。新增13任务原报告计数的Wilson区间（0新增rollout、独立固定策略假设、非paired baseline显著性）及q96干预前已掉落范围；原九图/数值/公式/表格保留。45页/主文10页，全文与干净ZIP含BibTeX四遍编译、两变化页7/42及新增45直接验看，其余42页像素一致，0 undefined/overfull。83成员包`writing_candidates/20261112_v22`已23:41:58 AFS逐成员/解包验真，TARfc8a2a85…/manifest451f3540…；P1–P5及37槽仍整体待证，不发布。详见CANDIDATE_V22_20261112_ZH.md与台账23.199–202。
 
 **CCI下一原固定role正在运行，禁止重复：** case40 Full实际23:27:20 exit0、1000命令/250H32、success0/0TOPP，776原件双端及本机动作/物理链验真；累计29完整role/14完整对均0/0/6unknown，新Full尚未配对。原bt40窗口不改，23:31:29唯一续段`cci_segment_iter27_v1`开始case40 Pooled（monitor2534261/campaign2534262/worker2534267），23:42实际24,555MiB/心跳、0生成/物理。先查其真实终态与原10:44:53UTC截止，再续原case41；不得把Pooled加载当完整新配对或另交ACP重复。
