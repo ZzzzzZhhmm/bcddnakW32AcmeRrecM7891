@@ -3058,3 +3058,23 @@ CCI原case3 Full第二次已19:37:24正常exit0，并由同monitor接4Full；完
 准备器首轮在CPU阶段错误假定后两个未尝试角色属于同一case而停止；ITER42_PREPARATION_INSPECTION_V1.json保留真实原顺序，无新增资源登记、GPU动作或云任务，源快照未覆盖。复核后优先采用现有v2的显式unknown核销，以原next_request接BT32Full、32Pooled和RB35Pooled、35Full，补齐原固定reset的双方，而非按结果选择后续case。旧两角色没有完整结局，不能计作模型失败；原unknown与原件永久保留。
 
 新增外层窗口核销条件必须同时核对原plan截止、实际runner scheduler_signal_2、距截止180秒内的真实结束、worker信号退出和事后检查时刻；不能把policy退出、已知结果或未核销unknown当可重试。只允许同一已冻结case/role的第二次尝试，仍禁止自动第三次；模型、指标、原样本和旧窗口不改。61项Windows及91项CCI原生CPU检查通过，32原冻结入口保持；准备后仍须完整绑定归档、source等价证明、两路独立预算，再逐一提交闲时ACP。本条不把排队/准备视作已运行或新增统计结果。
+
+### 23.285 两路原固定配对的闲时ACP实际获得资源并启动
+
+首轮外层恢复的CPU预检捕获了source绑定变化：准备器import新模块时改写了已绑定的旧pyc，尚无云创建或GPU动作。旧失败源码/预检完整保留，未修补活动树；新准备器全程禁止bytecode写入，新controller acca89ba143163f698c8e731f8dc9371534f3fc644cebe602296f8ba4eb61af8保持553文件。原/新两树1106成员封存d11d808c445636cc2ee3f04a0369e436915fd3618876b47d37f268fd7b33ddf0，manifest dc70de19e20318f349addfda54dae0bda3afc91144a1becb1197799e62ef34c9；本机逐字节和独立AST核验确认只资源函数及worker时钟guard变化，其他551文件/科学AST精确。原32冻结入口保持，canonical721a0c5已push并CCI离线FF。
+
+两阶段均为cluster02闲时1GPU/8CPU/128GiB、单副本/重启0、确认镜像与AFS；创建仅各点击一次，UID及配置云回读、真实AFS runner相互对应。BT任务warm-mf3k-bt30-tail-20261113-p42-idle，UID38a8fb6c994d42a483f92f027e417d78，19:57:06真实runner，固定BT32Full第二次→32Pooled；截止21:39:26.094270UTC沿用CPU预检前的首登记，不重置。RB任务warm-mf3k-rb30-tail-20261113-p42-idle，UID613e7ebe9c1b40669c6c3c4c406c8da0，19:58:23真实runner，固定RB35Pooled第二次→35Full，截止21:42:51.386072UTC。旧外层18UTC及所有原窗口不改。各1.8GPUh、保守累计119.8928711239/120、最多6槽；与CCI和PB共四路GPU任务，20:01两个新worker实际加载、生成0，不能写四卡已在推理。
+
+旧BT/RB inventory分别3094/5603文件全部封存，原known/unknown均保留。实际scheduler_signal_2和信号退出已显式核销，只恢复同case/role的第二次尝试，无自动第三次，第一角色若unknown则该monitor停止。两monitor独占各自条件后继，不得另开同角色或按结果替换。原PB85e的q96和0GPU审计1ae继续原23:15:38/23:25:38UTC截止，没有重复创建CPU任务。排队时规格中的*0是已分配数量，不能误当请求0GPU；已后续回读两任务均*1且运行中。
+
+### 23.286 BT3 Full完整验真，累计76角色/38固定配对
+
+CCI同角色第二次于19:37:24.968125UTC正常exit0，1000条命令、250个H32生成、0TOPP、success0；原guard超时165步/None保留。Full与已验收的BT3 Pooled双方初态、实际物理、共同contract及首query输入、proprio、Gaussian、bank与candidate payload精确。两份777成员原件（含角色退出与日志）双端/本机独立逐文件、有限动作、qpos连续链和实际accepted物理命令核验；Full TAR f8f7edd209eb0c5335337e3d92a64fb955373e44f05ea9144f55ac0b3fcea055、manifest f10a634ac05fb7ff621a314d4e0fb29f36042d6cc18edaeb3b723b4a1636ee10；Pooled TAR7cdc51cbfda53e44a694d6a7fbdf6f4856cffd0cd0ab4f33a79811e21e4896ab、manifest97fdf1501570632fd40c5cd527856900f76aa3a3d76362b59951687b70bbbb2e。
+
+ITER42_ROLE_RAW_LOCAL_VERIFICATION_V1.json验收后累计76完整角色/38固定0–0配对，原allocation66+资源等价10；12个历史unknown尝试继续分列（cohort10、CCI加载1、guard1），不会因之后同角色完整而删原件或改写旧退出。固定100对未完成，仍不能声称优势或非劣效。CCI同monitor已接4Full，20:01实际236命令/60生成；条件4Pooled仍归该monitor，21:30UTC不变。
+
+### 23.287 已核验执行补充与封存v30的一致性
+
+新增Bbqv/Hh4E两份作者口吻的已核验补充评论，明确38对完整0–0与原specialist比较分开；q48全部32候选、31完整/1invalid、不利主指标及父超额NA标签保持。rkWY原v30回复不做无证据增补，作者新真机材料仍未回传。当前新增补充不冒称新的完整回复或已修改PDF；封存v30 PDF89abaec1…/ZIP12539cd3…及17块/20项/37整段pending保持，未新编译、未公开发布。
+
+特别核对成本分母：C.6是预先冻结的75完整回合/15450replans，不把后来第76角色写进该审计或暗改分母。q48独立Markdown/LaTeX插入片段与本轮执行补充仍待q96终态后统一合入下一完整候选；有利P1–P5方向均未放行。新补充材料和放行矩阵应以iter42为恢复入口，不能按旧75/37或“两ACP未提交”快照重复创建。

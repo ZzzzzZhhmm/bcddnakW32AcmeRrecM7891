@@ -1,4 +1,8 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
+**Nov13 iter42恢复优先：两路新增闲时ACP已实际运行，不再创建。** BT32Full显式第二次→32Pooled，UID38a8fb6c994d42a483f92f027e417d78，截止21:39:26UTC；RB35Pooled显式第二次→35Full，UID613e7ebe9c1b40669c6c3c4c406c8da0，截止21:42:51UTC。两路均cluster02/1GPU8CPU128GiB/重启0，真实runner19:57/19:58已启动，20:01仍加载0生成；不能把已分配/加载写成已推理。原signal2 unknown与3094/5603项旧inventory完整保留，源acca89资源等价/1106成员/科学AST验真，61Windows/91nativeCPU通过。每条只允许已核销的第二次，无自动第三次或重复条件后继；旧master/窗口及新BT首登记不重置。保守119.8928711239/120GPUh、最多6槽，后续申请前必须先核销真实剩余额度。
+
+BT3 Full完整验真后累计76角色/38个0–0对（原66+资源等价10），12历史unknown尝试不删。CCI同monitor已接4Full/条件4Pooled，21:30UTC；原PB85e q96/CPU1ae仍23:15:38/23:25:38UTC，不重建。封存v30 PDF/ZIP未改，20项/17块/37整段pending保持；新Bbqv/Hh4E已核验补充和q48插入片段独立，尚未合入PDF。C.6成本仍固定75回合/15450replans，不混为76。先读PARALLEL_OUTER_WINDOW_RECOVERY_20261113_ZH.md、台账23.283–287及新current_iteration；不要按下方旧“75/37、两任务未提交、BT3活动”快照行动。
+
 **Nov13 iter41最新恢复：v30完整候选与关键资源guard修复已验收。** C.6/表33新增75完整回合、15450replan的真实日志成本，Hh4E W2/结尾联动；完整原工程+干净ZIP47页/主文10页、0undefined/overfull、41–47直接验看/其余40页像素同，91项19:04UTC AFS验真。20意见/17块/37整段pending不放行，原v29封存。读CANDIDATE_V30_NATIVE_COST_ZH.md及最新current_iteration。
 
 旧v3 BT3 Full165命令/42生成到3000秒超时，155原件已验真，None结果保留。每步重复1106源码准入校验实测10.7秒；新factory一次完整准入后只查同一绝对时钟，1000次0.000111秒，Windows44/native74通过。新collector77a1a6d6仅资源函数/worker budget变化，其他模型/物理/指标AST同；显式核销后新CCI段18:51→21:30UTC接同case3 Full第二次→4Full→4Pooled，monitor2581475/worker2581509。旧20UTC/master18UTC及所有原件不改，保守116.2928711239/120GPUh、6槽；不要按下方旧11a0f860阶段快照重复派发，也不能自动第三次尝试。
