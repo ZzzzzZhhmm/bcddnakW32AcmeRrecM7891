@@ -1,5 +1,11 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**Nov12 01:13UTC接续优先锚点：原固定两role段已启动，不重复case41 Full或case42 Full。** case41Pooled实际01:09:01正常exit0、1000命令/250H32/0TOPP/success0，777原件TAR23f1571f…/manifest259b11a0…双端与本机验真。累计31完整role/15完整对全0/0/6unknown，新Pooled尚未配对。当前`cci_segment_iter28_followup_v1`，monitor2537277/campaign2537278/worker2537283，原case41Full正在加载；最多2个原固定role，第二个仅在前一角色被原控制器验收后按冻结顺序选择case42Full。该段01:11:24准入前已独立核销旧进程/GPU/两lease及前终态，不是新ACP复制。
+
+**新段操作上限有前瞻身份，原研究时钟不变：** 01:01:52已冻结`ITER28_TWO_ROLE_OPERATOR_PLAN_V1.json` SHA f29feed7…，只设置单次invocation≤2role/9000s（含kill9120<4h），原每role3600s、科学配置/样本/模型/顺序/6slot/120GPUh及bt40首次22:44:53→10:44:53绝对截止不改。原入口adb5ba9b…已CPU验证2role可准入、3role拒绝；未知退出仍停止、禁止自动重试，不能按新段重置资源窗。当前0生成/0物理为加载，不称新完成角色。后续先看该outer、实际worker、exit和完整结果；即使第一角色结束，outer仍可能正运行第二角色，勿只因前一worker消失就另起任务。
+
+**最新索引用v23执行增量1，原89成员写作包不改：** `responses/20261112_v23_execution_addendum1`维护31/15与20项映射，三文件manifest48171396…；原三回复/PDF/LaTeX/ZIP不覆盖。q96另rank19/21/22三H32标签0的30原件TAR393952ea…/manifest963b2568…已双端/本机验真，累计23候选独立归档；01:13实际24候选/rank24重建，rank23晚到待接收，07:16UTC原截止不变。ACP UI认证仍待作者恢复，依赖AFS实际心跳，不重复索取旧真机素材。详见台账23.207–209；current_iteration完成安装后以该收据为准。
+
 **Nov12 00:53UTC当前锚点：v23已封存验真，20项不再用通用证据说明代替逐项自审。** `responses/20261112_v23_issue_specific`每项绑定原review note/field/ordinal/hash，逐项列出原主张、已回答子问题、原报告/新证据、剩余直接实验及真实PDF位置。三位真实优点开场、we/our及已完成修订结尾保留；Bbqv以M(n)及任务证据起笔再回应小幅总体差值。MemoryWAM成本与LIBERO复现分开，官方公开main的代码发布仍pending已保存固定commit/README/tree，不能用Pooled冒充。论文Wilson置信水平改为nominal，原数据/九图/公式/表格保留。45页/主文10，完整与干净ZIP重编译、变化43/44/45直接验看，另42页像素不变。89成员包TAR99f68449…/manifest98a6d0b7…已本机及00:52:58 AFS逐成员/解包验真；P1–P5及37槽未填，不发布。详见CANDIDATE_V23_20261112_ZH.md及台账23.203–206。
 
 **真实活动角色是case41 Pooled，勿沿用人工“Full”描述：** case40 Pooled已00:12:41完整1000命令/250H32、success0，777原件双端验真并与Full首输入/共同噪声/候选池精确一致。累计30角色/15对全0/0/6unknown。00:27:30唯一续段`cci_segment_iter28_v1`，monitor2535716/campaign2535717/worker2535722；冻结控制器按奇数case交替Pooled优先正确执行，admission文字错写Full另保留并单独纠正，未改科学顺序或重启。00:52实际340完整物理命令/86生成、32,392MiB/95%GPU。下一原角色由冻结next_request计算；终态核验前不重复。

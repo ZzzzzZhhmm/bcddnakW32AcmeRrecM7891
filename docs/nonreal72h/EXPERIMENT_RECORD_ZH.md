@@ -2499,3 +2499,18 @@ Git外本机`execution/20261112_iter28/MEMORYWAM_PUBLIC_RELEASE_AUDIT_V1`与AFS 
 89成员123,951,134B包TAR99f68449da64d7b1e0ed5dc740893fab0dcbc55094a5d28334afd5109f96f41c、manifest98a6d0b710418f04a9165d0080ad02c2dc9f6d04784a59592a5a862ad7fdd577，已本机及Nov12 00:52:58 AFS逐成员/解包独立验真，`writing_candidates/20261112_v23`；v22封存不改。00:52真实CCI case41Pooled有340完整物理命令/86生成、32,392MiB/95%GPU，尚不能计新完整role。q96实际25branch/22候选端点、rank22重建，原截止不改；20候选已归档、晚到rank19/21待独立接收。
 
 ACP界面本轮已显示登录超时，保留三个原tab及草稿，记录AUTHENTICATION_REQUIRED并向作者异步请求重新登录；不把旧UI状态称为本轮已核实。现有CCI与AFS实际心跳/结果可持续查验，未重启或重复现有云任务。详见CANDIDATE_V23_20261112_ZH.md。
+### 23.207 case41Pooled完整终态，原同信息研究累计31角色
+
+实际Nov12 01:09:01.952997UTC exit0、非bounded，完整1000命令/250H32/2000物理记录、success0/0TOPP。777原件18,115,175B封存`ITER28_BT41_POOLED_TERMINAL_V1`，TAR23f1571f4ceaad4562bf90c86f7853e72ea466dbe53719f89006835b0d52bb19、manifest259b11a0a79ca4b277f83311fe58dd4b3f81bea196e7484632afee9b63db9fb3；双端与本机逐成员/动作/生成/物理链独立验真。Pooled9c9c9124…/source87199cc6…/controller861004fa…不改。累计31完整role、15完整对全0/0、6unknown，新case41Pooled尚未与Full配对；原100对未完成，不据此推收益或非劣效。验证收据各自保留主机原时间戳，不以跨主机秒级顺序建立物理因果；q96时间问题依据同一轨迹command384干预顺序。
+
+### 23.208 q96三个晚到候选原件
+
+固定rank19/21/22各完整H32、父状态精确、无endpoint error，独立下一交互均0。30原件19,475,447B封存`ITER28_Q96_LATE_DELTA_V1`，TAR393952ea192e37fe395ecebf1244eb05ef2f6d2859a451f10d873067a107f2ce、manifest963b2568277f9bf18c3bd5e78f5b4cb5d528cc2c8a1d0d5b0349f72baa0db9f8；双端及本机01:07:30全成员/H32核验。累计23候选独立归档，仍一个不利父状态，所有0标签与主指标支持保留。01:13实际27branch/24候选端点、rank24重建；rank23晚到未独立归档，整池尚未完成，不能先算完整池主指标或人口修复率。原07:16:01UTC截止不改。
+
+### 23.209 前瞻冻结两role操作段，减少轮询空等但不改科学设计
+
+旧一role段正常终态与独立原件验收前，01:01:52先冻结`ITER28_TWO_ROLE_OPERATOR_PLAN_V1.json`（SHA f29feed75da9fc4c3bc72449b184ab181159327c34fb3cda436b0c1333e4dc90）。原不可变入口本就允许1–2新role，CPU validate-only对2通过、3拒绝；只改变未来一次invocation操作上限为2role/outer9000s，含kill最长9120<4h。原每role3600s、6slot/120GPUh、模型/数据/样本/科学源/奇偶顺序及原bt40首次22:44:53→Nov12 10:44:53资源窗保持。依据已观察单role约41分钟配置时间余量，非按结果换样或重开过期窗口；CCI四小时平台重启边界仍未核实。
+
+前Pooled全部777原件独立核验，旧三个PID/GPU/两lease均释放后，01:11:24.337945唯一启动`cci_segment_iter28_followup_v1`，monitor2537277/campaign2537278/worker2537283，当前case41Full加载，第一角色被原控制器验收后才按冻结next_request选择case42Full。新launch SHA16c6c8fa12b398cc65a4dc80cf09ff8706a69dabacccdfd48c47db3f0788e6be；科学入口adb5ba9b…/修订dfaa351a…/plan44c23a4b…逐字节不改。未知退出仍停止，不自动重试；两role cap不能误写成两角色已完成。01:13仅527MiB/0生成/0物理，为进程加载阶段。当前outer存活时不能因前一worker结束而另起同一角色。
+
+新内部`responses/20261112_v23_execution_addendum1`三文件维护20项映射及31/15/6unknown、q96已归档23/实际24的独立快照，manifest48171396e64f491c0aee3ffd53b937fe35453e867d4c8bd0f2350e134dd86e23。原v23三回复、PDF、源码ZIP与89成员包不动，P1–P5整段及37空槽保持待证；最新索引及双端当前状态以本轮安装收据为准。
