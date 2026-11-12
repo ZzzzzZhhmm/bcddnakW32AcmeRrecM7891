@@ -1,5 +1,11 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**Nov12 02:48UTC实际终态与下一段：原q96整池已完成，不再续跑。** runner02:40:22真实exit0、32候选/0未知、四Full精确、36分支同父；376项全量原件TAR546a0356…/manifest84bc6080…双端保全，本机02:46独立复算。原uniform-mean主指标pred/history/constant centered MSE0.170002/0.164821/0.144898，pred未优于参照；全部strict标签0，raw/Full0/0，原干预前掉落/单query/无null范围保持。constant absolute因缺实际requirement仍不可得。原07:16UTC窗口已由真实完成收尾，不能再等待旧rank31或重新派任务。
+
+**CCI case42Pooled已按原次序继续，禁止重复。** case42Full02:36:16完整1000/250/0TOPP、success0，777原件95462735…/5ebe7043…双端独立验收；累计33角色/16对全0/0/6unknown，尚无第17对。新`cci_segment_iter29_v1`02:40:11唯一准入monitor2540822/worker2540828，最多2role，下一case43Pooled由原控制器在验收首role后选择。原bt40 10:44:53UTC、3600s/9000s与科学入口不变；操作计划7f04c607…事前冻结，旧outer/GPU/两lease已核销，不复制ACP。
+
+**新证据走v24执行增量1；原PDF包仍封存。** 六成员manifest0ac1b46b…维护最新20项映射、两份英文followup和待合入LaTeX，完整q96数值尚未在v24 PDF中，下一整版整合并重编译。原BT q8 infer_kwargs对numpy仅存类型标记，不能直接当完整context。先修复独立collector捕获或原路径重构并核对原事实hash/Full H32，再做GPU null；别用零填补、伪造online capability或按结果换状态。两原代码23CPU资格与PB在线静态资格仍不等于该GPU/物理证据。ACP认证请求待作者，真机0新trial收到；详见台账23.216–218和后续current_iteration安装收据。
+
 **Nov12 02:30UTC写作与运行最新锚点：v24已整版封存验收，旧v23不覆盖。** 三位原review认可优点的开场、we/our与已完成修订结尾保持；rkWY正面重申支持范围内的贡献，Hh4E去重复/多余负面自评。论文4.7以作者视角分别连接适用、修复、完整成功与自然撤回的测量；45页/主文10，完整及干净ZIP编译全部页文本一致，第10页直接验看、余44像素一致，原图/表/数字/公式不删。原v23已有AI use statement，已核对源码和PDF第11页，v24原样保留，别重复新增。93成员包TAR62cc1593…/manifest06c76d93…已02:25:09 AFS验真；P1–P5整段/37槽仍待证。见CANDIDATE_V24_20261112_ZH.md。
 
 **当前case42 Full仍在原两role outer内，不能重复。** 02:26实际629命令/158生成、GPU100%；32角色/16配对全0/0/6unknown是已验收计数，未计活动case42。monitor2537277/campaign2537278/worker2538267及原bt40 10:44:53UTC截止保持；原q96已31候选/rank31活动，29候选已独立归档，晚到rank29/30待接收，原07:16:01UTC不改。真实终态后验全轨迹和exit，先核销outer与两lease再续原下一角色。ACP认证请求仍待作者，无重复创建。

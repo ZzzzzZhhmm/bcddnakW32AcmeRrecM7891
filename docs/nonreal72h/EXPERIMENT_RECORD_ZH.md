@@ -2554,3 +2554,25 @@ Full实际Nov12 01:53:51.570553UTC正常exit0、非bounded，1000命令/250H32/2
 完整原工程与干净ZIP均含BibTeX四遍编译45页/主文至结论10页，全部页文字一致。只改变第10页并直接验看，余44页像素一致；0undefined/overfull、45继承字体warning、匿名与内部标识通过。源码及PDF第11页证实原v23已有AI use statement，v24原样保留，纠正旧状态索引“待新增”。首次heading文字检查误拒PDF的AIUSE空白抽取，首份PDF原件保留；仅校正heading空白匹配后通过，未改科学数据。PDF85afd3605bcdb5d4591284756dcb71d1b8552fca2a5f7aff46c96114c29acef2，source ZIPed82211ab8d32c5919f268255c47b931d960154ea6dbf213f2e9230038f37cfb。
 
 93成员123,956,825B写作包TAR62cc1593e97f20773d1472b63323d42ab6bb2419fd74520f9dc1284bd092a29a、manifest06c76d933018760d33f81d3080c9a89ba7397839057029026c62a9a5135c0e8f，本机及02:25:09UTC AFS全成员/解包独立验真，`writing_candidates/20261112_v24`，原v23不改。材料快照仍32角色/16对全0/0/6unknown、q96已归档29候选；02:26实际case42Full629命令/158生成/GPU100%，q96已有31候选而rank31活动，晚到29/30未独立接收，不提前当完整结果。另case41配对的初态、首图像/proprio/共同Gaussian/候选池独立核对精确，`ITER29_CASE41_PAIR_INDEPENDENT_IDENTITY_V1.json`。
+
+### 23.216 原case42 Full终态与同窗下一两role
+
+Full实际02:36:16.320068UTC正常exit0、非bounded，1000命令/250H32/2000物理记录完整，success0/0TOPP。777原件17,975,659B在双端`ITER29_BT42_FULL_TERMINAL_V1`保全，TAR95462735b6d169f0bcb266aba276e8a443afda0baa763f6f99978fae4798fab8、manifest5ebe7043b0fd1e639488307a40fc7f3b58f66f8536a7375abb4b2cde43e907dd；本机02:39:18逐成员/动作/生成/独立物理链核验。累计33完整role/16完整对全0/0/6unknown，新Full尚未配对，不计第17对。
+
+原两role outer实际exit0、旧三PID/GPU/两lease释放及完整原件验收后，02:40:11.912182唯一准入`cci_segment_iter29_v1`，monitor2540822、实际worker2540828，原next_request正确选择case42 Pooled，第二角色仅在首角色被原控制器验收后选case43 Pooled。02:38:18预先冻结新操作计划7f04c607fd974d51f24c2186fc61aaeb4ec1656ae3f1f71ccbdd83df5e969131，仍最多2role/9000s、每role3600s；入口/launch科学字节、模型/样本/顺序、原bt40首次22:44:53→10:44:53窗口不改。不是新云副本，不按结果改样，未知仍停止。
+
+### 23.217 原BT q96全池与最终Full已真实完成，独立复算不利主指标
+
+原标准任务UID536a352f050b4142890aa99fb88aa23b的nonreal runner实际02:40:22.140339UTC complete/exit0，elapsed22562.61s；source前后f7cf0583…完全一致。原32/32候选完整H32、0未知，四次Full端点/效应精确，36分支父状态/事实前缀一致。376原件236,483,738B在双端`ITER29_Q96_COMPLETE_TERMINAL_V1`保全，TAR546a03565a3bc4d5ddee5f6627c6e59c4518e86aa180339515daff895bc7a161、manifest84bc6080d76f3d144cea62f9a5222a6468255ffc1e4d29f4a65d81c6c020452b；本机02:46:11全成员/H32/四Full/父状态及主指标独立验真。最后rank29–31三H32另有30项增量档案65ba071f…/e0115a81…，同样全部严格标签0。
+
+原uniform-mean四DINO token descriptor的完整共同支持上，predicted/historical/constant centered MSE为0.17000183889870682/0.16482099214548016/0.14489814162091016；predicted未优于两参照。predicted/historical absolute MSE为0.21172237343896194/0.20598023517768294；原query requirement未捕获，constant absolute仍不可得，不补造。独立残差二阶矩公式复算最大差2.7755575615628914e-17，未事后拟合或改主指标。
+
+干预前已掉落的父状态完整保留；32候选与四Full严格下一交互均0，selected raw/Full为0/0，无完成型修复/伤害，尚无同父candidate-null。一个query的相关候选不当32回合，不能外推总体机制收益或不可恢复性。原07:16UTC窗口以真实完成收尾，不重置或续跑该全池。浏览器认证仍未恢复，不把runner终态冒充最新云UI核验。
+
+最新`responses/20261112_v24_execution_addendum1`六文件含20项执行映射、两份英文followup、待合入的LaTeX段、进度与原件收据，manifest0ac1b46b81b291e33132b7f73924859c95dee6fc5c88f8a9096818fc856a116b。v24原93成员三回复/PDF/源码ZIP不改；这些全池数值尚未合入该PDF，下一整版须整合并重编译。P1–P5整段及37槽仍待证，不以此负结果填有利结论。
+
+### 23.218 原q8 GPU回放的事实context捕获检查
+
+只读检查原BT case0/q8的`infer_kwargs.pt`：原capture函数对numpy数组仅存`unserialized_type`标记，包含image/proprio/候选/回合历史字段；不能把这些标记当完整tensor context，更不能用零填补。实际旧相机/qpos、逐次模型动作、事实world/VAE输出、检索行与hash等仍保留，但完整context恢复尚未核验。原稿结果与已完成分支不受该工程检查改写；本轮未越级执行GPU null或新的物理分支。
+
+Git外`ITER29_ORIGINAL_BT_Q8_PAYLOAD_OUTLINE_V1.json`保存实际字段/shape与标记。下一资格应在独立冻结collector中正确保存numpy和实际source context，或用原策略/内存路径重建；先精确复现原固定前缀、输入hash及Full H32再封存null。不能伪造/重用已消费的online capability，也不能按新结果另挑状态。两个原代码的23CPU检查只是入口资格，尚不能释放P2/P3的行为证据。
