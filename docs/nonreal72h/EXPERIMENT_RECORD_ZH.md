@@ -3488,3 +3488,20 @@ CCI新增显式phase_feature_dim0的未训练小模块契约，只使用旧数�
 另按原warm_retrospective.py函数核实：timing4为合并观测夹爪流的首次close相位/有效位、首次open相位/有效位，iter54“每夹爪两事实”解释不准确，当前说明和guard纠正；已验4维输入数值不变。原specialist reranker没有后续shared-stage专门phase/ordinal和history-query投影，gate接口也不同。METHOD_VERSION_SCOPE_AUDIT原件逐函数/字段/hash保存；不能把后续实现细节无条件归给原benchmark，也不能仅靠字段缺失推断旧runtime全部行为。
 
 下一版原工程需另存，按METHOD_VERSION_ATTRIBUTION_AUDIT澄清AppendixA.2等技术归属并继续核对controller/config；原核心方法、原成绩和unknown保持，未恢复的DEV选点/evaluator manifest仍未恢复。v38稳定基线不覆盖，当前未发布；本轮不把工程通过视为新科学结果，不回填任何理想数值。
+
+
+### 23.333 原PB12000的真实权重ABI核验与版本归属证据
+
+2026-11-13 18:22:40UTC，独立CPU ABI V2 complete/0，总146.8939秒；零GPU、零policy动作、零优化器更新。原PB12000权重SHA a765d987b2df0d228782980592c39aaed0e837040c7f6f48c905e4641f79c285，与actual_q8_source_context、inputs、history四文件前后完整SHA/stat一致。1799保存张量中实际gate首层[16,5]；schema retrospective v3、context777/gist1024/timing4，专门phase/history-query投影不存在。实际history/proprio字段只做原输入ABI读取，不补零，不声称已经跑通新control的完整history/generation路径。
+
+V1已知失败/1，原因是审计器flatten后保留module路径slash而叶子键含dot，未匹配真实gate键；V2仅归一检查键名。两个尝试、执行脚本、失败原件及source AST保留，共13原件；TAR c78a31bc06d447f3847470aa6b1d35d247e29dd2b9d61277fd1d008732f1c78b，manifest8dd2efcb2a1a41ad56f502dbfbb10139ab75e13715d9428d9a06e3019dd58c5c，AFS与本机逐成员精确。scope为技术呈现和后续兼容性，不是效能、原稿准确率复现、选step恢复或已训练phase-free对照。原47277e5/f77c633的model及consequence源码分别全SHA同d89796cc…/64304241…；原src/scripts无shared cursor字段，文稿结论仅限定model boundary。
+
+### 23.334 v39将技术归属澄清实际落入自包含回复与完整修订稿
+
+v38四大文件保持。v39实证回复1811/2338/818词、10/14/4表，17评论块精确重构；20项review原字段/ordinal/hash保持。主文3.3/3.4、A.2新实现表及原五特征gate公式、B.1和符号表同步，Hh4E W3直接带实现表。共有history requirement/后果比较/双通路gate的核心保持；shared专门phase/history排序、cursor和重复抑制明确归属，不追认给原specialist分数。
+
+实证PDF50页/主文10，SHA814e4cba2b7bf422e7d44d67014ef6b168709dbe9e14f99777bef457409c40b8；源码ZIP2829b8cc927a6361e534f25ffc8d3705b159f11e5d643c2f7d3dbc5ed4ea3b4e。独立演练51页/主文10，PDF eabf9fb68fca87bc233ea1ffcf447c5e7c52bcf03ea011b0a44282c4f7a05622，ZIP6e55f66cb46c43344d99cb4c0f40afd438f0c2b093afde5441714dbb3f18d011。全部原结果表、47原表环境、10图保持，另加1实现表；两套完整原工程BibTeX+四遍及干净源码ZIP复编译，全部50/51页文本/像素精确；0undefined-reference/overfull，45既有font fallback。所有页面接触表及关键改页直接验看，匿名/AI声明保持。并发PDFium渲染异常保留，顺序复核通过；未把渲染器错误当论文差异。
+
+正文无作者提醒、无特殊颜色；理想值只在独立演练、段/表前源码注释，正式37字段仍null/verifiedfalse/releasefalse。41对0--0、13unknown、75回合15450replans和所有原窗口保持；P1–P5继续开放，新真机素材0，不发布OpenReview/上传投稿。完整67成员双端保全按iter56最新V2封包收据；包括两个PDF与两个完整源码ZIP。原V1封包仅后续内部README版本和页数注释修正，正文/PDF/ZIP完全同，V1不删除。
+
+ACP原Worker表可见成功后，18:19UTC刷新数据返回401；不能按缓存页面认定新认证或GPU释放。已记录AUTHENTICATION_REQUIRED并请求用户重登，保留原tab、finish forcedCleanup=false/closed0，无新创建/停止/删除。最后实际CCI GPU compute-app为空；新的兼容训练/科学阶段须显式登记，不重置旧144GPUh窗口或重复unknown。

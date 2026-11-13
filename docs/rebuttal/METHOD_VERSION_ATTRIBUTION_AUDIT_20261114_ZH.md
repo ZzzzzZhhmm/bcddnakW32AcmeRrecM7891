@@ -1,5 +1,7 @@
 # 修订稿技术细节的实现版本归属核对
 
+**iter56 / v39已完成呈现修正。** 新版主文3.3/3.4、Appendix A.2/B.1、符号表和Hh4E W3已把specialist/shared的timing、ranking、cursor、五/七特征门控归属分开，并新增实现表和原门控公式；完整原工程及源码ZIP独立编译/逐页文字像素通过。原PB12000权重CPU核验确认实际五输入门控及原四维timing，146.89秒complete/0；先前审计键名匹配失败保留。读`CANDIDATE_V39_VERSION_ALIGNED_20261114_ZH.md`与current_iteration。下方v38待修为保留的历史诊断；原DEV选点/eval manifest及完整新control仍未恢复，不因呈现修正放行37项实证字段。
+
 这是正式发布前的技术呈现检查，不改变原稿报告成绩、固定试验或旧unknown。v38继续封存，下一版应另存；本检查不构成对原核心贡献的撤回。
 
 ## 已直接核实的差异
