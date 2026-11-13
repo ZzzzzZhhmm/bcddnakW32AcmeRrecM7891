@@ -1,5 +1,11 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**Nov13 iter50三路ACP已恢复：** 作者已登录，旧两Pod失败/删除的gate均已认证；新case0 q96 UID34a11139…、case1 q96 UID68653e49…、两个q8撤回UID96e56a7a…的三个原生程序于08:01UTC均running/新鲜心跳，08:04三个Worker全部运行。都在cluster01e、idle1GPU8CPU128GiB/restart0。两个cluster02未运行排队实例先停止且确认Worker删除/无原生启动后，才用同一冻结launch转交；保留五云创建/三逻辑阶段及全部失败收据，勿复活52f5/50c8旧UID或复制活动阶段。先读ACP_RECOVERY_ITER50_20261113_ZH及current_iteration/ITER50_ACP_DISPATCH_V1。
+
+q96固定两case/原32候选和四Full，只用原封存动作、GPU效果读取与原生回放，new policy generations=0；case1已封口两个Full、在原rank5父重建，case0首次前缀。null case0仍加载原模型，尚无行为收益放行。原10:34:23/10:35:04UTC与null11UTC/3.5h、143.8054115725/144预留、4GiB准入/512MiB运行保护和49入口/三冻结树保持。CCI无新科学准入。AFS08:01约4.86GB，持续核查但不删受保护原件。
+
+v35仍是49页/主文10页、102项验真写作基线，20项/17块/37整段条件论证待证。CPU只读核验九模块齐全、56小tensor中54改变/四effect_mixer均改变、loss_effect=.05，纠正V1选错.mot字典；这不是新的行为/预测校准收益。所有数值只按各自范围使用。下方iter49“仍待登录/科学GPU=0/尚未创建”等是有时间戳的历史。
+
 **Nov13 iter49写作锚点已更新为v35：** 两组q48部分数据已经真实合入D.1表43及三位回复，不再按下方iter48“片段未合入”状态处理。49页/主文10，原工程与干净ZIP各完整编译、49页文本一致、0undefined/overfull；前45页像素同、46–49已查看或对已查看栅格精确复核。20原review绑定/17块/37整段条件论证保持；原正文/成绩/公式/九图+实测RGB/匿名/AI声明保持。102成员本机/AFS验真，旧v34的108成员不动。读CANDIDATE_V35_20261113_ZH和current_iteration、ITER49_EXECUTION_ADDENDUM_ZH。
 
 表43每组32候选四分类19/10完整、3/1invalid、1/1中断、9/20未开始；三Full已封口且0、最终Full未开始，完整候选标签也全0。436原件/39分支/43前缀保持；新增独立补充核验39父状态及DINO、每组三Full动作/端点/标签/次级prefix/DINO全精确。无完整pool主指标或修复收益放行，旧matched13unknown分母分开。

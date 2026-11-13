@@ -3277,3 +3277,40 @@ Windows/native最初35项通过；补充已封存CPU输入复用保护后两端3
 最终PDF SHA62b1e6a9ec141f67af6024e5836653326549c5d77dafd939b139e823e9116a11，源ZIPc4a01b7f708a962e8693f3dea2173ad726779ac7672e8d8f0ec823abe2a7df0a。102项包按responses/paper/两输出/六证据文件定义，TARbd00bca0c0638e2ed6b8412a8e41475f415353317c0f53b10aee607b9392ee0c/manifest2fecdf91f28c40d151d026a3fbdbf422d77968edb2776e828d2c4f1e60352b2f，06:16UTC AFS writing_candidates/20261113_v35/verified逐项通过。旧v34全部108成员、49旧入口及dc6/d6/594三冻结执行快照、两个q96的plan/job/launch/CPU seal均保持。成员数是存储索引，不与前包分母或科学样本混用；本机完整源工程及回复都在新包内。未发表或正式上传。
 
 06:11从官方console URL重新探测实际会话，scratch重定向IAM；未读输入/凭证、不点创建，保留原用户tabs并关闭scratch、finish成功。已有登录请求仍待处理，无新增GPU任务、当前科学GPU程序0，原0GPU审计两q8报告有效且仍等旧父终态。06:16 AFS实测5,076,668,416B；派发前4GiB重查、512MiB运行保护及原窗口/143.8054115725预留不变。新的写作验收不关闭P1–P5缺口，也未把q96 CPU封存当实证。
+
+
+### 23.311 登录恢复、原终态gate认证与三路闲时ACP实际运行
+
+本次运行截面为2026-11-13 08:01:45UTC（北京时间16:01:45），不是排队状态。三个独立run_manifest均running、三个父operator心跳距截面不足20秒；08:04控制台也确认第三个Worker运行中。后续恢复先读Git外ITER50_ACP_DISPATCH_V1.json及新的current_iteration.json；下方历史文件中的“仍待登录/尚未创建”不再作为当前状态。
+
+|固定实验|实际ACP名称|唯一活动UID|原生首准入UTC|原截止UTC|
+|---|---|---|---|---|
+|case0 q96|warm-pb-ns2-q96-case0-20261113-b|34a11139a63744cab8d5868c0ebb150f|07:59:03.381834|10:34:23.203393|
+|case1 q96|warm-pb-ns2-q96-case1-20261113-a|68653e49f15f43be86a3af1ef02d126c|07:24:18.631150|10:35:04.911124|
+|两个case的q8撤回|warm-pb-ns2-nullq8-20261113-b|96e56a7a25a04df5a59643fd06dfcf4f|07:47:40.544934|11:00:00 hard end|
+
+三路均为computing_cluster_01e、闲时1GPU/8CPU/128GiB、单副本/重启0，已核对私有镜像ccr-zhicheng-02/lwz_wam:lwz-workspace-20261029145800与afs-p3-01e:/挂载/mnt/afs、当前用户读写。q96 wrapper仍为5944997/digest371acb55，原物理collector仍为dc6快照；null仍为d6ce4ab/digestbf544968。49旧入口及三冻结代码树全部保持。
+
+## 先停止确认未运行的排队任务，再转交
+
+原两namespace科学程序的-15终态不改。认证控制台证实原UID0f0e8eee/d5aab172均失败、Worker已删除后，07:05写入两个platform_terminal gate。随后创建三份已准备任务。cluster02中null-a与q96case0-a均出现实际FailedScheduling/insufficient nvidia.com/gpu、没有Host/Pod IP；其科学operator和run_manifest不存在。
+
+null-a（52f5db98…）于07:28确认已停止/Worker已删除；07:42再次确认无原生启动后才创建null-b。q96case0-a（50c8d57b…）第一次停止核查因仍为“停止中”超时；未再点停止，07:53回读已停止，07:54确认Worker已删除，07:55原生确认未启动后才创建case0-b。两个handoff admission保留原件和SHA；原冻结launch、固定case/query/模型/标签/指标及所有旧时钟不变。五次云创建对应三个逻辑阶段，两个未运行排队实例已关闭，没有同时运行同一阶段或未知创建重试。
+
+q96各最多4h且含180s退出/归档，并始终受表中原截止约束；null最多3.5h且含退出、hard11UTC不变。累计准入预留143.8054115725/144GPUh，不新增预留、不退还未知退出、不重置旧clock。CCI没有新增科学准入，不因GPU空闲绕过旧bootstrap时钟。AFS本次截面4,859,973,632B，4GiB准入/512MiB运行保护保持，不清理当前3000/原specialist/CAS或唯一轨迹。
+
+## 当前运行并不等于新增机制结论
+
+q96只执行先前封存的原策略提案及Full动作，GPU用于原四token DINO效果读取与原生物理回放，不生成新的策略样本。case1截面已封口anchor-a和anchor-aa，正在原顺序rank-5父状态重建；case0正在首次资格前缀。两组仍无完整32候选/四Full/CPU审计，不能发布整池预测、修复收益或总体成功率。
+
+null父心跳正常、case0子程序仍在原模型加载阶段；尚无可发布的Full/null/Full行为结果。依次执行两个原固定q8，不按结果换case；原始动作、真实history、RNG及两侧Full控制必须通过精确复现。原namespace q48两条中断不重跑；shared matched 82角色/41个0–0对及13历史unknown也不混入本实验。
+
+
+原始创建、停止、Worker/events、原生心跳/退出、handoff admission与SHA完整保存在Git外ITER50执行包。界面locator超时与等待停止超时保留；没有因超时再次点创建或停止。此记录是资源运行取证，不是新效果或SR。
+
+### 23.312 原checkpoint独立WARM模块及effect训练语义的CPU只读诊断
+
+ITER50_EFFECT_HEAD_STATIC_AUDIT_V2.json纠正V1误选最大.mot字典的检查方法。原checkpoint将九个WARM模块另存于warm_retrospection_modules；10000/12000两固定step均完整存在。只读CPU/mmap检查了adapter与gate的56个小tensor，54个不同，effect_mixer四个参数均不同；原配置loss_effect=0.05，训练target为储存事件的事实观测效应。V1的零匹配不表示头缺失或未训练。此检查没有模型forward/物理动作、没有选择新checkpoint、没有改模型或主指标，也不证明跨状态后果校准、修复或自然撤回收益。
+
+
+V1/V2静态收据与源码行号保留。核验只说明模块存在/固定step之间参数更新及原监督范围；原预测不利、invalid、unknown和37整段待证论证不变。v35 PDF/ZIP与三位回复未因本检查改写，主文/图表及原报告结果保持。
