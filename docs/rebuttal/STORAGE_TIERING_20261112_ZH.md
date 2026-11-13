@@ -47,3 +47,12 @@ AFS再次完整hash、确认无进程/FD引用和49冻结入口未变，先写lo
 locator在原weight同目录`STORAGE_LOCATOR_ITER45_WEIGHT_V1.json`；收据P/ITER45_FULL200_WEIGHT_TIERING_V1/receipt.json，恢复helper同目录`restore_full200_weight_v1.py`（SHA`2b792da0d0750f031c947bece01609584685ab5b894c37b0678b43dddb7947fd`）。先把完整weight暂存到CCI临时盘；`--staging-file PATH`只dry-run，逐项校验hash/size、目标不存在及余量，显式`--apply`才原子恢复。`--help`通过，尚未实际恢复。首个只读尝试因错误runtime参数key停止、未迁移；核实ckpt_setting后执行成功。
 
 即时free1.1656GB保留原快照，稍后df实际13,312,421,888B，写作验真后约13.06GB。共享写入仍改变净空闲；保持实时4GiB任务准入和512MiB运行保护，不按逻辑冷存字节推算可用空间。
+
+
+## 第六阶段：旧control200 weight冷存
+
+Nov13 03:32共享卷仅约0.923GB。完整本机TAR `C:/Users/admin/.cache/warm-rebuttal-control200-state-v1/control200_byte_exact.tar` 38,437,867,520B/SHA d838ed0c5fc039170394a9719523a3c8d738929c9652b8f49ea6795d895451d7完整重读，再提取并二次核验12,130,288,488B weight SHA93870d3395cb0ee62978e627ec13d8da38f5b41c886fd5cba11aa60664069a41。独立副本位于`C:/Users/admin/.cache/warm-rebuttal-control200-cold-weight-iter46-v1/step_000200.pt`；AFS原control压缩CAS及manifest682cc459…保留，当前3000/原specialist/轨迹保持。
+
+03:37:03只冷存旧`matched_training_update200_v1/control-s3407/checkpoints/weights/step_000200.pt`冗余物理文件，先写同目录`STORAGE_LOCATOR_ITER46_WEIGHT_V1.json`。收据`ITER46_CONTROL200_WEIGHT_TIERING_V1/receipt.json`及补充`ITER46_CONTROL200_STORAGE_POST_VERIFICATION_V1.json`；首次两个只读路径校验失败没有迁移，v3验证真实路径后执行。补充校验实际Full3000与原身份一致，主收据Pooled保护行重复保留并明确解释，不覆盖历史收据。
+
+恢复时先将完整旧weight暂存至CCI临时盘，使用收据目录`restore_control200_weight_v1.py --staging-file PATH`，默认dry-run；逐项校验SHA/size、原目标不存在及size+1GiB空间，显式`--apply`才原子回填原路径。helper --help已通过，尚未实际恢复；可直接使用本机完整weight或从完整TAR精确提取，无需科学重跑。即时free.908GB保留，03:37:39实测13,042,106,368B；共享卷继续并发变化，保持4GiB准入门槛。

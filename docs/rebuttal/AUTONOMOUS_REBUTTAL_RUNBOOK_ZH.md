@@ -1,8 +1,14 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
-**Nov13 iter46恢复覆盖：** 两namespace factual各1500commands/375queries完整exit0，分别01:31:39/01:30:50UTC，均success false；2298原件本机逐字节/CRC/physical链验真，ITER46_FACTUAL_LOCAL_VERIFICATION_V1。原两ACP已经自动running_q8_pool、CPU seals exit0，不再重跑factual或已完成资格；原10:34:23/10:35:04UTC deadline不改。0GPU审计继续只读等待，source完整不是prediction/repair收益。旧matched82/41及13unknown、49入口、v32封存件保持。
+**Nov13 iter46最终恢复锚点：v34完整封存，关键效果缺口仍开放。** 三位回复/20项映射/17可粘贴块联动，37整段条件论证仍待证；原工程和干净ZIP49页、主文10页，前45页像素同、46–49直接验看，0undefined/overfull。108项包本机及AFS逐项验真，旧v32/v33保持。读CANDIDATE_V34_20261113_ZH.md、current_iteration、ITER46_EXECUTION_ADDENDUM_ZH.md；下方v32及“factual仍运行”是历史。
 
-为原P2补齐显式Full/null/Full，新增PB_NAMESPACE_NULL_20261113_ZH，固定case0/1的q8、单独private runtime，原policy前32命令/九个Full H32须先精确复现，再捕获真实past context做gate撤回；原factual的NumPy history只存类型，禁止当作真实数组、造旧capability或换零history。新代码Windows39通过/7无Torch跳过、native102全部通过，CLI导入通过，ITER46_NULL_NATIVE_CPU_V2保全；尚未创建新ACP。新增最多3.5GPUh，累计143.8054115725/144，不改变原两路20.5及旧119.805。运行后须按真实创建/准入/心跳更新收据。v32b仅为回复精简准备，五组固定状态按同支持表整理，20绑定/17块/37整段pending保持；未封存或替换v32恢复锚点。后续实际状态以current_iteration与本轮Git外收据优先。
+两个事前固定namespace原PB12000 source各1500命令/375推理、success=false，2298原件验真；q8各32候选，H32完整28/32与32/32，746原件/72分支/76独立前缀验真。预测/历史/常量MSE分别.050270313/.049997605/.011994798和.061228352/.060932313/.017833334，两组均未胜两个参照。case0四Full各12accepted后TOPP-invalid、标签未知；case1全部32候选/四Full严格H32标签0而原pretruth gate.9296875。仅该query检索池的严格完成失配，不是整个bank缺技能证书或总体误激活率；D.1/D.4及回复如实合入，不换指标填有利段。原BatteryTry稳定性证据保留，specialist/shared3000/固定12000三范围区分。
+
+03:36UTC两个原闲时ACP均running_q48_pool（case0 rank8、case1 rank7父状态重建），后接固定q96；UID0f0e8eee/d5aab172和10:34:23/10:35:04UTC截止不改。0GPU bee71c75已完成两个q8只读审计、等其余四池至11:10UTC。CCI GPU无科学角色，不因空闲重启RB45或重置bootstrap/任务窗口；原matched82/41和13unknown、C.6 75/15450、49入口及三credit保持。
+
+新增显式q8 Full/null/Full已104nativeCPU/CLI/实际plan预检及job dryrun通过，冻结d6ce4ab/digestbf544968，plan10ea381e/job62cec742/launch4ce02e3a。固定两case/q8，原policy真实历史精确重放，单个闲时1GPU任务顺序执行，最多3.5h含180s退出余量/最晚11UTC；事前累计预留143.8054115725/144。IAM会话过期，已请作者登录，尚未点击创建/没有UID或runner。恢复后先核对同名任务和AFS，勿重复未知创建；GPU只用闲时、纯CPU标准0GPU，不再索取标准配额。
+
+AFS03:32降至.923GB；旧control200 weight经本机完整38.438GB TAR与独立12.130GB权重、AFS原CAS核验，03:37无损冷存冗余物理原名，实际空闲13,042,106,368B。当前Full/Pooled3000、原specialist和轨迹保持，49冻结入口不变。读存储指引第六阶段/locator/恢复helper，旧200调用先恢复。两个只读预检失败及额外Full3000保护校验有独立收据，不隐去；4GiB准入/512MiB运行门槛不改。
 
 **Nov13 00:56UTC最新终态增量：** 两namespace case的原PB12000资格均已正常exit0：case0于00:49:25、case1于00:50:06，各1次真实模型推理/4条native命令、0 TOPP，初态全部绑定准确、weighta765/source4a1/sim a97保持。各13原件已本机逐项和原生TAR核验，合计26，收据ITER45_NAMESPACE_QUALIFICATION_LOCAL_VERIFICATION_V1；TAR ec6bbf1d…/50412a25…。不要再次加载或重跑已完成资格。两个原ACP父stage现running_factual，先查完整factual/首模型与四命令精确性、后续固定pool/归档与0GPU审计，不能将资格当SR或机制收益。实际stage deadline10:34:23/10:35:04及11UTC硬截止不改。后文00:38加载截面已过时。
 

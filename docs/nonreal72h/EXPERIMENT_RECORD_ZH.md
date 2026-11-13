@@ -3224,3 +3224,24 @@ docs/rebuttal/PB_NAMESPACE_NULL_20261113_ZH记录两个固定case都纳入、que
 派发前进一步将180秒退出/归档余量放入同一3.5h总窗口，未延长任何clock。V3 overlay5c89f388…的native103全部通过、CLI help0；Windows40通过/7明确skip，原V1/V2收据保持。此轮余量修复没有改变模型、采样、物理、指标或case选择。新GPU仍未创建；先同步/冻结、实际plan CPU preflight、前置登记预算后才能提交。
 
 第一次实际plan准备在新private runtime的config精确比较处只读停止：仅left/right_robot_file两个路径字符串不同；两者都解析到同一份原只读机器人资产。尚无plan/job/launch/operator、Popen或新GPU。V4仅在证明这两个已知alias解析到同一既存目录、且其余配置全部相同时保留原config字符串；不放宽几何或动作比较。旧未使用45460f7快照和失败保持，恢复准备使用另一个冻结快照。V4 overlay743bed7f… native104全部通过、CLI help0，Windows41通过/7明确skip。实际alias验证还须在新plan CPU preflight通过后方可提交，不把修复本身记为原模型结果。
+
+
+### 23.305 两组固定namespace q8候选与自然gate直接证据，746原件独立重算
+
+case0/1的q8整池真实终态、0GPU审计均完成。每池32候选全部尝试，完整H32分别28/32与32/32，case0四个TOPP-invalid保留，0 infrastructure unknown。原四token DINO观测效应在相同有效支持上重算：pred/history/constant centered MSE 0.050270313099541136/0.04999760472402783/0.01199479799779867、0.0612283516509489/0.06093231267236012/0.017833333518077348，均未胜两个参照。case0四Full各12accepted命令后同一invalid，标签和repair/harm未知；case1四Full都完整、raw/Full严格完成0/0，不是修复增益或非劣效。72分支和76独立原前32命令前缀、物理链/计数/四Full重复精确，全部746文件/TAR/manifest本机独立验真。原source4a1/weighta765/sim a97，未更新模型、指标、阈值或样本。
+
+case0 pretruth gate0.9375，28个已知零完成候选、4未知，不能认证整池零适用；case1原pretruth gate0.9296875且32候选/四Full严格H32完成全0。这是该检索池/严格有限时域完成准则的失配观察，不是整个bank技能缺失、所有准备动作无效、总体误激活率或阈值校准结果。原稿零gate退化性质与自然learned gate可靠性分开。ITER46_NAMESPACE_Q8_LOCAL_VERIFICATION_V1（02:48:42UTC）、NATIVE_SUMMARY及两个0GPU原report保全；本机不运行策略或模拟器。case0 TAR a95cbb84e786359eca53c5f8e63e2b57273e3a914512ba7c656a4530b574b0cf/manifest6b676a57c3ad86616741fee3662c8ba2e5ade6f9c7618bcc855600144a613aa3；case1 TAR1278879d67ac2a7d27de098c0d6ca549e26888f16b384ceb5ac77aeb4fc2088b/manifest927b80b841fb9dc28bec9a99a3d37257fd78ab41fe49d54f954d3d628d47c695。本机execution/20261113_iter46/q8_case00/01和AFS case00/01/archives均有完整原件。
+
+### 23.306 v34真实结果合稿，原工程/干净ZIP/108项双端验收
+
+两个factual 0/2与两组q8如实合入D.1/D.4及Bbqv/Hh4E；rkWY保持实际问题回复，三位作者视角、审稿人原strength感谢和完成修订总结通过。旧五组机制诊断合为同支持表，原正向BatteryTry稳定性、specialist主文成绩和全部不利/invalid/unknown保留。原主文/旧表/公式/九图和实测RGB均保持；C.6仍75回合15450replan、matched82/41及13unknown不混分母。20项review字段/ordinal/hash、17块与37整段条件论证精确绑定，未填理想方向。
+
+完整LaTeX工程和干净source ZIP分别BibTeX+四遍编译49页/主文10页，全部49页文本精确，0undefined/overfull、45既有font警告。前45页像素相同，46–49直接验看；原v34首布局有D.6标题孤行/大空白，保留旧件后用标准clearpage修正，标题与表43同页，未改字体/边距。匿名性/AI声明通过。PDF SHA a2802e614a68b79718b01ed1819ee58f6c366c3932f52441bd16dc6f7c1daaf3，ZIPe1361fa91aa2541395db6adf6c1e8d54fa64f5b32c6b26c5fe62fa1ddd55134e；108项包b4afc90390114c3853d088b9707740547170cb52db9f623b2a26d4b175100157/manifest e65093f2c890df9737da9adbb698190672cf8e3ec4501c121ad4fb1523c5ecbc，03:24UTC AFS writing_candidates/20261113_v34/verified逐项通过。原v32/v33封存、49入口/活动快照保持；未发表或正式上传。
+
+显式q8 Full/null/Full计划已V4 native104项通过、CLI help0/真实plan预检0/job dryrun0，冻结d6ce4ab/bf544968。两固定case/同q8、一个idle GPU/3.5h含180s退出、最晚11UTC；累计事前预留143.8054115725/144，旧119.805/20.5和credit不变。01:59准备收据/02:03双端事前登记齐全；控制台GET401/刷新400后IAM过期，已请作者登录，创建按钮未点击，无新UID/runner/科学样本。03:36实测原两任务running_q48、0GPU有两报告，原deadline和source不改；不能把准备当新撤回收益。
+
+### 23.307 AFS再次接近运行线，旧control200权重无损冷存
+
+03:24 AFS约1.075GB、03:32约0.923GB。选择已完成warmup200的control权重，先独立重读本机完整38,437,867,520B TAR（d838ed0c5fc039170394a9719523a3c8d738929c9652b8f49ea6795d895451d7），提取12,130,288,488B并二次重读，SHA93870d3395cb0ee62978e627ec13d8da38f5b41c886fd5cba11aa60664069a41与AFS原件精确；本机完整TAR/独立权重和AFS CAS manifest682cc459…保留。首次v1错用Full CAS名、v2错猜Pooled3000目录，各在只读assert/stat处停止，未unlink或建locator；原失败不覆盖。v3核验真实路径/无目标openFD/49入口后先写locator与恢复helper，03:37:03仅unlink旧冗余物理原名。
+
+旧路径matched_training_update200_v1/control-s3407/checkpoints/weights/step_000200.pt今后须先恢复；同目录STORAGE_LOCATOR_ITER46_WEIGHT_V1.json。收据ITER46_CONTROL200_WEIGHT_TIERING_V1/receipt.json SHA f1b3c5872b0c60100d3f6d67f2b48a98cedeeed8cefd9d9d39b0bfb701b993f3，helper restore_control200_weight_v1.py SHAdb52c33aa8989d3bd13557da8136f432c0b9eedc28d066dee2560210a995d7ca；--help0，未实际回填。补充收据额外核验实际Full3000 weight与前次保护身份精确，纠正主收据重复列Pooled保护行的不足；两个当前3000、原PB12000、全部科学轨迹与CAS保持。即时free.908GB因计量延迟不变，03:37:39实测13,042,106,368B；保留所有快照，不按逻辑大小推净空间。4GiB准入/512MiB运行保护不变。早先Full200 optimizer本轮仅本机再验证，已于iter33迁出，未重复计算释放字节。
