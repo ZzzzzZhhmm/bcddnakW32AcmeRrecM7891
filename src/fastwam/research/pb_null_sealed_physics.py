@@ -121,3 +121,14 @@ def full_control_summary(rows):
         return rows['Full-pre'],True
     if set(rows)!={'candidate-null','Full-post'}:raise ValueError('Unstarted role pair incomplete')
     return rows['Full-post'],False
+
+
+def reader_memory_fraction(policy_was_loaded):
+    """Do not shrink a process limit below still-referenced policy allocations.
+
+    Closing the online wrapper is not a guarantee that local model references
+    have been freed. Keep its original allowance in the combined process;
+    a physical-only fresh process retains the smaller reader-only allowance.
+    """
+    if type(policy_was_loaded) is not bool:raise ValueError('Explicit policy lifetime state required')
+    return .48 if policy_was_loaded else .12

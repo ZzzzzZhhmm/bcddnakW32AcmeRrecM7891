@@ -76,3 +76,16 @@ def test_only_known_writer_failure_qualifies():
     for key,value in [('active_branch','candidate-null'),('new_branch_commands',0),('extra_policy_queries',1),('branches',{'candidate-null':{}}),('traceback','other missing file')]:
         changed=dict(op);changed[key]=value
         with pytest.raises(ValueError):g.validate_unstarted_failure(changed,dict(status='failed',exit_code=1),0)
+
+
+@pytest.mark.parametrize('loaded',[True,False])
+def test_reader_handoff_keeps_room_above_observed_live_allocations(loaded):
+    # Actual failing H100 run:24.19GiB live,79.18GiB total;the old .12 cap
+    # allowed9.50GiB and failed despite54.98GiB physically free.
+    live=24.19 if loaded else 0
+    allowed=g.reader_memory_fraction(loaded)*79.18
+    assert allowed>live+2.0 and allowed<=.48*79.18
+
+@pytest.mark.parametrize('state',[None,0,1])
+def test_reader_handoff_rejects_ambiguous_lifetime(state):
+    with pytest.raises(ValueError):g.reader_memory_fraction(state)
