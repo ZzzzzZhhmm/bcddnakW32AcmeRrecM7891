@@ -1,5 +1,9 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**Nov13 iter46恢复覆盖：** 两namespace factual各1500commands/375queries完整exit0，分别01:31:39/01:30:50UTC，均success false；2298原件本机逐字节/CRC/physical链验真，ITER46_FACTUAL_LOCAL_VERIFICATION_V1。原两ACP已经自动running_q8_pool、CPU seals exit0，不再重跑factual或已完成资格；原10:34:23/10:35:04UTC deadline不改。0GPU审计继续只读等待，source完整不是prediction/repair收益。旧matched82/41及13unknown、49入口、v32封存件保持。
+
+为原P2补齐显式Full/null/Full，新增PB_NAMESPACE_NULL_20261113_ZH，固定case0/1的q8、单独private runtime，原policy前32命令/九个Full H32须先精确复现，再捕获真实past context做gate撤回；原factual的NumPy history只存类型，禁止当作真实数组、造旧capability或换零history。新代码Windows39通过/7无Torch跳过、native102全部通过，CLI导入通过，ITER46_NULL_NATIVE_CPU_V2保全；尚未创建新ACP。新增最多3.5GPUh，累计143.8054115725/144，不改变原两路20.5及旧119.805。运行后须按真实创建/准入/心跳更新收据。v32b仅为回复精简准备，五组固定状态按同支持表整理，20绑定/17块/37整段pending保持；未封存或替换v32恢复锚点。后续实际状态以current_iteration与本轮Git外收据优先。
+
 **Nov13 00:56UTC最新终态增量：** 两namespace case的原PB12000资格均已正常exit0：case0于00:49:25、case1于00:50:06，各1次真实模型推理/4条native命令、0 TOPP，初态全部绑定准确、weighta765/source4a1/sim a97保持。各13原件已本机逐项和原生TAR核验，合计26，收据ITER45_NAMESPACE_QUALIFICATION_LOCAL_VERIFICATION_V1；TAR ec6bbf1d…/50412a25…。不要再次加载或重跑已完成资格。两个原ACP父stage现running_factual，先查完整factual/首模型与四命令精确性、后续固定pool/归档与0GPU审计，不能将资格当SR或机制收益。实际stage deadline10:34:23/10:35:04及11UTC硬截止不改。后文00:38加载截面已过时。
 
 **Nov13 00:38UTC最高恢复优先项：** v32完整工程/干净ZIP48页、主文10页、45–48视觉和前44像素验收，97项包51e42749…在writing_candidates/20261113_v32；20项/17块/37整段有利pending保持，未发表。D.1加入q96全部32H32候选但Full控制未闭合的描述性表，主指标不利、repair NA；明确旧physical0为补充episode，不是namespace首case复现。读CANDIDATE_V32_20261113_ZH.md和最新current_iteration；下方v31及旧排队信息仅历史。

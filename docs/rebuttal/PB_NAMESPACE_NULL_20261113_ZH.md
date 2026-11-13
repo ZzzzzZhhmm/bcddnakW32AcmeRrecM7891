@@ -1,0 +1,13 @@
+# 两个固定namespace q8的候选撤回：事前直接对照
+
+在既有两个namespace case及q8封存、尚未读取新分支后果时，追加原P2计划尚缺的Full/null/Full控制。两个case均纳入，不能按事实成功、候选后果或几何好坏选择其一，也不能改到其他query。该扩展不更改或重启两路原ACP、其Full/K32 pools、原窗口及原件。
+
+模型仍为原PB specialist run press_button-s3407-v2的固定step12000，source47277e5/digest4a1d05cb、weighta765d987、simulator a97e308c。不是DEV选点或原稿SR复现。两个physical seeds340800000/340800001分别对应已事前expert-admitted的case0/1，query固定8、frame32、H32、部署prefix4。
+
+当前factual探针把NumPy历史数组序列化为类型说明，不能直接当成完整原历史输入；不伪造旧BoundOnlineStep或把零历史代入。新独立private runtime从完全相同reset执行原policy前32条动作，逐次精确核对原RGB、joint targets、实测物理、计数和TOPP记录，并逐query核对记录的全部H32动作。到q8直接捕获原模型当前构造的真实RetrospectiveSourceContext和采样输入；不把候选未来效果或隐藏计数提供给模型。先重现原q8 Full，再进行显式null、最后Full；三次共享真实context/Gaussian，参数和buffer不得改变。仅关闭已核验v3共同gate，保留recollection和query gist；此为显式干预，不能宣称自然技能缺失检测已经可靠。
+
+动作在任何新null后果之前封存。模型卸载后，每条Full/null/Full物理分支都从独立fresh reset重放原32条命令；两次前缀资格及三分支父状态必须精确相同，恢复原pre-query RNG，禁止physics unpack。原前缀中已有的TOPP观测必须精确重现；新的32步分支仍使用原严格OfficialQposGuard，发生拒绝即invalid，保留accepted数量和未知H32，不补零。两个Full的完整端点、物理状态和DINO效果须相同，否则不放行控制。原uniform四token DINO变化、H32及PB计数rubric不变；独立记录prefix4、strict next-interaction和native success，不能把局部干预当最终task SR或总体repair率。
+
+只申请一份新的闲时1GPU/8CPU/128GiB任务，两个固定case顺序执行、独立runtime/cache/lease/output，无自动重启。新增资源上界3.5GPUh，原119.8054115725和namespace20.5的预留保持，累计143.8054115725/144GPUh、最多6并发；这是准入预留上界而非账单。新窗口从真实准入起最多3.5h、且最晚Nov13 11UTC结束；不能重置旧clock或复活RB45。先完成CPU绑定测试、CCI原生验证、英文commit/push和冻结快照，再提交ACP；准备、排队与实际执行分开记账。运行结果不因是否有利决定保留。
+
+本文件是事前设计，尚不是已运行、已完成或已有收益的数据声明。实际创建、准入、完整原件及结果须在Git外收据和实验台账中另行登记。
