@@ -1,4 +1,11 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
+
+**Nov13 00:38UTC最高恢复优先项：** v32完整工程/干净ZIP48页、主文10页、45–48视觉和前44像素验收，97项包51e42749…在writing_candidates/20261113_v32；20项/17块/37整段有利pending保持，未发表。D.1加入q96全部32H32候选但Full控制未闭合的描述性表，主指标不利、repair NA；明确旧physical0为补充episode，不是namespace首case复现。读CANDIDATE_V32_20261113_ZH.md和最新current_iteration；下方v31及旧排队信息仅历史。
+
+**真正运行：** namespace case0唯一闲时UID0f0e8eee…在cluster_01e_02，first00:34:23/end10:34:23UTC；case1原a159dcef0…确认未启动后00:29:34停止，同一case/plan的b d5aab172…转cluster_01e，first00:35:04/end10:35:04UTC。两路实测加载original Full、0query/0命令，先查实际资格exit/模型/四命令一致性，不能当效果。case0转交门因真实准入拒绝，未停止/重建它，勿再调用转交helper。0GPU bee71c75…实际运行等待。R=实验根/PB_namespace2_20261113_v1，source dc6b8ab/digest65dbc4cd…冻结不改；canonical未来wrapper只修正初始scope标题，不改活动代码。读ITER45_NAMESPACE_ACP_DISPATCH_V2和ITER45_NAMESPACE_LIVE_V2。
+
+原49入口、旧clock、13matched unknown和不自动第三次RB45保持；原119.805/120不变，新增20.5、累计140.305/144。旧warmupFull200 weight在本机完整TAR/独立weight及AFS CAS齐全核验后冷存，当前Full3000/原specialist未改、空间实测约13GB；旧200调用先读STORAGE_LOCATOR_ITER45_WEIGHT_V1和存储指引第五阶段。继续资格→factual→固定pool→原件审计→如实接入文稿，不把工程完成当科学效能。
+
 **Nov13 iter44写作锚点更新为v31：q48已真正合入完整PDF，不再等待才合稿。** D.1/表39页45有31/32完整PB q48、不利主指标及NA标签；D.2页45–46加入41完整0–0配对/13unknown尝试，Bbqv/Hh4E同步，rkWY保持。完整原工程与干净ZIP47页/主文10页/文本精确，45–47直接验看、前44像素同，0undefined/overfull，93项写作包本机验真。主文/旧表/公式/九图及RGB、20项绑定/17块/37整段PENDING保持，C.6仍75/15450。原v30和48页预布局件封存；后续从v31接q96，不按下文旧“q48尚未合PDF”描述回退。AFS以ITER44_V31_AFS_VERIFICATION实际收据为准。读CANDIDATE_V31_PB_Q48_ZH.md和最新current_iteration。
 
 运行仍为原PB85e q96（22:01UTC rank23）及原0GPU1ae审计，23:15:38/23:25:38UTC不改。CCI RB45无活动进程、0生成/物理/null无exit，13unknown已含重启加载1；不自动第三次、复活旧ACP或跳过条件Full。49冻结入口、119.8054115725预留及三个一次性credit保持；未来CCI须bootstrap而非PID1窗口准入。q96完整原件/invalid/unknown/六Full及CPU审计通过后再填实际结果；不替换状态/指标、填37理想段或声明全部缺口关闭。

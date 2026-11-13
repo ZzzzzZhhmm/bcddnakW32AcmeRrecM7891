@@ -37,3 +37,13 @@ python scripts/tier_rebuttal_writing_archives.py \
 需要旧Full200 raw恢复时，先将上述两文件按原pytorch_model相对路径暂存到有空间的独立目录（例如CCI临时盘），再用P/ITER33_FULL200_VERIFIED_STORAGE_MIGRATION_V1/restore_full200_raw_state_v1.py --staging STAGING_DIRECTORY。该helper逐项核对原SHA/size，拒绝覆盖现存原路径，检查AFS可容纳两文件和1GiB余量，再原子恢复两个原名。恢复helper的--help检查已通过，尚未实际回填，勿宣称重新恢复过原状态。
 
 移出26,450,253,965逻辑字节；即时free3.35GB因共享卷计量延迟未变，09:50df实际29,768,081,408B。保留所有原快照；4GiB后续准入门不变。完整迁移收据P/ITER33_FULL200_VERIFIED_STORAGE_MIGRATION_V1/receipt.json SHA5407991f8dbaf810f4a63ff6286c28b5623ed2e9879cfa35c886c051b666699c。
+
+## 第五阶段：已完成warmup200的旧weight冷存
+
+Nov13 00UTC共享卷降至约1.16GB。先尝试另存Full3000 optimizer，传输较慢后中止；该原件始终在AFS，两份本机partial读本不计完整backup。改从已保留的本机Full200完整38,599,198,720B TAR（原SHAb2a7a0e2…）重新完整重读，提取`training/checkpoints/weights/step_000200.pt`，再独立重读提取文件。12,148,647,926B、SHA`1fb035c41663752d72098196cc04f04ff03cefcfa7db623bc994142d14af0ac4`精确，副本`C:/Users/admin/.cache/warm-rebuttal-full200-cold-weight-iter45-v1/step_000200.pt`、完整原TAR和AFS CAS均保留。
+
+AFS再次完整hash、确认无进程/FD引用和49冻结入口未变，先写locator及恢复helper，才于00:13:42UTC冷存旧冗余物理文件。旧路径P/matched_training_update200_v1/full-s3407/checkpoints/weights/step_000200.pt，现在调用旧200模型必须先恢复；当前Full3000、原稿specialist及科学轨迹未改。旧“所有评测weight常驻”只对应前四阶段，本次有明确可恢复的冷存例外。
+
+locator在原weight同目录`STORAGE_LOCATOR_ITER45_WEIGHT_V1.json`；收据P/ITER45_FULL200_WEIGHT_TIERING_V1/receipt.json，恢复helper同目录`restore_full200_weight_v1.py`（SHA`2b792da0d0750f031c947bece01609584685ab5b894c37b0678b43dddb7947fd`）。先把完整weight暂存到CCI临时盘；`--staging-file PATH`只dry-run，逐项校验hash/size、目标不存在及余量，显式`--apply`才原子恢复。`--help`通过，尚未实际恢复。首个只读尝试因错误runtime参数key停止、未迁移；核实ckpt_setting后执行成功。
+
+即时free1.1656GB保留原快照，稍后df实际13,312,421,888B，写作验真后约13.06GB。共享写入仍改变净空闲；保持实时4GiB任务准入和512MiB运行保护，不按逻辑冷存字节推算可用空间。

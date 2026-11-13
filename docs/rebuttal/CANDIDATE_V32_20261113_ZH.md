@@ -1,0 +1,15 @@
+# v32内部审阅候选与双source执行
+
+在封存v31上加入已验真的PB q96候选描述性结果及取证范围说明。全稿48页、主文10页；原工程与干净source ZIP均BibTeX+四遍编译，48页文本精确、0引用未定义/0 overfull；45–48页直接视觉验收，前44页像素与v31一致。原主文、此前数据/公式/图、真实strength感谢开头和37整段条件论证保持；后者仍红色、未放行。20项原review字段/序号/hash、17块回复绑定保持，未发表/正式上传。
+
+回复目录`tmp/rebuttal/responses/20261113_v32_pb_q96_scope`；完整工程`tmp/rebuttal/revision/WARM_ICLR2027_v32_pb_q96_scope`。PDF为同级`WARM_ICLR2027_revision_v32_pb_q96_scope.pdf`，SHA `d641cd829cd8598eb602fa6d1eeb72b28fdddb612505ff2057f60b10ff2c4038`；source ZIP的SHA `ce28758b016b86edd205a2439010e0a11a076d13167e59e5815f09f46427d977`。97项在AFS实验根P的writing_candidates/20261113_v32/verified逐项验真，TAR `51e42749cdd8689454fd35d98970e62db9fcba4030e0cf4594014b39bc11cdac`、manifest `6102f10985eabebd479e4d2e3d7969161a1c2262bb9dc331ea023991c8aa9bf8`。P/ITER45_V32_AFS_VERIFICATION_V1确认v31的93成员及49旧冻结入口保持。
+
+D.1/表40只报告q96的32完整H32候选，预测/历史/常量centered MSE `0.140979/0.140364/0.049166`，未优于两个参照。三个Full保存端点相同但均17命令后TOPP invalid；另一个旧控制unknown、一个无保存终态、一个未启动，完整控制审核未放行。父counts[5,1]相对targets[2,7]超额，交互/repair/harm为NA。旧PB三query同属明确physical0补充episode，不冒称official namespace首episode。原稿specialist、shared新比较及局部机制测量分列；C.6固定75角色/15450replans，matched82角色/41个0–0对、13unknown保持。
+
+两个独立namespace case在任何新learned trial前冻结：0/340800000和1/340800001，8原件双端核验。当前两路闲时ACP执行原PB12000资格→fresh完整factual→固定q8/48/96 fresh K32+四Full控制，private runtime/cache/output/lease，无自动重启或按结果换样本。case0唯一UID `0f0e8eeeba3544b181a73cacc62d7eae`、cluster_01e_02，实际first00:34:23/end10:34:23UTC；case1原a `159dcef0bae6445aaccaba92c7555c68`在确认无AFS运行且缺GPU后，00:29:34实际停止，同一冻结case/plan转b `d5aab172af5746c5b89923e4dc86d2c0`、cluster_01e，first00:35:04/end10:35:04UTC。00:38实测均加载original Full、0query/0命令，不当效果证据。
+
+0GPU/4CPU16GiB标准审计UID `bee71c75bc494db98047e108ba20155d`已00:19:17实际启动，只读等待终态。case0转交前置检查发现它已真正准入而拒绝，仅打开菜单、没有停止或重建case0。以后读ITER45_NAMESPACE_ACP_DISPATCH_V2和ITER45_NAMESPACE_LIVE_V2，不按旧排队截面重提。新增阶段20.5GPUh、累计140.3054115725/144、原119.8054115725/120及三个credit均不变，所有旧clock保持。每source最多10h且统一最迟Nov13 11UTC结束。
+
+运行代码dc6b8ab/digest65dbc4cd…保持冻结。其加载期operator.scope暂沿用旧physical0模板，但实际candidate_seed、roster/plan和parent-stage case明确为namespace；初态绑定完成后标题更新。canonical仅修正未来wrapper首个说明，不更改或重启活动快照。下一步先核验资格exit、实际首模型输出/四命令一致性，再核验完整factual和pool；用全K32独立标签审计真实coverage/natural gate，而非把家族holdout当技能缺失。37个理想结论不能仅填数值而保留未证实方向。
+
+AFS从约1.16GB经无损冷存旧warmupFull200 weight恢复到实测13.31GB。本机完整原TAR、独立weight和AFS CAS保留；当前Full3000、原specialist和轨迹未改。旧200调用前先读STORAGE_LOCATOR_ITER45_WEIGHT_V1及存储指引第五阶段。新真机取证仍由作者独立推进，尚未回传。

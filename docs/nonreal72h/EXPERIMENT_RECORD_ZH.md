@@ -3172,3 +3172,29 @@ D.2页45–46和Bbqv/Hh4E加入41完整配对双方均0、82角色=66原allocati
 新code显式绑定两个原PB12000 namespace case的seed/ordinal、private runtime/output/lease，保持原47277 source4a1…、weighta765…、bank/归一化/数值与H32/prefix4不变。learned1replan4命令资格→fresh完整1500或official success事实→固定q8/48/96→每query32候选+4Full，未达到不替换。新source前缀须两次精确重现原TOPP错误历史；候选新分支仍原严格guard、TOPP拒绝即invalid。新增0GPU auditor只读核验archive/物理链/DINO/标签/原主指标，不把工程完成当科学收益。
 
 110Windows/110native CPU通过，五个原生CLI help导入exit0；原生收据ITER45_NAMESPACE_EXECUTION_NATIVE_CPU_V1，overlay415ac142…，全部49旧冻结入口保持。首次Windows collection只因stage在顶层导入POSIX fcntl而失败，移至实际main后通过；没有策略forward或物理动作。此时新learned source未运行、两路GPU ACP和0GPU任务未创建。AFS实测由9.2GB降至约4.3GB（共享盘动态变化），保留4GiB任务准入及512MiB运行保护，不删科学原件。
+
+### 23.299 存储第二次趋满：旧warmup200 weight完整双副本核验后冷存
+
+23:56UTC AFS约1.16GB，新namespace任务未在不足4GiB时准入。Full3000 optimizer备份尝试因传输较慢中止，原件始终保留，两个本机partial不计完整backup；其只读preflight被正在SCP读取的FD拒绝，无移出。随后从本机已保留Full200完整38,599,198,720B TAR重新完整hash=b2a7a0e2…，提取旧step200 weight，再独立完整重读提取文件，12,148,647,926B/SHA1fb035c41663752d72098196cc04f04ff03cefcfa7db623bc994142d14af0ac4精确。
+
+AFS再次完整hash旧weight、确认无FD/进程消费、CAS manifest2a1f41d6…及49入口保持，00:13:42UTC仅冷存旧warmup200冗余weight；本机独立weight/完整原TAR及AFS CAS保全。原路径同目录STORAGE_LOCATOR_ITER45_WEIGHT_V1.json、P/ITER45_FULL200_WEIGHT_TIERING_V1/receipt.json及restore helper记录恢复映射；helper2b792da0…的help验证通过，未实际恢复。首个脚本在错误runtime参数key处只读失败，修正为ckpt_setting后才执行成功。当前Full3000 weight/optimizer/model-state与原PB12000实际stat前后不变，不删科学轨迹/checkpoint唯一字节。
+
+即时free仍1.1656GB、随后df13,312,421,888B，保留全部原快照；后续准入继续实时4GiB。Full200旧weight调用前先恢复，不把逻辑冷存解释为丢失或静默重写历史。存储指引第五阶段说明相对前四阶段“所有weight常驻”的显式变更。
+
+### 23.300 两路namespace原模型已在两个闲时集群实际准入
+
+源dc6b8ab已本机commit/push验证、CCI离线bundle FF；新执行controller source archive c3e94a11…、digest65dbc4cd…，资格/阶段/runner及0GPU审计全部CPU预检exit0，49旧入口保持。GPU case0初次创建UID0f0e8eeeba3544b181a73cacc62d7eae，case1初次UID159dcef0bae6445aaccaba92c7555c68，均闲时1GPU8CPU128GiB、restart0、已确认image/AFS；0GPU4CPU16GiB标准审计bee71c75bc494db98047e108ba20155d于00:19:17真实启动。排队和startup不当GPU推理。
+
+case1旧a实际Pod FailedScheduling缺GPU1、AFS无run/qualification/factual；00:29:34UI确认已停止后，才将同一冻结case/plan84ed3b91…转cluster_01e的b d5aab172af5746c5b89923e4dc86d2c0。重填因集群切换清空的AFS配置并核对image/AFS/command/spec；初次detail验证早于AFS显示加载，纯读重查确认全部正确，没有再次创建。新b实际00:35:04.911准入、end10:35:04.911UTC。case0转交预检发现原a已真正准入而拒绝，仅打开菜单，未停止或重建；原唯一UID保留，first00:34:23.203/end10:34:23.203UTC。
+
+00:38:44实测两个父stage/runner running、均加载original Full，candidate_seed340800000/340800001，原source4a1…/weighta765…/sim a97…；各0query/0物理命令。没有新完整factual或效果/SR。两个source各私有runtime/lease/cache/output，不将两namespace episode加入旧matched82/41分母。0GPU审计只读等待固定终态，尚无新放行数字。原case1a保留为确认未启动的资源终态，不增加13个历史matched unknown，不重置旧clock或credit。
+
+实际GPU创建共3次、仅2个source活跃加1个旧a停止；不是3份科学样本。P/ITER45_NAMESPACE_ACP_DISPATCH_V2和LIVE_V2是当前锚点；写作包内V1 dispatch为较早截面保留。新增预留20.5、累计140.3054115725/144及原119.8054115725/120不变。活动快照dc6b8ab不修改；canonical只把未来资格首个scope标题从physical0模板改为实际namespace case/seed，110Windows重验通过，不将此metadata修正解释为活动模型/采样/物理变化。
+
+### 23.301 v32正式合入q96候选描述性审核，完整原工程与双端97项验收
+
+D.1/表40在页45–46加入q96的32完整H32候选共同支持误差0.140979/0.140364/0.049166，原指标不利保留；三个Full均17命令后invalid、2个unknown/无终态、1个未启动和交互NA明确。完整native pool仍未放行，不以partial parser替代该gate。进一步明确旧三query来自physical0额外episode、二维namespace ordinal/lower-bound区别；两个独立新case只陈述事前冻结，策略结果仍pending。原main/旧表/公式/九图及RGB保持，C.6仍75角色/15450replans，matched82角色/41对全0、13unknown保持。
+
+Bbqv/Hh4E的对应机制回复与已完成修订总结联动，感谢及真实strength开头、we/our口吻、20原review字段/序号/hash和17块精确拼接核验；rkWY逐字保持。37整段理想方向论证逐字仍红色，不填数值或放行方向性结论。源工程和干净ZIP各BibTeX+四遍编译，48页/主文10页、全页文本精确、0undefined refs/overfull；45–48直接看图，前44与v31像素精确，匿名性/AI声明保持。
+
+PDF d641cd829cd8598eb602fa6d1eeb72b28fdddb612505ff2057f60b10ff2c4038，source ZIP ce28758b016b86edd205a2439010e0a11a076d13167e59e5815f09f46427d977。97项TAR51e42749cdd8689454fd35d98970e62db9fcba4030e0cf4594014b39bc11cdac/manifest6102f10985eabebd479e4d2e3d7969161a1c2262bb9dc331ea023991c8aa9bf8在本机与AFS writing_candidates/20261113_v32/verified逐项验真，P/ITER45_V32_AFS_VERIFICATION_V1，v31的93成员和49入口保持。未发表/上传。新真机由作者独立推进，尚无回传；真实coverage/natural withdrawal、完整公平比较及总体机制收益继续按真实数据闭合，不以措辞替代证据。

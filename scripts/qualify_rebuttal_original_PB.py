@@ -56,6 +56,8 @@ def main():
  stamp=lambda:datetime.datetime.now(datetime.timezone.utc).isoformat()
  sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
  state=dict(status='binding',started_utc=stamp(),plan_sha256=sha_plan,admission_sha256=cli.expected_admission_sha256,absolute_deadline_utc=admission['absolute_deadline_utc'],scope='Original-run fixed PB12000/source47277 root3407/physical0:one native live Full replan and four commands only. Not original DEV selection,a complete episode,repair,withdrawal,success rate or candidate-effect accuracy.',inference_queries=0,native_commands=0,model_updates=0)
+ if is_namespace:
+  state.update(namespace_case_id=entry['case_id'],scope=f"Original-run PB12000 namespace case{entry['case_id']}/physical seed{entry['seed']}/root3407:one native Full replan and four commands only;engineering qualification,not a complete episode or efficacy result.")
  def save():
   state['updated_utc']=stamp();t=out/'operator.json.partial';t.write_text(json.dumps(state,indent=2)+'\n');t.replace(out/'operator.json')
  save();env=None;policy=None;children_before=set();hook=None;old_git=None;topp_observer=None
