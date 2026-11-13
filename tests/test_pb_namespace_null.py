@@ -95,6 +95,15 @@ def test_deadline_never_restarts_or_crosses_original_cutoff():
     with pytest.raises(ValueError):M.deadline(first.replace(tzinfo=None),latest)
 
 
+def test_case_window_reserves_exit_and_archive_margin_inside_same_allocation():
+    z=datetime.timezone.utc;first=datetime.datetime(2026,11,13,2,tzinfo=z)
+    end=first+datetime.timedelta(hours=3.5)
+    assert M.case_deadline(first,end)==first+datetime.timedelta(seconds=6000)
+    later=end-datetime.timedelta(hours=1)
+    assert M.case_deadline(later,end)==end-datetime.timedelta(seconds=180)
+    with pytest.raises(ValueError):M.case_deadline(end-datetime.timedelta(seconds=1900),end)
+
+
 def context_fixture():
     torch=pytest.importorskip('torch')
     names=['query_context','candidate_context','candidate_actions','candidate_start_proprio','candidate_effect_pre',

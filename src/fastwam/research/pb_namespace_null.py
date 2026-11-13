@@ -48,6 +48,16 @@ def deadline(first, latest):
     return result
 
 
+def case_deadline(first, stage_end):
+    """Keep three minutes inside the same allocation for exit and raw sealing."""
+    if first.tzinfo is None or stage_end.tzinfo is None:
+        raise ValueError('Timezone-aware resource window required')
+    result = min(first + datetime.timedelta(seconds=6000), stage_end-datetime.timedelta(seconds=180))
+    if (result-first).total_seconds() < 1800:
+        raise ValueError('Insufficient unchanged case window and archive margin')
+    return result
+
+
 def inference_context_payload(context):
     """Save complete inference tensors while rejecting every future target."""
     import dataclasses

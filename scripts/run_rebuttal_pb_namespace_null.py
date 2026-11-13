@@ -325,9 +325,9 @@ def main():
     try:
         cache=Path(tempfile.mkdtemp(prefix='warm-pb-ns2-null-'));os.environ.update(TMPDIR=str(cache),TORCH_EXTENSIONS_DIR=str(cache/'torch'),TRITON_CACHE_DIR=str(cache/'triton'),CUDA_CACHE_PATH=str(cache/'cuda'))
         for case in [0,1]:
-            if (end-now()).total_seconds()<1800:
+            if (end-now()).total_seconds()<1980:
                 state['cases'][str(case)]=dict(status='not_started_original_window_insufficient');save();continue
-            deadline=min(end,now()+datetime.timedelta(seconds=p['maximum_case_seconds']))
+            deadline=BIND.case_deadline(now(),end)
             admission=dict(case_id=case,first_admitted_utc=first.isoformat(),absolute_deadline_utc=deadline.isoformat(),plan_sha256=cli.expected_plan_sha256)
             af=root/f'case{case:02d}.admission.json';assert not af.exists();write(af,admission)
             argv=[p['python'],'-B',str(Path(__file__).resolve()),'--plan',str(cli.plan),'--expected-plan-sha256',cli.expected_plan_sha256,

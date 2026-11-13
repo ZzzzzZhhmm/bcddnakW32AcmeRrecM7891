@@ -3220,3 +3220,5 @@ case1于Nov13 01:30:50.678UTC、case0于01:31:39.824完成原生1500-command上�
 docs/rebuttal/PB_NAMESPACE_NULL_20261113_ZH记录两个固定case都纳入、query8不替换的新独立控制。当前factual infer_kwargs把NumPy历史数组保存成类型说明，因此不能直接当作完整history输入；不伪造历史BoundOnlineStep、用零history替代或改动运行快照。新控制器用原policy独立reset重放前32动作，每次RGB/physical/counter/TOPP及九个H32生成精确核对，直接捕获当前原模型的真实source context，再做Full/null/Full采样；参数、buffer、Gaussian和recollection须保持。动作在新null truth前封存；随后两次原前缀资格、三条独立fresh物理分支，原DINO四token均值和计数rubric不变，新的TOPP拒绝仍invalid。该实验是显式候选撤回，不宣称自然技能缺失检测或最终task贡献。
 
 只允许一份新增闲时GPU任务顺序执行case0/1，最多3.5h、最晚Nov13 11UTC，保留原两路及旧窗口。累计准入预留143.8054115725/144GPUh，包含原119.8054115725和namespace20.5；不是计费、不退还未知退出、无自动重启。当前仍是实现/验证阶段，尚未创建新ACP、没有新null推理或物理分支。Windows39通过/7因无Torch跳过；原生102项全部通过、CLI help exit0，ITER46_NULL_NATIVE_CPU_V2保存overlay13def8a6…及结果。不能把合成context单测当实证；首次Windows调用因旧测试路径不存在而未收集，随后Torch缺失的7项改为明确skip并在原生实际通过，未隐去依赖差异。
+
+派发前进一步将180秒退出/归档余量放入同一3.5h总窗口，未延长任何clock。V3 overlay5c89f388…的native103全部通过、CLI help0；Windows40通过/7明确skip，原V1/V2收据保持。此轮余量修复没有改变模型、采样、物理、指标或case选择。新GPU仍未创建；先同步/冻结、实际plan CPU preflight、前置登记预算后才能提交。
