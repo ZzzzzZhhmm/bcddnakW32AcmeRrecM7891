@@ -3314,3 +3314,13 @@ ITER50_EFFECT_HEAD_STATIC_AUDIT_V2.json纠正V1误选最大.mot字典的检查�
 
 
 V1/V2静态收据与源码行号保留。核验只说明模块存在/固定step之间参数更新及原监督范围；原预测不利、invalid、unknown和37整段待证论证不变。v35 PDF/ZIP与三位回复未因本检查改写，主文/图表及原报告结果保持。
+
+### 23.313 两例撤回采集在真实在线history检查处失败，原件保全及修复
+
+null case0于08:03:58、case1于08:20:07UTC在inference_context_payload处报Original v3 candidate/history tensor layout differs，分别exit1；父程序08:20:13完成归档后exit0。这不是两例科学实验成功。每case已经复现原q0–q8九次H32 Full输出和32条原生前缀命令，但extra_policy_queries=0、new_branch_commands=0、branches为空；未封存新动作或产生撤回truth。两例各13原件/TAR/manifest逐项在AFS核验，随后本机独立重读TAR/每文件SHA，共26项。ITER50_NULL_PREBRANCH_FAILURES_VERIFIED_V1和本机iter50/null_case00/01_failed_v1保留，不能补成0成功率或误算为新的未知分支。
+
+原模型的online context接口允许history随回合增长，而采集器误要求episode_tokens固定为[1,16,768]。CCI修复仅允许原容量内的实际长度并要求mask维度精确，不补零、不改值、不更改候选/模型/采样/指标。新增显式恢复控制仅接受上述已知错误、已知exit1、9次精确复现/32原前缀及0新分支，并保留旧父complete/exit0与全部原件；原private runtime/lease/输入不变，新输出独立，原07:47首准入/11UTC截止及143.8054115725预留不重置。它不是未知结果自动重试，也不产生新的科学样本选择。
+
+修复后原生38项history检查通过，加入恢复准入后原生48通过；Windows首次31通过/16Torch skip/1个POSIX路径测试失败，改为显式PurePosixPath后32通过/16skip。新恢复代码还须冻结、实际plan CPU验证和资源准入，当前尚未创建。旧冻结d6代码不改、两个q96继续原窗口；原37整段有利论证未放行，v35未改稿或发布。
+
+08:26 AFS仅1,456,377,856B，新的4GiB准入被保留。旧PB10000 weight启动可恢复本机备份，原12,144,215,606B文件仍在AFS；下载完整性及第二份TAR/全SHA、恢复locator齐全前不得移除。它不改变原checkpoint选择，也不触碰实际使用的PB12000、当前3000或唯一证据。当前存储传输是未完成备份，不计为已经释放空间。

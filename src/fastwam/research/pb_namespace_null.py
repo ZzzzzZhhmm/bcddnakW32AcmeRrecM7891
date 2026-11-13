@@ -99,8 +99,15 @@ def inference_context_payload(context):
     result = {key:value.detach().cpu().clone() for key,value in values.items() if torch.is_tensor(value)}
     if any(x.is_floating_point() and not bool(torch.isfinite(x).all()) for x in result.values()):
         raise ValueError('Nonfinite inference context')
-    if tuple(result['candidate_actions'].shape)!=(1,32,32,14) or tuple(result['episode_tokens'].shape)!=(1,16,768):
-        raise ValueError('Original v3 candidate/history tensor layout differs')
+    if tuple(result['candidate_actions'].shape)!=(1,32,32,14):
+        raise ValueError('Original v3 candidate tensor layout differs')
+    # Original online history grows up to capacity; it is not padded to 16.
+    # Preserve the actual past tensors and require their matching validity mask.
+    history, mask = result['episode_tokens'], result['episode_mask']
+    if (history.ndim != 3 or history.shape[0] != 1 or history.shape[2] != 768
+            or not 1 <= history.shape[1] <= 16
+            or tuple(mask.shape) != tuple(history.shape[:2])):
+        raise ValueError('Original v3 history tensor or mask layout differs')
     return result
 
 

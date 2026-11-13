@@ -1,5 +1,11 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**iter50 08:40UTC覆盖下方“三路运行”截面：** 两路q96仍运行；null旧父程序于08:20正常退出0，但两个子case均以exit1在相同的history布局校验处停止，不能把云任务成功当作实验成功。各9次Full查询/32原前缀命令精确复现，extra queries及intervention commands均0；各13项、合计26原件已双端验真。读ITER50_NULL_PREBRANCH_FAILURES_VERIFIED_V1和current_iteration最新覆盖；不要重跑旧null冻结入口。
+
+CCI已修正采集器误将在线增长history要求为固定16项的问题，保留原张量值/长度及相应mask；新显式恢复入口仅接受已核实的同一工程错误/无任何撤回分支，并保留原07:47首准入/11UTC截止、固定两case及旧失败。48原生CPU通过；Windows32通过/16项因无Torch明确skip，首次Windows POSIX路径测试失败及PurePosix修复记录保留。新源码须英文commit/push、冻结和真实plan预检后才派发，不能修改活动快照。
+
+AFS08:26降至1,456,377,856B，不能放宽4GiB准入/512MiB运行保护。PB旧10000权重正备份到本机storage/20261113_PB10000_v1，下载尚未验真时原件必须保持；current_iteration记有SCP92110/PID53816和远端SHA任务34224。只有完整字节数/全文件SHA、独立本机TAR及恢复locator全部核验后才能无损冷存；当前PB12000/3000、CAS和唯一轨迹不动。新恢复仍未提交；v35/37整段待证保持。
+
 **Nov13 iter50三路ACP已恢复：** 作者已登录，旧两Pod失败/删除的gate均已认证；新case0 q96 UID34a11139…、case1 q96 UID68653e49…、两个q8撤回UID96e56a7a…的三个原生程序于08:01UTC均running/新鲜心跳，08:04三个Worker全部运行。都在cluster01e、idle1GPU8CPU128GiB/restart0。两个cluster02未运行排队实例先停止且确认Worker删除/无原生启动后，才用同一冻结launch转交；保留五云创建/三逻辑阶段及全部失败收据，勿复活52f5/50c8旧UID或复制活动阶段。先读ACP_RECOVERY_ITER50_20261113_ZH及current_iteration/ITER50_ACP_DISPATCH_V1。
 
 q96固定两case/原32候选和四Full，只用原封存动作、GPU效果读取与原生回放，new policy generations=0；case1已封口两个Full、在原rank5父重建，case0首次前缀。null case0仍加载原模型，尚无行为收益放行。原10:34:23/10:35:04UTC与null11UTC/3.5h、143.8054115725/144预留、4GiB准入/512MiB运行保护和49入口/三冻结树保持。CCI无新科学准入。AFS08:01约4.86GB，持续核查但不删受保护原件。

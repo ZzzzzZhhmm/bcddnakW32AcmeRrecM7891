@@ -123,6 +123,7 @@ def context_fixture():
            'episode_mask','episode_action_summaries','episode_action_mask']
     values={name:torch.ones(1) for name in names}
     values.update(candidate_actions=torch.zeros(1,32,32,14),episode_tokens=torch.zeros(1,16,768),
+                  episode_mask=torch.ones(1,16,dtype=torch.bool),
                   target_action=None,target_effect=None,current_semantic_teacher=None,target_action_valid_mask=None,
                   future_valid_mask=None,forced_candidate_indices=None)
     cls=dataclasses.make_dataclass('SyntheticEngineeringContext',[(k,object) for k in values])
@@ -149,3 +150,31 @@ def test_a_type_description_or_nonfinite_history_cannot_replace_recorded_history
     with pytest.raises(ValueError):M.inference_context_payload(c)
     c=context_fixture();c.episode_tokens[0,0,0]=float('nan')
     with pytest.raises(ValueError):M.inference_context_payload(c)
+
+
+@pytest.mark.parametrize('length', [1, 2, 6, 9, 15, 16])
+def test_original_online_history_grows_without_padding_or_changing_values(length):
+    torch=pytest.importorskip('torch')
+    c=context_fixture()
+    c.episode_tokens=torch.arange(length*768,dtype=torch.float32).reshape(1,length,768)
+    c.episode_mask=torch.ones(1,length,dtype=torch.bool)
+    payload=M.inference_context_payload(c)
+    assert torch.equal(payload['episode_tokens'],c.episode_tokens)
+    assert torch.equal(payload['episode_mask'],c.episode_mask)
+    assert tuple(payload['episode_tokens'].shape)==(1,length,768)
+
+
+@pytest.mark.parametrize('length', [0, 17])
+def test_empty_or_overcapacity_history_is_rejected(length):
+    torch=pytest.importorskip('torch')
+    c=context_fixture();c.episode_tokens=torch.zeros(1,length,768)
+    c.episode_mask=torch.ones(1,length,dtype=torch.bool)
+    with pytest.raises(ValueError,match='history tensor or mask'):
+        M.inference_context_payload(c)
+
+
+def test_original_history_mask_must_match_unpadded_length():
+    torch=pytest.importorskip('torch')
+    c=context_fixture();c.episode_tokens=torch.zeros(1,9,768)
+    with pytest.raises(ValueError,match='history tensor or mask'):
+        M.inference_context_payload(c)
