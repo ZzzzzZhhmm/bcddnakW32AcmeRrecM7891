@@ -168,17 +168,21 @@ class _LegacyPooledMixin:
         action_history = action_history.masked_fill(~ctx.episode_action_mask[...,None], 0.0)
         episode = torch.cat((ctx.episode_tokens, action_history), dim=1)
         episode_mask = torch.cat((ctx.episode_mask, ctx.episode_action_mask), dim=1)
-        required = self.retrospective_gist(world_tokens=bridge.world_tokens, world_mask=bridge.token_mask,
-            semantic_tokens=bridge.semantic_tokens, semantic_mask=torch.ones(bridge.semantic_tokens.shape[:2],device=early.device,dtype=torch.bool),
-            episode_tokens=episode, episode_mask=episode_mask,
+        # CUDA autocast keeps LayerNorm outputs in fp32, including the semantic
+        # bridge residual. Bind the strict gist/pool interfaces to the native
+        # action dtype; these casts are identities on the qualified non-AMP path.
+        source_dtype = base_gaussian.dtype
+        required = self.retrospective_gist(world_tokens=bridge.world_tokens.to(dtype=source_dtype), world_mask=bridge.token_mask,
+            semantic_tokens=bridge.semantic_tokens.to(dtype=source_dtype), semantic_mask=torch.ones(bridge.semantic_tokens.shape[:2],device=early.device,dtype=torch.bool),
+            episode_tokens=episode.to(dtype=source_dtype), episode_mask=episode_mask,
             event_pre_tokens=torch.zeros_like(ctx.candidate_effect_pre),
             event_delta_tokens=torch.zeros_like(ctx.candidate_effect_delta), event_token_mask=torch.zeros_like(event_mask),
-            text_tokens=text_context, text_mask=text_context_mask)
+            text_tokens=text_context.to(dtype=source_dtype), text_mask=text_context_mask)
         warped = model._warp_candidate_actions(ctx.candidate_actions,ctx.candidate_start_proprio,current_proprio,valid,cfg)
         actions, pooled = self.retrospective_event_adapter(warped_actions=warped,candidate_valid_mask=valid,
             event_pre_tokens=ctx.candidate_effect_pre,event_delta_tokens=ctx.candidate_effect_delta,
             event_delta_mask=event_mask,candidate_context=ctx.candidate_context,gripper_timing=ctx.candidate_timing,
-            gist_tokens=required.gist_tokens,query_context=ctx.query_context,proprio=current_proprio)
+            gist_tokens=required.gist_tokens.to(dtype=warped.dtype),query_context=ctx.query_context,proprio=current_proprio)
         scores = self.utility_reranker(ctx.query_context,ctx.candidate_context,None,None,None,valid)
         selection = consequence.select_consequence_candidate(scores,torch.zeros_like(scores),ctx.candidate_support,valid,
             consequence_weight=0.0,support_weight=0.0,automatic_null=False,forced_candidate_indices=ctx.forced_candidate_indices)

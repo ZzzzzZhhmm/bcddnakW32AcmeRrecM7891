@@ -3522,3 +3522,20 @@ iter57新增独立原v3工厂、明确schema和固定0.25 source权重，保留�
 v40实证回复1811/2440/818词、10/15/4表，17评论块精确重构，20原review绑定不变；无作者提醒，作者感谢/优势/we口吻/逐条回答/修订归纳保持。实证PDF50页主文10，SHAa3a63311869fbe965df5b5afaa179dbf2912c8e8e36c96857ced627ca477c2d7，完整源码ZIP55220d496f0b331e4cc4bb04714ba3c259c142365ca75b14507cbe8ad49e9217。独立演练PDF51页主文10，SHA717f8a6b8570c4a7f3f75e2bf66824fcb3442947fd794d9c6e7bc19d67f6e8de，ZIP1b1b9086e253b8c69174d4f9e31442738e952e02f1072abc813d41ebfbe81da9。各完整原工程BibTeX+4遍、32文件ZIP独立解包重编译，全部文本/像素精确；只有第24页较v39变化且直接验看，其余页与已验v39一致，主文像素不变，10图/原47表和另1实现表全部保持。0undefined/overfull、45既有fontfallback；匿名/AI声明保持。
 
 37实证字段仍null，41对shared全部0–0、13unknown、新真机0不改；理想值仅在独立演练源码注释标记的段/表，正常黑色正文，不晋升为实测，不发布OpenReview/上传投稿。完整封包以实际本机/AFS核验收据为准。三份冗余生成写作TAR共489,052,160B经两完整本机副本/原生全SHA/无FD/原路径JSON locator与永久restore helper后才迁出，当前v39 payload_v2不动。PB6000旧权重仍在下载并保护原件，未完成双完整验证前不声明冷存完成/已释放12GB。
+
+
+### 23.337 真实GPU forward的AMP失败、精确复现与边界修复
+
+单独0.75GPUh工程阶段于20:36:24UTC在CCI准入，R1 source12ebd5bb…/job85ddb3c…，真实model与原index0构造后，20:46:56worker failed/1、runner20:47:05 failed/1，总640.812秒，0优化器更新、0环境命令。gist严格dtype检查拒绝。原source/lease/log/样本identity及失败全部保留；不是SR失败标签，也不是已训练control。
+
+CPU mixed-precision小型检查15pass，CUDA相同fixture为1pass1fail，精确重现world bf16、semantic fp32（NativeLayerNormBackward）、其余bf16。新control在gist/pool边界显式对齐到Gaussian action dtype，原Full/shared实现完全不动，不换样本、phase、teacher或阈值。非AMP同dtype输入为恒等cast。独立修复树H10016项全pass/28.88秒，source before/after精确。新增production入口保存真实batch/source输入和精度收据；真实一次optimizer update仍要等待新attempt结果。
+
+原新阶段0.75GPUh的累计账须包含首R1 640.812秒、CUDA复现33.413秒、修复37.426秒及续跑上界1800+30秒，合计小于2700秒；02:00UTC绝对截止不重置。旧143.8054115725/144GPUh关闭账完全独立。ACP20:32再次登录超时，Copy定位器超时未触达创建表单/创建请求，新ACP任务0、未知创建0。任务在CLI idle自动释放后，重新create/finish证明closed0、forcedCleanupfalse、原用户登录页保留；不重复索取登录。
+
+### 23.338 v40双端完整封存与无损checkpoint冷存
+
+v40本机+AFS完整71成员包逐成员验真，含两PDF/两完整LaTeX ZIP/三位回复与17块/20映射/37字段账及原四训练收据。TAR b97c1dfc8b035f56c4e1aea5ebfa41fd805612db38735549a9c60659d48c29b9、manifest b5f79bfd1493bde48f3643f25404ded0f321628a1a14ab45932730a54aa6e257，原生payload writing_candidates/20261114_v40_full/payload。R4另1072原件双端全验，TAR bb78765962cd096d3c058c08a114bef439a84964cfe469443897764dedf0bf9d、manifest a47a544b3ab4e23e09e3357816e65440adc43b3149fc27f736835d65011a1af1，明确是未训练模块/0新增sampler/0更新。
+
+PB6000 raw/TAR双完整副本全SHA14e1beef…，TAR7aee5a73…；20:36:42原生全SHA/stat/无FD、当前12k不变通过，先建永久locator dbe79e94…/restore helper c904b913…并测--help，再只迁出旧6k。AFS随后实测16.59GB，后有外部/共享用量波动；准入4GiB、运行512MiB不降低，当前12k/3k/CAS/原轨迹保持。
+
+PB4000采用逐1MiB SHA的精确字节复用：9,672,065,024B来自已经完整验证的本机6k原字节，只传缺失2,472,150,582B；每块SHA、重建完整12,144,215,606B的SHA203904fe458a78d59f0fe119129103b8d56f47d0ef5da4b14e7b703da0e4e512、独立TAR整payload SHA均通过。TAR7f36abbd295b7c91da9ffa2f4296a16a56c8dce0957e1699d67355789b1bb399。不是近似权重或只保留delta；本机确有两个完整副本。原生仅可在全SHA/stat/无FD、永久locator/helper齐全后迁出，实际冷存结果读ITER57_PB4000_WEIGHT_COLD_STORAGE_V1。原稿DEV选点仍未恢复，旧4k始终可精确还原。

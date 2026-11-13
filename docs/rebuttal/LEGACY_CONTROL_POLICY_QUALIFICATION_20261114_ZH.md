@@ -25,3 +25,12 @@ v1–v3 和两套 unit attempts 共 5,309 原件，原生/本机逐成员核验�
 原四个训练收据均为 AdamW peak LR 0.0001、beta0.9/0.95、eps1e-8、weight decay0.01、BF16、seed3407，4 H100 × batch8 × accumulation4 = **128**；BT/PB/Cover 12,000，BRT14,000。正式新 control 必须使用原训练数据、共同初始化、同更新预算与 scheduler；若换 GPU 数，须显式匹配 effective batch 并披露运行环境，不冒充完全相同分布式执行。原稿 DEV 选点/最终 evaluator manifest 未恢复，不能据训练收据声称已经复现原准确率。
 
 20:22 UTC ACP 已重新加载实际列表，旧 unstarted0/1 云端均成功；应用的 progress-listen 请求出现 HTTP2 错误仅为页面订阅，未进行任务创建。后续 GPU 创建必须在冻结源码、实际磁盘准入和新计划登记后进行。已确认只用闲时资源；排队与实际分配/GPU 程序分别记录。
+
+
+## CUDA AMP 的实际续检（20:58 UTC）
+
+新阶段在 CCI 单卡实际运行，原始预算/窗口保持，独立阶段上限0.75 GPUh。首个真实 action+video forward 于20:46:56 failed/1，0优化器更新、0环境命令；错误是 gist 输入dtype不一致。工程检查不是任务失败标签，原件/lease保持，不静默重写。
+
+精确的小型 CPU AMP 检查15项通过，但 CUDA 的同一bf16测试重现失败：bridge world_tokens 是bf16，semantic_tokens 是fp32（CUDA autocast LayerNorm输出），其余真实接口使用bf16。这解释了CPU资格不能代替CUDA训练资格。保留 CPU pass 与 CUDA 1pass/1fail；仅在新 control 的严格 gist/pool 边界对齐到 native action dtype，不修改原 Full、bank、teacher、选样或阈值。非AMP同dtype路径上的cast是恒等。
+
+修复后的独立冻结树在H100上 **16项全部通过**（含CPU/CUDA bf16 forward/backward），新训练入口同时封存实际训练样本、source输入和bridge/gist dtype，便于任何后续失败直接定位。仍须真实生产 action+video 完成一次优化器更新，才可称训练资格通过；16项小型检查不替代此项。续跑为新attempt，沿用同一个新工程阶段0.75GPUh和02:00UTC绝对截止，原失败不覆盖，所有工程更新权重禁止作为匹配训练初始化。

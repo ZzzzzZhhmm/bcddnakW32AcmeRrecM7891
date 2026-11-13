@@ -1,5 +1,6 @@
 """Legacy control execution contracts on small fixtures, never task evidence."""
 from dataclasses import replace
+import dataclasses
 import os
 import pytest
 
@@ -65,6 +66,28 @@ def test_complete_training_route_backpropagates_into_pool_and_gist():
     assert model.retrospective_event_adapter.record_projection[0].weight.grad.abs().sum()>0
     assert model.retrospective_gist.future_projection.weight.grad.abs().sum()>0
     assert all(out.auxiliary_metrics['loss_warm_'+k]==0 for k in ['retrieval','effect','gate','adaptation'])
+
+
+@pytest.mark.parametrize('device',['cpu','cuda'])
+def test_autocast_float32_video_taps_with_bfloat16_context_keep_training_finite(device):
+    if device=='cuda' and not torch.cuda.is_available():pytest.skip('CUDA AMP boundary requires a GPU')
+    model=control().to(device=device,dtype=torch.bfloat16);model.torch_dtype=torch.bfloat16;model.device=torch.device(device)
+    model.configure_trainable_modules();ctx=context(with_teachers=True)
+    ctx=replace(ctx,**{f.name:getattr(ctx,f.name).to(device=device,dtype=torch.bfloat16 if getattr(ctx,f.name).is_floating_point() else getattr(ctx,f.name).dtype)
+        for f in dataclasses.fields(ctx) if torch.is_tensor(getattr(ctx,f.name))})
+    rand=lambda *shape:torch.randn(*shape,dtype=torch.bfloat16,device=device)
+    # A video residual can remain fp32 under autocast even though the model,
+    # factual history, text and Gaussian action path are explicitly bf16.
+    with torch.autocast(device_type=device,dtype=torch.bfloat16):
+        out=model._resolve_action_source(base_gaussian=rand(2,fixture.ACTION_HORIZON,fixture.ACTION_DIM),
+            action_source_context=ctx,memory_sigma=.2,phase='train',final_video_tokens=None,
+            world_token_streams=(torch.randn(2,5,TEXT_DIM,device=device),torch.randn(2,5,TEXT_DIM,device=device)),
+            text_context=rand(2,3,TEXT_DIM),text_context_mask=torch.ones(2,3,dtype=torch.bool,device=device),
+            current_proprio=rand(2,fixture.PROPRIO_DIM),current_video_latent=rand(2,2,1,2,2))
+        loss=out.conditioning_tokens.float().square().mean()+out.auxiliary_loss
+    loss.backward()
+    assert torch.isfinite(loss) and torch.isfinite(out.source).all()
+    assert model.retrospective_event_adapter.record_projection[0].weight.grad.abs().sum()>0
 
 
 def test_teacher_perturbations_do_not_change_decision_inputs():

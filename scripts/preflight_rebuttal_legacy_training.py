@@ -73,11 +73,39 @@ def main():
             return dict(shape=list(c.shape),dtype=str(c.dtype),sha256=hashlib.sha256(data).hexdigest())
         write('sample_identity.json',dict(index=0,tensors={k:tensor_identity(v) for k,v in batch.items() if torch.is_tensor(v)},
             dataset_class=type(dataset).__name__,no_synthetic_phase_or_proprio=True))
+        torch.save(batch,a.output/'actual_training_sample.pt')
         trainable=model.configure_trainable_modules();assert trainable
         optimizer=torch.optim.AdamW(trainable,lr=float(recipe.learning_rate),betas=(.9,.95),eps=1e-8,
             weight_decay=float(recipe.weight_decay))
         optimizer.zero_grad(set_to_none=True);update('actual_action_and_video_training_forward')
-        with torch.autocast(device_type='cuda',dtype=torch.bfloat16):loss,metrics=model.training_loss(batch)
+        import dataclasses
+        from types import MethodType
+        def cpu(value):
+            if torch.is_tensor(value):return value.detach().cpu().clone()
+            if dataclasses.is_dataclass(value):return {f.name:cpu(getattr(value,f.name)) for f in dataclasses.fields(value)}
+            if isinstance(value,dict):return {k:cpu(v) for k,v in value.items()}
+            if isinstance(value,(list,tuple)):return [cpu(v) for v in value]
+            return value
+        original_source=model._resolve_action_source;calls=[];precision={}
+        def capture(_self,**kwargs):
+            calls.append(1);torch.save(cpu(kwargs),a.output/'actual_training_source_inputs.pt')
+            return original_source(**kwargs)
+        def bridge_precision(_module,_args,out):
+            precision['bridge']={k:str(getattr(out,k).dtype) for k in ['world_tokens','semantic_tokens']}
+            write('actual_source_precision.json',precision)
+        def gist_precision(_module,_args,kwargs):
+            precision['gist_inputs']={k:dict(dtype=str(v.dtype),device=str(v.device),shape=list(v.shape))
+                for k,v in kwargs.items() if torch.is_tensor(v)}
+            write('actual_source_precision.json',precision)
+        hooks=[model.semantic_bridge.register_forward_hook(bridge_precision),
+            model.retrospective_gist.register_forward_pre_hook(gist_precision,with_kwargs=True)]
+        model._resolve_action_source=MethodType(capture,model)
+        try:
+            with torch.autocast(device_type='cuda',dtype=torch.bfloat16):loss,metrics=model.training_loss(batch)
+        finally:
+            del model._resolve_action_source
+            for hook in hooks:hook.remove()
+        if len(calls)!=1:raise ValueError('Expected one factual training source resolution')
         if not torch.isfinite(loss):raise ValueError('Nonfinite actual training loss')
         update('actual_joint_training_backward');loss.backward()
         if not all(p.grad is None or torch.isfinite(p.grad).all() for p in trainable):
