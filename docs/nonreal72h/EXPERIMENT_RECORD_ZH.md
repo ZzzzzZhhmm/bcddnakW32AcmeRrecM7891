@@ -3416,3 +3416,11 @@ iter51对四个指定根（原specialist/shared训练目录、rmbench_official50
 本机/AFS完整核验73成员回复包，TAR242187cffd0ce694112d848f04969cb0f20cdf58d0f988ae386482e5337275b3、manifest9a0b0350ba6aa66ea0138d0e8210777a3b21aa64c75f9a93eedc14086de040aa；AFS writing_candidates/20261113_v37_responses/verified，本机iter51/V37_RESPONSE_PACKET_V1。配套论文仍v36 PDF96384b35…/源码ZIPfb78b7e8…，没有生成新PDF，原50页/主文10页完整原工程与干净ZIP/视觉QA仍适用。旧v36的110项不改。
 
 12:53:59原生复核两个最后runner complete/0及原封口SHA，CCI compute-app为空，AFS4,769,820,672B；科学GPU程序0、无新试验。原窗口/一次credit和37未放行槽不动，ACP既有登录请求仍待确认，不重复发送。新增CANDIDATE_V37_REPLIES_20261113_ZH作为恢复入口；英文Docs提交/push/CCI离线同步及current_iteration原子安装使用iter51收据，保持36个本机既有删除、并发工作及全部冻结来源。
+
+### 23.325 晚间跨材料一致性与37槽/31宏统一填数契约
+
+2026-11-13 13:57:43UTC（北京时间21:57）只读核验回复v37＋论文v36。20条原review字段/序号/hash保持，17评论块精确拼接完整回复；41配对/13unknown、75回合/15450replans与当前台账一致。所有37个回复槽均处于完整PENDING区间，论文31个不同dataslot宏/34处引用均处于pendingresult整段；P1差值+CI、P2最终SR+差值CI是复合映射，另四个回复专用支持字段保留，31宏无漏配。所有槽的value仍null、verified/release均false，没有发布新数值或结果方向。
+
+Git外iter52/DATA_SLOT_CROSSWALK_V1.json、DATA_SLOT_CROSSWALK_ZH.md及NIGHTLY_CONSISTENCY_V1.json保留逐字段位置、单位和原分母；新增docs/rebuttal/DATA_SLOT_FILL_CONTRACT_ZH.md供后续统一接数据。P1的100对设计不替代现41对/13unknown；候选数不充当独立episode数；显式g=0不充当自然缺技能识别；新真机配对不拿原15/20填充；先审核实际方向/区间再放行整段回复与论文。PDF96384b35…/源码ZIPfb78b7e8…逐字节同封存v36，未重新生成PDF/试验。
+
+13:48UTC CCI HEADd64f73c、工作树干净、compute-app为空，AFS可用4,738,240,512B。Tabbit尝试读取已有作者console，在代码派发前PAGE_ATTACHMENT_TIMEOUT/30017ms，未导航、读取登录输入或创建任务；原任务90秒闲置过期后同名恢复确认retainedTab1728812393、全部七tab available，随后finished/forcedCleanup=false/closed0。公共OpenReview页面重定向浏览器验证，API工具不可读，不能认定无新评论或复核云case1终态。BROWSER_VERIFICATION_V1记录这些访问限制；旧登录请求仍待确认，未重复索取。所有原生终态/原件和旧clock保持，0新GPU/物理动作；本轮是工程/写作审计，非新增科学结果。

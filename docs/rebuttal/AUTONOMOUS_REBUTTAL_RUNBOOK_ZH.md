@@ -1,5 +1,9 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**iter52 13:57UTC晚间一致性检查通过，候选不变：回复v37＋论文v36。** 20项原review字段/hash、17评论块精确重构、41对/13unknown、75回合/15450replans均核对；37个回复槽对应31个论文宏/34处引用，两个复合字段及四个回复专用支持字段有完整映射，无漏配。全部槽位均处于整段PENDING，未放行任何数值或定性方向。新`DATA_SLOT_FILL_CONTRACT_ZH.md`给统一单位、分母、复合映射和整段放行条件，先读再接新数据。PDF/源码ZIP哈希同封存v36，未生成新PDF或试验。
+
+CCI Git d64f73c/干净、compute-app为空，AFS13:48为4,738,240,512B；两ACP原生终态继续按已验收据，云页面未获得新的认证。Tabbit读作者console时在代码派发前PAGE_ATTACHMENT_TIMEOUT；原任务闲置过期后确认保留用户tab，重新同名完成清理/closed0/forcedCleanup=false。公共OpenReview页面为浏览器验证，API不可读，不声称已核实“没有新评论”。原登录请求仍待，不重复发送、不创建任务。当前只推进内部稳定写作基线和审计，P1–P5/37关键论证仍开放，不能把写作验收当作科学闭合。
+
 **iter51 12:54UTC：回复更新v37，配套论文保持v36。** 读`CANDIDATE_V37_REPLIES_20261113_ZH.md`和current_iteration；不要为回复改动重新生成相同PDF。八处引导句消除未执行protocol被现在时暗写为完成实验的歧义；所有数字/strength感谢/结尾/37整段PENDING精确同v36。DATA_DEPENDENCIES由旧17对历史截面重绑到41对/13unknown及两例撤回终态；20项映射、17块重构通过，73成员本机/AFS验真。论文v36的50页/主文10页、PDF96384b35…/ZIPfb78b7e8…及完整QA不改。P1–P5仍开放，0新试验/GPU工作，现有登录请求不重复发送。
 
 原模型谱系只读扫描1156文件，355小型原件双端保全：四specialist末步attestation/config齐全，eval_every=0；指定范围无DEV选step记录。找到BRT formal100-v3是sapien导入失败，不是投稿成绩证据，不推翻原结果。12:53终态复核两runner complete/0、CCI compute-app为空，AFS4,769,820,672B；原窗口/一次credit及全部冻结源码保持。以下v36为配套论文及历史回复基线。
