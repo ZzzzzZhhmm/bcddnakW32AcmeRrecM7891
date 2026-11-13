@@ -8,7 +8,7 @@
 2. 原specialist reranker接收query/candidate context、adapted-action summary、observed effect、timing和valid mask。后续共享阶段把显式phase/ordinal投影加入candidate context，并把历史投影加入ranking query。不能把后续这两个专门投影无条件归给原specialist训练。
 3. 原gate调用接收selection和deformation；后续代码增加stagnation参数及独立SourceAcceptance结构。二者都存在候选对source和conditioning的共同调节，但具体特征/接受规则不能因概念相同而混写。
 
-静态AST报告保留了完整函数、context字段、调用参数和源文件SHA：Git外iter55/METHOD_VERSION_SCOPE_AUDIT_V1.json；原生位于legacy_phasefree_module_development_20261114_v1。缺某个model字段本身不证明整个旧评估runtime没有相应外部处理，需继续核对controller/config，不能凭字段名推断完整行为。
+静态AST报告保留了完整函数、context字段、调用参数和源文件SHA：Git外iter55/METHOD_VERSION_SCOPE_AUDIT_V2.json；原生位于legacy_phasefree_module_development_20261114_v1。缺某个model字段本身不证明整个旧评估runtime没有相应外部处理，需继续核对controller/config，不能凭字段名推断完整行为。
 
 ## 文稿下一步
 
@@ -17,3 +17,5 @@ v38 Appendix A.2把phase/ordinal写进一般reranker说明，应明确原special
 已确认的原specialist训练运行与固定12000补充诊断，不等于恢复了原稿DEV选点和最终benchmark evaluator manifest。后者仍按原缺口管理。下一版只澄清已核实的技术范围，不改成绩、不补造训练或性能结果；修改后重新编译和核对回复—文稿—源码一致性。
 
 原timing解释在iter54文档中写成“两个gripper各两个事实”不准确，本轮纠正解释和intake guard为实际四维combined-stream契约。已运行样本本来就是四维，数值和forward/backward结果不变；旧原始收据不覆盖。
+
+V1按单一class名称提取context字段，未匹配真实dataclass名称；V2按candidate_actions字段识别并补全context和reranker调用表达式，V1保持，不据缺少提取结果推断源代码缺字段。
