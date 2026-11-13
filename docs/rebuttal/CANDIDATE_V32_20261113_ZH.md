@@ -13,3 +13,5 @@ D.1/表40只报告q96的32完整H32候选，预测/历史/常量centered MSE `0.
 运行代码dc6b8ab/digest65dbc4cd…保持冻结。其加载期operator.scope暂沿用旧physical0模板，但实际candidate_seed、roster/plan和parent-stage case明确为namespace；初态绑定完成后标题更新。canonical仅修正未来wrapper首个说明，不更改或重启活动快照。下一步先核验资格exit、实际首模型输出/四命令一致性，再核验完整factual和pool；用全K32独立标签审计真实coverage/natural gate，而非把家族holdout当技能缺失。37个理想结论不能仅填数值而保留未证实方向。
 
 AFS从约1.16GB经无损冷存旧warmupFull200 weight恢复到实测13.31GB。本机完整原TAR、独立weight和AFS CAS保留；当前Full3000、原specialist和轨迹未改。旧200调用前先读STORAGE_LOCATOR_ITER45_WEIGHT_V1及存储指引第五阶段。新真机取证仍由作者独立推进，尚未回传。
+
+00:56UTC增量：两资格分别00:49:25/00:50:06正常结束，各1次模型推理、4条实测native命令、0 TOPP；initial RGB/qpos/物理关节/计数绑定准确。每case13原件在本机独立核验，TAR ec6bbf1d…/50412a25…、manifest c46bbce0…/af37b63d…。两个原stage已自动running_factual，资格不再重跑。仅工程资格，不是完整episode/SR或repair/effect收益；v32正文未将其作为新效果结果。

@@ -1,5 +1,7 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**Nov13 00:56UTC最新终态增量：** 两namespace case的原PB12000资格均已正常exit0：case0于00:49:25、case1于00:50:06，各1次真实模型推理/4条native命令、0 TOPP，初态全部绑定准确、weighta765/source4a1/sim a97保持。各13原件已本机逐项和原生TAR核验，合计26，收据ITER45_NAMESPACE_QUALIFICATION_LOCAL_VERIFICATION_V1；TAR ec6bbf1d…/50412a25…。不要再次加载或重跑已完成资格。两个原ACP父stage现running_factual，先查完整factual/首模型与四命令精确性、后续固定pool/归档与0GPU审计，不能将资格当SR或机制收益。实际stage deadline10:34:23/10:35:04及11UTC硬截止不改。后文00:38加载截面已过时。
+
 **Nov13 00:38UTC最高恢复优先项：** v32完整工程/干净ZIP48页、主文10页、45–48视觉和前44像素验收，97项包51e42749…在writing_candidates/20261113_v32；20项/17块/37整段有利pending保持，未发表。D.1加入q96全部32H32候选但Full控制未闭合的描述性表，主指标不利、repair NA；明确旧physical0为补充episode，不是namespace首case复现。读CANDIDATE_V32_20261113_ZH.md和最新current_iteration；下方v31及旧排队信息仅历史。
 
 **真正运行：** namespace case0唯一闲时UID0f0e8eee…在cluster_01e_02，first00:34:23/end10:34:23UTC；case1原a159dcef0…确认未启动后00:29:34停止，同一case/plan的b d5aab172…转cluster_01e，first00:35:04/end10:35:04UTC。两路实测加载original Full、0query/0命令，先查实际资格exit/模型/四命令一致性，不能当效果。case0转交门因真实准入拒绝，未停止/重建它，勿再调用转交helper。0GPU bee71c75…实际运行等待。R=实验根/PB_namespace2_20261113_v1，source dc6b8ab/digest65dbc4cd…冻结不改；canonical未来wrapper只修正初始scope标题，不改活动代码。读ITER45_NAMESPACE_ACP_DISPATCH_V2和ITER45_NAMESPACE_LIVE_V2。
