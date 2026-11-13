@@ -1,7 +1,9 @@
 """A separately trained, same-record pooled-memory control for WARM.
 
-All valid retrieved actions, visual preconditions, observed historical effects,
-timing and phase records enter one four-query attention pool. The common causal
+In the default contract, all valid retrieved actions, visual preconditions,
+observed historical effects, timing and phase records enter one four-query
+attention pool. A separately declared phase-free small module supports legacy
+interface checks; the full policy factory retains the default contract. The common causal
 history gist is retained. This control has no learned action deformation, effect
 predictor, utility reranker or confidence gate. It is not a named-method replica.
 """
@@ -26,12 +28,17 @@ PHASE_DIM = 4
 class PooledMemoryEvent(DeterministicEvent):
     """Pool complete records before selecting the fixed coarse action prior."""
 
-    def __init__(self, config, *, context_dim):
+    def __init__(self, config, *, context_dim, phase_feature_dim=PHASE_DIM):
         super().__init__(config)
         self.context_dim = context_dim
+        if type(phase_feature_dim) is not int or phase_feature_dim not in (0, PHASE_DIM):
+            raise ValueError("phase_feature_dim must explicitly be zero or four")
+        # Zero declares a separate untrained module contract for legacy banks
+        # that never stored these fields. It cannot load phase-aware weights.
+        self.phase_feature_dim = phase_feature_dim
         record_dim = (config.action_horizon * config.action_dim
                       + 2 * SPATIAL_TOKENS * config.event_dim
-                      + context_dim + config.timing_dim + PHASE_DIM + SPATIAL_TOKENS)
+                      + context_dim + config.timing_dim + self.phase_feature_dim + SPATIAL_TOKENS)
         dim = config.model_dim
         self.record_projection = nn.Sequential(
             nn.Linear(record_dim, dim), nn.GELU(), nn.LayerNorm(dim),
@@ -59,7 +66,7 @@ class PooledMemoryEvent(DeterministicEvent):
 
     def forward(self, *, warped_actions, candidate_valid_mask, event_pre_tokens,
                 event_delta_tokens, event_delta_mask, candidate_context,
-                candidate_phase_features, gripper_timing, gist_tokens,
+                candidate_phase_features=None, gripper_timing, gist_tokens,
                 query_context, proprio, **unused):
         cfg = self.config
         if warped_actions.ndim != 4:
@@ -83,7 +90,13 @@ class PooledMemoryEvent(DeterministicEvent):
         delta = field(event_delta_tokens, mask[..., None], pre.shape, "event_delta")
         context = field(candidate_context, valid[..., None], (b,k,self.context_dim), "candidate_context")
         timing = field(gripper_timing, valid[..., None], (b,k,cfg.timing_dim), "timing")
-        phase = field(candidate_phase_features, valid[..., None], (b,k,PHASE_DIM), "phase")
+        if self.phase_feature_dim:
+            phase = field(candidate_phase_features, valid[..., None],
+                          (b,k,self.phase_feature_dim), "phase")
+        else:
+            if candidate_phase_features is not None:
+                raise ValueError("phase-free contract cannot receive extra phase features")
+            phase = actions.new_empty((b,k,0))
         history = field(gist_tokens, torch.ones_like(gist_tokens, dtype=torch.bool),
                         (b,8,cfg.gist_dim), "gist_tokens")
         query = field(query_context, torch.ones_like(query_context, dtype=torch.bool),

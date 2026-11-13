@@ -15,6 +15,7 @@ def main():
     p.add_argument('--recipe',type=Path,required=True)
     p.add_argument('--sealed-context',type=Path,required=True)
     p.add_argument('--output',type=Path,required=True)
+    p.add_argument('--module-contract', choices=['required_four','legacy_phase_free'], default='required_four')
     a=p.parse_args();original=a.original_code.resolve();current=a.preflight_code.resolve()
     if os.environ.get('CUDA_VISIBLE_DEVICES')!='':raise ValueError('CPU intake requires explicitly hidden CUDA devices')
     if any(k=='fastwam' or k.startswith('fastwam.') for k in sys.modules):raise ValueError('Import original model before any current fastwam package')
@@ -69,12 +70,15 @@ def main():
     sys.modules[module.__name__] = module
     torch.set_num_threads(4)
     sys.argv=[str(current/'scripts/preflight_rebuttal_pooled_memory.py'),'--recipe',str(a.recipe),'--sealed-context',str(a.sealed_context),'--training-index','0','--output',str(a.output),'--device','cpu']
+    intake = current/'scripts'/('preflight_rebuttal_legacy_pooled_module.py' if a.module_contract=='legacy_phase_free' else 'preflight_rebuttal_pooled_memory.py')
     original_build = runtime.build_datasets
     required = {'warm_candidate_mu', 'warm_candidate_mask',
         'warm_candidate_effect_pre', 'warm_candidate_effect_delta',
         'warm_candidate_context', 'warm_candidate_timing',
         'warm_candidate_start_proprio', 'warm_current_context',
         'warm_candidate_normalized_phase', 'warm_candidate_event_ordinal', 'proprio'}
+    if a.module_contract=='legacy_phase_free':
+        required -= {'warm_candidate_normalized_phase', 'warm_candidate_event_ordinal'}
     def audited_build(*args, **kwargs):
         dataset, validation = original_build(*args, **kwargs)
         class AuditedDataset:
@@ -86,7 +90,7 @@ def main():
                         fields[key] = dict(shape=list(value.shape), dtype=str(value.dtype))
                     else: fields[key] = dict(type=type(value).__name__)
                 missing = sorted(required - set(sample))
-                audit = dict(fixed_training_index=index, original_dataset_type=type(dataset).__name__,
+                audit = dict(module_contract=a.module_contract,fixed_training_index=index, original_dataset_type=type(dataset).__name__,
                     sample_fields=fields, required_fields=sorted(required), missing_fields=missing,
                     status='incompatible_original_dataset' if missing else 'required_fields_present',
                     original_timing_dim=cfg.timing_dim, input_hashes=before,
@@ -98,17 +102,17 @@ def main():
         return AuditedDataset(), validation
     runtime.build_datasets = audited_build
     try:
-        runpy.run_path(str(current/'scripts/preflight_rebuttal_pooled_memory.py'),run_name='__main__')
+        runpy.run_path(str(intake),run_name='__main__')
     except Exception as exc:
         assert all(sha(path)==value for path,value in before.items())
-        failure = dict(status='not_qualified', exception_type=type(exc).__name__,
+        failure = dict(module_contract=a.module_contract,status='not_qualified', exception_type=type(exc).__name__,
             exception=str(exc), input_hashes=before, CUDA_initialized=torch.cuda.is_initialized(),
             optimizer_updates=0, policy_actions=0,
             scope='Engineering intake failure;not an efficacy or original benchmark result')
         a.output.with_suffix('.failure.json').write_text(json.dumps(failure, indent=2))
         raise
     assert all(sha(path)==value for path,value in before.items()) and not torch.cuda.is_initialized()
-    binding=dict(original_code=str(original),research_code=str(current),original_config_module=retrospection_config.__file__,original_runtime_module=runtime.__file__,timing_dim=cfg.timing_dim,pooler_source_hashes={str(p):sha(p) for p in [pool_path,simple_path]},pooler_binding='Exact unchanged class AST only;full current policy classes intentionally not imported',input_hashes=before,CUDA_initialized=False,optimizer_updates=0,policy_actions=0,scope='Small CPU module interface only;not full policy/backbone/training or performance qualification')
+    binding=dict(module_contract=a.module_contract,original_code=str(original),research_code=str(current),original_config_module=retrospection_config.__file__,original_runtime_module=runtime.__file__,timing_dim=cfg.timing_dim,pooler_source_hashes={str(p):sha(p) for p in [pool_path,simple_path]},pooler_binding='Exact unchanged class AST only;full current policy classes intentionally not imported',input_hashes=before,CUDA_initialized=False,optimizer_updates=0,policy_actions=0,scope='Small CPU module interface only;not full policy/backbone/training or performance qualification')
     a.output.with_suffix('.binding.json').write_text(json.dumps(binding,indent=2));print(json.dumps(binding))
 
 

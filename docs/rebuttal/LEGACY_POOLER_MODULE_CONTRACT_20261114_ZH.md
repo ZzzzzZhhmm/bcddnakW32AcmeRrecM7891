@@ -1,0 +1,21 @@
+# 原specialist数据的phase-free模块资格检查
+
+这是工程候选接口，不是已完成的公平策略对照，也不改变v38论文或回复。所有37个正式实验字段继续未放行。
+
+## 已核实的来源差异
+
+原recipe指向`WARM_artifacts/rmbench_official50_v1/m1/banks/hybrid_h32`。events.npz为1,393,856,998B，实读全SHA660ae0a6711f9f5a853097e2e269692d63276232bd052e9ffe3d4b653dd6ef4e，与manifest声明精确同。该bank含46,783事件、405来源episode、777维task-conditioned context；实际16个payload数组没有normalized_phase/event_ordinal。旧adapter同样不输出这两个独立字段。这是旧数据格式的真实契约，不代表两字段意外丢失；不得补零或推定其值来让原检查变为成功。
+
+bank manifest SHA2f57ccfe1ae3e518696f718b38399faadb9e0cf58cfe9f247ab1169b71c6a2fa，candidate manifest SHAaa4d5081828c4c18f1dc0cf410934453fd153ba3c2a74311ed8f5cd07bda100f。完整原始metadata及两个版本的数据/model源码在Git外iter55对应AFS开发目录保全。
+
+## 单独声明的模块契约
+
+`PooledMemoryEvent`新增显式`phase_feature_dim=0`模块选项：记录投影仅拼接旧数据实际存在的动作、pre/effect、context、原四维timing和有效空间mask；不接受额外phase输入。四个注意力查询及输出布局保持。这个未训练模块的权重形状与原phase-aware模块不同，不能加载原phase-aware权重。整个现有Pooled策略工厂、checkpoint schema和默认行为始终选择四维phase，现有严格intake也仍以required_four为默认；旧十次失败不改写。
+
+新入口`preflight_rebuttal_legacy_pooled_module.py`只检查该显式phase-free模块。由`preflight_rebuttal_original_pool_interface.py --module-contract legacy_phase_free`绑定原f77c633/47277e5 config/runtime，以固定train index0和封存在线记录进行数值/反传检查。原timing_dim4、原recipe、bank和检索结果完全保持。history-gist及在线proprio仍明确为接口占位，不能据此宣称因果history路由、完整sampler、训练公平性、任务收益或旧checkpoint复现通过。
+
+## 验证边界与后续
+
+新增检查验证：默认四维模块的参数/RNG保持、旧字段可用时phase-free梯度可达、两种权重形状隔离、phase-aware不接受缺字段、phase-free拒绝偷偷追加phase。第一版测试在反传前故意执行失败load_state_dict，PyTorch部分复制同shape参数使graph版本检查失败；已保留该失败，改用独立新模块检查拒载，避免在失败加载后的对象上继续反传。原生CPU合并检查18项通过。
+
+实际样本资格结果以iter55收据为准，在结果出现前不写通过。此工程接口若通过，下一步仍需完整原模型/历史/生成路径的同信息核对和明确的新策略训练协议；不采用已有共享3000控制权重来冒充这个新模块，也不替换41对0–0、13历史unknown或原稿specialist数字。没有新增GPU训练、策略动作、科学预算或旧窗口重置。

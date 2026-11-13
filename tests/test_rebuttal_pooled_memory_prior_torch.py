@@ -119,3 +119,44 @@ def test_pool_initialization_preserves_common_weights_rng_and_checkpoint_isolati
     for other in (conditioned, control(SimplePriorFastWAM), fixture._model()):
         with pytest.raises(ValueError): other._validate_retrospection_state(state)
         with pytest.raises(ValueError): pooled._validate_retrospection_state(other._retrospection_state())
+
+
+def test_phase_free_module_uses_only_legacy_fields_and_isolates_checkpoints():
+    model = control(PooledMemoryPriorFastWAM)
+    phase_aware = model.retrospective_event_adapter
+    phase_free = PooledMemoryEvent(phase_aware.config,
+        context_dim=model._require_retrospection().context_dim, phase_feature_dim=0)
+    original = inputs(model)
+    legacy = dict(original)
+    del legacy["candidate_phase_features"]
+    # The original phase-aware contract stays strict, rather than accepting
+    # invented zeros in order to pass a legacy-data check.
+    with pytest.raises(ValueError, match="phase"):
+        phase_aware(**legacy)
+    result = phase_free(**legacy)
+    assert torch.isfinite(result.action_context_tokens).all()
+    assert phase_free.record_projection[0].in_features == phase_aware.record_projection[0].in_features - 4
+    with pytest.raises(ValueError, match="phase-free contract"):
+        phase_free(**original)
+    # A failed torch load may already copy same-shape tensors. Use a fresh
+    # module for the rejection test and never resume a graph after that load.
+    rejected = PooledMemoryEvent(phase_aware.config,
+        context_dim=model._require_retrospection().context_dim, phase_feature_dim=0)
+    with pytest.raises(RuntimeError, match="size mismatch"):
+        rejected.load_state_dict(phase_aware.state_dict())
+    (result.action_context_tokens * torch.randn_like(result.action_context_tokens)).sum().backward()
+    assert bool(phase_free.record_projection[0].weight.grad.abs().sum() > 0)
+
+
+def test_explicit_default_phase_contract_preserves_weights_and_rng():
+    model = control(PooledMemoryPriorFastWAM)
+    cfg = model.retrospective_event_adapter.config
+    dim = model._require_retrospection().context_dim
+    torch.manual_seed(3407)
+    default = PooledMemoryEvent(cfg, context_dim=dim)
+    expected_rng = torch.get_rng_state()
+    torch.manual_seed(3407)
+    explicit = PooledMemoryEvent(cfg, context_dim=dim, phase_feature_dim=4)
+    assert torch.equal(expected_rng, torch.get_rng_state())
+    assert default.state_dict().keys() == explicit.state_dict().keys()
+    assert all(torch.equal(a, explicit.state_dict()[k]) for k,a in default.state_dict().items())
