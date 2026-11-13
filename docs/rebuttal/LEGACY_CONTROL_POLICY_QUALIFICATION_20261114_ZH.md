@@ -49,3 +49,5 @@ R2使用canonical eaf5e7d、source manifest2821f011…、job c6483da6…；与R1
 新正式训练第一段在第一次更新前因旧Git attestation要求.git失败，665.847秒计入新campaign；只回移当前canonical已有的容错函数后，无Git/脏树/绑定sidecar三项CPU契约通过。真实source由完整SHA清单绑定，git字段为明确未知哨兵。R2首次准入因共享AFS66.65GB低于此次64GiB而被拒绝，0新进程/lease；先完整备份旧BT6000。是否已再次准入必须读最新admission/runner，不按准备完成推断训练活动或12k已完成。
 
 ACP20:22页面列表展示不是独立认证API200或最新Pod终态证据；此前该句表述过强。20:32登录超时和新创建0为当前状态，原登录请求不重复发送。原生终态由各runner单独证明，不借缓存页面替代。
+
+后续正式R2已于23:13:54 complete/0，首前缀两个有效batch128更新及完整state保存通过，source前后精确；不是完整12k训练或新效能结果。下一段等待0GPU完整恢复审计及V3三个旧权重冷存恢复64GiB准入。详细step2 SHA、实际字节、预算与当前CPU进程见正式campaign文档和current_iteration；不要继续按早期“R2正在初始化”截面恢复。

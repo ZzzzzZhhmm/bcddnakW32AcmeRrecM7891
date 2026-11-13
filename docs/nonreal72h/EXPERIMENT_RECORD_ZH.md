@@ -3590,3 +3590,21 @@ BT6000原始12,144,215,606B/SHAf3fab406b66cd81ae2804ee95633de0696dd4fae42a10585c
 原R1全部终态原件及R2执行前metadata修复/3项CPU契约合计1093成员，TAR f269c8b6d6c371ee15d9161c8daed7ec2734cc91b7862320cf9fb1705d449bf8（8,069,120B）、manifest31dc9dd4c87b4a9827f71e9df343697b6ee63444a08a14ea6383c61fd9e40717，本机与AFS逐成员size/SHA全部验真。新R2活动输出不在此终态包中，不将部分log当完成收据。23:01:28UTC其runner仍training_or_initializing，child2627765/GPU worker2627812，最后GPU13,618MiB；optimizer step仍null，不能声称两步已完成。
 
 七份冷存原生locator/helper/receipt再次逐项SHA核对，全部原specialist12000/14000 physically present；本机七套完整raw/TAR的原proof及原生收据交叉一致。另存20261114_ADDITIONAL_SPECIALISTS_v2/RECOVERY_RECONCILIATION_V1.json，V1已停协调器、其旧PB2000子复制及V2已结束，后续补块已完成，所有原失败/partial不改；禁止恢复旧BRT12000范围或重启协调器。ITER57_STORAGE_AND_FORMAL_LIVE_V2保存新训练、实际容量及全部保护stat。小时级站立任务已通过正式automation_update工具更新，保持原频率/到期时间，指向最新v40、新campaign与保护规则，不创建重复自动任务。
+
+### 23.346 正式前缀完成2次有效batch128更新，保存完整state并启动恢复审计
+
+原specialist新control R2于23:13:54.079190UTC complete/0，1086.380175秒，验证actual_global_step2、max12000、effective batch128/world1/accum16，source manifest11d283fd…前后精确。配置仍从共同released base开始，没有加载工程更新pool；原trainable audit929 tensors/1,069,047,916 trainable params有限，global warmup600/initialLR1.667e-7。新campaign累计R1+R2=1752.227490883秒/约0.48673GPUh，192GPUh cap和11月17日23UTC截止不变；旧144/0.75工程阶段不重置。
+
+weight step_000002.pt为12,138,204,611B，SHA566c6170e44e5daec1144e81dd011163b132be56f9f968dd9c799decaa9a4880，旁training.json记录原base/data/recipe与真实Deepspeed runtime。state step_000002保存model13,548,540,417B、optimizer12,828,654,705B及scheduler/RNG/trainer cursor；epoch0/batch_in_epoch32，对应32×8=2×128样本。完整state存在不等于实际load_state已验证，另起0GPU full-byte parent/DeepSpeed tree/cursor/scheduler/RNG审计，native PID2629051、根legacy_pb_pooled_step2_resume_audit_20261114_v1；实际恢复仍由未来trainer严格验证，不将此审计冒充新训练或效能。
+
+R2保存后GPU为空、AFS约40.25GB，不能在低于64GiB时创建下一正式段。当前step2 weight/state全部保护，23:26:33UTC独立隐藏0GPU存储协调器V3/PID38268启动，只备份BT4000/BT2000/BRT8000三份旧非当前权重，第一项已实际读备份；双完整proof、原生guard/永久locator全部通过后才迁出。原V1/V2不重启，不将尚在备份的三项当已释放空间。下一段同global12k/有效batch128续跑必须先核销唯一已知终态、完整恢复审计和实时容量；没有新增SR/完整repair/missing-skill收益，37个原字段及新study六字段都仍null。
+
+23:16末检两源码ZIP实际各33成员，含32 payload与SOURCE_FILE_MANIFEST.json；前文32是payload口径，不能称ZIP只有32entries。ZIP全CRC、四PDF/ZIP完整SHA均与封存完全一致，既有完整重编译/逐页像素证据可复用，不为同一PDF重复编译。三位纯粘贴回复仍10/15/4表、17块/20review原绑定精确，演练42表及构造数值算术一致，实证字段未填构造值。
+
+23:21再次从console list实际导航到signin.sensecore.cn IAM登录页，鉴权确实不可用；先前路径检测漏掉独立signin域名的false结果已在HOST_V3单独纠正，保留旧只读结果而不作为认证。最终记录仅保存认证状态，不保留登录表单快照。0新ACP/0未知创建，finish closed0/forcedCleanupfalse，原用户登录页保留，原登录请求不重复发送。
+
+### 23.347 step2完整恢复审计通过与小原件双端验真
+
+独立0GPU审计于23:31:06.217603UTC complete/0、251.917607秒，重新全SHA核验12,138,204,611B weight与training.json，并按原formal lineage算法完整读取全部DeepSpeed state。state tree SHAa3f3d594a7876240b7354f44d55497427576a03e50e513406d51e07c141485c4，所有state file stat前后不变，global2/epoch0/batch32、scheduler last_epoch2，Python/NumPy/Torch CPU/CUDA RNG键齐全。没有执行未来实际load_state，没有GPU更新/环境命令/新SR；不是完成12k。
+
+1089个R2实际冻结source/config/log/receipt和小型resume metadata（含真实scheduler/RNG/trainer cursor）双端逐成员完整验证，TAR8c82292f3b9fb58c9a16b15b8511c86fe64f5885ffdb177aa106356a9b9fbafd（7,915,520B），manifest3fc4c47768d27351450ea12be4cb5795a8cba0c920a150154afe8d1984f72def。三个大型weight/model/optimizer payload仍原生AFS保护，weight全SHA及完整state-tree SHA单独绑定；此小包不包含这些大payload，不能说全部39GB双端备份完成。当前GPU0，原生审计也已终止；仍活动的是本机0GPU存储V3，后续容量按其真实guard收据和实时AFS核查。回复/论文保持v40同SHA，37实证槽仍null，不用这两步训练直接推断效能或填数。

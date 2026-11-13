@@ -32,6 +32,18 @@ R2为 `legacy_pb_pooled_s3407_formal_20261114_v2`。仅将 canonical eaf5e7d 中
 
 BT6000完成双完整副本/原生guard冷存后，22:55:47UTC实际free78,782,689,280B，唯一准入R2/operator2627762。最新source manifest为11d283fd34a4e46ca71ea9242dcb2aa3f569a33bfe33f3e4dd15e8093709907d；job646661cad1e29ccfa5841607a34b7a18824feffe2d2f25ee2abc3274436b90f5、configf34ae1688db30b82da16ec1d720e2e5ad42bce5b31f546a057b0614b8a085d2c，完整记录ITER57_FORMAL_GITLESS_SEGMENT2_ADMISSION_V3。启动不是已验证更新/12k完成，实际续跑只依赖已知终态和完整checkpoint收据。
 
+## 首段已完成与当前续跑门槛
+
+R2于23:13:54.079190UTC complete/0，实际1086.380175秒，完整训练收据确认global_step2/max12000、有效batch128、world1/accum16；source前后精确。原R1加本R2共1752.227490883秒，均计新campaign，旧两关闭阶段不变。训练日志证明五组正式trainable audit共929 tensors/1,069,047,916 trainable parameters有限，并按全局warmup600从initial LR1.667e-7开始；不是以peak LR直接走两步。
+
+保存 `training/checkpoints/weights/step_000002.pt`，12,138,204,611B，SHA566c6170e44e5daec1144e81dd011163b132be56f9f968dd9c799decaa9a4880；旁有`.training.json`。完整state中model13,548,540,417B、optimizer12,828,654,705B、scheduler/RNG/trainer cursor均保存；cursor为epoch0/batch_in_epoch32，对应2×128样本。保存存在与实际成功恢复是两件事：独立0GPU full-byte审计在 `legacy_pb_pooled_step2_resume_audit_20261114_v1` 运行，随后真实resume仍须通过trainer自己的lineage/load_state核验。
+
+AFS在保存当前weight/state后约40.25GB，低于新段64GiB准入。当前step2完整权重和state保护，不删除。新本机0GPU存储协调器V3/PID38268只对BT4000、BT2000、BRT8000做两完整副本及原生guard冷存；原V1/V2保持终态。待实际容量和完整恢复审计通过，再准备同data/global12k/有效batch128的有界续跑；不把两个更新当已训练12k control或新SR。ACP23:21重新导航明确落在signin IAM页，仍须认证，0新任务/0未知创建。
+
+23:31:06UTC独立0GPU恢复审计complete/0，251.918秒：重新完整核验step2 weight/attestation和全部DeepSpeed state，tree SHA256 `a3f3d594a7876240b7354f44d55497427576a03e50e513406d51e07c141485c4`；前后stat不变，scheduler last_epoch2，Python/NumPy/Torch CPU/CUDA RNG齐全，cursor32正确。仍未执行未来trainer的真实load_state，不能把此预审说成已经续跑。
+
+新2步的1089个小型source/config/log/receipt/resume-metadata原件本机与AFS全成员验真，TAR8c82292f3b9fb58c9a16b15b8511c86fe64f5885ffdb177aa106356a9b9fbafd、manifest3fc4c47768d27351450ea12be4cb5795a8cba0c920a150154afe8d1984f72def。大weight/optimizer/model payload不在该8MB包中，它们在AFS原路径保护并由weight/tree SHA绑定；不得误称全部39GB已复制到本机。
+
 ## 材料联动
 
 v40实证与构造值演练分别封存，回复29/42表、17评论块/20意见。实证正文没有作者提醒；另有去除HTML源码注释的纯粘贴导出，不改可见论述或任何数字。50/51页PDF和完整原LaTeX ZIP已逐页文本/像素检查，主文均10页。新的训练工程进展不能回填任何成功率、自然missing-skill或完成型repair结论。

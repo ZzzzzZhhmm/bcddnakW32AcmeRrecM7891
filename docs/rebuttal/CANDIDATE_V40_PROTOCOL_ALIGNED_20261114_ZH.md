@@ -10,7 +10,7 @@
 - 完整源码 ZIP：`WARM_ICLR2027_revision_v40_verified_clean_source.zip`，SHA `55220d496f0b331e4cc4bb04714ba3c259c142365ca75b14507cbe8ad49e9217`。
 - 独立演练：`tmp/rebuttal/rehearsal/20261114_v40_hypothetical`；PDF 51 页/主文10页，SHA `717f8a6b8570c4a7f3f75e2bf66824fcb3442947fd794d9c6e7bc19d67f6e8de`，源码 ZIP SHA `1b1b9086e253b8c69174d4f9e31442738e952e02f1072abc813d41ebfbe81da9`。
 
-两套原工程均 BibTeX+四遍 pdflatex，完整32文件源码 ZIP 分别独立解包重编译；全部50/51页文本与像素精确，只有第24页较 v39 改变且已直接验看，主文像素不变。10图、此前修订版47个表环境及另加的实现表全部保留；这里的47不是重新清点的33页投稿表数。0 undefined-reference/overfull，45条既有字体回退警告。匿名与 AI 声明保持。
+两套原工程均 BibTeX+四遍 pdflatex，源码 ZIP 分别独立解包重编译；各含32个payload文件及1个SOURCE_FILE_MANIFEST.json，共33件。全部50/51页文本与像素精确，只有第24页较 v39 改变且已直接验看，主文像素不变。10图、此前修订版47个表环境及另加的实现表全部保留；这里的47不是重新清点的33页投稿表数。0 undefined-reference/overfull，45条既有字体回退警告。匿名与 AI 声明保持。
 
 正文没有 pending、do not submit 或作者执行提醒，采用正常黑色排版。理想数值仅在独立演练版本，段/表前源码注释标记；实证候选未插入未测值。37 实证字段仍 null/未验证/未放行，P1–P5 没有因材料排版完成而关闭。41对 shared 完整结果仍全部0–0，13历史 unknown 保持；新真机素材0。
 

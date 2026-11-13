@@ -119,3 +119,9 @@ PB4000为了降低传输量，先对原文件每1MiB建立SHA清单，与本机�
 旧V1/V2协调器的known stop/失败不追改，`20261114_ADDITIONAL_SPECIALISTS_v2/RECOVERY_RECONCILIATION_V1.json`另记后续完成。PB2000/BRT10000/BT10000仅补齐已知缺块，旧partial全部保留；BT8000上传前失败后用独立r2路径及非交互stdin补采。原V1目标中的BRT12000未执行迁出，物理原件保留；不得恢复该旧scope或再次启动原协调器。
 
 BT6000两完整副本于22:50:42UTC验真，独立TAR SHA71e60fbc0a30045ccce96935a769ef4ce7fdfcdf5ee4b09d57924c2b927b833d。原生22:54:41全SHA/stat/无FD通过、locator SHAab58b370471cf868fc2be0585dacbfe74a183bb38e57d649119bc867923a775b、helper SHA f099a21dfa42691ed095a96dc9b2dce995e41e99f46c63252f553ca5b3ccd674先于unlink；当前BT12000 stat不变。即时df仍66.64GB，22:55变为约78.78GB，随后新正式训练以实际64GiB准入通过，不降低门槛。共享卷继续实时变化，长期checkpoint/state峰值仍须逐段核查。
+
+## 首段新checkpoint保存后的V3容量准备
+
+原specialist Pooled首个正式两更新段已完整保存step2 weight及model/optimizer/RNG/scheduler/cursor，当前weight与state不迁出。AFS随后约40.25GB，下一段仍要求64GiB准入。23:26:33UTC启动独立本机隐藏0GPU协调器V3/PID38268，冻结范围只为BT4000、BT2000、BRT8000，目录 `20261114_ADDITIONAL_SPECIALISTS_v3/current.json`。源码模板SHA、子进程及每目标状态持久保存；采用非交互SSH、保活、原生完整SHA/stat/无FD和永久恢复指针流程，全部12000/14000、shared3k、CAS/raw及新当前step2均保护。
+
+V3是新的三个已命名非当前权重，不是重启已结束V1/V2。首个BT4000读备份已实际开始；排队/复制中不宣称三项完成或已释放36GB。有任何失败保留partial；原生guard一旦调用结果不明必须先核销，不自动重试。current PID消失也不等于完成，按原生locator/receipt与两完整本机proof逐项确认。standby的全局GPU训练不得因等待容量而悄悄重置预算、scheduler或fixed roster。
