@@ -36,3 +36,35 @@ def test_new_output_does_not_modify_original_private_runtime_or_input():
     for i in [0,1]:
         assert new['cases'][i]['runtime']==original['cases'][i]['runtime'] and new['cases'][i]['lease']==original['cases'][i]['lease']
         assert new['cases'][i]['source']==original['cases'][i]['source'] and new['cases'][i]['output']!=original['cases'][i]['output']
+
+
+def test_entry_does_not_cache_current_fastwam_before_original_source_binding():
+    import subprocess,sys
+    entry=Path(__file__).resolve().parents[1]/'scripts/run_rebuttal_pb_namespace_null_recovery.py'
+    code='import runpy,sys;runpy.run_path('+repr(str(entry))+',run_name="binding_probe");assert "fastwam" not in sys.modules'
+    result=subprocess.run([sys.executable,'-B','-c',code],capture_output=True,text=True)
+    assert result.returncode==0,result.stderr
+
+
+def test_second_output_root_keeps_original_inputs():
+    original=dict(cases=[dict(case_id=i,runtime=f'/private/{i}',source=f'/original/{i}',output=f'/old/{i}') for i in [0,1]])
+    actual=M.execution_plan(original,'/evidence/PB_namespace2_null_recovery_20261113_v2')
+    assert actual['cases'][1]['runtime']==original['cases'][1]['runtime']
+    assert actual['cases'][0]['output'].endswith('/case00/results')
+
+
+def bootstrap_fixtures():
+    original,_,_,_=fixtures()
+    parent=dict(status='terminal_fixed_recovery_all_existing_output_archived',first_admitted_utc=original['first_admitted_utc'],absolute_deadline_utc=original['absolute_deadline_utc'],cases={str(i):dict(exit_code=1,bounded_termination=False) for i in [0,1]})
+    cases={i:dict(status='failed_or_interrupted_q8_null_preserve_all',case_id=i,live_reproduction_queries=0,reproduced_native_commands=0,extra_policy_queries=0,new_branch_commands=0,model_updates=0,branches={},error=repr(ImportError("_mean_effect"))) for i in [0,1]}
+    return parent,dict(status='complete',exit_code=0),cases,original
+
+
+def test_known_import_error_with_zero_execution_is_eligible():
+    M.validate_bootstrap_failure(*bootstrap_fixtures())
+
+
+@pytest.mark.parametrize('field', ['live_reproduction_queries','reproduced_native_commands','extra_policy_queries','new_branch_commands'])
+def test_bootstrap_repair_rejects_any_execution(field):
+    p,r,c,o=bootstrap_fixtures();c[0][field]=1
+    with pytest.raises(ValueError):M.validate_bootstrap_failure(p,r,c,o)

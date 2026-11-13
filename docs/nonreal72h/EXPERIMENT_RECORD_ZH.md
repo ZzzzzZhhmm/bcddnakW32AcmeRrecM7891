@@ -3324,3 +3324,17 @@ null case0于08:03:58、case1于08:20:07UTC在inference_context_payload处报Ori
 修复后原生38项history检查通过，加入恢复准入后原生48通过；Windows首次31通过/16Torch skip/1个POSIX路径测试失败，改为显式PurePosixPath后32通过/16skip。新恢复代码还须冻结、实际plan CPU验证和资源准入，当前尚未创建。旧冻结d6代码不改、两个q96继续原窗口；原37整段有利论证未放行，v35未改稿或发布。
 
 08:26 AFS仅1,456,377,856B，新的4GiB准入被保留。旧PB10000 weight启动可恢复本机备份，原12,144,215,606B文件仍在AFS；下载完整性及第二份TAR/全SHA、恢复locator齐全前不得移除。它不改变原checkpoint选择，也不触碰实际使用的PB12000、当前3000或唯一证据。当前存储传输是未完成备份，不计为已经释放空间。
+
+### 23.314 PB10000旧权重完成精确备份与可恢复冷存
+
+SCP于09:10:21UTC正常exit0，完整12,144,215,606B。本机原文件SHA ed410a36987142ea1e941b061dbe9e180c3f544bdf31c137da04da1708deb5ff与原生完整sha256sum一致；独立TAR逐字节重读payload精确，TAR12,144,230,400B/SHA069147e8d6fa7900d5d7cb8c0f7e7920295e3d7ed48341d09ca62777db521481。两份完整本机副本及manifest保存在tmp/rebuttal/storage/20261113_PB10000_v1，09:11验证收据保留。
+
+09:15原生再次完整SHA、原mtime/byte数、无本机openFD、活动两factual均绑定12000、49入口和三冻结树通过后，仅冷存旧10000物理原名。原weights目录STORAGE_LOCATOR_ITER50_PB10000_WEIGHT_V1.json SHAad39ae0f…；实验根restore_pb10000_iter50_v1.py SHA12972f5e…已--help0，未执行实际恢复。未来先上传完整原文件到同目录.step_010000.restore.incoming，再运行helper核对SHA并原子建立原名；不覆盖既有目标。完整收据ITER50_PB10000_WEIGHT_TIERING_V1。当前12000文件stat/inode不变、3000和CAS未触碰，不据此改变原稿DEV选点。即刻df仍1.34GB，09:19实测13,474,500,608B；09:42共享写入后10,075,856,896B。新恢复CPU在冷存后再次通过，4GiB准入保持。
+
+### 23.315 首次工程恢复遇到原模型导入隔离错误，零执行原件保留及修复
+
+冻结e5b0e35/digest4bf147cb的真实CPU预检与job dryrun均0，09:23只创建一次闲时1GPU/8CPU/128GiB任务warm-pb-ns2-nullq8-recovery-20261113-a，UID2d4666ef0c1749648dd44995ff661393。09:28 Worker运行、09:30父程序归档退出0，但两子程序都在导入_mean_effect时exit1；live_reproduction_queries、reproduced_native_commands、extra_policy_queries、new_branch_commands均0。原件留在PB_namespace2_null_recovery_20261113_v1及原归档中，不是科学结果，不计为0成功率，也不冒称已完成撤回对照。
+
+根因为新wrapper顶部通过包导入研究helper，提前缓存当前fastwam，后续sys.path切换不能将模型换回原historical source。修复改为直接按文件加载helper，保留原模型包在原source绑定后首次导入；新增fresh-subprocess回归检查。v2新输出须额外绑定前次已知ImportError/0执行/已知exit1、父complete0及同一原窗口，不接受未知或有执行的bootstrap重试。新输出独立，v1冻结代码/原件不覆写。
+
+初次新增测试因字面量转义导致收集SyntaxError，随后Windows回归暴露顶层fcntl的POSIX依赖；分别修复字面量并将锁模块延迟到实际父进程后，55原生CPU、Windows39通过/16Torch依赖skip。09:49 ITER50_ORIGINAL_IMPORT_BINDING_CPU_V1独立验证实际plan校验不预载当前fastwam，随后从原historical_specialist_source_47277e5导入原retrospection_model及_mean_effect；未初始化CUDA、0模型forward/0物理命令。新的代码须commit/push/冻结/真实plan预检后才提交v2；原07:47首准入、11UTC截止与143.8054115725预留不变。原37整段待证论证与v35封存件保持。

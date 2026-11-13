@@ -1,5 +1,9 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**iter50 09:51UTC再覆盖：** PB10000旧权重已在本机原文件及独立TAR完整验真后冷存，原路径有STORAGE_LOCATOR_ITER50_PB10000_WEIGHT_V1，恢复helper在实验根；恢复动作尚未实际执行。09:19 AFS13.47GB、09:42为10.08GB，当前12000/3000保持。两q96仍运行，原截止不变。
+
+null首次修复UID2d4666ef…于09:30结束：父exit0、两子exit1，均在任何模型查询或命令之前发生_mean_effect ImportError。新入口预先导入当前fastwam包，污染了原模型来源；已改为独立文件绑定，并把fcntl推迟到实际POSIX父进程。55原生CPU、Windows39通过/16Torch skip；09:49实际验证后无当前fastwam缓存，且从原historical source成功导入_mean_effect，CUDA未初始化。新v2仅允许绑定这两条已知0执行错误的终态/原件，仍用原固定两case与07:47/11UTC窗口；不复活v1或覆盖其原件。v2尚待冻结/实际预检/唯一创建，按current_iteration/最新收据继续。
+
 **iter50 08:40UTC覆盖下方“三路运行”截面：** 两路q96仍运行；null旧父程序于08:20正常退出0，但两个子case均以exit1在相同的history布局校验处停止，不能把云任务成功当作实验成功。各9次Full查询/32原前缀命令精确复现，extra queries及intervention commands均0；各13项、合计26原件已双端验真。读ITER50_NULL_PREBRANCH_FAILURES_VERIFIED_V1和current_iteration最新覆盖；不要重跑旧null冻结入口。
 
 CCI已修正采集器误将在线增长history要求为固定16项的问题，保留原张量值/长度及相应mask；新显式恢复入口仅接受已核实的同一工程错误/无任何撤回分支，并保留原07:47首准入/11UTC截止、固定两case及旧失败。48原生CPU通过；Windows32通过/16项因无Torch明确skip，首次Windows POSIX路径测试失败及PurePosix修复记录保留。新源码须英文commit/push、冻结和真实plan预检后才派发，不能修改活动快照。

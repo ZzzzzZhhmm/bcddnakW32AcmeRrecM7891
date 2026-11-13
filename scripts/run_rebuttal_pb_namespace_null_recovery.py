@@ -1,8 +1,10 @@
 """Explicitly recover two certified pre-branch layout errors; never reset their clock."""
 from pathlib import Path
-import argparse,datetime,fcntl,importlib.util,json,os,shutil,signal,subprocess,sys,time,traceback
-ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT/'src'))
-from fastwam.research import pb_namespace_null_recovery as B
+import argparse,datetime,importlib.util,json,os,shutil,signal,subprocess,sys,time,traceback
+ROOT=Path(__file__).resolve().parents[1]
+# Do not cache the current fastwam package before the original source is bound.
+_spec=importlib.util.spec_from_file_location('PB_null_recovery_binding',ROOT/'src/fastwam/research/pb_namespace_null_recovery.py')
+B=importlib.util.module_from_spec(_spec);_spec.loader.exec_module(B)
 
 def load(path):
     spec=importlib.util.spec_from_file_location('fixed_null_recovery_base',path);module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module);return module
@@ -22,6 +24,13 @@ def validate(p):
         assert len(manifest)==13 and all((oldout/n).is_file() and B.sha(oldout/n)==v['sha256'] for n,v in manifest.items())
         for q in range(9):assert B.read(oldout/f'replay-q{q:04d}.json')['original_H32_exact'] is True
         assert not (oldout/'action_seal.json').exists()
+    prior=p.get('prior_bootstrap_repair')
+    if Path(p['root']).name.endswith('_v2') and prior is None:
+        raise ValueError('Second collector repair requires known zero-execution bootstrap receipts')
+    if prior is not None:
+        pp=B.read(B.reference(prior['parent']));rr=B.read(B.reference(prior['runner']))
+        cc={r['case_id']:B.read(B.reference(r['operator'])) for r in prior['cases']}
+        B.validate_bootstrap_failure(pp,rr,cc,parent)
     return base,original,first,end
 
 def main():
@@ -31,6 +40,7 @@ def main():
     if a.case is not None:
         admission=B.read(root/f'case{a.case:02d}.admission.json');assert admission['original_first_admitted_utc']==first.isoformat() and datetime.datetime.fromisoformat(admission['absolute_deadline_utc'])<=end-datetime.timedelta(seconds=180)
         base.run_case(new,a.case,admission);return
+    import fcntl
     locks=[]
     for f in [Path(original['root'])/'supervisor.lock',root/'supervisor.lock']:
         lock=f.open('a');fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB);locks.append(lock)
