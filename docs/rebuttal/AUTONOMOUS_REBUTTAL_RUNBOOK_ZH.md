@@ -1,5 +1,9 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**iter51 12:54UTC：回复更新v37，配套论文保持v36。** 读`CANDIDATE_V37_REPLIES_20261113_ZH.md`和current_iteration；不要为回复改动重新生成相同PDF。八处引导句消除未执行protocol被现在时暗写为完成实验的歧义；所有数字/strength感谢/结尾/37整段PENDING精确同v36。DATA_DEPENDENCIES由旧17对历史截面重绑到41对/13unknown及两例撤回终态；20项映射、17块重构通过，73成员本机/AFS验真。论文v36的50页/主文10页、PDF96384b35…/ZIPfb78b7e8…及完整QA不改。P1–P5仍开放，0新试验/GPU工作，现有登录请求不重复发送。
+
+原模型谱系只读扫描1156文件，355小型原件双端保全：四specialist末步attestation/config齐全，eval_every=0；指定范围无DEV选step记录。找到BRT formal100-v3是sapien导入失败，不是投稿成绩证据，不推翻原结果。12:53终态复核两runner complete/0、CCI compute-app为空，AFS4,769,820,672B；原窗口/一次credit及全部冻结源码保持。以下v36为配套论文及历史回复基线。
+
 **iter50 12:35UTC最终写作覆盖：v36已封存，不再等待另存。** 读`CANDIDATE_V36_20261113_ZH.md`及current_iteration最终指针。三位回复/20项原review绑定/17评论块，37整段条件论证保持待证；q96部分411原件与两例显式撤回60原件已真正合入D.1表43/44和回复。50页/主文10页，原工程与干净ZIP完整编译、50页文字/像素相同，前45页同v35、46–50逐页验看，0undefined/overfull。110成员本机/AFS逐项验真，旧v35的102项和所有冻结源码不动。PDF 96384b35…，源码ZIP fb78b7e8…，写作包240e4491…；不是可直接发布版本，P1公平比较/P2修复与最终归因/P3自然缺技能/P4–P5真机仍开放。
 
 当前科学GPU程序0，最后两个runner complete/0；旧0GPU审计complete/0仅两个q8报告，不是六池全部完成。旧11UTC及独立12分钟窗口均已关闭，.4闭合余额credit已用一次，不复活旧任务或unknown。12:09ACP再次IAM过期，已请求登录，继续等待本次确认；不因旧“已登录”消息假定当前认证有效。未来采集器同进程显存限额修复df5fef0已push，85nativeCPU、Windows69通过/16Torch skip，实际本轮科学数据仍绑定e075ccd。最终Docs离线同步CCI和current_iteration安装使用独立收据，不改实测快照。以下“接下来另存v36”及活动截面均为历史。
