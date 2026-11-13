@@ -3264,3 +3264,16 @@ Windows/native最初35项通过；补充已封存CPU输入复用保护后两端3
 源码5944997已本机commit/push验证、CCI离线bundle FF；新执行digest371acb5597990bd7df51d493990fd28c9eb09886d21c348f8032399dac7ca2ad/archiveb00c8ed28e00a7a2a6fa5c970b3f8977b475ff9d86dc3772bca8c4419180aaf6。05:07:53两case实际原冻结collector CPU preflight、wrapper validate-only、nonreal job dryrun均0；无CUDA初始化、policy forward或物理动作。两个新plan/job/launch位于PB_namespace2_q96_remaining_20261113_v1/case00/01，名称warm-pb-ns2-q96-case0/1-20261113-a，尚未创建/无UID；原null-q8也尚未创建。旧49入口、旧dc6源与d6 null快照均精确保持。
 
 每新q96 idle1GPU8CPU128GiB/restart0，最多4h含180秒退出归档，仍clamp原10:34:23/10:35:04UTC绝对截止。旧实际elapsed分别14632.07778/11635.489726s，加4h上界为8.06446605/7.23208048GPUh，均小于原每source10；未加预算、未退credit，总143.8054115725/144不变。认证终态后两个q96与一个既有准备null可并行，仍不超过6GPU。若晚准入以原截止缩短，不重置窗口；原q48残余工作未被此恢复协议授权或自动执行。AFS最新约5.60GB，派发前必须重验4GiB，所有权重/原轨迹保留。
+
+
+### 23.310 q48部分数据联动v35、独立Full复核和完整PDF验收
+
+将iter48已核验q48四分类计数和缺失性正式纳入论文D.1/table43及Bbqv/rkWY/Hh4E回复。每32候选分别19/10个H32、3/1invalid、1/1中断、9/20未开始；各三Full完整且0、最终Full未开始。所有已知候选完成label0，invalid/中断未知保留，完整pool主指标和总体repair仍不放行。原先只有插入片段、未合入v34的描述成为历史；v34原件不变。20原review字段/ordinal/hash、17可拼接块、三位真实strength感谢与we/our、完成修订总结和37整段条件论证逐项精确核验，未把理想方向写成新事实。
+
+新增ITER49_PARTIAL_CONTROL_SUPPLEMENT_V1（06:06:20UTC）在既有436原件上独立再核验：全部39封口父状态/原4token DINO精确，每组三Full H32动作数组、端点DINO、状态/accepted命令/任务计数/次级prefix逐项精确；声明的可观测量范围不扩充为所有opaque对象证书。原iter48 rawproof SHA9097838e82570203e40e8321c59b18f36cfc02d62eebce922478fa6a7efca230绑定；无新的GPU/模拟器动作。
+
+完整原LaTeX工程和干净ZIP各BibTeX+四遍编译49页、主文10页，全部49页提取文本精确一致，0undefined/overfull、45既有font警告保留。前45页与v34逐像素同；最终47/49直接查看，46/48与已直接查看的栅格像素精确。新段落和caption曾出现过短尾行，保留两组旧PDF/ZIP/QA/构建件后仅精炼新段句尾/补明原任务rubric，最终新段与caption尾行充分；正文、原成绩/表/公式、九图及实测RGB保持，C.6仍75/15450、shared仍82/41及13matched unknown，匿名与AI声明通过。原区间表随新增表43正常自动编号为44，无丢失或悬挂标题。
+
+最终PDF SHA62b1e6a9ec141f67af6024e5836653326549c5d77dafd939b139e823e9116a11，源ZIPc4a01b7f708a962e8693f3dea2173ad726779ac7672e8d8f0ec823abe2a7df0a。102项包按responses/paper/两输出/六证据文件定义，TARbd00bca0c0638e2ed6b8412a8e41475f415353317c0f53b10aee607b9392ee0c/manifest2fecdf91f28c40d151d026a3fbdbf422d77968edb2776e828d2c4f1e60352b2f，06:16UTC AFS writing_candidates/20261113_v35/verified逐项通过。旧v34全部108成员、49旧入口及dc6/d6/594三冻结执行快照、两个q96的plan/job/launch/CPU seal均保持。成员数是存储索引，不与前包分母或科学样本混用；本机完整源工程及回复都在新包内。未发表或正式上传。
+
+06:11从官方console URL重新探测实际会话，scratch重定向IAM；未读输入/凭证、不点创建，保留原用户tabs并关闭scratch、finish成功。已有登录请求仍待处理，无新增GPU任务、当前科学GPU程序0，原0GPU审计两q8报告有效且仍等旧父终态。06:16 AFS实测5,076,668,416B；派发前4GiB重查、512MiB运行保护及原窗口/143.8054115725预留不变。新的写作验收不关闭P1–P5缺口，也未把q96 CPU封存当实证。
