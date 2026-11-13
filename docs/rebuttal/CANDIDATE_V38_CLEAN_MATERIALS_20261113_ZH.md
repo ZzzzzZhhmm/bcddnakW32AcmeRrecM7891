@@ -1,0 +1,35 @@
+# v38 纯净回复、实证论文和独立论证演练
+
+2026-11-13晚新增要求的交付。以`tmp/rebuttal/planning/current_iteration.json`的最终指针和Git外iter54收据为准；v36论文和v37回复的既有封存不改。
+
+## 阅读入口
+
+实证回复：`tmp/rebuttal/responses/20261113_v38_verified_clean/REVIEW_GUIDE_ZH.md`。三位完整Markdown及17个评论块都给关键数据表，包含直接回答、作者视角和已经完成的修订归纳。20项原review的字段/序号/hash与对应评论块保持，论文定位按v38重新取自aux。
+
+实证原LaTeX工程：`tmp/rebuttal/revision/WARM_ICLR2027_v38_verified_clean`。PDF及完整源码ZIP为同目录下`WARM_ICLR2027_revision_v38_verified_clean.pdf`和`WARM_ICLR2027_revision_v38_verified_clean_source.zip`。PDF SHA为66a2993c88974dc8231269f2b6975f7a0ed434f41689271561be6e832c877377，ZIP为aa0355d9ba241edfe61d933d38b192a6a9a5481530ce96e68794be1e7dec0569。
+
+独立演练：`tmp/rebuttal/rehearsal/20261113_v38_hypothetical`，包含另一套回复/评论块/完整LaTeX/PDF/源码ZIP。新增有利数值是构造例子，不是测量。每处依赖段落和表格前用HTML/LaTeX源码注释标明，正文正常排版，没有红色或内部提醒。演练PDF最终SHA为7fecc11ea287c31025dbd2381b6726036a26615d9542fb328c7675f9c366a1df，ZIP为3c4a7af524ad4cd2687c8b8a595c5b92ee298f93728246bce27f031f4f403852。
+
+## 本轮修改与验收
+
+- 实证回复约1811/2182/818词（Bbqv/Hh4E/rkWY），分别10/13/4张表；演练回复另存。删除重复描述及正文工作流提醒，保留真实strength、we/our、全部负结果的科学含义。
+- 实证论文49页，演练50页，主文均10页。原9图及新增实测RGB图、47个原表格环境均保留，匿名及AI声明检查通过。
+- 两套完整工程均pdflatex四遍加BibTeX，并由干净源码ZIP独立重编译；全部49/50页文本及像素精确。0未定义引用、0overfull；45条原有字体回退warning保持。实际修改页及演练的32/33/42/48/49页均直接验看。
+- 修正演练中完整100对与旧“仍不完整”并存的矛盾，明确历史计时截面、局部修复、完整任务、自然缺技能、记忆遮蔽、扩库和位移各自的队列与分母。示例不改写原失败或unknown。
+- `V38_QA_FINAL_V1.json`、`V38_REPLY_QA_V2.json`、`V38_FINAL_CONSISTENCY_V1.json`为Git外审计。37个实证字段仍在外部release图中为null/false；正文没有可见占位不代表证据已经补齐。
+
+## 真实实验与访问恢复
+
+iter53于22:28北京时间确认SenseCore已登录：两个R4任务及各自Worker均成功，UID匹配原native封口；Worker对象仍保留，未删除。22:30直接读取OpenReview，三位各10个字段与原快照精确相同，评分仍3/2/2，可见仍6条（3 official reviews、3 Program Chairs LLM feedback）。整体DOM含控件差异，不声称全文逐字相同。未发评论、未上传论文。
+
+iter54实际进行了10个0GPU CPU工程尝试，V2另因AFS不足4GiB在准入前拒绝、无任务。两份原specialist recipe实际timing_dim为4（两个gripper各两个事实）；新配置要求8，不能直接混用。V3的错误2维断言、V4的SourceAcceptance API不兼容均保留。V5/V6读到原训练index0，两个数据集都缺少`warm_candidate_normalized_phase`及`warm_candidate_event_ordinal`，因此未资格通过。V6给完整字段/shape审计；没有合成缺字段、改原配置、执行policy或优化器更新。源码导入绑定为原f77c633/47277e5；新pooler仅抽取未改类定义检查接口，明确不资格认可整模型。固定研究源码digest55e9593…在10次runner前后保持。
+
+完整112原件TAR SHA0788cce2852904d3c11f49fb21501fd417c24492d50c93d8e555b2b683ee9045，manifest SHA5b7d3f6473fbff906394d2ceaabe9a6cb1784dab1b21e0fd4affe2be053c27a5。Git外iter54有本机独立验真，AFS保全位置及最终复制收据见current_iteration。该结果是兼容性诊断，不能填入P1成功率或证明原稿模型性能。
+
+AFS再降至约1.35GiB，正式新实验4GiB准入保持。旧PB8000的12,144,215,606字节权重在做本机精确备份，原文件SHA3717020d35c675ba989f1898331fedcb298eea0c300f1cd3c89c4b6f4aa8305a。只在两份完整本机副本、全SHA和原路径恢复locator都核实后冷存原物理文件；未满足前不得删除。当前12000/3000、CAS及唯一轨迹不动，不改变原DEV选点。后台传输状态必须读current_iteration和storage/20261113_PB8000_v1实际收据，不能把部分传输写成已释放空间。
+
+## 后续优先级
+
+P1仍为41对0–0/13历史unknown；P2总体后果预测/修复/完整任务归因、P3自然缺技能及作者新P4/P5真机数据仍开放。先解决兼容性和存储，不将失败检查包装成科学证据，不重新开始未知尝试或重置旧资源窗口。原144GPUh阶段账保持；未来科学阶段须有明确的新登记，不能把此处CPU工程诊断当作新的GPU阶段。
+
+每位回复表格自包含。实际新结果抵达后按`DATA_SLOT_FILL_CONTRACT_ZH.md`核对整段结论与数值，更新回复、论文、20项映射并重新编译。独立演练稿不得自动晋升。已有项目定时任务已更新为正文纯净/源码注释/两稿隔离，保持原小时频率。未经作者授权不发布。

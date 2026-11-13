@@ -3424,3 +3424,36 @@ iter51对四个指定根（原specialist/shared训练目录、rmbench_official50
 Git外iter52/DATA_SLOT_CROSSWALK_V1.json、DATA_SLOT_CROSSWALK_ZH.md及NIGHTLY_CONSISTENCY_V1.json保留逐字段位置、单位和原分母；新增docs/rebuttal/DATA_SLOT_FILL_CONTRACT_ZH.md供后续统一接数据。P1的100对设计不替代现41对/13unknown；候选数不充当独立episode数；显式g=0不充当自然缺技能识别；新真机配对不拿原15/20填充；先审核实际方向/区间再放行整段回复与论文。PDF96384b35…/源码ZIPfb78b7e8…逐字节同封存v36，未重新生成PDF/试验。
 
 13:48UTC CCI HEADd64f73c、工作树干净、compute-app为空，AFS可用4,738,240,512B。Tabbit尝试读取已有作者console，在代码派发前PAGE_ATTACHMENT_TIMEOUT/30017ms，未导航、读取登录输入或创建任务；原任务90秒闲置过期后同名恢复确认retainedTab1728812393、全部七tab available，随后finished/forcedCleanup=false/closed0。公共OpenReview页面重定向浏览器验证，API工具不可读，不能认定无新评论或复核云case1终态。BROWSER_VERIFICATION_V1记录这些访问限制；旧登录请求仍待确认，未重复索取。所有原生终态/原件和旧clock保持，0新GPU/物理动作；本轮是工程/写作审计，非新增科学结果。
+
+
+### 23.326 认证恢复后复核云终态和三位原review
+
+2026-11-13 14:28:53UTC直接认证读取：R4 case0/case1的原UID a237421717b6448eafb8df07cd084f8d/5707d877cf9044a1bbdcefa13faed2a1，任务及各自Worker均成功；Worker对象仍在，不声称删除或证明资源释放。与原native complete/0及60原件封口对应，未创建/停止/删除任务。iter53/ACP_TWO_TERMINALS_RAW_V1保留完整页面，旧登录失败收据不覆盖。
+
+14:30:17UTC直接读取OpenReview：三位各10字段与原快照精确同，评级仍Bbqv3/Hh4E2/rkWY2，可见6/6为3officialreviews+3ProgramChairs LLMfeedback，无新代理评论。整体DOM因控件不同不逐字同，不能把字段精确同误写成整页精确同。OPENREVIEW_CURRENT_COMPARISON_V1、全部DOM原件及清理收据保留；只关闭自己新建scratch，用户ACP/AuthorConsole tab保留，finished/forcedCleanup=false。
+
+### 23.327 原specialist的真实CPU接口诊断，不作为新效能结果
+
+iter54 V1/V3/V4/V5/V6各两路，合10个0GPU CPU工程任务均known failed/1，零policy动作、零优化器更新。V2因AFS不足4GiB在准入前拒绝、没有创建任务。原研究源码冻结e075ccd/digest55e9593bd9985415082c7e5d17b25ef67049be8b94951e9ee159b0705dce6d4d，十个runner前后精确同。原PB47277e5和BTf77c633 config/runtime导入绑定；recipe原SHA32b8d678…/4421db829…、sealed实际q8 context eed53708…保持，没有加载backbone或改checkpoint。
+
+两原recipe实际timing_dim4（每gripper两个事实），与当前八维验证规则不同。V3错误断言2维、V4整体import缺SourceAcceptance API、V5首个缺phase字段KeyError均原样保留。V6抽取未改small module类定义而不替换原policy；实际读取各原训练index0，完整字段审计都缺warm_candidate_normalized_phase和warm_candidate_event_ordinal，输出incompatible_original_dataset，仍exit1。没有合成缺字段、静默改变训练语义或宣称pooler/整模型资格通过；forward/gradient检查尚未执行。数据只说明新pooler不可直接复用原数据接口，不是零成功率或原稿成绩复现。
+
+112原件TAR0788cce2852904d3c11f49fb21501fd417c24492d50c93d8e555b2b683ee9045，manifest5b7d3f6473fbff906394d2ceaabe9a6cb1784dab1b21e0fd4affe2be053c27a5；Git外iter54全成员本机验真。旧84原件V1包85e4e5c2…同样保持。AFS最终保全收据和路径按current_iteration，不把正在复制写成完成。最新源码仅为可恢复工程诊断，现用权重、旧科学队列/clock保持。
+
+### 23.328 v38纯净实证材料与独立假设演练，实测字段不填示例
+
+作者要求最终面向审稿人的纯净正文和自包含表格。实证三位回复精简至1811/2182/818词，各10/13/4表，17块精确重构；20原review字段/ordinal/hash保持，新增aux页码已同步。正文无pending/do not submit等作者提醒；未验证的补充论证从实证正文移出，仅用源码注释和外部证据图管理。
+
+实证原完整工程49页/主文10，PDF66a2993c88974dc8231269f2b6975f7a0ed434f41689271561be6e832c877377，源ZIPaa0355d9ba241edfe61d933d38b192a6a9a5481530ce96e68794be1e7dec0569。独立演练50页/主文10，PDF7fecc11ea287c31025dbd2381b6726036a26615d9542fb328c7675f9c366a1df，源ZIP3c4a7af524ad4cd2687c8b8a595c5b92ee298f93728246bce27f031f4f403852。两套原9图+实测RGB及47表环境保留，BibTeX+四遍/干净ZIP49/50页文本及像素精确，0undefined-reference/overfull，45既有字体warning；匿名、AI声明及实际修改页验看通过。旧v36/v37原封存不变。
+
+演练的新SR/MSE/CI/demo数量均为明确构造的内部例子，段/表前源码注释注明，正文正常排版。其完整100对、12来源/120状态、技能缺失/真机补充不属于实验结果，不写入任何实测字段；HYPOTHETICAL_SCENARIO_VALUES_V1的is_measured=false。修正示例内队列/分母/时态矛盾，保留真实负结果在原队列。实证37字段仍null、releasefalse，P1–P5仍开放。没有新有利效能结果、没有OpenReview发布或正式上传。既有项目定时任务同步纯净正文/源码注释/两稿隔离要求，频率保持。
+
+### 23.329 AFS不足时开始旧PB8000的可恢复备份
+
+AFS约1.35GiB低于正式4GiB准入。旧PB8000 12,144,215,606B原文件全SHA3717020d35c675ba989f1898331fedcb298eea0c300f1cd3c89c4b6f4aa8305a已核验，mtime_ns1785122960397589140。下载源保持不动。自己的单流SCP在保留至少4GiB精确前缀后显式停止，记录known operator handoff/exit-1；改为四个固定byte range继续，未开始科学动作或重置实验窗口。此时不能记为冷存完成或已释放空间。只有完整拼接SHA、第二份全字节本机备份、原路径locator/恢复helper齐全且原生再核验后才允许迁出旧权重；当前12000/3000及唯一原件保持。
+
+
+16:03UTC将112原件写入AFS时明确ENOSPC，未宣称AFS备份完成；原/tmp全包及本机已核验副本保留。只读复核确认该失败未建立AFS同名文件；本机空stdout失败记录保留，后续另用新版本名安装。正式任务保持不准入；原canonical同步须等待有实际空间后再进行，不在满盘上写Git对象。
+
+
+16:10UTC为恢复少量元数据空间，仅迁出四个已经导入、所有bundle refs均被原生HEAD ab515e4包含的离线Git传输缓存（15,360,495B）。每个本机原副本与原生SHA/byte数精确，原生Git对象/源码/冻结树及checkpoint/轨迹完全不动，恢复即上传本机同名原文件；原生/tmp和本机CONSUMED_GIT_BUNDLE_CACHE_TIERING_V1保留逐项定位，随后AFS小型收据与CPU原件包重试情况以实际V2收据为准。该动作不是新实验、不是PB8000冷存完成或新增GPU预算。
