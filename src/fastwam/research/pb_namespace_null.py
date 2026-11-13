@@ -58,6 +58,25 @@ def case_deadline(first, stage_end):
     return result
 
 
+def exact_native_config(actual, original):
+    """Retain original config strings after proving the two asset aliases.
+
+    Private runtime copies share read-only robot assets. Only the two known
+    embodiment directory strings may differ, and both must resolve to the same
+    existing directory. Every other configuration value remains exact.
+    """
+    if set(actual)!=set(original):
+        raise ValueError('Different native configuration fields')
+    for key in actual:
+        if key in {'left_robot_file','right_robot_file'}:
+            a,b=Path(actual[key]).resolve(strict=True),Path(original[key]).resolve(strict=True)
+            if a!=b or not a.is_dir():
+                raise ValueError('Different robot assets: '+key)
+        elif actual[key]!=original[key]:
+            raise ValueError('Different native configuration value: '+key)
+    return dict(original)
+
+
 def inference_context_payload(context):
     """Save complete inference tensors while rejecting every future target."""
     import dataclasses

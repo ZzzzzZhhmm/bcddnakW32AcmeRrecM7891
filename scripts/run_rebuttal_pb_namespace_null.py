@@ -93,7 +93,7 @@ def run_case(plan, case_id, admission):
         trace=[json.loads(x) for x in (source/'native_trace.jsonl').read_text().splitlines()]
         source_records={int(r['frame_index']):r for r in (json.loads(x) for x in (source/'full-telemetry.jsonl').read_text().splitlines()) if r['kind']=='replan'}
         cfg=setup.resolved_config(runtime,'press_button',row['physical_seed']); cfg['now_ep_num']=case_id
-        assert cfg==rd(source/'native_config.json')
+        cfg=BIND.exact_native_config(cfg,rd(source/'native_config.json'))
         expert=rd(source/'expert_setup_metadata.json'); initial=rd(source/'initial_identity.json')
         observer_path=Path(original['native_TOPP_observer_source'])
         assert sha(observer_path)=='49888eb2854b29d6f5f384e394aaf91847dd9ebfdf9e89f6bc51fb1f8152dd4d'

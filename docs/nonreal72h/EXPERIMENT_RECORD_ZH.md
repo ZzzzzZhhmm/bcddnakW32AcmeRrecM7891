@@ -3222,3 +3222,5 @@ docs/rebuttal/PB_NAMESPACE_NULL_20261113_ZH记录两个固定case都纳入、que
 只允许一份新增闲时GPU任务顺序执行case0/1，最多3.5h、最晚Nov13 11UTC，保留原两路及旧窗口。累计准入预留143.8054115725/144GPUh，包含原119.8054115725和namespace20.5；不是计费、不退还未知退出、无自动重启。当前仍是实现/验证阶段，尚未创建新ACP、没有新null推理或物理分支。Windows39通过/7因无Torch跳过；原生102项全部通过、CLI help exit0，ITER46_NULL_NATIVE_CPU_V2保存overlay13def8a6…及结果。不能把合成context单测当实证；首次Windows调用因旧测试路径不存在而未收集，随后Torch缺失的7项改为明确skip并在原生实际通过，未隐去依赖差异。
 
 派发前进一步将180秒退出/归档余量放入同一3.5h总窗口，未延长任何clock。V3 overlay5c89f388…的native103全部通过、CLI help0；Windows40通过/7明确skip，原V1/V2收据保持。此轮余量修复没有改变模型、采样、物理、指标或case选择。新GPU仍未创建；先同步/冻结、实际plan CPU preflight、前置登记预算后才能提交。
+
+第一次实际plan准备在新private runtime的config精确比较处只读停止：仅left/right_robot_file两个路径字符串不同；两者都解析到同一份原只读机器人资产。尚无plan/job/launch/operator、Popen或新GPU。V4仅在证明这两个已知alias解析到同一既存目录、且其余配置全部相同时保留原config字符串；不放宽几何或动作比较。旧未使用45460f7快照和失败保持，恢复准备使用另一个冻结快照。V4 overlay743bed7f… native104全部通过、CLI help0，Windows41通过/7明确skip。实际alias验证还须在新plan CPU preflight通过后方可提交，不把修复本身记为原模型结果。

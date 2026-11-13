@@ -104,6 +104,18 @@ def test_case_window_reserves_exit_and_archive_margin_inside_same_allocation():
     with pytest.raises(ValueError):M.case_deadline(end-datetime.timedelta(seconds=1900),end)
 
 
+def test_only_identical_existing_robot_asset_aliases_keep_original_config(tmp_path):
+    asset=tmp_path/'robot-assets';asset.mkdir()
+    original=dict(left_robot_file=str(asset),right_robot_file=str(asset),step_limit=1500)
+    actual=dict(original,left_robot_file=str(asset/'..'/'robot-assets'))
+    assert M.exact_native_config(actual,original)==original
+    assert actual['left_robot_file']!=original['left_robot_file']
+    other=tmp_path/'other-assets';other.mkdir();actual['left_robot_file']=str(other)
+    with pytest.raises(ValueError):M.exact_native_config(actual,original)
+    with pytest.raises(ValueError):M.exact_native_config(dict(original,step_limit=700),original)
+    with pytest.raises(ValueError):M.exact_native_config(dict(original,added_flag=True),original)
+
+
 def context_fixture():
     torch=pytest.importorskip('torch')
     names=['query_context','candidate_context','candidate_actions','candidate_start_proprio','candidate_effect_pre',
