@@ -419,6 +419,34 @@ def test_dirty_git_still_allows_context_and_publication(tmp_path: Path) -> None:
     assert output.exists()
 
 
+def test_gitless_snapshot_publishes_bound_sidecar_without_remote_access(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repository = tmp_path / "immutable_snapshot"
+    repository.mkdir()
+    monkeypatch.setenv("GIT_CEILING_DIRECTORIES", str(tmp_path))
+    original_run = subprocess.run
+    calls: list[list[str]] = []
+
+    def local_head_only(command: list[str], **kwargs: object):
+        assert command == ["git", "rev-parse", "HEAD"]
+        calls.append(command)
+        return original_run(command, **kwargs)
+
+    monkeypatch.setattr(subprocess, "run", local_head_only)
+    context = _context(repository)
+    assert context.git_commit == "0" * 40
+    checkpoint = tmp_path / "step_000017.pt"
+    checkpoint.write_bytes(b"immutable snapshot checkpoint fixture")
+    output, published = publish_training_attestation(
+        checkpoint, context=context, actual_global_step=17
+    )
+    assert calls
+    assert published.git_commit == "0" * 40
+    assert published.checkpoint_sha256 == sha256_file(checkpoint)
+    assert load_training_attestation(output) == published
+
+
 def test_git_change_after_context_still_publishes_sidecar(
     tmp_path: Path,
 ) -> None:

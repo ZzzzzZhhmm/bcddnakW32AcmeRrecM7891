@@ -3539,3 +3539,54 @@ v40本机+AFS完整71成员包逐成员验真，含两PDF/两完整LaTeX ZIP/三
 PB6000 raw/TAR双完整副本全SHA14e1beef…，TAR7aee5a73…；20:36:42原生全SHA/stat/无FD、当前12k不变通过，先建永久locator dbe79e94…/restore helper c904b913…并测--help，再只迁出旧6k。AFS随后实测16.59GB，后有外部/共享用量波动；准入4GiB、运行512MiB不降低，当前12k/3k/CAS/原轨迹保持。
 
 PB4000采用逐1MiB SHA的精确字节复用：9,672,065,024B来自已经完整验证的本机6k原字节，只传缺失2,472,150,582B；每块SHA、重建完整12,144,215,606B的SHA203904fe458a78d59f0fe119129103b8d56f47d0ef5da4b14e7b703da0e4e512、独立TAR整payload SHA均通过。TAR7f36abbd295b7c91da9ffa2f4296a16a56c8dce0957e1699d67355789b1bb399。不是近似权重或只保留delta；本机确有两个完整副本。原生仅可在全SHA/stat/无FD、永久locator/helper齐全后迁出，实际冷存结果读ITER57_PB4000_WEIGHT_COLD_STORAGE_V1。原稿DEV选点仍未恢复，旧4k始终可精确还原。
+
+
+### 23.339 真实原specialist兼容control完成生产联合训练一步
+
+R2 canonical eaf5e7d4daaf10badcb84c6603308036b642b235，source manifest2821f011194502dfb7fc4409c25faa56d042ea5068ad7e39fade14218a5bb711、job c6483da65ddc404687d8c39086d71f63a9b1015c747dcdea606b92b59f2d9d80。真实原index0全部样本tensor SHA与R1完全一致，未换样/阈值/teacher。21:14:24.154594UTC worker complete/0、675.515秒，runner complete/0、691.009秒；联合action/video loss1.594169497，action1.291766524、video0.201462865、aux0.100940138，五组action/bridge/gist/pool/video-adapters梯度均有限非零，pool5,246,304元素改变，峰值allocated22,226,856,448B/reserved23,030,923,264B。actual_source_precision记录world bf16、semantic fp32，gist各输入bf16，修复与生产实际相符。
+
+仅工程微批量1、一次更新、0环境命令；不是effective batch128完整12k训练，不晋升工程权重，不构成新SR/机制收益。0.75GPUh独立phase累计1402.6604796秒/0.389627911GPUh（含R1与两CUDA检查），现已关闭且compute-app空，旧143.8054115725/144GPUh及原未知保持。1073原件含真实batch/source、pool更新和完整记录，TAR5643f807312caf858b93a70ebb41adba50bfce63dacb3c4355f0252af7c50eb2、manifest23da9cbe29fd342533efbfc2d58b4467adcac8644663f7a693242b341a523f03已AFS/本机全成员验证。另4252失败/CPU/CUDA原件TARb02406fa8df766880dcec30b59b7b0329fa4b9cf7656326bbe6db2865c042071、manifestfc942d76098b62730e363d13dcc1766817803d4affb9382c748ca2bc1b5e19e3也全部验真，R1失败不覆盖。
+
+### 23.340 后续训练的存储准备与并发保护
+
+PB4000原生20:59:50全SHA/无FD/活动12k不变后可恢复冷存完成，永久locator SHA d83953d0b4de5cb5de41f400817230f5978c5f7fc6113a809cccddbc2c4094df、helper fdd68ebcad56aa8167f8c77f5b2d3d5f6e3be6d63a784495c59d755c32db6845齐全，AFS后实测24,920,629,248B。当前12k/14k/shared3k/CAS及原轨迹保持，原DEV选点仍未恢复。需要继续完整匹配训练，先估计checkpoint/optimizer峰值，不以4GiB最低门槛冒充足够长期容量。
+
+21:22启动额外read-only双副本协调器V1；复核保护范围后于21:25:32在唯一PB2000字节备份阶段明确停止协调器PID54864，0 native cold guard、子复制器63252未停，保留全部进行中原件。该停机是已知operator scope收窄，不是科学失败/未知退出。V2 PID55872于21:26:26启动，独立冻结模板，仅处理BT10000、BT8000、BRT10000，逐目标两完整本机raw/TAR及全SHA通过后再执行原生SHA/stat/无FD/永久locator/helper guard。明确拒绝任何12000/14000物理迁出，原V1不恢复；PB2000的现有单独复制要从proof续接而非重复下载。current/CONTROLLED_HANDOFF及launch receipts在tmp/rebuttal/storage和execution/20261114_iter57。排队/复制中不宣称释放容量，新ACP创建仍0、会话超时，不重复索取登录。
+
+v40正文/PDF/ZIP及71成员包完全不变；37实证字段继续null，41对0–0、13unknown、新真机0均保持。当前真实新增内容是原始训练协议核实、完整control接口与生产优化资格；尚无新的匹配SR、自然missing-skill或完成型repair优势。
+
+### 23.341 六个非当前原权重完成双完整副本冷存与失败核销
+
+22:24:35UTC原生聚合收据ITER57_STORAGE_AND_FORMAL_LIVE_V1核对PB2000/4000/6000、BT8000/10000、BRT10000六个locator/永久helper/冷存收据，以及全部原specialist12000/14000仍在。每个原权重12,144,215,606B，六个逻辑原件合计72,865,293,636B；每个均有本机完整raw及独立完整TAR、全payload SHA。原生再做SHA/stat/无FD核验后先建永久locator/helper再迁出。没有近似权重、delta-only恢复依赖或改变DEV选点；shared3000、CAS、唯一轨迹与unknown不动。实际free约70.0GB，不能将逻辑迁出量当净free。
+
+PB2000原复制ConnectionReset、只读SSH阻塞和V2三项工程失败全部保留。后续只从已验前缀补读：PB2000剩39块/40,502,838B、BRT10000剩2块/2,097,152B、BT10000剩1,389块/1,456,080,438B；BT8000第一次manifest上传失败发生在执行前，另存r2入口后完成非交互四路传输。最终四项全部完成双完整本机验真，再按真实原生guard冷存；不追改旧失败状态。原V1协调器known stop、V2complete_with_preserved_failures均不复活，另加reconciliation记录后续已核销进展。全部12000/14000（含BRT12000）仍物理保留。
+
+### 23.342 新原specialist正式对照、首段失败与冻结Git边界修复
+
+新campaign legacy_pb_pooled_s3407_formal_20261114_v1事先登记192GPUh上限、2026-11-17T23:00UTC绝对截止。它与旧144GPUh/随后0.75GPUh关闭阶段独立，不复活余额。PB共同released base776475b2…、原recipe32b8d678…、seed3407、LR1e-4/AdamW/BF16/全局12000scheduler与数据保持；原4H100×8×4和新1H100×8×16均有效batch128，硬件执行不同明确披露。工程更新pool绝不晋升初始化。固定Full reference PB12000 SHAa765d987…是新研究固定末步，不称恢复原DEV选点。
+
+新100对Press Button roster在任何新增训练/测试结果前冻结；simseed340900000+i、policyseed340700000+i，i=0…99。初稿误取RB700命令在执行前改为原Press Button1500命令，成员完全相同，V1保留，V2 SHAde4dc7debcf0bf86994a9ad6bf8fd507fe321870289623caec8fdfcfba7f9c35。不能将此新study静默填入旧shared3k两任务数据槽。
+
+首R1于22:13:57.706947UTC启动，22:25:03.550961UTC failed/1，665.847315822秒，0optimizer更新，原source2821f011…前后精确。报错是原训练attestation要求冻结树存在.git，在首更新前拒绝。旧lease/log/source/job/失败全部保持；665.847秒从新campaign计费，不改上限/截止。source身份必须是完整manifest，不能靠脏树/远端Git检查，也不以disable attestation绕过正式收据。
+
+R2独立目录legacy_pb_pooled_s3407_formal_20261114_v2，仅回移canonical eaf5e7d已存在的clean_git_commit容错函数；无.git时git字段为40个0的未知哨兵，完整1055 source manifest为真实身份。三个原生CPU契约3pass/21deselected/10.11秒，覆盖无Git、脏树和绑定sidecar，不访问Git远端。R1复制出的四个Hydra运行文件精确保留到preflight后移出R2冻结代码清单，R1原件不动；修正后source SHA11d283fd34a4e46ca71ea9242dcb2aa3f569a33bfe33f3e4dd15e8093709907d。
+
+为先获得真实吞吐和完整续跑状态，在R2任何更新前将首个50步前缀缩为2步；全局12k scheduler和样本顺序不变。每次CCI最大5400秒+180秒退出、预约1.5GPUh，不声称恢复主机PID1为CCI四小时起点。22:43:10UTC实际AFS66,649,636,864B，小于本次64GiB准入68,719,476,736B，R2在创建进程/lease前被拒绝；不是正在训练，门槛未降。另行完整备份旧BT6000以恢复足够空间，完成前保留原件。后续启动以明确admission/runner为准。
+
+### 23.343 v40纯粘贴导出及认证状态澄清
+
+实证/演练阅读稿分别29/42表，两端SHA精确。实证再导出只移除HTML源码注释的三位回复与17块，所有可见论述/表数字精确保持，无pending/do not submit/作者执行提醒或显式AC/meta-review。reader SHAecf0ca1c439fc0125e5b353ab0090fc90022b725e814a7b80bbd682536172559；22成员TAR922c74ad4a00f465e55f60440c1022b97aa004fc3e3e3d2b4898c58471534153，manifest a9b5d7b39c949e43cf689dd549ec7a545e4847786fb000e9f22af92c597d05ee，AFS逐成员全验。完整71成员v40包和两PDF/完整ZIP不重写；此前修订47个表环境+1实现表的计数，不是重新清点33页投稿表数。20原review/17块/37null及全部科学负结果保持，无OpenReview发布或正式上传。
+
+更正前文20:22UTC“云端终态已核实”的过强表述：该次仅看到重新加载后的页面列表，没有独立认证API200收据，可能仍含客户端缓存；不能单凭它确认新认证、Pod最新终态或GPU分配。20:32真实登录超时是当前可用认证状态，旧原生runner终态按已验原生收据分别成立。Copy定位失败未到创建表单/请求，新ACP创建0、未知创建0；原登录请求保持，不重复索取。
+
+### 23.344 BT6000恢复空间后唯一启动正式R2
+
+BT6000原始12,144,215,606B/SHAf3fab406b66cd81ae2804ee95633de0696dd4fae42a10585c635bf13979185fb，完整raw和独立TAR于22:50:42UTC全验，TAR SHA71e60fbc0a30045ccce96935a769ef4ce7fdfcdf5ee4b09d57924c2b927b833d。22:54:41原生完整SHA/stat/无FD、活动12k stat不变后，locator ab58b370…与永久helper f099a21d…先建再迁出，仅旧BT6000。七份合计85,009,509,242逻辑字节双完整可恢复，原specialist12000/14000及shared3k/CAS/轨迹不动。22:55实测AFS78,782,689,280B，通过本次64GiB准入。
+
+22:55:47.252080UTC在CCI唯一启动原specialist新正式R2，operator PID2627762。source manifest11d283fd34a4e46ca71ea9242dcb2aa3f569a33bfe33f3e4dd15e8093709907d，job646661cad1e29ccfa5841607a34b7a18824feffe2d2f25ee2abc3274436b90f5，configf34ae1688db30b82da16ec1d720e2e5ad42bce5b31f546a057b0614b8a085d2c，controller70714bd333679b6f8f76ef1b66887f2dba4b4b8af06d71c6cbe4813394f922eb。首前缀2步，整体12000/effective batch128/原data与scheduler保持；single GPU硬件差异披露，最大5400秒，预约1.5GPUh。前驱665.847秒仍计新192GPUh总账，绝对截止与旧两关闭阶段不改。真实optimizer进度/完整checkpoint以runner和attestation核验为准，不以启动宣称已更新或完成12k；不把活动CCI段复制到ACP。
+
+### 23.345 新正式失败/修复原件完整封存与存储协调器核销
+
+原R1全部终态原件及R2执行前metadata修复/3项CPU契约合计1093成员，TAR f269c8b6d6c371ee15d9161c8daed7ec2734cc91b7862320cf9fb1705d449bf8（8,069,120B）、manifest31dc9dd4c87b4a9827f71e9df343697b6ee63444a08a14ea6383c61fd9e40717，本机与AFS逐成员size/SHA全部验真。新R2活动输出不在此终态包中，不将部分log当完成收据。23:01:28UTC其runner仍training_or_initializing，child2627765/GPU worker2627812，最后GPU13,618MiB；optimizer step仍null，不能声称两步已完成。
+
+七份冷存原生locator/helper/receipt再次逐项SHA核对，全部原specialist12000/14000 physically present；本机七套完整raw/TAR的原proof及原生收据交叉一致。另存20261114_ADDITIONAL_SPECIALISTS_v2/RECOVERY_RECONCILIATION_V1.json，V1已停协调器、其旧PB2000子复制及V2已结束，后续补块已完成，所有原失败/partial不改；禁止恢复旧BRT12000范围或重启协调器。ITER57_STORAGE_AND_FORMAL_LIVE_V2保存新训练、实际容量及全部保护stat。小时级站立任务已通过正式automation_update工具更新，保持原频率/到期时间，指向最新v40、新campaign与保护规则，不创建重复自动任务。

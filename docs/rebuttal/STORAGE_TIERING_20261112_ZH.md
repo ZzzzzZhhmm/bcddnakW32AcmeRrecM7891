@@ -80,3 +80,42 @@ PB8000 raw 12,144,215,606B/SHA3717020d35c675ba989f1898331fedcb298eea0c300f1cd3c8
 恢复时先保证空间和余量，把完整raw上传到原weights目录.step_008000.restore.incoming，再运行helper --incoming ABSOLUTE_INCOMING_PATH；其全SHA/字节数检查后原子建立原名，不覆盖已有权重。当前12000/3000、CAS与唯一轨迹保持。完整本机和原生ITER54_PB8000_WEIGHT_TIERING/PERSISTENT_LOCATOR收据定位两份副本；不得用partial恢复或把冷存视为新DEV选点。
 
 AFS16:04实测0，16:20即时仍0，16:22为11,919,413,248B，16:25写作包后约11.91GB；不同时间共享写入不能据逻辑文件数推算净空间。另四个已导入Git、refs全被HEAD包含的离线传输缓存15,360,495B已精确保留本机副本再迁出，未删Git对象/源码；缓存迁出后仍0，不能声称它已恢复空间。之后112CPU原件和v38完整111成员都已持久保全。
+
+## 2026-11-14 PB6000 / PB4000 的双完整副本冷存
+
+本机根为 `C:/Users/admin/Downloads/slai_download/WARM/tmp/rebuttal/storage/`。两份 PB 权重各自保留完整 raw 和独立完整 TAR，均为原始12,144,215,606字节；不是仅保存差分、参数近似或模型替代。当前PB12000、shared Full/Pooled3000、CAS、唯一原轨迹和未知失败不动，原DEV选点仍未核实。
+
+| 原权重 | 本机双完整副本目录 | 完整原字节 SHA256 |
+|---|---|---|
+| PB step006000 | `20261114_PB6000_v1` | `14e1beefa81c1ca828fca4c4f54c3b610c85e80cd759dfcc1100dd15e49f191e` |
+| PB step004000 | `20261114_PB4000_v1` | `203904fe458a78d59f0fe119129103b8d56f47d0ef5da4b14e7b703da0e4e512` |
+
+每目录 `PBxxxx_COLD_LOCAL_VERIFICATION_V1.json` 给 raw/TAR 的路径、字节数、全SHA与独立payload校验；PB6000 TAR SHA7aee5a737c8395d4884c1529a5bdf0bf02448bcb05267234e630f0fd8bc2d3ff，PB4000 TAR SHA7f36abbd295b7c91da9ffa2f4296a16a56c8dce0957e1699d67355789b1bb399。原生重新校验完整SHA/stat、无open FD、活动12k不变之后，先将永久JSON locator和restore helper写好、读取验真、测`--help`，才分别于20:36:42和20:59:50UTC迁出旧6k/4k原文件名。恢复从未实际执行，不将`--help`通过写成恢复成功。
+
+原生weights目录中 `step_006000.pt.COLD_LOCATOR_ITER57.json` / `step_004000.pt.COLD_LOCATOR_ITER57.json` 是永久指针。完整收据位于实验根P的 `ITER57_PB6000_WEIGHT_COLD_STORAGE_V1.json` / `ITER57_PB4000_WEIGHT_COLD_STORAGE_V1.json`。恢复前核对实时空间，至少可容纳待上传完整原件及4GiB工作余量；将对应raw上传到同一weights目录的 `.step_006000.restore.incoming` 或 `.step_004000.restore.incoming`，然后分别使用P下 `restore_pb6000_iter57_v1.py --incoming ABSOLUTE_PATH` / `restore_pb4000_iter57_v1.py --incoming ABSOLUTE_PATH`。helper逐字节校验size/SHA并原子建立原名，拒绝覆盖不同文件；上传mtime可能不同，新增恢复收据应记录新stat，不覆盖历史stat。
+
+PB4000为了降低传输量，先对原文件每1MiB建立SHA清单，与本机已全文件核验的PB6000作精确块匹配。复用9,672,065,024原字节，只传2,472,150,582缺失字节；每块和最终重建raw的完整SHA均验真，再另外生成并完整重读TAR。最终两份完整副本与任何后续delta/base都无恢复依赖；即使不使用块复用工具，也可直接上传任一完整raw/TAR提取件。这种方法不修改任何checkpoint权重。
+
+三份冗余生成写作TAR（v38完整包、v39 V1/V2）也已各保留两个完整本机副本，额外副本在 `20261114_WRITING_PACKAGES_v1`。原AFS TAR旁 `.COLD_LOCATOR_ITER57.json` 给对应SHA、两副本路径及 `P/restore_iter57_writing_bundle_v1.py`；v39当前 `payload_v2` 和本机原PDF/ZIP未动。恢复这些容器只上传全SHA匹配的完整TAR到helper规定的incoming位置，按`--help`确认，不覆盖已存在的原件。
+
+本轮逻辑迁出两份12.14GB权重和489MB旧生成包；实际卷空闲先约16.59GB、再约24.92GB，期间其他共享写入明显。始终以实时df作为准入依据，4GiB/512MiB门槛保持；这些容量不足以自动证明长训练的checkpoint与optimizer峰值空间可用。
+
+## 2026-11-14 七份旧权重的最终恢复索引
+
+上述PB6000/4000之后，PB2000、BT10000/8000、BRT10000以及BT6000均完成相同双完整本机副本/全SHA/原生stat和无FD/永久locator与helper先于unlink的流程。本轮七份合计85,009,509,242个原始逻辑字节，不能作为AFS净free增量。全部specialist12000/14000（含BRT12000）、shared3000、CAS、原轨迹和unknown仍保护。各本机目录位于tmp/rebuttal/storage/20261114_KEY_v1；KEY替换为下表键。
+
+| 键 | 完整原字节SHA256 | 原生恢复helper |
+|---|---|---|
+| PB2000 | 95f64d2c0b1ac513b6ef429134bdf508ee2dcaa257cf9684b69bead108e7032e | restore_pb2000_iter57_v1.py |
+| PB4000 | 203904fe458a78d59f0fe119129103b8d56f47d0ef5da4b14e7b703da0e4e512 | restore_pb4000_iter57_v1.py |
+| PB6000 | 14e1beefa81c1ca828fca4c4f54c3b610c85e80cd759dfcc1100dd15e49f191e | restore_pb6000_iter57_v1.py |
+| BT6000 | f3fab406b66cd81ae2804ee95633de0696dd4fae42a10585c635bf13979185fb | restore_bt6000_iter57_v1.py |
+| BT8000 | 44223c273f2aa2a278fcdf939e20a2f13d14769d869c6d852ce2678b29b1eb55 | restore_bt8000_iter57_v1.py |
+| BT10000 | 5031042e6548afb3c34e89c4c465a70c02743f597021a9c00fe58c59e927dc7a | restore_bt10000_iter57_v1.py |
+| BRT10000 | 9b7fed7b70facd48ac35e8c97d067d7a45a2ec7732086b9491a8a3d2a2a65e53 | restore_brt10000_iter57_v1.py |
+
+每个对应原AFS文件名旁有`.COLD_LOCATOR_ITER57.json`，P/ITER57_KEY_WEIGHT_COLD_STORAGE_V1.json为永久原生收据。每个helper只接受原目录`.step_xxxxxx.restore.incoming`、完整size和SHA，拒绝覆盖不同权重。恢复前核对实际容量及余量，上传完整raw或完整TAR提取件，记录新stat；目前只验证--help，未实际恢复。分块精确复用只是传输优化，最终raw/TAR各自独立完整，无base依赖。
+
+旧V1/V2协调器的known stop/失败不追改，`20261114_ADDITIONAL_SPECIALISTS_v2/RECOVERY_RECONCILIATION_V1.json`另记后续完成。PB2000/BRT10000/BT10000仅补齐已知缺块，旧partial全部保留；BT8000上传前失败后用独立r2路径及非交互stdin补采。原V1目标中的BRT12000未执行迁出，物理原件保留；不得恢复该旧scope或再次启动原协调器。
+
+BT6000两完整副本于22:50:42UTC验真，独立TAR SHA71e60fbc0a30045ccce96935a769ef4ce7fdfcdf5ee4b09d57924c2b927b833d。原生22:54:41全SHA/stat/无FD通过、locator SHAab58b370471cf868fc2be0585dacbfe74a183bb38e57d649119bc867923a775b、helper SHA f099a21dfa42691ed095a96dc9b2dce995e41e99f46c63252f553ca5b3ccd674先于unlink；当前BT12000 stat不变。即时df仍66.64GB，22:55变为约78.78GB，随后新正式训练以实际64GiB准入通过，不降低门槛。共享卷继续实时变化，长期checkpoint/state峰值仍须逐段核查。
