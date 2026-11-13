@@ -1,0 +1,19 @@
+# 修订稿技术细节的实现版本归属核对
+
+这是正式发布前的技术呈现检查，不改变原稿报告成绩、固定试验或旧unknown。v38继续封存，下一版应另存；本检查不构成对原核心贡献的撤回。
+
+## 已直接核实的差异
+
+1. 原PB47277e5代码和原bank把两夹爪绝对状态之和作为一个观测序列，四维timing为首次负差分相位/有效位、首次正差分相位/有效位。它不是“每夹爪两个事实”。后续共享阶段代码支持独立夹爪序列的四事实编码；双夹爪配置为八维。
+2. 原specialist reranker接收query/candidate context、adapted-action summary、observed effect、timing和valid mask。后续共享阶段把显式phase/ordinal投影加入candidate context，并把历史投影加入ranking query。不能把后续这两个专门投影无条件归给原specialist训练。
+3. 原gate调用接收selection和deformation；后续代码增加stagnation参数及独立SourceAcceptance结构。二者都存在候选对source和conditioning的共同调节，但具体特征/接受规则不能因概念相同而混写。
+
+静态AST报告保留了完整函数、context字段、调用参数和源文件SHA：Git外iter55/METHOD_VERSION_SCOPE_AUDIT_V1.json；原生位于legacy_phasefree_module_development_20261114_v1。缺某个model字段本身不证明整个旧评估runtime没有相应外部处理，需继续核对controller/config，不能凭字段名推断完整行为。
+
+## 文稿下一步
+
+v38 Appendix A.2把phase/ordinal写进一般reranker说明，应明确原specialist和后续shared-stage的归属；同样逐项核对其后门控/源连续性技术细节。核心方法仍围绕episode-informed requirement、candidate-effect comparison、source/conditioning共同调节组织。解释各版本通过什么路径使用历史，并把已核实的具体实现和各自实验绑定；不能把新的细节自动归因给旧benchmark增益。
+
+已确认的原specialist训练运行与固定12000补充诊断，不等于恢复了原稿DEV选点和最终benchmark evaluator manifest。后者仍按原缺口管理。下一版只澄清已核实的技术范围，不改成绩、不补造训练或性能结果；修改后重新编译和核对回复—文稿—源码一致性。
+
+原timing解释在iter54文档中写成“两个gripper各两个事实”不准确，本轮纠正解释和intake guard为实际四维combined-stream契约。已运行样本本来就是四维，数值和forward/backward结果不变；旧原始收据不覆盖。

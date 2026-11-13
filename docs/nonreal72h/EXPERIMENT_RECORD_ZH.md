@@ -3477,3 +3477,14 @@ iter55只读核验原recipe的hybrid_h32 bank：events.npz 1,393,856,998B，实�
 CCI新增显式phase_feature_dim0的未训练小模块契约，只使用旧数据已有字段，并拒绝新增phase输入。原Pooled策略工厂/默认四维契约/旧checkpoint和原strict preflight保持；新module接口、权重shape与实际检查单独命名，不回写旧十次失败。原specialist config/runtime绑定不变。新增契约只可通过显式--module-contract legacy_phase_free选择。新单独入口使用实际训练index0和封存记录，history-gist/在线proprio接口占位仍明确，不资格认可整个policy/sampler、训练公平性或任务收益。
 
 原生18项CPU检查通过。首版一项新增测试在同一对象上先尝试拒载checkpoint再反传，因PyTorch失败加载仍复制同shape参数而触发inplace版本错误；原17通过/1失败记录保持，改为独立对象检查拒载后18通过。实际输入检查尚未运行，不写为完成。v38回复/PDF/源码ZIP和20意见/37实证字段保持，不新增GPU预算、动作或重置旧窗口。
+
+
+### 23.332 独立phase-free模块真实输入通过，保留完整策略缺口与版本归属检查
+
+17:10:00UTC新CPU工程阶段只创建一次，max600秒、0GPU；原始GPU时窗/预留及十次旧失败完全不动。新source5a5b0c7/ee2035c83f1d8130d59f4899abd395d074a30b040473380f6292f88fc42ea7f8冻结615文件，原PB47277e5 config/runtime、recipe32b8d678…、namespace case0实际q8 context eed53708…保持。runner约17:14:56 complete/0、295.987秒，source前后同。实际trainindex0及同任务封存online context各32候选，输出[1,32,4,512]，5,763,072参数梯度全有限；CUDA未初始化、无policy动作/优化器更新。
+
+资格严格限独立未训练phase-free小模块：history-gist及onlineproprio占位仍明确，未资格认可完整policy/sampler、训练公平性或效能。默认phase4策略仍严格，冻结旧类与新默认同seed权重/RNG/输出逐位同；原strict required_four失败不提升。646原件TAR84e14d36b5cb083f3ada8903f0d769df95063c9d59aa73c1394a1ae48309aa94、manifest29eb18a1e1509a1453331d259e021fd8c45526cd522bd6c706523f2809193e87已AFS及本机逐成员核验。v38论文和回复字节不变，37字段继续null。
+
+另按原warm_retrospective.py函数核实：timing4为合并观测夹爪流的首次close相位/有效位、首次open相位/有效位，iter54“每夹爪两事实”解释不准确，当前说明和guard纠正；已验4维输入数值不变。原specialist reranker没有后续shared-stage专门phase/ordinal和history-query投影，gate接口也不同。METHOD_VERSION_SCOPE_AUDIT原件逐函数/字段/hash保存；不能把后续实现细节无条件归给原benchmark，也不能仅靠字段缺失推断旧runtime全部行为。
+
+下一版原工程需另存，按METHOD_VERSION_ATTRIBUTION_AUDIT澄清AppendixA.2等技术归属并继续核对controller/config；原核心方法、原成绩和unknown保持，未恢复的DEV选点/evaluator manifest仍未恢复。v38稳定基线不覆盖，当前未发布；本轮不把工程通过视为新科学结果，不回填任何理想数值。

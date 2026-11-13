@@ -38,10 +38,11 @@ def main():
     import torch
     from omegaconf import OmegaConf
     recipe=OmegaConf.load(a.recipe);cfg=retrospection_config.WarmRetrospectionConfig.from_dict(OmegaConf.to_container(recipe.model.retrospection,resolve=True))
-    # The original recipes encode two timing facts per canonical gripper.
-    # Read the actual recipe; never change it to satisfy a newer contract.
-    if cfg.timing_dim != 2 * len(cfg.canonical_gripper_dims):
-        raise ValueError('Original per-gripper timing contract does not match the recipe')
+    # The legacy bank stores one combined gripper stream. Its four entries
+    # are first-close phase/validity and first-open phase/validity, not two
+    # entries per gripper. Preserve this actual recipe rather than recoding it.
+    if cfg.timing_dim != 4:
+        raise ValueError('Original combined-gripper timing contract requires four entries')
     if torch.cuda.is_initialized():raise ValueError('CPU intake initialized CUDA')
     # Execute only the two unchanged small-module class definitions. Importing
     # current policy classes would require a SourceAcceptance API absent from
