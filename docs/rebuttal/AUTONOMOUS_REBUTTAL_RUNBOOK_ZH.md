@@ -1,5 +1,22 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**iter50 12:35UTC最终写作覆盖：v36已封存，不再等待另存。** 读`CANDIDATE_V36_20261113_ZH.md`及current_iteration最终指针。三位回复/20项原review绑定/17评论块，37整段条件论证保持待证；q96部分411原件与两例显式撤回60原件已真正合入D.1表43/44和回复。50页/主文10页，原工程与干净ZIP完整编译、50页文字/像素相同，前45页同v35、46–50逐页验看，0undefined/overfull。110成员本机/AFS逐项验真，旧v35的102项和所有冻结源码不动。PDF 96384b35…，源码ZIP fb78b7e8…，写作包240e4491…；不是可直接发布版本，P1公平比较/P2修复与最终归因/P3自然缺技能/P4–P5真机仍开放。
+
+当前科学GPU程序0，最后两个runner complete/0；旧0GPU审计complete/0仅两个q8报告，不是六池全部完成。旧11UTC及独立12分钟窗口均已关闭，.4闭合余额credit已用一次，不复活旧任务或unknown。12:09ACP再次IAM过期，已请求登录，继续等待本次确认；不因旧“已登录”消息假定当前认证有效。未来采集器同进程显存限额修复df5fef0已push，85nativeCPU、Windows69通过/16Torch skip，实际本轮科学数据仍绑定e075ccd。最终Docs离线同步CCI和current_iteration安装使用独立收据，不改实测快照。以下“接下来另存v36”及活动截面均为历史。
+
+**iter50 11:22UTC终态覆盖：** 原11UTC窗口已关闭，R3首个Full写封口时漏复制action_seal，12/32accepted后未封口、两runner exit1；20原件已本机/AFS完整保全，两个Fullpre保持unknown且不重跑。e075ccd已修复目录准入和七项原输入精确复制，并支持只执行未开始null/Fullpost；80nativeCPU、Windows64通过/16Torch skip，已push/CCI离线FF。通过全部已知终态/云更新时间核销原3.5GPUh中的.4未用余额，唯一credit PB_null_known_writer_closed_balance_20261113_v1转给独立12分钟阶段11:04:12.993485–11:16:12.993485；原窗口不改，总143.8054115725/144不变。
+
+新unstarted两例UID a237421717b6448eafb8df07cd084f8d/5707d877cf9044a1bbdcefa13faed2a1均runner complete/0，于11:13:55/11:14:41结束。60原件/4封口角色已双端验真：case0 nullH32/label0，Full12invalid/label未知；case1 null及Full均H32/label0。每对新parent hashes一致、8项live-checked前缀资格，无新policy加载/查询。不要声称新双侧Full重复、repair/最终SR增益；先前Fullpre未知不计为新终态。当前科学GPU程序0，不复活任何旧任务。q96411/39/43及全缺失性保持。接下来从封存v35另存v36，补真实表格/回复并完整编译/干净ZIP/视觉核验，37整段有利假设仍待证。CPU实际history需按原模型加batch及dtype后比对，不能把raw/typed形状不同误认为内容变化。以下10:51及更早截面是历史。
+
+
+**iter50 10:51UTC最新覆盖：** 两路q96均在原active窗口有界中断并归档，原生runner failed/1、物理child -2，不再运行。411原件/39封口分支/43条384命令前缀已双端验真；case0为14 H32候选、1未知、17未开始，case1为19、1、12，均无invalid候选。三Full每例动作/物理/DINO重复精确：case0 H32且label0；case1均1命令后invalid，19候选因父状态预先超计数而label未知。末尾Full未开始，不放行整池主指标或修复收益。读ITER50_Q96_AND_ACTION_ARCHIVES_LOCAL_VERIFICATION_V1。
+
+q8撤回R2两例各9次原Full/36原命令及额外3次Full-null-Full输出已精确封存；原进程遗留模型引用与.12限额导致效果reader OOM，0新物理命令，40原件已双端验真。c4a1ad9新增已知OOM的fresh-process物理续跑，73nativeCPU、Windows57通过/16Torch skip，真实context/action/Gaussian CPU绑定通过。只执行同一封存动作，不加载policy或重新采样。首次R3任务因缺少case上级目录在任何operator/模型/动作前exit1；两终态认证后补齐目录，同一冻结plan/job/launch显式转交`warm-pb-ns2-sealedphysics0/1-20261113-b`。10:51两原生runner running，均action_seal_qualified_no_null_truth_yet。
+
+当前R3=`PB_namespace2_null_physical_20261113_v2`，分别查case00/01/results/operator及shard00/01/job_logs最新runner，无总体父operator。不要复活旧a任务、R2或串行父任务。10:57 active/11UTC hard end、固定case/模型/动作/lease不变；原3.5GPUh内保守核销1+.5+两R2各.5+两目录错误各.1+两新物理各.4=3.5，无新预留或clock重置。读ITER50_KNOWN_DIRECTORY_RETRY_PREPARED_V1及current_iteration最新覆盖。
+
+PB10000冷存完成，两本机完整副本/原weights locator/恢复helper齐全，不再轮询旧SCP；当前12000/3000、CAS、唯一原件不动。10:51 AFS5,592,297,472B，4GiB新准入/512MiB运行保护保持。v35仍为封存写作基线、20项/17块/37整段待证；下一版只接真实审计数据并完整编译/验看，不批量填理想值。以下09:51及更早截面是历史。
+
 **iter50 09:51UTC再覆盖：** PB10000旧权重已在本机原文件及独立TAR完整验真后冷存，原路径有STORAGE_LOCATOR_ITER50_PB10000_WEIGHT_V1，恢复helper在实验根；恢复动作尚未实际执行。09:19 AFS13.47GB、09:42为10.08GB，当前12000/3000保持。两q96仍运行，原截止不变。
 
 null首次修复UID2d4666ef…于09:30结束：父exit0、两子exit1，均在任何模型查询或命令之前发生_mean_effect ImportError。新入口预先导入当前fastwam包，污染了原模型来源；已改为独立文件绑定，并把fcntl推迟到实际POSIX父进程。55原生CPU、Windows39通过/16Torch skip；09:49实际验证后无当前fastwam缓存，且从原historical source成功导入_mean_effect，CUDA未初始化。新v2仅允许绑定这两条已知0执行错误的终态/原件，仍用原固定两case与07:47/11UTC窗口；不复活v1或覆盖其原件。v2尚待冻结/实际预检/唯一创建，按current_iteration/最新收据继续。

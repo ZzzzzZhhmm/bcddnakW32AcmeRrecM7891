@@ -56,3 +56,16 @@ Nov13 03:32共享卷仅约0.923GB。完整本机TAR `C:/Users/admin/.cache/warm-
 03:37:03只冷存旧`matched_training_update200_v1/control-s3407/checkpoints/weights/step_000200.pt`冗余物理文件，先写同目录`STORAGE_LOCATOR_ITER46_WEIGHT_V1.json`。收据`ITER46_CONTROL200_WEIGHT_TIERING_V1/receipt.json`及补充`ITER46_CONTROL200_STORAGE_POST_VERIFICATION_V1.json`；首次两个只读路径校验失败没有迁移，v3验证真实路径后执行。补充校验实际Full3000与原身份一致，主收据Pooled保护行重复保留并明确解释，不覆盖历史收据。
 
 恢复时先将完整旧weight暂存至CCI临时盘，使用收据目录`restore_control200_weight_v1.py --staging-file PATH`，默认dry-run；逐项校验SHA/size、原目标不存在及size+1GiB空间，显式`--apply`才原子回填原路径。helper --help已通过，尚未实际恢复；可直接使用本机完整weight或从完整TAR精确提取，无需科学重跑。即时free.908GB保留，03:37:39实测13,042,106,368B；共享卷继续并发变化，保持4GiB准入门槛。
+
+
+## 第七阶段：原Press Button旧10000 weight冷存
+
+Nov13 08:26 AFS仅1,456,377,856B。原WARM/runs/rmbench_official50_specialists/press_button-s3407-v2/checkpoints/weights/step_010000.pt在完整SCP和独立本机TAR重读后冷存；当前12000、shared Full/Pooled3000及全部唯一原件保持。本操作不改变评测checkpoint选择，原稿DEV选定step仍未核实。
+
+本机tmp/rebuttal/storage/20261113_PB10000_v1保留完整原weight 12,144,215,606B，SHA ed410a36987142ea1e941b061dbe9e180c3f544bdf31c137da04da1708deb5ff；独立PB10000_WEIGHT_V1.tar为12,144,230,400B，SHA 069147e8d6fa7900d5d7cb8c0f7e7920295e3d7ed48341d09ca62777db521481。SCP09:10:21 exit0、09:11两副本payload完整验证。独占写入时目录length=0只是历史中间快照，不再轮询旧传输。
+
+09:15原生完整SHA、原mtime/size、无openFD、活动12000及49入口/旧冻结树通过后，先写locator及helper，再迁出旧10000物理原名。locator为原weights目录STORAGE_LOCATOR_ITER50_PB10000_WEIGHT_V1.json，SHA ad39ae0fc032cfca2999e9f1e2983050fa3290acce3ed589adf5d11536210f3a。完整收据P/ITER50_PB10000_WEIGHT_TIERING_V1.json保持。
+
+恢复时把完整原weight上传到同一weights目录.step_010000.restore.incoming，再运行P/restore_pb10000_iter50_v1.py --incoming ABSOLUTE_INCOMING_PATH。helper校验精确SHA/size、目标不存在后原子建立原名，移除冗余incoming；SHA 12972f5ee3401ce0fa511787f06b2db6d972d0dcc4d7d1576d48b414f96df853，--help通过，未实际恢复。恢复前核查可容纳原文件和余量；不得回填partial或近似权重。
+
+即时df仍1.34GB，09:19实测13,474,500,608B，09:42为10,075,856,896B，10:51为5,592,297,472B。不同时间的共享卷快照不等于逻辑迁出净增；保持4GiB准入与512MiB运行保护。
