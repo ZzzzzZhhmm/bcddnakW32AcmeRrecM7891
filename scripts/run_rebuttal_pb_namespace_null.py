@@ -228,6 +228,8 @@ def run_case(plan, case_id, admission, sealed_recovery=None):
             # A fresh process executes only already sealed actions. No policy is loaded.
             verifier=load('PB_null_sealed_physics_guard',ROOT/'src/fastwam/research/pb_null_sealed_physics.py')
             sealed=verifier.load_sealed_actions(sealed_recovery,case_id,row)
+            copied=verifier.materialize_sealed_inputs(sealed_recovery,out)
+            write(out/'sealed_input_copy_manifest.json',copied)
             state.update(mode='sealed_action_physics_only_continuation',
                          previous_action_seal=sealed_recovery['files']['action_seal.json'],
                          original_generation_queries=9,original_extra_queries=3,
@@ -259,7 +261,8 @@ def run_case(plan, case_id, admission, sealed_recovery=None):
         assert parents[0]==parents[1]
         write(out/'two_prefixes_qualified.json',dict(two_exact_prefixes_before_null_truth=True,parent_hashes=parents[0]))
         rows={}
-        for role in ['Full-pre','candidate-null','Full-post']:
+        role_guard=load('PB_null_physical_roles',ROOT/'src/fastwam/research/pb_null_sealed_physics.py')
+        for role in role_guard.physical_roles(sealed_recovery):
             budget();attempt=out/'branches'/role/'attempt-001';attempt.mkdir(parents=True,exist_ok=False)
             parent,ph=reset_parent(role);assert ph==parents[0]
             (attempt/'parent.pickle').write_bytes(pickle.dumps(parent,protocol=4))
@@ -291,10 +294,10 @@ def run_case(plan, case_id, admission, sealed_recovery=None):
             (attempt/'endpoint.pickle').write_bytes(pickle.dumps(endpoint,protocol=4));np.save(attempt/'endpoint_dino_spatial.npy',after,allow_pickle=False)
             seal_branch(attempt,result);rows[role]=result;state['branches'][role]=result;save()
             env.close_env(clear_cache=True);env=None
-        keys=['parent_hashes','endpoint_hashes','endpoint_status','executed_steps','error','observed_effect','parent_progress','endpoint_progress','secondary_prefix4','independent_label']
-        assert all(rows['Full-pre'][key]==rows['Full-post'][key] for key in keys),'Repeated Full physical endpoints differ'
-        state.update(status='complete_two_sided_Full_null_Full_fixed_q8',Full_physical_repeat_exact=True,
-                     Full_H32_effect_available=rows['Full-pre']['endpoint_status']=='complete_horizon',
+        full_reference,two_sided=role_guard.full_control_summary(rows)
+        state.update(status='complete_two_sided_Full_null_Full_fixed_q8' if two_sided else 'complete_previously_unstarted_null_and_Full_post',Full_physical_repeat_exact=two_sided,
+                     original_Full_pre_unknown_preserved=not two_sided,
+                     Full_H32_effect_available=full_reference['endpoint_status']=='complete_horizon',
                      null_H32_effect_available=rows['candidate-null']['endpoint_status']=='complete_horizon',
                      population_repair_rate_available=False,final_task_attribution_available=False,
                      source_sha256_after=identity.source_digest(C),ended_utc=now().isoformat())

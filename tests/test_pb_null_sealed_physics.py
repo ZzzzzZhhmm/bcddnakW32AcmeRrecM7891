@@ -30,3 +30,49 @@ def test_no_top_level_fastwam_package_import():
     import subprocess,sys
     script="import runpy,sys;runpy.run_path(sys.argv[1]);assert 'fastwam' not in sys.modules"
     subprocess.run([sys.executable,'-c',script,str(Path(g.__file__))],check=True)
+
+
+def test_output_parent_is_checked_before_inference(tmp_path):
+    out=tmp_path/'case00'/'results'
+    with pytest.raises(ValueError):g.check_output_readiness(tmp_path,0,out)
+    out.parent.mkdir();g.check_output_readiness(tmp_path,0,out)
+    out.mkdir()
+    with pytest.raises(ValueError):g.check_output_readiness(tmp_path,0,out)
+
+def test_materialized_seal_bytes_and_no_operator_copy(tmp_path):
+    import hashlib
+    source=tmp_path/'source';source.mkdir();out=tmp_path/'out';out.mkdir();files={}
+    for i,name in enumerate(g.SEALED_INPUT_NAMES):
+        p=source/name;p.write_bytes(('sealed-'+str(i)).encode());files[name]=dict(path=str(p),sha256=g.sha(p))
+    files['operator.json']=dict(path='must-not-read',sha256='bad')
+    result=g.materialize_sealed_inputs(dict(files=files),out)
+    assert set(result)==set(g.SEALED_INPUT_NAMES) and not (out/'operator.json').exists()
+    for name in g.SEALED_INPUT_NAMES:assert (out/name).read_bytes()==(source/name).read_bytes()
+    with pytest.raises(ValueError):g.materialize_sealed_inputs(dict(files=files),out)
+
+def test_changed_sealed_input_rejected_before_copy(tmp_path):
+    p=tmp_path/'input';p.write_bytes(b'changed');out=tmp_path/'out';out.mkdir()
+    files={name:dict(path=str(p),sha256='0'*64) for name in g.SEALED_INPUT_NAMES}
+    with pytest.raises(ValueError):g.materialize_sealed_inputs(dict(files=files),out)
+    assert not list(out.iterdir())
+
+
+def test_unknown_full_pre_cannot_be_requested():
+    assert g.physical_roles(dict(physical_roles=['candidate-null','Full-post']))==['candidate-null','Full-post']
+    for roles in [['Full-pre'],['Full-post','candidate-null'],['Full-pre','Full-post']]:
+        with pytest.raises(ValueError):g.physical_roles(dict(physical_roles=roles))
+
+def test_single_post_full_does_not_claim_two_sided_repeat():
+    row=dict(endpoint_status='complete_horizon')
+    full,two_sided=g.full_control_summary({'candidate-null':{},'Full-post':row})
+    assert full is row and two_sided is False
+
+def test_missing_unstarted_role_is_not_complete():
+    with pytest.raises(ValueError):g.full_control_summary({'Full-post':{}})
+
+def test_only_known_writer_failure_qualifies():
+    op=dict(status='failed_or_interrupted_q8_null_preserve_all',case_id=0,mode='sealed_action_physics_only_continuation',new_policy_loaded=False,live_reproduction_queries=0,extra_policy_queries=0,model_updates=0,active_branch='Full-pre',branches={},new_branch_commands=12,error="FileNotFoundError(2,'missing')",traceback='action_seal.json')
+    g.validate_unstarted_failure(op,dict(status='failed',exit_code=1),0)
+    for key,value in [('active_branch','candidate-null'),('new_branch_commands',0),('extra_policy_queries',1),('branches',{'candidate-null':{}}),('traceback','other missing file')]:
+        changed=dict(op);changed[key]=value
+        with pytest.raises(ValueError):g.validate_unstarted_failure(changed,dict(status='failed',exit_code=1),0)
