@@ -31,7 +31,7 @@ def write(path, value):
     temp.write_text(json.dumps(value, indent=2, sort_keys=True, allow_nan=False)); temp.replace(path)
 
 
-def run_case(plan, case_id, admission):
+def run_case(plan, case_id, admission, sealed_recovery=None):
     row = plan['cases'][case_id]; out = Path(row['output']); source = Path(row['source'])
     assert row['case_id'] == case_id and not out.exists()
     import fcntl
@@ -122,107 +122,117 @@ def run_case(plan, case_id, admission):
             assert np.array_equal(before,np.asarray(r['before'],dtype=before.dtype)) and np.array_equal(after,np.asarray(r['after'],dtype=after.dtype))
             assert p0==r['physical_before'] and p1==r['physical_after'] and s0==r['task_state_before'] and s1==r['task_state_after']
             assert errors==r['observed_TOPP_errors'] and int(env.take_action_cnt)==i+1
-        # Match the original collector's pre-loader setup, then fresh learned reset.
-        env=cls(); seed_reset(); env.setup_demo(**cfg); assert env.step_lim==1500; env.close_env()
-        state['status']='loading_original_policy_for_exact_prefix_reproduction';save();budget()
-        policy=deployment.RMBenchWarmPolicy(args)
-        assert policy.model._warm_loaded_checkpoint_sha256==BIND.WEIGHT
-        seed_reset(); env.setup_demo(**cfg); instruction(); source_obs(source/'initial_observation.npz',env.get_obs())
-        BIND.namespace_module().require_initial(original,env.get_obs(),initial['instruction'],measured(),B.observe(env)['native_state'])
-        model=policy.model; old_infer=model.infer_action; query_now=0; sealed={}; full_witness={}
-        def cpu(x):
-            if torch.is_tensor(x):return x.detach().cpu().clone()
-            if isinstance(x,np.ndarray):return torch.from_numpy(np.array(x,copy=True))
-            if dataclasses.is_dataclass(x):return {f.name:cpu(getattr(x,f.name)) for f in dataclasses.fields(x)}
-            if isinstance(x,dict):return {str(k):cpu(v) for k,v in x.items()}
-            if isinstance(x,(list,tuple)):return [cpu(v) for v in x]
-            if isinstance(x,(str,int,float,bool,type(None))):return x
-            raise TypeError('Incomplete context serialization is forbidden: '+str(type(x)))
-        @contextmanager
-        def capture_source():
-            assert '_resolve_action_source' not in model.__dict__
-            original_resolve=model._resolve_action_source; cache={}
-            def observe(_self,*a,**kw):
-                assert not cache and kw['phase']=='infer'
-                cache['context']=kw['action_source_context']
-                value=original_resolve(*a,**kw)
-                for key in ['source','base_gaussian','conditioning_tokens','source_gate']:cache[key]=cpu(getattr(value,key))
-                return value
-            model._resolve_action_source=MethodType(observe,model)
-            try:yield cache
-            finally:del model._resolve_action_source
-        def infer_observer(*a,**kw):
-            budget();q=query_now
-            if q==8:
-                with capture_source() as witness:value=old_infer(*a,**kw)
-            else:value=old_infer(*a,**kw)
-            action=value['action'].detach().float().cpu().numpy().reshape(32,14).copy()
-            expected=np.load(source/f'generations/q{q:04d}/model_actions.npy',allow_pickle=False)
-            assert action.dtype==expected.dtype and np.array_equal(action,expected),'Full factual action differs before null'
-            state['live_reproduction_queries']+=1
-            write(out/f'replay-q{q:04d}.json',dict(original_H32_exact=True,model_action_sha256=sha256_array(action)))
-            if q==8:
-                step=kw['online_step']; oldkw=torch.load(source/'probes/q0008/infer_kwargs.pt',map_location='cpu',weights_only=True)
-                for key in ['context_key_sha256','candidate_payload_sha256','model_input_sha256','proprio_sha256','prompt_sha256','derived_seed']:
-                    assert getattr(step,key)==oldkw['online_step'][key],key
-                assert dataclasses.asdict(step.query_id)==oldkw['online_step']['query_id']
-                ctx=witness['context']; payload=BIND.inference_context_payload(ctx)
-                torch.save(payload,out/'actual_q8_source_context.pt')
-                np.savez_compressed(out/'actual_q8_history.npz',**{k:np.array(kw[k],copy=True) for k in ['episode_tokens','episode_mask','episode_action_summaries','episode_action_mask']})
-                np.savez_compressed(out/'actual_q8_inputs.npz',model_input=np.array(step.model_input,copy=True),proprio=np.array(step.proprio,copy=True))
-                sampler={k:kw[k] for k in ['negative_prompt','text_cfg_scale','num_inference_steps','sigma_shift','rand_device','tiled']}
-                full_witness.update({k:v for k,v in witness.items() if k!='context'})
-                torch.save(full_witness,out/'original_Full_source_witness.pt')
-                versions=[(n,p,int(p._version)) for n,p in list(model.named_parameters())+list(model.named_buffers())]
-                def generate():
-                    budget()
-                    y=FastWAM.infer_action(model,prompt=step.prompt,input_image=torch.tensor(step.model_input,device=model.device,dtype=model.torch_dtype),
-                        proprio=torch.tensor(step.proprio,device=model.device,dtype=model.torch_dtype),action_horizon=32,
-                        seed=int(step.derived_seed),action_source_context=ctx,memory_sigma=model._require_retrospection().source_sigma_min,**sampler)
-                    state['extra_policy_queries']+=1
-                    return y['action'].detach().float().cpu().numpy().reshape(32,14).copy()
-                with torch.inference_mode():
-                    with capture_source() as check:a_full=generate()
-                    assert np.array_equal(a_full,action) and all(torch.equal(check[k],full_witness[k]) for k in full_witness)
-                    with withdraw(model) as null_witness:a_null=generate()
-                    assert torch.equal(null_witness['base_gaussian'],full_witness['base_gaussian'])
-                    torch.save(cpu(null_witness),out/'candidate_null_source_witness.pt')
-                    with capture_source() as final:a_final=generate()
-                    assert np.array_equal(a_final,action) and all(torch.equal(final[k],full_witness[k]) for k in full_witness)
-                after=dict(list(model.named_parameters())+list(model.named_buffers()))
-                assert set(after)=={n for n,p,v in versions} and all(after[n] is p and int(p._version)==v for n,p,v in versions)
-                sealed.update({'Full-pre':np.asarray(policy.action_normalizer.denormalize(a_full),dtype=np.float32),
-                               'candidate-null':np.asarray(policy.action_normalizer.denormalize(a_null),dtype=np.float32),
-                               'Full-post':np.asarray(policy.action_normalizer.denormalize(a_final),dtype=np.float32)})
-                assert sha256_array(sealed['Full-pre'])==source_records[32]['environment_action_chunk_sha256']
-                np.savez_compressed(out/'sealed_native_actions.npz',**sealed)
-                write(out/'action_seal.json',dict(schema='warm.PB-namespace2-q8-null-action-seal.v1',case_id=case_id,physical_seed=row['physical_seed'],query=8,
-                    source_sha256=BIND.CORE,checkpoint_sha256=BIND.WEIGHT,source_factual_plan=row['factual_plan'],
-                    Full_original_and_final_actions_exact=True,same_context_and_Gaussian=True,explicit_null_only=True,
-                    factual_recollection_retained=True,natural_absence_certified=False,model_parameters_and_buffers_unchanged=True,
-                    before_any_new_null_truth=True,actions_sha256=sha(out/'sealed_native_actions.npz'),
-                    action_array_sha256={k:sha256_array(v) for k,v in sealed.items()},source_context_sha256=sha(out/'actual_q8_source_context.pt')))
-            save();return value
-        model.infer_action=infer_observer
-        policy._next_episode_index=case_id;policy.reset()
-        state['status']='reproducing_all_original_queries_and_first36_commands';save()
-        observer=TOPP(env);observer.__enter__()
-        with (out/'reproduced_native_prefix.jsonl').open('x',buffering=1) as stream:
-            for i in range(36):
-                budget();obs=env.get_obs();query_now=i//4
-                if not policy.queue:
-                    source_obs(source/f'replan-{query_now:04d}.npz',obs);policy._replan(obs,env)
-                    records=[json.loads(x) for x in (out/'replay-telemetry.jsonl').read_text().splitlines()]
-                    recent=[x for x in records if x['kind']=='replan'][-1]
-                    assert recent['history_before_replan']==source_records[i]['history_before_replan']
-                before=factual_joint_state(obs).copy();p0=measured();s0=B.observe(env)['native_state'];observer.errors.clear()
-                policy.step(env,obs);after=factual_joint_state(env.get_obs()).copy();p1=measured();s1=B.observe(env)['native_state']
-                compare_native(i,before,after,p0,p1,s0,s1,observer.errors)
-                stream.write(json.dumps(dict(index=i,original_native_step_exact=True,physical_before=p0,physical_after=p1,task_before=s0,task_after=s1,TOPP_errors=observer.errors))+'\n')
-                state['reproduced_native_commands']+=1;save()
-        observer.__exit__(None,None,None);observer=None
-        assert state['live_reproduction_queries']==9 and state['extra_policy_queries']==3 and len(sealed)==3
-        env.close_env(clear_cache=True);env=None;policy.close();policy=None;gc.collect();torch.cuda.empty_cache()
+        if sealed_recovery is None:
+            # Match the original collector's pre-loader setup, then fresh learned reset.
+            env=cls(); seed_reset(); env.setup_demo(**cfg); assert env.step_lim==1500; env.close_env()
+            state['status']='loading_original_policy_for_exact_prefix_reproduction';save();budget()
+            policy=deployment.RMBenchWarmPolicy(args)
+            assert policy.model._warm_loaded_checkpoint_sha256==BIND.WEIGHT
+            seed_reset(); env.setup_demo(**cfg); instruction(); source_obs(source/'initial_observation.npz',env.get_obs())
+            BIND.namespace_module().require_initial(original,env.get_obs(),initial['instruction'],measured(),B.observe(env)['native_state'])
+            model=policy.model; old_infer=model.infer_action; query_now=0; sealed={}; full_witness={}
+            def cpu(x):
+                if torch.is_tensor(x):return x.detach().cpu().clone()
+                if isinstance(x,np.ndarray):return torch.from_numpy(np.array(x,copy=True))
+                if dataclasses.is_dataclass(x):return {f.name:cpu(getattr(x,f.name)) for f in dataclasses.fields(x)}
+                if isinstance(x,dict):return {str(k):cpu(v) for k,v in x.items()}
+                if isinstance(x,(list,tuple)):return [cpu(v) for v in x]
+                if isinstance(x,(str,int,float,bool,type(None))):return x
+                raise TypeError('Incomplete context serialization is forbidden: '+str(type(x)))
+            @contextmanager
+            def capture_source():
+                assert '_resolve_action_source' not in model.__dict__
+                original_resolve=model._resolve_action_source; cache={}
+                def observe(_self,*a,**kw):
+                    assert not cache and kw['phase']=='infer'
+                    cache['context']=kw['action_source_context']
+                    value=original_resolve(*a,**kw)
+                    for key in ['source','base_gaussian','conditioning_tokens','source_gate']:cache[key]=cpu(getattr(value,key))
+                    return value
+                model._resolve_action_source=MethodType(observe,model)
+                try:yield cache
+                finally:del model._resolve_action_source
+            def infer_observer(*a,**kw):
+                budget();q=query_now
+                if q==8:
+                    with capture_source() as witness:value=old_infer(*a,**kw)
+                else:value=old_infer(*a,**kw)
+                action=value['action'].detach().float().cpu().numpy().reshape(32,14).copy()
+                expected=np.load(source/f'generations/q{q:04d}/model_actions.npy',allow_pickle=False)
+                assert action.dtype==expected.dtype and np.array_equal(action,expected),'Full factual action differs before null'
+                state['live_reproduction_queries']+=1
+                write(out/f'replay-q{q:04d}.json',dict(original_H32_exact=True,model_action_sha256=sha256_array(action)))
+                if q==8:
+                    step=kw['online_step']; oldkw=torch.load(source/'probes/q0008/infer_kwargs.pt',map_location='cpu',weights_only=True)
+                    for key in ['context_key_sha256','candidate_payload_sha256','model_input_sha256','proprio_sha256','prompt_sha256','derived_seed']:
+                        assert getattr(step,key)==oldkw['online_step'][key],key
+                    assert dataclasses.asdict(step.query_id)==oldkw['online_step']['query_id']
+                    ctx=witness['context']; payload=BIND.inference_context_payload(ctx)
+                    torch.save(payload,out/'actual_q8_source_context.pt')
+                    np.savez_compressed(out/'actual_q8_history.npz',**{k:np.array(kw[k],copy=True) for k in ['episode_tokens','episode_mask','episode_action_summaries','episode_action_mask']})
+                    np.savez_compressed(out/'actual_q8_inputs.npz',model_input=np.array(step.model_input,copy=True),proprio=np.array(step.proprio,copy=True))
+                    sampler={k:kw[k] for k in ['negative_prompt','text_cfg_scale','num_inference_steps','sigma_shift','rand_device','tiled']}
+                    full_witness.update({k:v for k,v in witness.items() if k!='context'})
+                    torch.save(full_witness,out/'original_Full_source_witness.pt')
+                    versions=[(n,p,int(p._version)) for n,p in list(model.named_parameters())+list(model.named_buffers())]
+                    def generate():
+                        budget()
+                        y=FastWAM.infer_action(model,prompt=step.prompt,input_image=torch.tensor(step.model_input,device=model.device,dtype=model.torch_dtype),
+                            proprio=torch.tensor(step.proprio,device=model.device,dtype=model.torch_dtype),action_horizon=32,
+                            seed=int(step.derived_seed),action_source_context=ctx,memory_sigma=model._require_retrospection().source_sigma_min,**sampler)
+                        state['extra_policy_queries']+=1
+                        return y['action'].detach().float().cpu().numpy().reshape(32,14).copy()
+                    with torch.inference_mode():
+                        with capture_source() as check:a_full=generate()
+                        assert np.array_equal(a_full,action) and all(torch.equal(check[k],full_witness[k]) for k in full_witness)
+                        with withdraw(model) as null_witness:a_null=generate()
+                        assert torch.equal(null_witness['base_gaussian'],full_witness['base_gaussian'])
+                        torch.save(cpu(null_witness),out/'candidate_null_source_witness.pt')
+                        with capture_source() as final:a_final=generate()
+                        assert np.array_equal(a_final,action) and all(torch.equal(final[k],full_witness[k]) for k in full_witness)
+                    after=dict(list(model.named_parameters())+list(model.named_buffers()))
+                    assert set(after)=={n for n,p,v in versions} and all(after[n] is p and int(p._version)==v for n,p,v in versions)
+                    sealed.update({'Full-pre':np.asarray(policy.action_normalizer.denormalize(a_full),dtype=np.float32),
+                                   'candidate-null':np.asarray(policy.action_normalizer.denormalize(a_null),dtype=np.float32),
+                                   'Full-post':np.asarray(policy.action_normalizer.denormalize(a_final),dtype=np.float32)})
+                    assert sha256_array(sealed['Full-pre'])==source_records[32]['environment_action_chunk_sha256']
+                    np.savez_compressed(out/'sealed_native_actions.npz',**sealed)
+                    write(out/'action_seal.json',dict(schema='warm.PB-namespace2-q8-null-action-seal.v1',case_id=case_id,physical_seed=row['physical_seed'],query=8,
+                        source_sha256=BIND.CORE,checkpoint_sha256=BIND.WEIGHT,source_factual_plan=row['factual_plan'],
+                        Full_original_and_final_actions_exact=True,same_context_and_Gaussian=True,explicit_null_only=True,
+                        factual_recollection_retained=True,natural_absence_certified=False,model_parameters_and_buffers_unchanged=True,
+                        before_any_new_null_truth=True,actions_sha256=sha(out/'sealed_native_actions.npz'),
+                        action_array_sha256={k:sha256_array(v) for k,v in sealed.items()},source_context_sha256=sha(out/'actual_q8_source_context.pt')))
+                save();return value
+            model.infer_action=infer_observer
+            policy._next_episode_index=case_id;policy.reset()
+            state['status']='reproducing_all_original_queries_and_first36_commands';save()
+            observer=TOPP(env);observer.__enter__()
+            with (out/'reproduced_native_prefix.jsonl').open('x',buffering=1) as stream:
+                for i in range(36):
+                    budget();obs=env.get_obs();query_now=i//4
+                    if not policy.queue:
+                        source_obs(source/f'replan-{query_now:04d}.npz',obs);policy._replan(obs,env)
+                        records=[json.loads(x) for x in (out/'replay-telemetry.jsonl').read_text().splitlines()]
+                        recent=[x for x in records if x['kind']=='replan'][-1]
+                        assert recent['history_before_replan']==source_records[i]['history_before_replan']
+                    before=factual_joint_state(obs).copy();p0=measured();s0=B.observe(env)['native_state'];observer.errors.clear()
+                    policy.step(env,obs);after=factual_joint_state(env.get_obs()).copy();p1=measured();s1=B.observe(env)['native_state']
+                    compare_native(i,before,after,p0,p1,s0,s1,observer.errors)
+                    stream.write(json.dumps(dict(index=i,original_native_step_exact=True,physical_before=p0,physical_after=p1,task_before=s0,task_after=s1,TOPP_errors=observer.errors))+'\n')
+                    state['reproduced_native_commands']+=1;save()
+            observer.__exit__(None,None,None);observer=None
+            assert state['live_reproduction_queries']==9 and state['extra_policy_queries']==3 and len(sealed)==3
+            env.close_env(clear_cache=True);env=None;policy.close();policy=None;gc.collect();torch.cuda.empty_cache()
+        else:
+            # A fresh process executes only already sealed actions. No policy is loaded.
+            verifier=load('PB_null_sealed_physics_guard',ROOT/'src/fastwam/research/pb_null_sealed_physics.py')
+            sealed=verifier.load_sealed_actions(sealed_recovery,case_id,row)
+            state.update(mode='sealed_action_physics_only_continuation',
+                         previous_action_seal=sealed_recovery['files']['action_seal.json'],
+                         original_generation_queries=9,original_extra_queries=3,
+                         new_policy_loaded=False,new_policy_queries=0)
+            save()
         state['status']='action_seal_qualified_no_null_truth_yet';save();budget()
         torch.cuda.set_per_process_memory_fraction(.12)
         teacher=FrozenFactualEffectReader.from_source_runtime(args,contract);write(out/'reader_receipt.json',teacher.receipt)
