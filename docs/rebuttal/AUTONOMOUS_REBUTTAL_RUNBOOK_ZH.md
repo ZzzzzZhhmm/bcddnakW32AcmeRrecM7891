@@ -1,5 +1,14 @@
 # WARM rebuttal：持续执行与11月13日稳定版验收
 
+**Nov13 iter48中断覆盖：** 两原namespace GPU程序已分别04:38:15/03:49:00UTC以failed/-15结束，原父operator的running字段残留，不能再按下方iter46/47的活动截面处理。实际Pod/调度原因仍未认证；原q8/factual完整证据保持。0GPU bee71c75仍等旧父终态至11:10UTC；当前已确认在推理的GPU程序为0，不把CPU等待或准备当GPU运行。IAM登录页04:48重查仍需作者登录，已发送明确请求；未点击任何新创建。
+
+q48部分原件436项已双端完整保全/本机独立验真：两个36分支序列分别25封口+1未知+10未开始、14封口+1未知+21未开始。候选H32完整19/10、invalid3/1，已完成标签全0；每case三Full H32完整且0、最终Full未开始。两条中断rank22/rank11都在父状态重建阶段、0已验命令，不补0或重跑。39封口分支和43条192命令原前缀全部复核；无完整pool主指标/repair/总体收益。读ITER48_PARTIAL_LOCAL_VERIFICATION_V1，旧matched13unknown分母不混入这两个namespace尝试。
+
+固定未启动q96的资源恢复已独立准备：源码5944997/digest371acb55，36Windows/36nativeCPU及两真实原收集器CPU输入封存、恢复plan预检、job dryrun全部0；不加载policy或执行物理动作。PB_namespace2_q96_remaining_20261113_v1/case00/01各有冻结plan/job/launch，名称warm-pb-ns2-q96-case0/1-20261113-a；两个任务各idle1GPU8CPU128GiB/restart0，最多4h含180s退出，仍受原10:34:23/10:35:04UTC截止约束。前段真实elapsed加本段上界8.06447/7.23208GPUh均不超过原每source10，总预留143.8054115725/144不增加。原dc6收集器/模型/物理代码不改，q48不重跑；原case私有lease避免并发原owner。认证旧Pod/任务终态后须先写各platform_terminal.json并保全源receipt，才可提交对应launch。未认证gate时程序拒绝推理；两新q96未创建、没有UID。原null-q8任务同样仅准备未创建，登录恢复后可与两q96并行，GPU只用闲时。
+
+v34的108项/PDF/ZIP保持封存，49页/主文10；20映射/17块/37整段条件论证仍待证。新q48回复/LaTeX插入片段已写在iter48执行目录且明确尚未合入，不能声称新PDF已含partial数据。后续收真实q96或null数据再统一合稿、完整编译和视觉验收；23CST稳定版仍须明示尚未闭合的机制/比较证据。AFS05:07约5.60GB，派发前重新查4GiB准入，保留512MiB运行保护；当前3000/原specialist不动，旧200恢复见存储指引。
+
+
 **Nov13 iter46最终恢复锚点：v34完整封存，关键效果缺口仍开放。** 三位回复/20项映射/17可粘贴块联动，37整段条件论证仍待证；原工程和干净ZIP49页、主文10页，前45页像素同、46–49直接验看，0undefined/overfull。108项包本机及AFS逐项验真，旧v32/v33保持。读CANDIDATE_V34_20261113_ZH.md、current_iteration、ITER46_EXECUTION_ADDENDUM_ZH.md；下方v32及“factual仍运行”是历史。
 
 两个事前固定namespace原PB12000 source各1500命令/375推理、success=false，2298原件验真；q8各32候选，H32完整28/32与32/32，746原件/72分支/76独立前缀验真。预测/历史/常量MSE分别.050270313/.049997605/.011994798和.061228352/.060932313/.017833334，两组均未胜两个参照。case0四Full各12accepted后TOPP-invalid、标签未知；case1全部32候选/四Full严格H32标签0而原pretruth gate.9296875。仅该query检索池的严格完成失配，不是整个bank缺技能证书或总体误激活率；D.1/D.4及回复如实合入，不换指标填有利段。原BatteryTry稳定性证据保留，specialist/shared3000/固定12000三范围区分。
