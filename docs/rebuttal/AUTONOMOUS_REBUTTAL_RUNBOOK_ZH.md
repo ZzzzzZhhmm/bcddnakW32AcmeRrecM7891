@@ -1,3 +1,5 @@
+**11月14日00:31最终覆盖：** PB8000经两本机完整副本/全SHA及原生复核完成可恢复冷存，原目录metadata symlink先于unlink建立；永久JSON locator和helper齐全，当前12000/3000及原件不变。AFS实测约11.9GB，4GiB/512MiB准入保持。CPU112原件和v38完整111成员包均AFS全验；两PDF及两源码ZIP全部在完整包中。当前CCI与本机代码23119cd规范LF同，旧known stash保留；后续以最终Docs/current_iteration canonical覆盖。旧ENOSPC和raw换行断言失败保留，未重复科学任务。
+
 # WARM rebuttal：持续执行与稳定候选验收
 
 **2026-11-13晚v38覆盖以下历史截面。** 先读`CANDIDATE_V38_CLEAN_MATERIALS_20261113_ZH.md`及current_iteration。实证回复/49页论文与独立假设演练/50页论文分开；两套主文10页、完整原工程和干净ZIP编译、逐页文本/像素验证。正文无作者提醒，回复直接带表格。示例仅在独立演练中正常排版并有源码注释，不能回填实证字段；37字段仍null/未放行，20项映射/17评论块保持。实际材料未发布，原v36/v37封存不变。

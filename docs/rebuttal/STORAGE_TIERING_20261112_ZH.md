@@ -69,3 +69,14 @@ Nov13 08:26 AFS仅1,456,377,856B。原WARM/runs/rmbench_official50_specialists/p
 恢复时把完整原weight上传到同一weights目录.step_010000.restore.incoming，再运行P/restore_pb10000_iter50_v1.py --incoming ABSOLUTE_INCOMING_PATH。helper校验精确SHA/size、目标不存在后原子建立原名，移除冗余incoming；SHA 12972f5ee3401ce0fa511787f06b2db6d972d0dcc4d7d1576d48b414f96df853，--help通过，未实际恢复。恢复前核查可容纳原文件和余量；不得回填partial或近似权重。
 
 即时df仍1.34GB，09:19实测13,474,500,608B，09:42为10,075,856,896B，10:51为5,592,297,472B。不同时间的共享卷快照不等于逻辑迁出净增；保持4GiB准入与512MiB运行保护。
+
+
+## 2026-11-14 旧PB8000的可恢复冷存
+
+PB8000 raw 12,144,215,606B/SHA3717020d35c675ba989f1898331fedcb298eea0c300f1cd3c89c4b6f4aa8305a，与独立PB8000_WEIGHT_V1.tar 12,144,230,400B/SHAee688bb9ce020fd6d95759da91ef3396adc82f870f26305a55971fab91f0129b双副本在本机tmp/rebuttal/storage/20261113_PB8000_v1完整校验。自己的旧SCP known stop保留至少4GiB前缀，余4段原位置读取，各range SHA/源stat核对，拼接全SHA精确；旧partial及四段保留。
+
+原生16:20再次完整SHA、mtime_ns1785122960397589140、无openFD、当前12000 stat不变后，在原weights目录建立STORAGE_LOCATOR_ITER54_PB8000_LOCAL_VERIFICATION元数据symlink，指向已持久的本机完整验证manifest，再只迁出原8000文件名。这样在AFS数据块已满时仍有原路径恢复指针，未改原checkpoint内容或失去两份完整副本。16:23空间恢复后原目录补全STORAGE_LOCATOR_ITER54_PB8000_WEIGHT_V1.json（SHA65ffa8576f6acafd91a9d44aea4a871ffe32067f702f6470d1eb84c779150861），永久P/restore_pb8000_iter54_v1.py（SHAa3f5f2f90cb03df6c4dbce5733488204116adf250915bfc42e40aeba0e024c94），--help0、未实际恢复。
+
+恢复时先保证空间和余量，把完整raw上传到原weights目录.step_008000.restore.incoming，再运行helper --incoming ABSOLUTE_INCOMING_PATH；其全SHA/字节数检查后原子建立原名，不覆盖已有权重。当前12000/3000、CAS与唯一轨迹保持。完整本机和原生ITER54_PB8000_WEIGHT_TIERING/PERSISTENT_LOCATOR收据定位两份副本；不得用partial恢复或把冷存视为新DEV选点。
+
+AFS16:04实测0，16:20即时仍0，16:22为11,919,413,248B，16:25写作包后约11.91GB；不同时间共享写入不能据逻辑文件数推算净空间。另四个已导入Git、refs全被HEAD包含的离线传输缓存15,360,495B已精确保留本机副本再迁出，未删Git对象/源码；缓存迁出后仍0，不能声称它已恢复空间。之后112CPU原件和v38完整111成员都已持久保全。
