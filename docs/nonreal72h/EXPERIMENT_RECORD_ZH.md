@@ -3505,3 +3505,20 @@ v38四大文件保持。v39实证回复1811/2338/818词、10/14/4表，17评论�
 正文无作者提醒、无特殊颜色；理想值只在独立演练、段/表前源码注释，正式37字段仍null/verifiedfalse/releasefalse。41对0--0、13unknown、75回合15450replans和所有原窗口保持；P1–P5继续开放，新真机素材0，不发布OpenReview/上传投稿。完整67成员双端保全按iter56最新V2封包收据；包括两个PDF与两个完整源码ZIP。原V1封包仅后续内部README版本和页数注释修正，正文/PDF/ZIP完全同，V1不删除。
 
 ACP原Worker表可见成功后，18:19UTC刷新数据返回401；不能按缓存页面认定新认证或GPU释放。已记录AUTHENTICATION_REQUIRED并请求用户重登，保留原tab、finish forcedCleanup=false/closed0，无新创建/停止/删除。最后实际CCI GPU compute-app为空；新的兼容训练/科学阶段须显式登记，不重置旧144GPUh窗口或重复unknown。
+
+
+### 23.335 原specialist完整Pooled路径与真实生产sampler资格
+
+iter57新增独立原v3工厂、明确schema和固定0.25 source权重，保留原history/真实query/proprio/全部K记录，删除的四类head对应loss必须为零；当前默认Full和后续shared Pooled不改。14项原生契约通过，含共同初始化/RNG、teacher firewall、非首选记录可达性、checkpoint隔离及训练反传。首版unit fixture只有两空间单元，真实契约四单元，4pass9fail原件保留；只修unit fixture。CPU V1/V2循环import失败均发生在采样前，未覆盖旧失败。
+
+真实CPU V3完成生产模型6,773,524,296参数及pool5,763,072参数、原trainindex0与封存q8，实际FastWAM sampler一次输出有限[32,14]、Gaussian原值精确；后置检查误要求[1,32,14]导致failed/1，记录保持。V4 source manifest692f8a40815d8bcf5b83bfed598100c3406593b0534848404a9d17bfbace52e8，job60d4ab18e273400f7285e2ea090653c9290ac056245aa1e00023810b76c97815，只续检已完成输出不重复sampler：20:21:28.7992UTC complete/0，340.588秒，实际八history gist重建逐位精确、Gaussian精确、Full/null/Full source及conditioning重复、null候选条件0、共同八history保留、pool参数梯度有限、history/proprio/query梯度非0。原recipe32b8d678…、q8 context eed53708…及输入原件全SHA/stat前后不变。所有步骤0优化器更新、0环境命令、0新GPUh；scope为完整生产接口/数值资格，不是匹配训练或收益。
+
+最初五个attempt的5309原件AFS/本机逐成员验真，TAR0d37b8f2b8c3132f1d6ac617ab2e8e327416e29ac17eaeef48ee4d6a3e024840，manifest9492ebc9635d1d98e51fb24ae0283ea24b6a6321410fc1963126eabac8edfcf4。R4原件另存、不改R3。新GPU一步资格脚本准备，微批量1只检查action+video真实梯度和更新，不能当原batch128匹配训练；新phase单独登记，旧143.8054115725/144GPUh与窗口不改。ACP20:22UTC实际重新加载列表确认旧unstarted0/1云端成功；页面progress listen HTTP2错误无任务创建/重试。
+
+### 23.336 v40统一原训练收据与纯净自包含材料
+
+原四份训练attestation经原SHA绑定：AdamW peak LR0.0001、beta0.9/0.95、eps1e-8、weightdecay0.01、BF16 seed3407、4H100×microbatch8×accum4=128，BT/PB/Cover12000、BRT14000，warmup5%和cosine到1%。该核验只恢复训练协议，不是DEV选点/最终evaluator manifest或原成绩复现。B.1原5e-5说明据此改成1e-4，Hh4E W1加入四行原训练表；原结果、固定样本和shared3000身份保持。
+
+v40实证回复1811/2440/818词、10/15/4表，17评论块精确重构，20原review绑定不变；无作者提醒，作者感谢/优势/we口吻/逐条回答/修订归纳保持。实证PDF50页主文10，SHAa3a63311869fbe965df5b5afaa179dbf2912c8e8e36c96857ced627ca477c2d7，完整源码ZIP55220d496f0b331e4cc4bb04714ba3c259c142365ca75b14507cbe8ad49e9217。独立演练PDF51页主文10，SHA717f8a6b8570c4a7f3f75e2bf66824fcb3442947fd794d9c6e7bc19d67f6e8de，ZIP1b1b9086e253b8c69174d4f9e31442738e952e02f1072abc813d41ebfbe81da9。各完整原工程BibTeX+4遍、32文件ZIP独立解包重编译，全部文本/像素精确；只有第24页较v39变化且直接验看，其余页与已验v39一致，主文像素不变，10图/原47表和另1实现表全部保持。0undefined/overfull、45既有fontfallback；匿名/AI声明保持。
+
+37实证字段仍null，41对shared全部0–0、13unknown、新真机0不改；理想值仅在独立演练源码注释标记的段/表，正常黑色正文，不晋升为实测，不发布OpenReview/上传投稿。完整封包以实际本机/AFS核验收据为准。三份冗余生成写作TAR共489,052,160B经两完整本机副本/原生全SHA/无FD/原路径JSON locator与永久restore helper后才迁出，当前v39 payload_v2不动。PB6000旧权重仍在下载并保护原件，未完成双完整验证前不声明冷存完成/已释放12GB。
