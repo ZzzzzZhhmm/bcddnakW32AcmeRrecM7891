@@ -3868,3 +3868,12 @@ R9已观察模型/optimizer/scheduler/RNG及epoch6/b2528完整恢复、load: ste
 作者本轮说明新测checkpoint并非另一台机器上的原评测完全版，先记录为待身份对应的作者陈述；不由此宣称旧观测错误。按模型/协议一致隔离新增效能诊断，包括不利结果和有利BT q8局部稳定性，不按正负挑选。AUTHOR_CHECKS_ZH.md列明真实未关闭的外部方法匹配复现、人口级修复频率、>50%污染及更广真机证据；CHECKPOINT_DIAGNOSTICS_AUTHOR_ONLY.md及archive_inputs保全原首轮文本和v40附录副本，SHA见CONTENT_VERIFICATION_V1.json。这些是材料/派生来源副本，不冒充重新取得的raw轨迹。
 
 冻结20261114_round1、原50页v40 PDF/LaTeX ZIP和首轮总ZIP保持原字节，其他reviewer未改。恢复指针writing_current_Bbqv.json；新增SR0，实验与自动任务继续暂停。
+
+
+### 23.379 Bbqv问题标题与分类回应模板固化（仅写作）
+
+依据作者11月14日进一步写作要求，独立工作稿responses/20261114_Bbqv_question_aligned/Reviewer_Bbqv.md改为六个中性问题标题，保留原W/Q编号，首句一个完整粗体结论；2712词/10表，SHA75a92649ec68dba32dd6b8573217a5e23c207fd3d667717da8fd9a3468066f43。按直接证据、概念/分母澄清、承认呈现疏漏与实际修订组合回应，不指责审稿人，不把真机规模/变化范围疑问改写成“任务简单”。
+
+十张表与上一版逐字相同；没有新测量、模拟填数或改变结果范围。首轮与工作首版原件保持。十项原review逐字绑定到六组回复及当前v40 LaTeX十五个实际label位置，QUESTION_STRATEGY_AND_REVISION_MAP与CONTENT_VERIFICATION_V1保存口径及验证；完成时修订表述仅对应已存在内容，不代表本轮改PDF/重编译/上传。AUTHOR_CHECKS独立记录named-method完整复现、总体repair频率、>50%闭环与更广真机等真实未闭合请求，all_scientific_gaps_closed仍false。两份作者写作规范已统一，以Bbqv作结构模板而非复用其证据/认可点；Hh4E/rkWY未改。
+
+本轮新SR0、GPU/CPU实验0、CCI/ACP操作0，未恢复自动任务或冷存动作，暂停授权保持；writing_current_Bbqv.json更新至新稿。
