@@ -3659,3 +3659,24 @@ V5/PID58520于2026-11-14T01:33:33.034124UTC complete，2480.922秒、本机0GPU�
 新增纯标准库cci_runtime_budget只约束实际可控制的单次训练5400秒+退出180+CPU验真900=6480秒，小于作者单次4小时限额；不假设当前时刻开启新资源窗口，不把SSH PID时间当分配clock。若确有带完整观察SHA的认证平台allocation deadline，按真实剩余时间拒绝；未知则明确记录未知并允许有界checkpointed调用，保留外部抢占/中断风险与全部失败收据。容量64GiB、512MiB运行保护、唯一运行、已知前驱、完整state验证、新192GPUh cap及11月17日23UTC截止均不变。
 
 0GPU原生回归于02:00:51UTC完成10 passed，2.467秒；source SHA67f23e904f642a72569bd10c4e71b0ba63374b57421627e1a5b978be639d432e，test SHA39ce61e524cab7f258f46b1ca218c1c62bc6fcde92dc3395ec181db83e21e7a4。覆盖未知寿命不造clock、明确平台短deadline拒绝、SSH观察拒作allocation证据、完整退出/验真预算和单位/时区约束。本机缺pytest的前置失败保留，未临时安装或改模型。新helper只影响operator准入，不改原Full或新Pooled数学；模型source及正式已完成global66不变。回复/论文v40、37+6null和所有负结果保持，无新SR。
+
+
+### 23.354 R5实际启动与完整step66恢复后继续更新
+
+R5 legacy_pb_pooled_s3407_formal_20261114_v5于2026-11-14T02:08:07.284731UTC在CCI唯一准入，AFS125,142,462,464B，operator2645124/child2645127/GPU worker2645174。jobc37042d7fdc2fc926f47dc8ae7f77aad26f60394824dbbe9d34a6931eee13a8c、config6ad0a9af10feb8e2ed9df117bd6d590033361b4250bbd39d8bb3c56a4ca41070，controller8465bf6ea87fa2e4badfd8ff780a85abbd924b904e1de3e639f7992e4dd106c7，source1055 manifest11d283fd…及helper67f23e90…均精确。只有output_dir/resume/run_steps=190变动，parent66→target256，全局12000/seed3407/名义batch128及shared recipe d7ea9a84…不改；5400+180+900=6480秒、预约2GPUh，新192GPUh/绝对截止及旧关闭账不变。
+
+02:48:47UTC快照确认数据恢复epoch0/batch1056/sample_offset8448，并已通过load后state重新哈希、实际进入后续训练；日志最高step160/12000，GPU49,480MiB，梯度有限。原生P/ITER59_R5_LOG_SNAPSHOT_V2.log及本机同名SHA75303e56e44b574b78a4c80d1afd1ab56be7fdfce664088a3f8129b03ca075ba，是带时间的活动前缀，不是完整训练终态；最近完整持久checkpoint仍是66，不能把日志进度当256保存成功或新SR。
+
+另0GPU只读读取既有scheduler.bin：step2 last_epoch2、LR4.994444444444444e-7；step66 last_epoch66、LR1.1148333333333338e-5，均保留warmup600、base LR1e-4、后续cosine11400，训练日志step120 LR2.01e-5继续延伸。此前4.994e-7是step2恢复时LR，不能误当step66学习率；不存在重开warmup或替换全局12k预算的证据。
+
+### 23.355 事前冻结一次R5→R6自动续接，保护并发和未知状态
+
+02:39:01UTC、R5仍训练且256终态未产生时，冻结R6 conditional plan SHAe2d8d5f81affa184ae2f5ea509def65f94c47bd4777afdebc1f510af6a7562fb。它只在R5 complete/0、step256及全部checkpoint审计通过后，尝试一次同source/recipe的256→640操作段（新增384更新）；这是按运行效率预定的保存端点，不是性能选步或改变最终12k评测。0GPU真实sampler/Accelerate1.12控制流预审256/epoch1/b1104→640/epoch3/b1264通过，跨epoch边界global374/561；实际state仍须复核。
+
+本机隐藏follow-up PID6452于02:40:06UTC启动，最多7200秒只读等待，当前mutation_calls0、新GPU0。只有已知父终态后才发一次native审计/准备/准入；任何未知或回执丢失不重试，先查R6 root、parent audit和admission。R6单次训练9000+退出180+验真900=10080秒、预约3GPUh，仍小于4小时；不假设新平台窗口，64GiB/512MiB和原192GPUh/截止不变。读取execution/20261114_iter59/R5_TO_R6_FOLLOWUP_V1/current.json及P/ITER59_R6_CONDITIONAL_OUTCOME_V1，禁止agent另建同一R6或将等待程序当作活跃GPU任务。原R4完整未启动注册保留，旧watch已明确停止。
+
+### 23.356 完整step2恢复包只读备份与材料/认证状态
+
+02:26:08UTC本机隐藏0GPU backup PID64268开始完整step2 weight+DeepSpeed state备份。原生先全SHA复核weight566c6170…和state-tree a3f3d594…，再直接stream TAR到本机，额外AFS大型临时文件0；随后需逐成员验真并独立展开完整raw恢复树，只有两份全SHA都通过才记完成。当前状态native_hashing_or_streaming、记录时流入9471039488B，不能宣称两副本或释放容量。原weight/state、全部12000/14000/3k/CAS/raw/unknown不修改，不创建cold locator，不删除或迁出任何新checkpoint；未来保留策略仍无批准。
+
+ACP02:52:14UTC实际重新导航后仍落signin IAM，未读input值/未存登录表单，0创建/0未知；正常finish closed0/forcedCleanupfalse，原请求不重复。v40实证/演练回复、两完整PDF/ZIP全部未改，37原字段+新study六字段继续null；工程进展不放行为效果、repair或SR。元数据打包的一次本机PowerShell转义/随后missing-file调用失败发生在读取执行前，模型训练未受影响，已改为UTF8脚本文件方式并成功保存快照；不计为新policy失败或GPU实验。
