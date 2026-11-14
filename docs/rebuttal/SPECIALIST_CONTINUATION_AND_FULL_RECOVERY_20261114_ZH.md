@@ -29,3 +29,12 @@ Windows对仍打开文件的长度曾显示0，但实际原生stdout计数已增
 ## 材料边界
 
 v40实证回复29表、17评论块、20项映射及两套完整论文工程保持。原37实证字段和新specialist6结果仍未测，无新SR；旧41对shared0–0、13unknown及负结果均保留。新训练、CPU控制流程、备份进度和冷存容量不能代替正式12000及100对评测。ACP07:21实际导航仍为IAM认证页，原登录请求不重复，没有新建或未知ACP任务。
+
+
+## 07:57 UTC终态更新：66原窗口失败与独立续尾
+
+原66 stream已于07:52按9000秒时限known failed，38,020,628,480B前缀和全部原件保留，原生也有BrokenPipe终态。priority已07:52:47恢复4/4只读reader、704.261499秒，无GPU signal或旧clock延长。原冷存PID56224对66已知跳过/mutation0，继续只等256。
+
+独立66恢复V2/PID61956从07:53运行，路径 `storage/20261114_STEP66_FULL_STATE_v2`，新3600秒stream/native1800秒。新archive已逐字节复制并核对原prefix SHA `3b84abfacd206cc999771e868491c9e4ecf9efc0dd599f18db6f72a0a62c54df`，再生TAR必须prefix SHA相同才发送缺失尾部；完整TAR/raw两副本全SHA通过前不计恢复、冷存或容量。原V1不覆盖、不重启。
+
+独立66冷存V2/PID12732从07:54运行，原5400秒，只等上述V2；已断言原协调66为known failed skip/mutation0，不拥有256。它仍调用相同严格native helper，全部full-copy/source/stat/noFD/非parent/永久locator/intent条件成立后最多一次操作。未知结果先只读核销，旧PID56224、12732、61956、64140均不能重复启动。R7最新07:57日志1220，完整保存仍640；未完成12000或100对。

@@ -3766,3 +3766,12 @@ CPU已终止，不再启动相同资格。R7仍为唯一GPU训练/target1280，�
 唯一Windows可逆冷存协调器PID56224于07:43启动、原5400秒，每个66/256最多一次native调用。只有两完整副本再核、原生9件全SHA/stat、非当前parent/无FD、永久locator/helper/pointer/intent均就绪后才移出3个冗余热存；6小metadata与所有内容保留，不执行未批准的不可逆checkpoint保留策略。当前只是有条件准备，未见成功receipt不能计容量或冷存完成。详见SPECIALIST_CONTINUATION_AND_FULL_RECOVERY_20261114_ZH.md，所有程序/计划/身份在Git外execution/20261114_iter63。
 
 07:45日志R7已1180/12000，唯一H100/49,572MiB、实际640恢复仍成立，最近完整checkpoint640/target1280；AFS实测65,470,361,600B，低于下一段64GiB准入，不能靠逻辑冷存字节推算可用量。ACP07:21实际导航仍IAM，0创建/0unknown，原请求不重复。v40/37+6 null、41对0–0/13unknown、全部负结果保持；没有新的正式SR或评测完成。
+
+
+### 23.366 原step66 stream已知超时保留；独立prefix验真续尾V2
+
+原05:22的9000秒stream于07:52:25.873UTC known failed/9002.703秒，完整保留38,020,628,480B前缀及全部AFS原件；原生07:52:44也记录BrokenPipe failed/1，未把它改写成成功。priority于07:52:47 complete_resumed/704.261499秒，原4只读reader全部恢复，无GPU signal/旧clock变更；step256继续原5400/7200秒窗口。原冷存协调器56224对step66已known-backup-failed跳过、mutation0，仍只等step256，不能复活旧copy或重复66冷存。
+
+独立0GPU tail rescue V2/PID61956于07:53:32开始，原V1失败、前缀和时限全部保留，新stream限3600秒/native1800秒。前缀已复制到新archive并两次全SHA匹配3b84abfacd206cc999771e868491c9e4ecf9efc0dd599f18db6f72a0a62c54df，原前缀stat不变。新原生只读重建同9件TAR，必须先验证完整再生prefix SHA才向本机发送任何尾部；最后还需全archive SHA、9成员SHA和独立raw第二副本。当前是native hashing/prefix verification，未称恢复成功/两副本/容量释放；TAR期望余量约0.495GB不当作实际传输收据。实际scope在storage/20261114_STEP66_FULL_STATE_v2和P/STEP66_TAIL_RESCUE_ITER63_V2，程序和计划在execution/20261114_iter63。
+
+独立66冷存协调V2/PID12732于07:54启动、原5400秒，只等新的V2完整备份，并先确认原协调66为已知跳过/mutation0；不接管256。原生冷存仍同一严格helpers/固定checkpoint身份，两副本再次全SHA、原生全SHA/stat/noFD/非当前parent和永久locator/intent都必须过后才可一次操作，未知动作不重试，不执行不可逆保留策略。07:57日志R7实际1220但最近完整仍640/target1280，AFS65.034GB，原37+6及v40保持，没有新SR。
