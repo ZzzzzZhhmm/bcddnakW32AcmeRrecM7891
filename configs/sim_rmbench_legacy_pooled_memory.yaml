@@ -1,0 +1,15 @@
+# @package _global_
+
+defaults:
+  - sim_rmbench
+  - _self_
+
+# Audited original-v3 specialist control. Load only independently trained
+# legacy phase-free pooled weights; shared-stage Pooled weights are incompatible.
+model:
+  _target_: fastwam.research.legacy_pooled_memory_prior.create_legacy_pooled_memory_prior
+  retrospection:
+    loss_retrieval: 0.0
+    loss_effect: 0.0
+    loss_gate: 0.0
+    loss_adaptation: 0.0

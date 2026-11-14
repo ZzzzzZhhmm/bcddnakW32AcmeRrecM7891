@@ -126,3 +126,17 @@ R5于2026-11-14T03:16:30.524961+00:00 complete/0，4102.885685593秒，实际新
 
 
 后续03:52:25UTC只读核查：R6日志明确显示parent256真实load_state、dataloader cursor恢复与run_target640/384新增更新，并已执行到日志step290（03:49UTC；日志进度不是持久checkpoint）。H100实际计算进程2648971、49,480MiB；source1055逐文件不变。最新完整已保存checkpoint仍256，目标640尚未完成；AFS可用79,476,994,048B。见Git外execution/20261114_iter59/ITER59_CAMPAIGN_PHASE_LIVE_V5.json。
+
+
+## iter60在线评测前置CPU资格
+
+
+### 23.358 固定原demo动作表示、真实保存边界及legacy online配置的0GPU资格
+
+在R6继续训练时，使用同一1055/11d283fd冻结source开展只读CPU检查（新GPU/模型构建/任务命令/正式contract/SR均0）。已封存的原训练index0对应dataset0/episode270/frame0，原action tensor SHA6086604f…；直接读取同一parquet首32条真实动作，按原RobotwinQposZScore前向编码及反向解码，最大误差分别0/5.96046448e-08，均小于2e-6。此固定记录支持训练与旧在线action仿射表示一致，不支持物理成功/完整adapter正确；物理初始seed仍未核实，严禁把episode270当seed270或擅自teacher replay。
+
+从真实冻结trainer AST提取原periodic/final保存控制流，4例通过：1999最终1份、2000最终复用periodic仍1份、跨2000再以2048终止需2份、12000最终复用仍1份。没有真实写checkpoint或修改trainer。下一段若经过2000，应预先固定在2000结束或实测足够双份峰值，不能降低64GiB准入。实际原生产derive_online_query_seed对固定100-case roster的0/4/1496共300 query检查通过：各case使用事前paired_policy_seed，独立CPU generator在无关全局RNG消费后Gaussian逐元素相同，300种子无冲突。这里仅证明seed函数/独立generator，不称Full/Pooled真实sampler配对通过；未来每case online contract应绑定该policy root，训练seed3407与物理seed独立，不改roster de4dc7de…。
+
+新增独立configs/sim_rmbench_legacy_pooled_memory.yaml，仅指定已训练中的原v3 Pooled factory及四项移除loss=0。真实旧deploy composer（SHAbaabaeca…）的函数原文通过AST提取执行，Full/Pooled解析只相差factory+四loss这5项；data/camera/state/action/history/inference配置全一致，prefix4/history chunk4及policy root保持。标记路径仅用于0GPU配置工程检查，未制造或绕过正式contract/attestation，完整模型加载与online rollout资格仍须后续补齐。活动训练source不增加此文件、不变更11d283fd身份。
+
+CPU intake V1的AST selector误选了两个同条件早退，V2 fake logger缺accelerator属性；两次已知工程失败原样保留，V3仅修harness后04:07:22UTC complete/0、13.372609秒。配置资格04:09:19UTC complete/0、1.688297秒。原件/失败/程序/解析配置53成员，原生和本机逐成员验真：TAR SHA2564a34e7c1cec58584c0e296581d9acf24b4a6691265524ece7ef4f35ce60af（276480B），manifest22d89f5a95a810d8b15724a9f1c02b8f1707eb97606a8afc9cc5e0d1b7f6f5f0。AFS P/ITER60_CPU_RAW_V1.tar，本机tmp/rebuttal/execution/20261114_iter60/CPU_RAW_VERIFIED_V1。04:10UTC R6日志已380/epoch2，实际GPU进程2648971/49,572MiB，最近完整保存仍256、target640未完成；AFS79,460,065,280B。37+6未测结果继续null，v40回复/PDF/ZIP不变，旧41对0–0/13unknown及负结果保持。step2完整备份仍只读进行，不计完成、不删除新checkpoint。
