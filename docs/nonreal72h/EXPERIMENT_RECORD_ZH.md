@@ -3751,3 +3751,18 @@ CPU V2于2026-11-14T06:40:48.371502+00:00 complete/0，591.220980132秒，原始
 完整输出、源代码、冻结配置及逐项证据1078成员，两端逐成员size/SHA验真：TAR 4f8b581e49119e82128f97aa4e02303e21a697784fae19b20092a76300b8e06d（11929600B），manifest 2d28f1624a786b0a423dfc9b3090d3cf286363b943a14a9406d0399597d1ad76；原生P/ITER62_PARALLEL_RAW_V2.tar，本机execution/20261114_iter62/CPU_V2_RAW_VERIFIED_V1。小包不含12GB模型checkpoint payload；其原生文件仍受保护。相关CLI/test已commit并push/native offline FF至3da94cdd07fc95620af066f3d2536b682c527d0d，字节与CPU1056-file manifest75dbfbad…中的两个overlay完全一致；整个CPU组合source由完整manifest定义，不声称等于该Git提交的纯checkout。
 
 CPU已终止，不再启动相同资格。R7仍为唯一GPU训练/target1280，最近完整保存640，实际日志进度见06:47快照；step66只读全备份继续原9000秒bound/不提前计容量。浏览器备用会话核查的Cua和Sky均在初始化时因kernel-assets路径不存在(os error3)失败，尚未观察到任何其他browser的认证状态、未作Windows UI输入或读取登录值；不能据此称其他会话不存在。已有Tabbit06:19实际IAM状态保持，原请求不重复。合作专家目录本次检查最新mtime仍11月9日，无新材料，不重复采纳或追加冗余实验。v40回复/两PDF/ZIP未改，37+6仍null，原41对0–0/13unknown与全部负结果保持。
+
+
+### 23.364 下一操作段1280→2000预注册与0GPU生产游标检查
+
+在R7未完成前，固定下一操作段1280→2000、720新增更新以复用periodic2000，global12000/seed3407/source1055/11d及固定PB100名册不变。真实生产sampler与Accelerate1.12.0于07:12:18UTC完成0GPU游标检查，1280/epoch6/b2528→2000/epoch10/b2080，四个epoch尾部1309/1496/1683/1870；没有模型更新、native命令或新SR。6个control文件仅语法和元数据预审，不冒称训练测试。计划485d9c1b…于07:16双端发布核对时R7仍resuming_or_training、R8 root不存在、0新GPU。唯一Windows接续器PID64140自07:17运行，原7200秒/一次mutation上限不变，必须等真实1280 complete、完整state独立审计、64GiB、GPU空闲与原预算/截止后才调用；未知动作只读核销，不重复创建。
+
+### 23.365 完整step256无损字节复用备份及有界可逆冷存准备
+
+07:27:50UTC，step256原生9文件38,515,456,964B逐块/完整SHA核验complete/0、239.553662秒，与R5原完整state-tree d299e25b…一致，manifest36f807ef31dd7518e23eeb8ab798a206267fc3d4f80ead3dedd3273efee3b237。原本机完整step2的9文件再次全SHA验证（39.405999秒），精确复用20,115,915,267B，需传18,399,541,697B；PID34832于07:29开始0GPU四路只读传输，原7200秒总bound、各reader5400秒，不把传输中计两副本。最终仍需完整standalone raw/TAR两份全SHA，base内容不改。没有AFS大临时payload或checkpoint删弃。
+
+原step66 stream仍用05:22/9000秒原bound，不延长。共享带宽下07:41启动唯一原生priority PID2657492，只暂停经pid/create_time/cmd/SHA核实的4个只读step256 reader，原900秒内或step66终态后finally恢复，GPU进程未被signal，各旧clock不改。Windows对打开文件的初始长度0导致误判“阻塞”，原生实际stdout写入计数与随后0.78–0.96GB/路观测否定了该判断；OPEN_FILE_PROGRESS_CORRECTION_V1保存修正。V1探针缺psutil在SSH前失败；V2两种普通/隐藏进程方式各1MiB均exit0/相同SHA，不是模型或收益实验。
+
+唯一Windows可逆冷存协调器PID56224于07:43启动、原5400秒，每个66/256最多一次native调用。只有两完整副本再核、原生9件全SHA/stat、非当前parent/无FD、永久locator/helper/pointer/intent均就绪后才移出3个冗余热存；6小metadata与所有内容保留，不执行未批准的不可逆checkpoint保留策略。当前只是有条件准备，未见成功receipt不能计容量或冷存完成。详见SPECIALIST_CONTINUATION_AND_FULL_RECOVERY_20261114_ZH.md，所有程序/计划/身份在Git外execution/20261114_iter63。
+
+07:45日志R7已1180/12000，唯一H100/49,572MiB、实际640恢复仍成立，最近完整checkpoint640/target1280；AFS实测65,470,361,600B，低于下一段64GiB准入，不能靠逻辑冷存字节推算可用量。ACP07:21实际导航仍IAM，0创建/0unknown，原请求不重复。v40/37+6 null、41对0–0/13unknown、全部负结果保持；没有新的正式SR或评测完成。

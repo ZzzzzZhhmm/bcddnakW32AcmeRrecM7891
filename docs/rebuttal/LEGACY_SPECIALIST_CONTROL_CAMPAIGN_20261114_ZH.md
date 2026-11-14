@@ -200,3 +200,10 @@ CPU V2于2026-11-14T06:40:48.371502+00:00 complete/0，591.220980132秒，原始
 完整输出、源代码、冻结配置及逐项证据1078成员，两端逐成员size/SHA验真：TAR 4f8b581e49119e82128f97aa4e02303e21a697784fae19b20092a76300b8e06d（11929600B），manifest 2d28f1624a786b0a423dfc9b3090d3cf286363b943a14a9406d0399597d1ad76；原生P/ITER62_PARALLEL_RAW_V2.tar，本机execution/20261114_iter62/CPU_V2_RAW_VERIFIED_V1。小包不含12GB模型checkpoint payload；其原生文件仍受保护。相关CLI/test已commit并push/native offline FF至3da94cdd07fc95620af066f3d2536b682c527d0d，字节与CPU1056-file manifest75dbfbad…中的两个overlay完全一致；整个CPU组合source由完整manifest定义，不声称等于该Git提交的纯checkout。
 
 CPU已终止，不再启动相同资格。R7仍为唯一GPU训练/target1280，最近完整保存640，实际日志进度见06:47快照；step66只读全备份继续原9000秒bound/不提前计容量。浏览器备用会话核查的Cua和Sky均在初始化时因kernel-assets路径不存在(os error3)失败，尚未观察到任何其他browser的认证状态、未作Windows UI输入或读取登录值；不能据此称其他会话不存在。已有Tabbit06:19实际IAM状态保持，原请求不重复。合作专家目录本次检查最新mtime仍11月9日，无新材料，不重复采纳或追加冗余实验。v40回复/两PDF/ZIP未改，37+6仍null，原41对0–0/13unknown与全部负结果保持。
+
+
+## iter63：下一操作段与完整存储接续
+
+R7仍唯一CCI训练，07:45实际1180但完整保存仍640；新R8事前固定1280→2000、720更新，复用periodic2000，不换global12000或测试样本。真实生产sampler/Accelerate CPU游标目标2000/epoch10/b2080已验，计划485d9c1b…已发布且未创建R8 root。Windows唯一一次接续PID64140/07:17起7200秒，须先known1280 complete/full-state audit、64GiB和GPU空闲。原预算、绝对截止、平台余寿未知与所有旧失败保持。
+
+AFS实测65.47GB低于下一段门槛，0GPU完整恢复副本与可逆冷存按独立bounded流程推进：66原9000秒copy；256新9件manifest36f807ef…/state d299…，复用20.12GB、传18.40GB；priority2657492最多900秒只协调只读reader、不signal GPU或延长任何clock；冷存PID56224每项最多一次，双完整副本再核和原生保护全部过后才释放冗余热存，所有内容永久保留。未知调用只读核销，未成功不计容量。详见SPECIALIST_CONTINUATION_AND_FULL_RECOVERY_20261114_ZH.md；没有新SR，37+6字段继续null，v40不变。
