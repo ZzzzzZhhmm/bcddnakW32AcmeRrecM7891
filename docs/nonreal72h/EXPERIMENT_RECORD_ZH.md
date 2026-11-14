@@ -3740,3 +3740,14 @@ CPU V1于06:13:15唯一准入，模型实际构造后于06:19:23 failed/1、0 po
 另一次先后顺序错误：prepare返回“仍运行”时，曾提前执行native测试（实际发现0条）和准入（读取尚不存在的job.json即失败，尚未写intent/启动模型）。0测试不计通过，错误单独保存；随后等待prepare明确exit0才逐项测试、准入。修正后新增严格公共接口回归：未授予声明SHA必须拒绝、原loader失败原样保留、路径型公共API可正常调用；合计6项本机/原生Linux均通过（0.629s/1.161s）。这些边界测试不声称完整模型已经加载。
 
 已知V1终态核销后，CPU V2在同checkpoint/输入/协议上，仅改上述caller和3个新回归，manifest75dbfbad…/1056，job ba39677aa1b0e45e7f8b8d8ed971ee67c4868bb1c1df7009a37cd537df14541f，于06:30:53UTC实际准入，operator PID2654495、0GPU、cgroup可用123976818688B。完整加载和sampler仍须读该V2真实终态，不复活V1、不混入其0生成原件。未使用工程一步权重作为初始化，未改变任何训练/eval样本、阈值或最终12k选步。step66原只读备份继续以原9000秒bound运行，不扩展或重置；若发生已知部分流失败，保留原件并从同9-member manifest校验prefix后准备独立尾段续传，不覆盖失败收据或重复未知调用。ACP06:19:22实际新导航仍IAM auth，原请求不重复。v40和37+6未测字段不变，无新SR。
+
+
+### 23.363 CPU V2完整模型加载与一次事实输入生产sampler完成
+
+CPU V2于2026-11-14T06:40:48.371502+00:00 complete/0，591.220980132秒，原始输入/冻结source前后不变。实际构造6773524296参数模型，严格公共WARM入口加载Pooled640/b32a3bdc…并授予相同SHA；9类retrospective模块keys和值（按声明评测dtype）逐项一致。随后在封存原Press Button q8真实图像、文本、proprio及因果历史上执行且仅执行一次生产FastWAM sampler，输出有限[32,14]动作；原Gaussian逐元素一致，source与conditioning的Full-null-Full重复一致，null候选tokens为零、共用8个history tokens不变，实际pool输入梯度有限，历史/proprio/query梯度非零。这里Full/null重复检查是source/conditioning层，未额外生成两条完整policy动作序列；没有native task命令、optimizer更新或CUDA初始化。
+
+这关闭了“已保存legacy Pooled完整权重可严格加载并在真实输入运行生产sampler”的实现资格；它是prefix640的CPU工程验证，仍不是最终12k权重、RMBench完整online contract/物理rollout或性能/效率结论，不能用于替换37原字段或新study6个结果。591.221秒包含多次完整checkpoint/输入SHA及CPU模型构建，不能写成部署单次时延。实际full_model_load和sampler1/1已完成，V1失败0生成保留，两者不混并。
+
+完整输出、源代码、冻结配置及逐项证据1078成员，两端逐成员size/SHA验真：TAR 4f8b581e49119e82128f97aa4e02303e21a697784fae19b20092a76300b8e06d（11929600B），manifest 2d28f1624a786b0a423dfc9b3090d3cf286363b943a14a9406d0399597d1ad76；原生P/ITER62_PARALLEL_RAW_V2.tar，本机execution/20261114_iter62/CPU_V2_RAW_VERIFIED_V1。小包不含12GB模型checkpoint payload；其原生文件仍受保护。相关CLI/test已commit并push/native offline FF至3da94cdd07fc95620af066f3d2536b682c527d0d，字节与CPU1056-file manifest75dbfbad…中的两个overlay完全一致；整个CPU组合source由完整manifest定义，不声称等于该Git提交的纯checkout。
+
+CPU已终止，不再启动相同资格。R7仍为唯一GPU训练/target1280，最近完整保存640，实际日志进度见06:47快照；step66只读全备份继续原9000秒bound/不提前计容量。浏览器备用会话核查的Cua和Sky均在初始化时因kernel-assets路径不存在(os error3)失败，尚未观察到任何其他browser的认证状态、未作Windows UI输入或读取登录值；不能据此称其他会话不存在。已有Tabbit06:19实际IAM状态保持，原请求不重复。合作专家目录本次检查最新mtime仍11月9日，无新材料，不重复采纳或追加冗余实验。v40回复/两PDF/ZIP未改，37+6仍null，原41对0–0/13unknown与全部负结果保持。
