@@ -3842,3 +3842,18 @@ R8实际运行时间只能界定为2624.491515至3493.744733秒；按首次已�
 11月14日09:57实际重新导航并观察到authenticated任务列表与具体任务行，09:59:52再次核对通过；没有读取登录input值或凭据，正常finish保留原用户tab，0新创建/0unknown create。此前08:31 IAM是历史截面，不能再据其断言仍未登录或重复发登录请求。首屏只核对可见10项，不声称完整30页全量任务审计；progress订阅出现HTTP2错误，但实际列表可读，不把订阅失败当创建结果。后续独立Full参考评测和CPU合同资格可使用ACP，必须先冻结源码/资格及核销已有同名动作，GPU仍只用闲时。
 
 本轮均为运行恢复、完整性和存储操作；没有新增SR、最终12000或固定100对结果。原37实证字段及specialist6字段仍null，v40实证29表/17块/20项回复与完整论文/演练版本保持，原41对0–0、13unknown及不利机制结果未被替换。正文仍独立带表、作者第一人称、无pending/作者提醒；理想数值仅在独立演练版本，不进入实证。
+
+
+### 23.376 R9真实1280恢复后持续更新与640完整恢复备份
+
+R9已观察模型/optimizer/scheduler/RNG及epoch6/b2528完整恢复、load: step=1280，10:59原生核查持续更新至1420/12000，source1055/11d与job d6eb9ea6保持；最近完整checkpoint仍1280/target1780，不把日志当新持久状态或12k正式对照完成。原192GPUh/11月17日23UTC、单次12480秒与R8未知退出上界扣账保持。
+
+非活动640源9成员38,515,457,029B于10:39全块/全文件SHA完成，state-tree0b15bec45bb839b8f62c8e181fbe4ab5f4abdf9c5e78ad9ed735ec5f428aa82c，manifest a04b2dbc21ed99c0f227c7e3c4d3cdbced78c44f2c903ac59aed757dc4397f58。10:40:50只读backup PID49912按7200秒新窗口启动，复用20,115,915,267B、传输18,399,541,762B。base块索引沿用此前完整全SHA证明并重新核对九文件stat；不把它说成此次重新全读base，目标重建每块及最终raw/TAR仍须分别全SHA。10:55:55唯一640 cold coordinator PID2124/9000秒启动，最多一次、先两完整副本重验再原生全SHA/stat/非parent/noFD/永久helper及intent；原helper未覆盖。仍fetching时不可计两副本、冷存或释放；不可逆删除0。实际进程和最新状态读ITER66_NATIVE_LIVE_V1及两个本机current，不重复创建。
+
+### 23.377 首轮真实材料可提交与最终补证分开管理
+
+作者于11月14日明确要求立即启动首轮讨论，现已整理submission/20261114_round1：3份完整英文回复1282/1261/728词、8个不超过3500字符的粘贴块、17张独立可读表，覆盖原3reviewer20项原文绑定；总3271词，比v40的5069缩短约35%。感谢/认可点/第一人称、逐项回答及实际修订归纳已核对，正文无pending/作者提醒/身份/面向AC或理想值。原0/41、未知和不利机制结论未改写为正面结果；未完成新specialist比较明确随后单独更新。
+
+论文50页/主文10页和完整33项LaTeX ZIP直接复用同字节已验收实证v40：PDF a3a63311869fbe965df5b5afaa179dbf2912c8e8e36c96857ced627ca477c2d7，ZIP55220d496f0b331e4cc4bb04714ba3c259c142365ca75b14507cbe8ad49e9217；原完整工程编译/匿名/AI披露/引用/全页文本像素证明保持，0undefined/0overfull，45既有font fallback单独记录。不改PDF而伪称新编译。首轮first_round_ready=true不等于all_scientific_gaps_closed，37+6字段仍null、新SR0，原稿报告与新实测分别标注。未发布评论或上传正式PDF。
+
+11月14日官方Author Guidelines已读实页核对主文10页、讨论期多次修订及总评论数不限但单条有上限。OpenReview另一次可选只读检查PAGE_ATTACHMENT_TIMEOUT/codeDispatched=false，不能推断登录或review更新，原程序/错误/正常恢复finish保留、原用户tab保留；仍用11月13日14:30UTC验真的30原字段/20项。提交准备初版出现大小写References断言错误，发生在已验真复制后、未改PDF或发布；V2核对同页AI/ethics exempt section与大写REFERENCES后完成，不是科学/论文失败。

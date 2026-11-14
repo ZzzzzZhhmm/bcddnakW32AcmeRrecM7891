@@ -1,6 +1,6 @@
 # 完整训练checkpoint的永久可恢复冷存
 
-本记录区分两件事：完整内容已保存到两份本机恢复副本后，释放冗余AFS热存；以及未来新快照的不可逆舍弃。当前只执行前者。`CHECKPOINT_RETENTION_PROPOSAL_20261114_ZH.md`中后者仍待作者答复。
+本记录区分两件事：完整内容已保存到两份本机恢复副本后，释放冗余AFS热存；以及后续新操作性快照的不可逆舍弃。作者已明确批准`CHECKPOINT_RETENTION_PROPOSAL_20261114_ZH.md`，授权和范围见iter65记录，不再重复索取同一批准。以下冷存操作始终保留全部checkpoint内容；一般保留策略的批准不能代替逐项验真、实际后继恢复及保护检查。当前不可逆舍弃数为0。
 
 ## step2：完整内容永久保留，三份热存payload已释放
 
@@ -32,4 +32,6 @@
 
 ## step66及后续
 
-step66两份完整恢复副本已开始只读采集，以`tmp/rebuttal/storage/20261114_STEP66_FULL_STATE_v1/current.json`的真实终态为准。未完成全SHA验真前，不计备份完成或可释放容量。新checkpoint的不可逆保留策略没有获准，不能依据本文丢弃内容；已核实的完整checkpoint和原件保护要求保持。
+step66原V1在9000秒到期后失败，原38.02GB前缀及失败收据保留。独立V2已补齐、两份完整raw/TAR全SHA通过并于08:16UTC完成可恢复冷存；恢复包为`storage/20261114_STEP66_FULL_STATE_v2`。step256也于08:39完成两完整副本、08:44完成冷存，原生永久locator分别位于`checkpoint_cold_storage/step66_full_20261114_v1`和`step256_full_20261114_v1`。旧copy/协调器均已终止，不能重启。
+
+step640新只读备份于10:40:50UTC启动，`storage/20261114_STEP640_FULL_STATE_v1`，PID49912、7200秒原窗口；源9成员38,515,457,029B及state-tree0b15bec4已全SHA核对。两完整副本尚未完成前不计容量或移动热存。新独立cold coordinator/PID2124于10:55:55启动，9000秒、只负责640、最多一次原生操作；只有两完整副本重验、原生全SHA/stat/noFD/非当前parent和永久索引/helper/intent全部通过后才释放三个冗余热存payload，6小metadata和全部内容保留。640专用恢复helper有独立SHA与允许run映射，不覆盖原step2/66/256 helper。未知动作先只读核销，不重复调用。
