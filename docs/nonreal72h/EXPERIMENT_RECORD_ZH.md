@@ -3703,3 +3703,27 @@ R5于2026-11-14T03:16:30.524961+00:00 complete/0，4102.885685593秒，实际新
 新增独立configs/sim_rmbench_legacy_pooled_memory.yaml，仅指定已训练中的原v3 Pooled factory及四项移除loss=0。真实旧deploy composer（SHAbaabaeca…）的函数原文通过AST提取执行，Full/Pooled解析只相差factory+四loss这5项；data/camera/state/action/history/inference配置全一致，prefix4/history chunk4及policy root保持。标记路径仅用于0GPU配置工程检查，未制造或绕过正式contract/attestation，完整模型加载与online rollout资格仍须后续补齐。活动训练source不增加此文件、不变更11d283fd身份。
 
 CPU intake V1的AST selector误选了两个同条件早退，V2 fake logger缺accelerator属性；两次已知工程失败原样保留，V3仅修harness后04:07:22UTC complete/0、13.372609秒。配置资格04:09:19UTC complete/0、1.688297秒。原件/失败/程序/解析配置53成员，原生和本机逐成员验真：TAR SHA2564a34e7c1cec58584c0e296581d9acf24b4a6691265524ece7ef4f35ce60af（276480B），manifest22d89f5a95a810d8b15724a9f1c02b8f1707eb97606a8afc9cc5e0d1b7f6f5f0。AFS P/ITER60_CPU_RAW_V1.tar，本机tmp/rebuttal/execution/20261114_iter60/CPU_RAW_VERIFIED_V1。04:10UTC R6日志已380/epoch2，实际GPU进程2648971/49,572MiB，最近完整保存仍256、target640未完成；AFS79,460,065,280B。37+6未测结果继续null，v40回复/PDF/ZIP不变，旧41对0–0/13unknown及负结果保持。step2完整备份仍只读进行，不计完成、不删除新checkpoint。
+
+
+### 23.359 R6 complete640、完整step2双备份及可恢复冷存
+
+R6于2026-11-14T05:13:00.574763+00:00 complete/0，6676.052649107秒、384新增更新/global640；weight SHAb32a3bdc242ce83c4c43d4da091d14479671c8f21d9c6c41b7426e04a8b25213，parent256 lineage/shared recipe/source1055/11d283fd前后一致，cursor epoch3/b1264。完整模型/optimizer/scheduler/RNG已写出，独立parent640 full-state audit正在进行；tree SHA尚不先填。该训练prefix不是最终12000对照或新SR。新campaign已完成累计16264.839526303113秒，旧144/0.75关闭账不变，192GPUh及11月17日23UTC截止不重置。
+
+此前0GPU step2完整备份已04:21:05UTC complete，9成员、38515456772 payload B、两份完整本机raw/TAR；TAR 38515486720B、SHA7a14b0e5c616c89c99e89df5d174a55db7a778f449058ba53d0994bc2e4e240c，state-tree a3f3d594…、weight566c6170…保持。两副本位于同一本机物理盘，此处“两份”仅指两个完整文件表示，不声称不同失效域。iter61再次全量SHA重读两副本，proof SHAffb05ced1e3d968550ef82bd0668217cc619a0304cd0b846a86cdbe1798fd664；原生9件全SHA/stat再审209.652617秒通过。
+
+按此前已授权的无损可恢复冷存流程，先建立永久full-manifest/双副本索引/恢复helper及原路径旁pointer，再检查无活动FD/不被当前parent使用，于05:14:44UTC仅释放R2已完成step2的三份冗余热存大文件，共38515399733逻辑B；其完整内容在上述两份永久副本中保留，6份小型原metadata仍在AFS，step66/256/640及所有原specialist12000/14000/shared3000/CAS/raw/unknown未动。这里不执行尚未批准的未来新快照不可逆舍弃策略。永久locator P/checkpoint_cold_storage/step2_full_20261114_v1/COLD_LOCATOR_V1.json SHA8de2c52ed11722a48840f74957ccae4306a321f124447a3b3d70b2b0f75bd3a8，helper SHA12648a18fef29a78222c594b4df1713971213c34a6562b2b202c26183ef2ed5e；完整路径、9件哈希、逐项释放收据和恢复staging路径均已保存。即时df缓存未刷新，不能按逻辑B推算可用容量；随后实际df显示76108910592B，重新满足64GiB。step2备份原current仍记录其04:21只读完成时现场，新冷存状态以独立收据和最新current_iteration为准。
+
+### 23.360 真实checkpoint角色metadata资格及下一操作段固定
+
+0GPU通过mmap读取真实原Full12000和新Pooled256的checkpoint metadata，调用实际原v3与新Pooled类的配置/schema验证器：正确角色2/2通过，错角色2/2被拒绝；05:13:27UTC complete/0、26.577122秒，未构造7b backbone、未初始化CUDA、未执行policy query，未再次全量读取12GB权重SHA（绑定此前完整权重证明与当前stat/attestation）。这只证明角色schema/config不混用，完整online权重加载、正式每case contract及sampler资格仍须补齐，不能写成online rollout或SR。
+
+下一R7操作性保存端点640→1280、640更新在R6已知终态前发布（05:10:49观察parent resuming_or_training），plan SHA9b2475c4a6cb03ddb2b06d13ebf48690463949047e93d2fcd4c3c1ef49563441；真实sampler/Accelerate1.12的CPU游标测试已通过，预计1280/epoch6/b2528，跨748/935/1122三epoch边界，尾batch不声称完整128。11400训练+180退出+900验真=12480秒单次bound、3.5GPUh预约，仍小于4h；不创造新allocation clock，不改12k/scheduler/训练数据/roster。正式准入仍须parent640全审、64GiB实际free与GPU空闲，当前启动结果必须读唯一R7 outcome/runner，不能由本段计划推断。ACP05:02:20UTC实际新导航仍signin IAM，input值/表单快照未读未存，0创建/0未知，正常finish保留用户tab，原请求不重复。
+
+
+### 23.361 parent640全审、唯一R7实际准入与step66只读备份
+
+parent640 full-state audit于05:20:31UTC complete/0、257.211185秒；tree SHA0b15bec45bb839b8f62c8e181fbe4ab5f4abdf9c5e78ad9ed735ec5f428aa82c，global640/epoch3/b1264/scheduler640、五类RNG键齐全。R7完成source1055逐文件身份、同shared recipe及Hydra检查后，仅一次实际准入于05:21:16UTC，operator PID2652395，job SHAe371f49ea5613ca368494e55c52a65b06cdc1c260284413e16c02d1c3f71cee4，config550c5dc5…；parent640→target1280/新增640更新，11400+180+900=12480秒bound、3.5GPUh预约，phase192GPUh/绝对截止不变，不假定新平台窗口。05:25实际GPU进程2652445/13,618MiB正在初始化，尚未在日志看到实际parent640 load_state，不把进程启动当恢复完成或1280终态。准入时AFS74,773,770,240B，05:25实测72,757,465,088B；原step2内容永久双副本、原66/256/640热存保护。
+
+R6完整小原件+原始1055 source、parent640全审、R7冻结注册/初始化观测、checkpoint角色metadata资格及可恢复冷存索引/收据共1104成员，原生和本机逐成员size/SHA验真：TAR bc55c73586e42cae630f6f9574f1880f2172c1c5de19cf68e42750b5ea95f476（8017920B），manifest 7cf71619d362f705d926fe95d15f35b003f14dc420421ec561396304a93c38a9；原生P/ITER61_STEP640_RAW_V1.tar，本机execution/20261114_iter61/STEP640_RAW_VERIFIED_V1。该小包不含任何38.5GB完整模型/optimizer payload，不能与永久完整备份混淆。
+
+本机0GPU step66完整只读备份于05:22:23UTC启动，PID1756/SSH55692，native full hash后直接stream到本机，不产生额外AFS大型临时文件；新采集bound9000秒，当前未完成、不计容量，原生checkpoint66不改动。读取storage/20261114_STEP66_FULL_STATE_v1/current.json；不要重复启动。完整step2恢复路径另记docs/rebuttal/FULL_CHECKPOINT_COLD_RECOVERY_20261114_ZH.md。37原字段+新study6字段仍null，v40回复/论文/ZIP未改，角色metadata2+2与游标CPU通过均不作为效果、修复或SR数据。
