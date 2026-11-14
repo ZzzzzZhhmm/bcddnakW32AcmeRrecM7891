@@ -3799,3 +3799,21 @@ AFS在R7完整保存后实测仍低于下一段64GiB；唯一接续64140按原72
 新增stdlib recovery_container.py保存完整文件recipes、对象SHA及TAR边界，raw与TAR/header/padding均原字节恢复，每容器无外部base依赖。7项真实软件完整性边界测试Windows0.134秒全部通过；最初纳秒时钟粒度导致的单项harness失败保留，改为确定耗尽deadline及任何输出前准入，不改训练。固定PB2000/4000/6000三已完成冷存包，58文件89,955,012,703B，plan7c34a005…、冻结module2d9c75a3…；本机0GPU/7200秒/120GiB，拟创建2完整独立容器、两次全文件SHA及实际12GB导出检查。当前为准备，未计容器成功或释放原件；所有旧raw/TAR/部分传输/metadata和native locator保留。不执行不可逆保留提案，见SELF_CONTAINED_RECOVERY_CONTAINER_PILOT_20261114_ZH.md。
 
 ACP08:31真实导航仍IAM auth，已finish保留用户tab，0创建/0unknown，原请求不重复。正式R7 complete1280与原66可恢复冷存终态保持；原R8接续只等真实容量和独立1280 full-state审计，37+6 null/v40不变。
+
+
+### 23.370 完整step256可恢复冷存完成；独立1280全state审计与R8唯一准入
+
+step256于08:39:20UTC完成两份完整standalone raw/TAR，9件38,515,456,964B逐成员及TAR全SHA通过；TAR b7db7743cfcc5522609b4e204211b58dddf38d73a64b5aed3664337c2879fef8，manifest ae6e208a78bea9623854800c0090a0d1a422b6af105864795aa0386632b3ba7e。复用20,115,915,267B/实际读取18,399,541,697B，最终恢复不依赖base；6小metadata/全部checkpoint内容保留。原生08:44:23在再次全SHA/stat/noFD/非parent和永久locator/helper/intent之后完成3冗余热存可逆释放，逻辑38,515,399,733B，未执行不可逆保留提案。实际AFS随后刷新到约103.08GB，不能用unlink瞬时旧df误判容量。
+
+唯一原接续64140于08:44末已知容量/GPU空闲通过后只调用一次，独立完整1280 audit通过：weight3c7cef40…，state-tree9c35d933b0f4fcd2caf42b33e1f65a4b55bb7e546eca8fdb55e2828f47794a0e，epoch6/b2528/scheduler1280及RNG齐全。R8 legacy_pb_pooled_s3407_formal_20261114_v8于08:50:43UTC实际在CCI准入1280→2000/720新增更新，job a2556a20a4e9154ea8b0ea17f83efda85ad7fbb601086cb7f43ad8676c79e123，config4ad1809f6b8116254fa90876d6800f72911e304b3978f232da61f4edaa74914d；source1055/11d与model/data/loss/global12000不变，helper67f23e90/11400+180+900=12480秒/3.5GPUh预约不变，原platform余寿未知、不假定新window。接续器已退出0/mutation1/unknown0，不重启或另建R8。
+
+09:01实际GPU进程2661880/14,274MiB、初始化中，尚未看到parent1280真实load_state与cursor恢复日志，不能把准入或全state审计写成实际恢复已完成；等新日志再核销。累计26861.683004秒/192GPUh、11月17日23UTC截止和旧144/0.75关闭账保持，R8只在真实terminal后计实际秒。R7完整1280/已知前驱保持，无final12000或100配对结果。
+
+0GPU无损容器pilot/PID63360于08:46:48UTC实际启动、原7200秒/120GiB，不改变任何原件/旧locator；58文件/89,955,012,703B，先构建完整容器再逐文件验真，未complete不计两个容器成功。7项软件边界测试Windows0.134秒、Linux0.024秒均过；最初时钟粒度harness失败保留。source2d9c75a3…及tests00e45266…已提交推送并原生offline FF，运行使用独立冻结copy。原件仍全保留，37+6 null/v40/41对0–0/13unknown不变。
+
+
+### 23.371 实际解析配置与R8/两完整冷存的操作证据补齐
+
+V1的1086件包括完整冻结source/base configs、job及实际运行config SHA；为明确补齐独立解析后的YAML，新增V2而不改原包。V2外层30件含R7 pooled_resume640.yaml（550c5dc5…）、R8 pooled_resume1280.yaml（4ad1809f…）原字节、R8冻结控制入口/准入/状态与日志截面、1280完整audit及66/256永久恢复元数据，并嵌入原完整1086件V1包（1055 source）。两端逐成员size/SHA验真：TAR69a7b81513e9d5361b2a96b1fcb5799875bd83ead77eb74995437baf5d416e13（8,325,120B），manifestd21744f0d7ff32fe398dc83319c613940c4a0fe4cf7a8df8a5b7195a0f41a75f。不能将外层30与内层1086相加混称独立实验数。
+
+09:08截面R8仍初始化，parent1280 full-state audit真实通过但load_state/cursor实际恢复尚未观察；last persisted1280/target2000，实际AFS约103GB；37+6及v40保持。包不含大weight/state，原件和完整恢复容器均按独立路径保护；没有新SR。

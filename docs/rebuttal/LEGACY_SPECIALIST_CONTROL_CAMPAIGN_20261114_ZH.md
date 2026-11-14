@@ -215,3 +215,6 @@ iter63 07:57覆盖：R7日志1220但完整仍640；66原9000秒copy known failed
 ## iter64终态与存储连续性
 
 R7已08:17:54 complete/0、global1280（640新增更新），weight3c7cef40…、epoch6/b2528/source11d保持，1086小原件两端验真TARaa12e3d7…；大state/weight原生保护，独立1280 full-state再审仍待R8准备器，不称12000或100对完成。累计26861.683004秒/192GPUh与截止不改。唯一接续64140原09:17 bound、一次准入，等实际容量与GPU空闲，不复制。66独立恢复2完整副本与保护后冷存均complete，旧失败保持；256完整备份08:39 complete，其冷存看实际receipt。0GPU无损独立容器pilot仅处理3个已完成历史冷存包、保留一切原路径/locator，7项软件完整性测试过，未生成科学结果，读SELF_CONTAINED_RECOVERY_CONTAINER_PILOT_20261114_ZH.md。v40与37+6字段继续不变。
+
+
+iter64 09:01接续覆盖：256完整备份及可恢复冷存均complete，实际AFS约103.08GB；独立1280 full-state audit tree9c35d933…/cursor6,2528/scheduler1280通过。唯一R8已08:50:43在CCI准入1280→2000/720更新，job a2556a20/config4ad1809f/source11d，旧接续64140退出0/mutation1。GPU2661880初始化中，尚未观测parent1280实际恢复，最后完整仍1280；不重复R8、不重置12480秒/3.5GPUh/192GPUh/11月17日23UTC。pilot63360为独立0GPU只读归档，7Win/7Linux软件测试过，所有原件/索引保持，没有新科学SR或final12000/100对完成。v40与37+6字段不改。
