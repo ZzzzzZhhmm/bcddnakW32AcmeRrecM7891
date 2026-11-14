@@ -1,0 +1,33 @@
+% Editorial fragment for the selective-reuse theory appendix.
+\paragraph{Conditional episode equivalence to candidate-null generation.}
+\label{app:candidate_null_episode_equivalence}
+Consider two versions of the same trained policy, with identical parameters,
+instruction, initial environment state, and initial retained factual state.
+The first version retains the repertoire interface but fixes its effective
+gate to zero at every replan. The second uses the candidate-null interface.
+Assume matching decoder token layouts and masks, solver schedules, execution
+prefixes, control and observation timing, stopping rules, and native
+conditioning interfaces at each replan. Any wall-clock dependence of execution
+or termination is held fixed by the comparison protocol. Couple all sampling, environment,
+observation, and controller randomness between the two versions.
+Assume further that every retained state reaching an ungated decoder input
+is updated by the same candidate-independent function of factual observations
+and executed commands. Candidate-dependent bookkeeping may differ only when
+it has no route to an ungated decoder input.
+
+At the first replan, joint withdrawal gives identical Gaussian sources,
+recollection-grounded requirements, zero candidate conditioning, and matched
+native and visual context. The fixed solver therefore produces identical
+action chunks and executed prefixes. Identical executed commands under the
+coupled environment and controller randomness yield identical next states
+and observations. The assumed factual-state update then yields identical
+retained inputs for the following replan. Induction proves pathwise equality
+of the complete executed trajectories. Consequently every measurable success
+criterion on those trajectories has equal probability under the two versions.
+
+This is conditional equivalence to the candidate-null version of the same
+trained policy, not an empirical comparison with a separately trained
+retrieval-free policy. It does not assert that a learned gate becomes zero
+when an entire skill is absent from a nonempty bank. That detection property
+requires a bank-wide skill-absence protocol and is separate from the
+zero-gate premise used here.

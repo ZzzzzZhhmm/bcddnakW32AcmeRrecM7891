@@ -3888,3 +3888,14 @@ R9已观察模型/optimizer/scheduler/RNG及epoch6/b2528完整恢复、load: ste
 九张定量表31行逐项对原LaTeX/未变Bbqv表通过，另两张角色表核对定义；Wilson与三种子区间复算一致。核对器两次格式解析失败（LaTeX控制字、行前缀空白）修复后完整通过，同源数据/正文值均未改，NUMERIC_RECONCILIATION_PARSER_CORRECTION_V1单独保留，不计科学失败。新实测SR0；原frozen首轮/v40/Bbqv/rkWY保持，新增checkpoint相关效能仍按统一scope隔离，不择正负。
 
 MemoryWAM LIBERO/部署成本、完整specialist成功—成本、更广独立示范/技能缺失与原DEV/eval身份等真实缺口未因文字优化关闭。writing_current_Hh4E及working_response_index_20261114索引20项，论文同步队列保留Bbqv并增加Hh4E。实验/自动任务仍暂停，未SSH或创建ACP，未发布评论或上传论文。
+
+
+### 23.381 rkWY四项回复优化与条件性candidate-null推论（仅写作）
+
+按Bbqv示例完成responses/20261114_rkWY_question_aligned/Reviewer_rkWY.md：1967词、W1/W2/Q1/Q2中性原问题标题/单句粗体结论、六表，SHA3f68612790f2110ab857633275cd7d2bcf07cf8419d9b4c69691a25af9c925af。独立回答specialist与generalization、tabletop范围、经验质量/位置变化及缺技能gate问题；五张定量表21行对原gate LaTeX与已独立核验Hh4E来源链通过，另一个适配角色表按方法定义核对。门控N/Ndet、raw utility条件中位数与effective gate全标注中位数、五eval-run干扰与三training-seed常量控制保持不同口径。
+
+新增CANDIDATE_NULL_EPISODE_EQUIVALENCE_20261114.tex为条件性解析推论：同模型/初始状态、每replan零gate、匹配接口与执行/停止时序、耦合环境/controller/观察/采样随机性、candidate-independent ungated factual更新下，由单步撤回归纳得到candidate-null轨迹及轨迹成功事件等价。不是自然skill-absence检测、未认证运行时条件、较小非零gate的成功保证或独立训练baseline非劣效；没有新物理/模拟效能。当前v40工程/PDF未改/未重编译，片段随论文同步任务保留待整合。
+
+原review/首轮rkWY/v40来源及片段Git外按字节/manifest保存；namespace高gate、invalid和unknown旧原件未变，原报告门控中位数不是对同一固定态的替代数据。位移曲线、独立示范多样性、整库语义缺技能与自然gate完整配对NI仍未关闭；无模拟填数。writing_current_rkWY.json为当前入口，跨回复索引现覆盖三位20原项/16组/27表，前两位正文hash未变。论文同步队列16组，all_scientific_gaps_closed仍false，不冒充新正式投稿包或全量论文验收。
+
+本轮新SR0、CCI/ACP操作0，实验/定时任务仍暂停，未发布OpenReview或上传文稿。
