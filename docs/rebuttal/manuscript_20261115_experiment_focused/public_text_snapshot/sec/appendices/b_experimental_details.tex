@@ -1,0 +1,201 @@
+\section{Experimental Details}
+\label{app:protocols}
+
+We specify the settings, controlled comparisons, and statistical units underlying Section~\ref{sec:experiments}.
+The protocols distinguish the complementary roles of recollection and repertoire, the contribution of generative reuse, and the robustness provided by consequence assessment.
+Appendix~\ref{app:mechanism_probes} details candidate assessment and shared withdrawal; Appendix~\ref{app:realworld} describes the physical tasks.
+
+\subsection{Benchmarks, Training, and Evaluation Settings}
+\label{app:baseline_sources}
+
+\paragraph{Task requirements.}
+LIBERO evaluates spatial, object, goal, and extended manipulation across four suites~\citep{liu2023libero}.
+RMBench's $M(1)$ tasks test retention of a task-relevant observation, while $M(n)$ tasks require information accumulated over multiple interactions~\citep{chen2026rmbench}.
+Put Back Block uses the block's original pad as its destination after an intermediate move and button press; Observe and Pick Up requires matching a reference object after it is hidden.
+Blocks Ranking Try uses feedback to search over block orders, and Cover Blocks requires recovering covered objects in a specified color order.
+These tasks test whether a policy retains the evidence needed to select the next interaction as execution progresses.
+
+\begin{table}[H]
+\centering\small
+\caption{\textbf{Simulation interfaces for \method{}.} Horizons and execution prefixes count model action steps. Baseline-specific observation and execution interfaces are described below.}
+\label{tab:contracts}
+\begin{tabularx}{\linewidth}{@{}lXX@{}}
+\toprule
+Setting & LIBERO & RMBench \\
+\midrule
+Tasks / rollouts per task per evaluation & 40 / 50 & 9 / 100 \\
+RGB views & 2 & Head and two wrists \\
+Processed resolution & $224\times224$ & $240\times320$ per view \\
+Action / proprioception dimensions & 7 / 8 & 14 / 14 \\
+Prediction horizon / executed prefix & 32 / 10 & 32 / 4 \\
+Retrieval-key width & $768+40$ & $768+9$ \\
+Regular event-window stride & 32 & 4 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{Data and execution.}
+We split data by episode before extracting event windows, build the repertoire from policy-training episodes, and exclude each offline query's source episode under Appendix~\ref{app:memory_details}.
+The repertoire reindexes those training demonstrations as action--effect events that remain directly accessible at inference.
+Recollection resets each episode and follows its actual observation/action prefix.
+LIBERO uses relative end-effector pose commands and a gripper channel; RMBench uses joint-control actions. Alignment operates within each dataset's control coordinates, as specified in Appendix~\ref{app:gate_details}.
+LIBERO includes 30 settling steps and gripper binarization; RMBench uses RoboTwin simulation~\citep{chen2025robotwin2}.
+In the task order of Table~\ref{tab:rmbench}, RMBench step limits are 250, 700, 500, 1,000, 600, 1,000, 3,500, 1,500, and 1,500.
+Policy errors, invalid actions, and timeouts count as failures; infrastructure exclusions follow a common recorded rule.
+
+\paragraph{Training and configuration.}
+\label{app:run_configuration}
+We initialize the video/action backbone from released Fast-WAM weights~\citep{yuan2026fastwam}.
+Training updates Action DiT, retrospective modules, the native state projection, and rank-16 video adapters at layers 9 and 19; the remaining pretrained components stay fixed (Appendix~\ref{app:learning_details}).
+Table~\ref{tab:app_run_settings} summarizes the optimizer, memory, objective, and evaluation settings. Table~\ref{tab:implementation_variants} separately identifies the audited specialist interfaces and the shared-policy study; the latter retains its own checkpoint and outcomes.
+
+\begin{table}[!tbp]
+\centering\small
+\caption{\textbf{Training and deployment settings.} We list the shared configuration and identify task-specific choices for LIBERO and RMBench.}
+\label{tab:app_run_settings}
+\begin{tabularx}{\linewidth}{@{}p{0.25\linewidth}X@{}}
+\toprule
+Component & Configuration \\
+\midrule
+Training and selection & AdamW with $(\beta_1,\beta_2)=(0.9,0.95)$; 5\% linear warm-up and cosine decay to 1\% of peak learning rate. Peak learning rate is $10^{-4}$ for LIBERO and the four audited RMBench specialist runs; weight decay 0.01, BF16, and gradient clipping 1.0. The audited RMBench runs use batch $8\times4\times4=128$ across four H100s, with 12,000 updates for Battery Try, Press Button, and Cover Blocks, and 14,000 for Blocks Ranking Try. Checkpoints are selected on development data and frozen before test evaluation. \\
+Recollection and retrieval & Episode-disjoint retrieval from training-only banks. LIBERO uses six retained events and two action summaries; RMBench task profiles span 6--20 events and 2--8 summaries. The write-threshold range is $[0.08,0.85]$. Retrieval uses $K=32$ for most task profiles and $K=16$ for Observe and Pick Up; the shared-policy cursor forward window is 256 steps with expiry after three null steps. \\
+Objectives and admission & Ranking weight 0.10; bridge, requirement, effect, gate, and adaptation weights 0.05 each; video/action flow weights 1.0 each. We use $\rho=0.25$, $\sigma_{\min}=0.2$, magnitude weight 0.25; the shared-policy admission threshold is 0.15. Normal/drop/null/hard-negative fractions are 0.50/0.125/0.125/0.25 for LIBERO and 0.60/0.10/0.10/0.20 for RMBench. The adapter uses $s_j=1$ in normalized action coordinates. \\
+Generation and evaluation & Action horizon $H=32$ with ten Euler steps; the Observe and Pick Up task profile uses eight. Execution prefixes are ten commands for LIBERO and four for RMBench. We fix reset and sampling schedules at seed 3407 and associate each score with its checkpoint and resolved configuration. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{Baselines.}
+We compare VLA, world--action, and memory-augmented policies.
+
+(\uppercase\expandafter{\romannumeral 1}) \emph{VLA policies.}
+$\pi_0$ combines a pretrained vision--language backbone with flow-matching action generation~\citep{black2025pi0}; $\pi_{0.5}$ extends this recipe through heterogeneous co-training and semantic subtask prediction~\citep{intelligence2025pi05}.
+These baselines provide general-purpose references for visuomotor control and semantic task understanding.
+
+(\uppercase\expandafter{\romannumeral 2}) \emph{World--action models.}
+Motus integrates understanding, video, and action experts with motion-derived latent actions~\citep{bi2025motus}.
+LingBot-VA jointly models video and actions autoregressively, retaining historical context through a KV cache and incorporating observed feedback~\citep{li2026lingbotva}.
+Fast-WAM learns from video prediction and uses current-frame features to generate actions at inference~\citep{yuan2026fastwam}, providing our backbone reference.
+WLA-0 combines subtask reasoning with dynamics-supervised actions; its optional test-time scaling scores sampled actions by imagined outcomes, while we use standard inference~\citep{yang2026wla}.
+
+(\uppercase\expandafter{\romannumeral 3}) \emph{Memory-augmented policies.}
+MemoryWAM combines recent frames, initial anchors, and compressed gist tokens in a persistent visual cache~\citep{yang2026memorywam}.
+HiMem-WAM learns motion and skill latents, writes compact states at skill boundaries, and gates memory reading~\citep{sun2026himem}.
+DIM-WAM retains diverse historical events in multiple banks and supervises task progress to condition video/action denoising~\citep{wang2026dimwam}.
+EventVLA combines visual anchors with predicted event keyframes; its RMBench row uses the visual-anchors-only configuration, preserving initial and recent observations~\citep{yang2026eventvla}.
+These methods make past task context available to action prediction through structured temporal representations of the ongoing episode.
+
+\paragraph{Baseline evaluation and references.}
+We ran the released implementations where available under their documented evaluation protocols; for methods without a runnable release, we use the cited results.
+Table~\ref{tab:app_baseline_sources} identifies the reference versions and benchmark tables, while each method retains its documented observation and execution interface.
+Our RMBench evaluation trains a separate specialist for each of the nine tasks; task-specific memory and inference profiles are summarized in Table~\ref{tab:app_run_settings}.
+
+\begin{table}[H]
+\centering\small
+\caption{\textbf{Baseline references.} Versions and tables identify the benchmark sources; VA denotes EventVLA's visual-anchors setting.}
+\label{tab:app_baseline_sources}
+\begin{tabularx}{\linewidth}{@{}p{0.14\linewidth}Xl@{}}
+\toprule
+Benchmark & Reference methods & Paper version / table \\
+\midrule
+LIBERO & $\pi_0$, $\pi_{0.5}$, Motus, Fast-WAM & Fast-WAM v2, T2~\citep{yuan2026fastwam} \\
+LIBERO & HiMem-WAM & v1, T2~\citep{sun2026himem} \\
+LIBERO & LingBot-VA; WLA-0 & v2, T2; v1, T1~\citep{li2026lingbotva,yang2026wla} \\
+RMBench & $\pi_{0.5}$, Fast-WAM, MemoryWAM & MemoryWAM v1, T1~\citep{yang2026memorywam} \\
+RMBench & HiMem-WAM; DIM-WAM & v1, T1; v1, TII~\citep{sun2026himem,wang2026dimwam} \\
+RMBench & EventVLA (VA); WLA-0 & v2, T8; v1, T2~\citep{yang2026eventvla,yang2026wla} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+WLA-0 reports the four $M(n)$ tasks on RMBench; unavailable $M(1)$ entries remain blank in Table~\ref{tab:rmbench}.
+
+\paragraph{Distinctive contribution of \method{}.}
+The baselines above use temporal memory, predictive dynamics, and outcome assessment to support control.
+We make episode evidence govern the reuse of cross-episode action experience: recollection supplies a candidate-independent requirement against which we assess the predicted effects of adapted repertoire actions.
+This comparison guides candidate selection and a shared gate over stochastic initialization and candidate-derived conditioning.
+Our distinctive coupling controls both which past behavior is reused and its influence on generation, with coordinated admission, attenuation, and withdrawal across both paths.
+Sections~\ref{sec:ablations}--\ref{sec:experience_robustness} test these roles; Appendix~\ref{app:ablation_defs} defines the component and misleading-retrieval controls.
+
+\subsection{Protocols for Component Contributions and Retrieval Robustness}
+\label{app:ablation_defs}
+\label{app:semantics}
+
+\paragraph{Separate evidence access from experience use.}
+The comparisons in Table~\ref{tab:ablation} answer two complementary questions.
+First, how do current-episode evidence and cross-episode actions contribute together?
+The four store-access variants test recollection, repertoire, and their combination.
+Second, how does assessed experience improve generation?
+The Gaussian-source control isolates experience-informed initialization while retaining gated candidate conditioning; the no-comparison control isolates explicit effect--requirement compatibility while retaining effect prediction and adaptation.
+Table~\ref{tab:app_ablation_defs} defines the six variants precisely.
+The component study uses three training seeds, with shared data partitions and task-specific evaluation protocols.
+
+\begin{table}[!htbp]
+\centering\small
+\caption{\textbf{Controls for evidence access and generative reuse.} The first four entries test the two stores; the last two test experience-informed initialization and explicit consequence comparison.}
+\label{tab:app_ablation_defs}
+\begin{tabularx}{\linewidth}{@{}p{0.29\linewidth}X@{}}
+\toprule
+Variant & Change from full \method{} \\
+\midrule
+Neither event store & Mask both stores; use Gaussian initialization and no candidate contribution, preserving current-state interfaces. \\
+Recollection only & Disable repertoire retrieval and both candidate contributions, retaining current-episode evidence. \\
+Repertoire only & Mask past observations, executed-action summaries, history-derived queries, repetition evidence, and continuity state. \\
+Full \method{} & Retain both sources, explicit comparison, and both candidate-injection paths. \\
+\midrule
+Gaussian source / context only & Set $z_t=\varepsilon_t$; preserve gated candidate conditioning. \\
+Without explicit comparison & Remove $\kappa_i$ from selection and gate inputs; retain effect features, effect supervision, adaptation, and both paths. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Evaluation-run variation describes reset and sampling variation within a configured policy; it does not count independent training repetitions.
+
+\paragraph{Test consequence assessment under misleading retrieval.}
+\label{app:distraction_protocol}
+On Put Back Block and Press Button, Figure~\ref{fig:experience_distraction} compares full \method{} and the no-comparison variant under normal retrieval, random-event replacement, and similar-event replacement.
+We target replacement of 50\% of candidate slots with intact training events.
+Random donors come from the task/control space; similar donors also match visual pre-state features while differing in stage or effect evidence.
+Each donor retains its own action, effect, timing, and provenance.
+This preserves a coherent past interaction while changing its applicability to the current task, directly testing the role of effect--requirement comparison.
+
+Both policies use the same reset schedule, donor-sampling rule, candidate count, and control budget; subsequent observations follow their respective executions.
+Donor sampling is independent of policy acceptance and final success.
+When a donor is unavailable, we retain the original slot; the 50\% setting therefore specifies the attempted candidate-slot replacement.
+Privileged stage labels are used only to construct similar-event donors.
+Candidate assessment against independently executed outcomes is specified in Appendix~\ref{app:effect_probes}.
+
+\subsection{Metrics and Statistical Interpretation}
+\label{app:evidence}
+
+\paragraph{Task-balanced success.}
+Let $Y_{mjrk}\in\{0,1\}$ indicate success for policy $m$ on trial $k$ of task $j$ in evaluation run $r$.
+For $N_{jr}$ trials per task/run and $J$ tasks, define
+\begin{equation}
+ s_{mjr}=\frac{100}{N_{jr}}\sum_{k=1}^{N_{jr}}Y_{mjrk},\qquad
+ S_{mr}=\frac1J\sum_{j=1}^J s_{mjr}.
+ \label{eq:exp_macro_sr}
+\end{equation}
+The nine-task RMBench average weights the two groups by their task counts:
+\begin{equation}
+ \mathrm{SR}_{\mathrm{RMBench}}
+ =\frac{5\mathrm{SR}_{M(1)}+4\mathrm{SR}_{M(n)}}9.
+ \label{eq:exp_rmbench_weighting}
+\end{equation}
+We aggregate before rounding.
+EventVLA's published total is 67.8\%; its displayed integer task scores re-average to 67.9\%, so Table~\ref{tab:rmbench} retains the source total.
+
+\paragraph{Robustness across retrieval conditions.}
+Figure~\ref{fig:experience_distraction} averages the two tasks within each of five evaluation runs and reports the mean and sample SD over runs.
+The recollection-only normal-condition result provides a common reference for the benefit of retrieval.
+For full \method{} $W$, the no-comparison variant $N$, and condition $c$, define the performance drop $d_{mrc}$ and the advantage in retained robustness $\Gamma_c$:
+\begin{equation}
+ d_{mrc}=S_{mr,\mathrm{normal}}-S_{mrc},\qquad
+ \Gamma_c=\frac15\sum_{r=1}^{5}(d_{Nrc}-d_{Wrc}).
+ \label{eq:exp_paired_drop}
+\end{equation}
+The reported means give $\Gamma_{\mathrm{random}}=7.8$ and $\Gamma_{\mathrm{similar}}=19.8$ percentage points.
+This contrast measures how much explicit comparison reduces the loss from misleading experience; Appendix~\ref{app:fullresults} provides the task-level breakdown.
+
+\paragraph{Statistical units.}
+The five runs in Figure~\ref{fig:experience_distraction} and Table~\ref{tab:app_distraction_tasks} vary evaluation resets and sampling; the displayed SD measures variation across those runs.
+They are distinct from independent training repetitions, and the 20-trial physical comparisons in Figure~\ref{fig:realworld} are reported as observed success counts.

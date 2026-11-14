@@ -1,0 +1,591 @@
+\section{Method Details and Mathematical Analysis}
+\label{app:contracts}
+\label{app:notation}
+
+We first specify the interfaces that connect recollection, consequence assessment, and action generation, then establish how the shared gate controls recalled experience.
+Training objectives and causal record construction complete the method specification; Appendix~\ref{app:symbols} indexes the core notation.
+
+\subsection{Semantic Interfaces and Information Flow}
+\label{app:effect_repr}
+
+\paragraph{A common space for requirements and effects.}
+The fixed descriptor map $\mathcal P_{\mathrm{eff}}$ defines a common space for historical effects $E_i$, requirements $r_t$, and predictions $\widehat E_i$ within each evaluated implementation.
+Frozen DINOv2 features $\Phi$~\citep{oquab2024dinov2} are pooled to $2\times2$ cells of width $d_s$, with pre-state $S^-_{ij}$ and change $\Delta S_{ij}$.
+
+\paragraph{Descriptor in the audited task specialists.}
+\label{app:original_effect_projection}
+For the audited Battery Try, Press Button, Cover Blocks, and Blocks Ranking Try specialists, the effect target is the uniform mean of the four recorded change tokens:
+\[
+ E_i=\mathcal P_{\mathrm{eff}}^{\mathrm{mean}}(S_i^-,\Delta S_i)
+ =\frac14\sum_{j=1}^{4}\Delta S_{ij}.
+\]
+The demonstrated-query target $E_t^\star$ uses the same mean.
+This vector is a coarse semantic change target; the retained spatial-token records and current visual/proprioceptive inputs remain separate from it.
+Independent effects for a given checkpoint must be evaluated using its own descriptor map, without changing the map after observing outcomes.
+
+\paragraph{Descriptor in the separate shared-stage variant.}
+The separate shared-stage configuration uses the following change-weighted map:
+
+\begin{equation}
+ a_{ij}=\|\Delta S_{ij}\|_2^2/d_s,\quad
+ \omega_{ij}=\frac{a_{ij}+\epsilon_p}{\sum_{k=1}^{4}a_{ik}+4\epsilon_p},\quad
+ E_i=\sum_{j=1}^{4}\omega_{ij}(\Delta S_{ij}+0.05S^-_{ij}).
+ \label{eq:effect_pooling}
+\end{equation}
+The stabilizer $\epsilon_p>0$ handles negligible changes, and $0.05S^-_{ij}$ preserves starting context.
+Within this shared-stage variant, the same map gives $E_t^\star$; it differs from the uniform-mean target of the audited specialists above.
+
+\paragraph{Connect current features to stored evidence.}
+We read the same current frame at Video DiT layers 9 and 19, obtaining token streams $U_t^{(1)},U_t^{(2)}$ of width 3,072; these are two network depths, not two camera views.
+Learned projections $P_1,P_2$ and mixing logits $b_1,b_2$ fuse them:
+\begin{equation}
+ W_t=\omega_1P_1U_t^{(1)}+\omega_2P_2U_t^{(2)},\qquad
+ (\omega_1,\omega_2)=\operatorname{softmax}(b_1,b_2),
+ \label{eq:world_fusion}
+\end{equation}
+Four learned Perceiver-style queries~\citep{jaegle2021perceiver} compress $W_t$ into $\widehat S_t\in\mathbb R^{4\times d_s}$, aligned to frozen $\Phi(o_t)$ during training.
+This bridge connects the instruction- and state-conditioned video representation to stored evidence through the interfaces in Table~\ref{tab:app_visibility}.
+
+\begin{table}[!htbp]
+\centering\small
+\caption{\textbf{Interfaces for consequence-aligned reuse.} Demonstrated actions and futures provide training targets; deployment reads use the inputs listed here.}
+\label{tab:app_visibility}
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.22\linewidth}>{\raggedright\arraybackslash}p{0.39\linewidth}>{\raggedright\arraybackslash}X@{}}
+\toprule
+Computation & Direct inputs & Output and role \\
+\midrule
+Requirement read & $W_t,\widehat S_t,q_t,\ell,\mathcal M_t$; retrieved groups masked & $R_t,r_t$: assessment reference \\
+Action adaptation & $A_i,c_t,c_i^0,\tau_i$; current context and $R_t$ & $A_i^w,\mu_i$: aligned and adapted actions \\
+Effect prediction & $\operatorname{stats}(\mu_i),E_i,\operatorname{pool}(W_t)$ & $\widehat E_i$: proposed effect \\
+Ranking and gating & Candidate/context features, timing; recollection through the requirement; variant-specific gate inputs & $\ell_i^{\mathrm{rank}},\alpha_t,g_t$: selection and influence \\
+Selected-event read & Requirement inputs plus selected pre-state/change tokens & $R_t^{\mathrm{pred}}$: transition context \\
+Action-context readout & Adaptation states, stored change, predicted effect & $C_i$: projected action/effect context \\
+Action DiT & $x_\sigma,\sigma,\mathcal C_t$ & $v_\theta$: velocity generating $A_t$ \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{Two reads, one Transition Adapter.}
+The shared $G_{\mathrm{tr}}$ uses eight learned queries, two cross-attention/feed-forward blocks~\citep{vaswani2017attention}, type embeddings, validity masks, and the native robot-state token.
+Masking retrieved groups gives $R_t\in\mathbb R^{8\times d_r}$ of adapter width $d_r$; $P_{\mathrm{req}}$ projects their mean to the candidate-independent reference $r_t\in\mathbb R^{d_s}$.
+A second read adds the selected event's pre-state/change tokens to produce $R_t^{\mathrm{pred}}$.
+We gate its increment over $R_t$ by Eq.~\eqref{eq:conditions} and apply affine $P_{\mathrm{ctx}}$ to reach decoder width.
+
+\paragraph{From an action proposal to its predicted effect.}
+The adapter $f_A$ combines aligned actions $A_i^w$, position and gripper timing $\tau_i$, current context, and $R_t$ to produce bounded $\mu_i$ in Eq.~\eqref{eq:adapter}.
+Effect prediction uses mean command, terminal command, and mean absolute temporal variation:
+\begin{equation}
+ \operatorname{stats}(A)=\left[
+ \frac1H\sum_{h=0}^{H-1}A_h,\ A_{H-1},\
+ \frac1{H-1}\sum_{h=0}^{H-2}|A_{h+1}-A_h|
+ \right]\in\mathbb R^{3d_a}.
+ \label{eq:action_stats}
+\end{equation}
+For $H=1$, variation is zero.
+World pooling applies a learned projection and validity-masked mean to $W_t$.
+Together with $E_i$ and $\operatorname{stats}(\mu_i)$, it gives $\widehat E_i$ for the proposal preceding flow refinement.
+Task context enters through $W_t$ and $R_t\rightarrow\mu_i\rightarrow\widehat E_i$.
+
+Action-context tokens combine adaptation states, stored changes, and predicted effects.
+Their affine projection to decoder width is included in $C_i$, so gating scales the entire contribution.
+
+
+\paragraph{Compare direction and magnitude.}
+For effect vectors $p,q$ above the cosine norm floor, Eq.~\eqref{eq:kappa} decomposes as
+\begin{equation}
+ 1-\kappa(p,q)=\frac12\left\|\frac p{\|p\|_2}-\frac q{\|q\|_2}\right\|_2^2
+ +\lambda_m\left|\log\frac{\|p\|_2+\epsilon}{\|q\|_2+\epsilon}\right|.
+ \label{eq:comparison_geometry}
+\end{equation}
+The two terms measure angular mismatch and relative effect magnitude.
+We use $\lambda_m=0.25$ and $\epsilon=10^{-6}$; safe cosine normalizes with denominator floor $\epsilon$, assigning zero cosine to a zero vector.
+Our action summary compresses temporal order, and the descriptor compresses physical change; Appendix~\ref{app:effect_probes} tests whether this resolution preserves useful candidate ordering against independently executed outcomes.
+
+\subsection{Recall Selection and Effective Gating}
+\label{app:gate_details}
+
+\paragraph{Retrieve, align, and select.}
+For a unit-normalized frozen-DINO CLS vector $v_t\in\mathbb R^{768}$ and a one-hot task vector $e(\ell)\in\mathbb R^J$, the retrieval key is $k_t=2^{-1/2}[v_t;e(\ell)]$; stored keys use the same construction.
+We apply cosine top-$K$ search to these keys, with $J=40,9,4$ for LIBERO, RMBench, and the physical task set, respectively.
+The task block contributes similarity without excluding cross-task events.
+Alignment $\mathcal W$ preserves relative EEF commands. For absolute joint commands, $c_t$ and $c_i^0$ denote current and stored starts in the same joint coordinates; their normalized difference shifts arm targets while preserving gripper commands.
+When such matched start-state coordinates are unavailable, $\mathcal W$ leaves the stored command unchanged and the action adapter supplies the learned correction.
+The adapter then applies the bounded residual in Eq.~\eqref{eq:adapter}.
+This start-state alignment is expressed in the control coordinates; it does not establish object-frame or camera-frame geometric invariance.
+Object displacement can change visual context, proposal suitability, and the correction needed for success even when the residual remains bounded.
+The specialist reranker reads current/candidate context, adapted-action statistics, observed effects, and gripper timing to produce $\ell_i^{\mathrm{rank}}$.
+In the shared-policy variant, projected episode history augments its query, and projected phase/ordinal features augment candidate context.
+Both variants use recollection in the candidate-independent requirement and hence in consequence comparison.
+
+\paragraph{Keep implementation and evidence aligned.}
+\label{app:implementation_variants}
+Our task-specialist benchmark models and the separately trained shared-policy control study implement the same requirement--proposal--influence interface.
+Table~\ref{tab:implementation_variants} specifies their different encodings and selection/gate inputs.
+We retain each checkpoint's own feature map and computation in the corresponding measurement; the additional shared-policy study does not replace the specialist benchmark results.
+
+\begin{table}[!htbp]
+\centering\small
+\caption{\textbf{Implementation-specific interfaces.} Specialist interfaces correspond to RMBench task-specific training; shared-policy interfaces correspond to the update-3,000 Full/Pooled configuration.}
+\label{tab:implementation_variants}
+\begin{tabularx}{\linewidth}{@{}p{0.20\linewidth}XX@{}}\toprule
+Interface & Task-specialist path & Shared-policy path\\\midrule
+Effect descriptor & Uniform mean of four change tokens & Change-weighted descriptor in Eq.~\eqref{eq:effect_pooling}\\
+Gripper timing & Four entries: first close/open phases and validity in the combined gripper stream & Four entries per gripper; eight in the bimanual configuration\\
+Ranking context & Query/candidate context, adapted actions, observed effects, timing & Additionally projects episode history into the query and phase/ordinal into candidate context\\
+Gate input & Selected score, score margin, compatibility, validity coordinate, deformation & Selected probability, probability margin, entropy, compatibility, validity coordinate, deformation, repetition\\
+Event continuity & No additive event-order term at the specialist model boundary & Runtime supplies event-order prior and temporal source eligibility\\\bottomrule
+\end{tabularx}
+\end{table}
+
+\Needspace{9\baselineskip}
+\paragraph{Preserve useful event continuity in the shared-policy runtime.}
+The following event-order extension supplies $b_{t,i}$ to the shared-policy selector; the audited specialist model uses rank plus consequence compatibility without this additive term.
+Let the previously selected event come from demonstration $d_0$ at time $s_0$, and let $\Delta_i=s_i-s_0$ for candidates from that demonstration.
+We define its recorded-order prior by
+\[
+ b_{t,i}=\begin{cases}
+ 0,&\text{no active event or a different demonstration},\\
+ -\lambda_{\mathrm{reuse}},&\operatorname{demo}(i)=d_0,\ \Delta_i\leq0,\\
+ \lambda_{\mathrm{forward}}\max(0,1-\Delta_i/F),&\operatorname{demo}(i)=d_0,\ \Delta_i>0,
+ \end{cases}
+\]
+with nonnegative reuse penalty $\lambda_{\mathrm{reuse}}$, forward weight $\lambda_{\mathrm{forward}}$, and window $F>0$.
+Same-or-earlier events are also source-ineligible; successor metadata may supply a continuation candidate.
+This cursor tracks selected-event order, while recollection tracks actual interaction.
+It resets each episode; advancement, null-step expiry, and continuation/truncation settings belong to the run specification in Table~\ref{tab:app_run_settings}.
+
+\paragraph{Measure adaptation and repetition.}
+Both variants measure adaptation by the selected residual. The additional repetition statistic below belongs to the shared-policy path.
+For selected residual $\delta=\mu_{i^\star}-A_{i^\star}^w$, the smooth RMS deformation is
+\[
+ d=\sqrt{(Hd_a)^{-1}\|\delta\|_F^2+\epsilon_d^2}-\epsilon_d,
+ \qquad \epsilon_d=10^{-6}.
+\]
+For $L$ executed-action summary slots, validity flags $m_j$, and stored repetition coordinates $r_j\in[0,1]$, we use
+\[
+ \zeta_t=\frac{\sum_{j=1}^La_jm_jr_j}{\max(1,\sum_{j=1}^La_jm_j)}.
+\]
+Recency weights $a_j$ are equally spaced from $0.5$ to $1$ ($0.5$ for one slot); empty history gives zero.
+Each summary concatenates mean arm commands, terminal/net arm displacement, and terminal gripper values, with gripper entries zeroed in the arm blocks.
+Relative commands use their sum for net displacement; absolute targets use offsets from the observed prefix-start state in both arm blocks.
+
+We match a new executed-prefix summary to retained summaries by maximum cosine similarity, breaking ties by relative distance.
+A repetition flag requires both similarity and distance thresholds to pass; it is zero without earlier history.
+Observed progress clears it when frozen-feature change reaches the motion threshold, or both frozen-feature and VAE changes exceed the stationary threshold.
+Reference defaults are $0.97$, $0.20$, $0.08$, and $0.03$; Table~\ref{tab:app_run_settings} records evaluated settings.
+
+\paragraph{Turn selection evidence into shared influence.}
+The specialist gate uses five inputs:
+\begin{equation}
+ \alpha_t^{\mathrm{sp}}=\operatorname{sigmoid} f_g^{\mathrm{sp}}\!
+ \left([\ell_{t,i^\star}^{\mathrm{sel}},\Delta\ell_t,
+ \kappa_{i^\star},\log(1+n),d]\right),\qquad
+ g_t^{\mathrm{sp}}=\mathbf1[i^\star\in\mathcal I_t]\alpha_t^{\mathrm{sp}}.
+ \label{eq:specialist_gate}
+\end{equation}
+Here $\Delta\ell_t$ is the selected score minus the strongest competing candidate score; with a single valid candidate it is zero.
+The valid-candidate support is $n=1$, so this input is a validity coordinate.
+The shared-policy variant instead forms probability-based confidence statistics and adds the repetition statistic $\zeta_t$:
+for valid candidates, set $P_i=\operatorname{softmax}_i(\ell_{t,i}^{\mathrm{sel}}/\tau_{\mathrm{sel}})$ with $\tau_{\mathrm{sel}}>0$.
+Let $P=P_{i^\star}$ and $\Delta P$ be its margin over the strongest competitor.
+Normalized entropy is $\mathcal H=-\sum_iP_i\log P_i/\log|\mathcal I_t|$ for multiple candidates; a single candidate has zero entropy and an absent competitor of probability zero.
+Its learned gate combines selection statistics, compatibility, validity coordinate $n$, deformation, and repetition:
+\begin{equation}
+ \alpha_t=\operatorname{sigmoid} f_g\!\left(
+ [P,\Delta P,1-\mathcal H,\kappa_{i^\star},\log(1+n),d,\zeta_t]\right).
+ \label{eq:rawgate}
+\end{equation}
+For each selected valid event, $n=1$ (and $n=0$ in padded slots), so $\log(1+n)$ is a fixed validity coordinate, not an estimated support count.
+Equation~\eqref{eq:gate_loss} trains $\alpha_t$ as an imitation-utility score; eligibility and repetition determine its effective influence:
+\begin{equation}
+ g_t=\chi_t\,\mathbf1[\zeta_t<\zeta_{\max}]\,
+ \alpha_t\exp(-\lambda_\zeta\zeta_t).
+ \label{eq:effectivegate}
+\end{equation}
+For this shared-policy path, $\chi_t$ encodes candidate availability and eligibility: absent candidates, forced null, and forced negatives set it to zero; deployment also applies the raw-gate threshold and temporal eligibility.
+The specialist path uses Eq.~\eqref{eq:specialist_gate}.
+The coefficient $\lambda_\zeta\geq0$ sets repetition decay and $\zeta_{\max}\in[0,1]$ sets its cutoff.
+In either path, the resulting $g_t$ controls both the stochastic source and candidate conditioning.
+
+Empty retrieval bypasses argmax, zeros candidate payloads, and sets $g_t=0$.
+The candidate-null interface retains the requirement context $P_{\mathrm{ctx}}(R_t)$, native context, visual K/V, and fixed conditioning masks, with zero action-context slots.
+This common interface supports the exact withdrawal property below.
+
+\subsection{Mathematical Properties of Selective Generative Reuse}
+\label{app:theory}
+\label{app:source_properties}
+
+We establish exact withdrawal and bounded partial influence, then characterize the source and its flow-matching objective.
+For withdrawal and source geometry, fix the current query and proposal $\mu=\mu_{i^\star}$, vectorize normalized actions in $\mathbb R^D$ with $D=Hd_a$, and write $\beta=1-\sigma_{\min}$ and $c(g)=1-\beta g$.
+At prescribed gate $g\in[0,1]$, the source is $z_g=g\mu+c(g)\varepsilon_t$, where $\varepsilon_t\sim\mathcal N(0,I_D)$.
+
+\subsubsection{Joint withdrawal and bounded action influence}
+\label{app:influence_proof}
+
+\paragraph{Proof of Proposition~\ref{prop:withdrawal}.}
+Fix factual inputs, recollection, parameters, masks, solver schedule, and sampling randomness for one replan.
+The candidate-independent read preserves $R_t$, native context, and visual K/V under candidate replacement.
+At $g=0$, Eqs.~\eqref{eq:source} and~\eqref{eq:conditions} give $z_0=\varepsilon_t$, $R_t^{\mathrm{act}}=R_t$, and $C_t^{\mathrm{act}}=0$.
+Every decoder input is identical; induction over solver steps therefore gives identical iterates and final actions.\hfill$\square$
+
+\paragraph{Conditional episode equivalence to candidate-null generation.}
+\label{app:candidate_null_episode_equivalence}
+Consider two versions of the same trained policy, with identical parameters,
+instruction, initial environment state, and initial retained factual state.
+The first version retains the repertoire interface but fixes its effective
+gate to zero at every replan. The second uses the candidate-null interface.
+Assume matching decoder token layouts and masks, solver schedules, execution
+prefixes, control and observation timing, stopping rules, and native
+conditioning interfaces at each replan. Any wall-clock dependence of execution
+or termination is held fixed by the comparison protocol. Couple all sampling, environment,
+observation, and controller randomness between the two versions.
+Assume further that every retained state reaching an ungated decoder input
+is updated by the same candidate-independent function of factual observations
+and executed commands. Candidate-dependent bookkeeping may differ only when
+it has no route to an ungated decoder input.
+
+At the first replan, joint withdrawal gives identical Gaussian sources,
+recollection-grounded requirements, zero candidate conditioning, and matched
+native and visual context. The fixed solver therefore produces identical
+action chunks and executed prefixes. Identical executed commands under the
+coupled environment and controller randomness yield identical next states
+and observations. The assumed factual-state update then yields identical
+retained inputs for the following replan. Induction proves pathwise equality
+of the complete executed trajectories. Consequently every measurable success
+criterion on those trajectories has equal probability under the two versions.
+
+This is conditional equivalence to the candidate-null version of the same
+trained policy, not an empirical comparison with a separately trained
+retrieval-free policy. It does not assert that a learned gate becomes zero
+when an entire skill is absent from a nonempty bank. That detection property
+requires a bank-wide skill-absence protocol and is separate from the
+zero-gate premise used here.
+
+
+\paragraph{Partial admission within a fixed proposal branch.}
+Hold $\mu,R_t,R_t^{\mathrm{pred}},C_{i^\star}$, factual context, and masks fixed, and vary $g$ with a shared noise draw.
+For the linear part $P_{\mathrm{ctx}}^{\mathrm{lin}}$ of the affine context projection, define
+\begin{equation}
+ h_t=\left[\operatorname{vec}\!\left(P_{\mathrm{ctx}}^{\mathrm{lin}}
+ (R_t^{\mathrm{pred}}-R_t)\right);\operatorname{vec}(C_{i^\star})\right].
+ \label{eq:context_direction}
+\end{equation}
+Gating the entire projected candidate contribution gives $\mathcal C_g-\mathcal C_0=gh_t$ in the varying coordinates.
+Assume continuous-flow solutions exist on the unit interval and the following bound holds uniformly over their trajectories and contexts for finite $L_x,L_C\geq0$:
+\begin{equation}
+ \|v_\theta(x,\sigma;\mathcal C)-v_\theta(y,\sigma;\mathcal C')\|
+ \leq L_x\|x-y\|+L_C\|\mathcal C-\mathcal C'\|,
+ \label{eq:lipschitz_assumption}
+\end{equation}
+With $\psi(L)=(e^L-1)/L$ for $L>0$ and $\psi(0)=1$, we obtain
+\begin{equation}
+ \|A_t(g)-A_t(0)\|\leq g\left[
+ e^{L_x}\|\mu-\beta\varepsilon_t\|+L_C\psi(L_x)\|h_t\|\right]
+ \equiv gK_t.
+ \label{eq:action_influence_bound}
+\end{equation}
+Here $A_t(g)$ is the continuous normalized output before discontinuous command processing, and $K_t$ is independent of $g$ on the fixed branch.
+
+\noindent\emph{Proof.}
+Set $s=1-\sigma$, $Y_g(s)=x_{1-s}(g)$, and $D(s)=\|Y_g(s)-Y_0(s)\|$.
+Then $\mathrm dY_g/\mathrm ds=-v_\theta(Y_g,1-s;\mathcal C_g)$, and $D(0)=g\|\mu-\beta\varepsilon_t\|$.
+Equation~\eqref{eq:lipschitz_assumption} yields
+\[
+ D(s)\leq D(0)+\int_0^s[L_xD(u)+gL_C\|h_t\|]\,\mathrm du.
+\]
+Gronwall's inequality gives
+$D(s)\leq e^{L_xs}D(0)+gL_C\|h_t\|\int_0^se^{L_x(s-u)}\mathrm du$;
+at $s=1$ this is Eq.~\eqref{eq:action_influence_bound}, including $L_x=0$.\hfill$\square$
+
+For a shared Euler grid with positive steps $\Delta_k$ summing to one, the recurrence
+$D_{k+1}\leq(1+L_x\Delta_k)D_k+gL_C\Delta_k\|h_t\|$
+gives the same bound using $\prod_k(1+L_x\Delta_k)\leq e^{L_x}$, under the same regularity on the iterates.
+Thus the shared gate controls both source and conditioning through a linearly shrinking influence envelope.
+The comparison holds within fixed candidate, mask, and eligibility choices, before physical execution; output differences inside the envelope may vary nonmonotonically.
+Appendix~\ref{app:gate_probes} checks the corresponding zero-gate withdrawal in the implementation.
+
+\subsubsection{Geometry of the experience-informed source}
+\label{app:source_geometry}
+
+Writing $\varepsilon=\varepsilon_t$, the source law conditioned on a proposal and gate fixed before noise is drawn is
+\begin{equation}
+ \nu_g=\operatorname{Law}(z_g\mid\mu,g)=\mathcal N(g\mu,c(g)^2I_D),\qquad
+ c(g)\geq\sigma_{\min}>0.
+ \label{eq:source_law}
+\end{equation}
+The positive floor keeps the source nondegenerate at full acceptance; across queries, these Gaussian sources can form a mixture.
+For a fixed demonstrated action $A^\star$, the zero-mean cross term gives
+\begin{equation}
+ \mathbb E_\varepsilon\|z_g-A^\star\|_F^2
+ =\|g\mu-A^\star\|_F^2+c(g)^2D,
+ \label{eq:geometry}
+\end{equation}
+Writing this expected distance as $J(g)$, its change from a Gaussian start is
+\begin{equation}
+ J(g)-J(0)=g^2(\|\mu\|_F^2+\beta^2D)
+ -2g(\langle\mu,A^\star\rangle_F+\beta D).
+ \label{eq:source_distance_difference}
+\end{equation}
+The expression separates the proposal shift from noise contraction, clarifying the two contributions of the shared source.
+For the candidate-null law $\nu_0=\mathcal N(0,I_D)$, the quadratic Wasserstein distance is
+\begin{equation}
+ W_2(\nu_g,\nu_0)=g\sqrt{\|\mu\|_F^2+\beta^2D}.
+ \label{eq:source_wasserstein}
+\end{equation}
+The common-noise coupling attains squared cost $g^2\|\mu\|_F^2+(c(g)-1)^2D$; Cauchy--Schwarz bounds every coupling's centered cross moment by $Dc(g)$, establishing optimality.
+Hence source displacement scales linearly with admission, while the learned flow determines the resulting action.
+
+\subsubsection{Conditional flow matching with experience-dependent sources}
+\label{app:flow_proof}
+
+Our specialization of conditional flow matching~\citep{lipman2023flowmatching,liu2023rectifiedflow} models the joint distribution of demonstrated actions and retrospective sources under the declared training corruptions.
+
+\begin{warmproposition}[Flow matching with experience-dependent sources]
+\label{prop:conditional_flow}
+Fix the retrospective maps and consider full-valid action chunks.
+Let $(A^\star,Z,\mathcal C)$ have any joint distribution with finite second moments, where $\mathcal C$ is precisely the decoder-visible condition.
+Define $X_\sigma=(1-\sigma)A^\star+\sigma Z$ and $V=Z-A^\star$.
+Assume $\mathbb E[w(\sigma)\|V\|^2]<\infty$. For independently sampled $\sigma$ with positive density and $w(\sigma)>0$, the unrestricted minimizer of the weighted squared flow loss is, almost everywhere,
+\begin{equation}
+ u_\sigma(x;c)=\mathbb E[V\mid X_\sigma=x,\mathcal C=c].
+ \label{eq:optimal_conditional_field}
+\end{equation}
+The conditional path law $p_\sigma(\cdot\mid c)$ satisfies the continuity equation with field $u_\sigma$ in the weak sense.
+If its ODE and continuity equation are well posed backward on each $[\delta,1]$, $\delta>0$, sampling from $p_1(\cdot\mid c)$ and integrating the field recovers $p_\delta(\cdot\mid c)$, with weak endpoint limit $p_0(\cdot\mid c)$.
+\end{warmproposition}
+
+\noindent\emph{Proof.}
+For fixed $\sigma,c$, conditional expectation gives
+\begin{equation}
+ \mathbb E[\|v(X_\sigma,\sigma;c)-V\|^2\mid c]
+ =\mathbb E[\|v(X_\sigma,\sigma;c)-u_\sigma(X_\sigma;c)\|^2\mid c]
+ +\mathbb E[\|V-u_\sigma(X_\sigma;c)\|^2\mid c].
+ \label{eq:conditional_orthogonality}
+\end{equation}
+The cross term vanishes because $\mathbb E[V-u_\sigma(X_\sigma;c)\mid X_\sigma,c]=0$.
+Positive scheduler weights and fixed action-dimension normalization preserve this pointwise minimizer.
+For a smooth compactly supported test function $\varphi$,
+\begin{equation}
+ \frac{\mathrm d}{\mathrm d\sigma}\mathbb E[\varphi(X_\sigma)\mid c]
+ =\mathbb E[\nabla\varphi(X_\sigma)^\top V\mid c]
+ =\mathbb E[\nabla\varphi(X_\sigma)^\top u_\sigma(X_\sigma;c)\mid c].
+ \label{eq:weak_continuity}
+\end{equation}
+Finite second moments and bounded $\nabla\varphi$ justify differentiation under the expectation.
+This is the weak continuity equation $\partial_\sigma p_\sigma+\nabla\!\cdot(p_\sigma u_\sigma)=0$.
+Uniqueness on $[\delta,1]$ identifies the ODE law initialized from $p_1$ with $p_\sigma$; mean-square convergence $X_\delta\to A^\star$ gives the weak endpoint limit.\hfill$\square$
+
+This result connects experience-conditioned initialization to the population objective under the decoder's actual information interface.
+Transport assumes an optimal field and matching source sampling; deployment eligibility, finite data, joint updates, model approximation, and discretization are assessed through the empirical policy evaluations.
+
+\subsection{Auxiliary Supervision and Gradient Flow}
+\label{app:learning_details}
+
+Our targets connect each retrospective decision to observable evidence: recorded effects supervise semantic prediction, demonstration agreement supervises ranking and adaptation, and selected-proposal agreement supervises raw utility.
+
+\paragraph{Masks and distances.}
+Let $m_{t,h}\in\{0,1\}$ mark valid action steps and $f_t\in\{0,1\}$ mark availability of the future observation.
+For queries with at least one valid step, define
+\begin{equation}
+ d_A(U,V)=\frac{\sum_{h=0}^{H-1}m_{t,h}\|U_h-V_h\|_2^2}{d_a\sum_{h=0}^{H-1}m_{t,h}},
+ \qquad d_E(p,q)=\frac1{d_s}\|p-q\|_2^2.
+ \label{eq:distances}
+\end{equation}
+Candidate sums and softmaxes use $\mathcal I_t$.
+We write $\langle\cdot\rangle_{\mathcal S}$ for a query-set mean, with empty means equal to zero.
+Sets $\mathcal A,\mathcal F,\mathcal V$ contain action-valid queries, those with future targets, and those with valid candidates, respectively; $\mathcal F,\mathcal V\subseteq\mathcal A$.
+Set $\mathcal N$ contains forced hard negatives.
+Missing futures retain available action supervision.
+
+\paragraph{Requirement and semantic bridge.}
+For prediction $p$ and detached target $y$, our semantic loss combines direction and log-magnitude alignment:
+\begin{equation}
+ \ell_{\mathrm{sem}}(p,y)=1-\cos(p,y)+\lambda_m\operatorname{SmoothL1}
+ \!\left(\log(1+\|p\|_2),\log(1+\|y\|_2)\right).
+ \label{eq:semantic_loss}
+\end{equation}
+Here $\operatorname{SmoothL1}$ denotes smooth absolute error.
+We set $\mathcal L_{\mathrm{req}}=\langle\ell_{\mathrm{sem}}(r_t,\operatorname{sg}(E_t^\star))\rangle_{\mathcal F}$ and average $1-\cos(\widehat S_{t,j},\operatorname{sg}(\Phi(o_t)_j))$ over queries and four cells for $\mathcal L_{\mathrm{bridge}}$.
+The frozen encoder supplies stable observed targets. Training uses a smooth robust penalty on $\log(1+\|\cdot\|_2)$; selection uses the absolute difference of stabilized log magnitudes in Eq.~\eqref{eq:kappa}. The coefficient $\lambda_m$ weights the comparison of predicted and required effect scales.
+
+\paragraph{Ranking and action adaptation.}
+For $t\in\mathcal V$, aligned stored actions and historical effects define detached utility weights:
+\begin{equation}
+ u_i=-d_A(A_i^w,A_t^\star)-\lambda_E f_t d_E(E_i,E_t^\star),\qquad
+ y_i=\operatorname{softmax}_{i\in\mathcal I_t}(u_i/\tau_u).
+ \label{eq:utility}
+\end{equation}
+Here $\tau_u>0$ sets concentration and $\lambda_E\geq0$ balances effect agreement, omitted when $f_t=0$.
+These labels depend on deterministic alignment and recorded evidence, remaining fixed as the learned proposal and prediction change.
+We optimize
+\begin{equation}
+ \begin{aligned}
+ \mathcal L_{\mathrm{rank}}&=\left\langle D_{\mathrm{KL}}\!\left(
+ \operatorname{sg}(y)\,\|\,\operatorname{softmax}(\ell^{\mathrm{rank}})\right)\right\rangle_{\mathcal V},\\
+ \mathcal L_{\mathrm{adapt}}&=\left\langle\sum_{i\in\mathcal I_t}
+ \operatorname{sg}(y_i)d_A(\mu_i,A_t^\star)\right\rangle_{\mathcal V\setminus\mathcal N}.
+ \end{aligned}
+ \label{eq:ranking_adaptation}
+\end{equation}
+The Kullback--Leibler loss $D_{\mathrm{KL}}$ trains relative preference among valid candidates; the weighted action loss trains bounded adaptation, excluding forced negatives.
+
+\paragraph{Effect-supervision variants and their scope.}
+\label{app:effect_target_scope}
+The audited task-specialist runs for Battery Try, Press Button, Cover Blocks, and Blocks Ranking Try use event-factual effect supervision.
+For each valid retrieved event, the effect branch is trained against that event's own recorded pre/post-transition descriptor $E_i$, rather than assigning the current demonstration's effect $E_t^\star$ to every candidate.
+The current demonstration still supervises requirement prediction and contributes to ranking and utility targets. The descriptor for these runs is the uniform change mean in Appendix~\ref{app:original_effect_projection}.
+These targets must be distinguished from the independently observed effect of executing an alternative action in the current query state.
+In particular, because the historical descriptor is an input to the effect branch, reconstructing $E_i$ can minimize event-factual supervision without establishing transfer to the current state.
+Thus event-factual targets alone do not identify current-state counterfactual consequences.
+
+\paragraph{Shared-stage factual term and candidate regularizer.}
+The separate shared-stage configuration uses the following alternative effect objective, distinguishing its shared-query regularizer from the event-specific targets of the four specialists above.
+An observed transition $(o_t,A_t^\star,o_{t+H})$ trains the shared head with its historical-effect input set to zero:
+\begin{equation}
+ \mathcal L_{\mathrm{fact}}=\left\langle
+ \ell_{\mathrm{sem}}\!\left(f_E(\operatorname{stats}(A_t^\star),0,
+ \operatorname{pool}(W_t)),\operatorname{sg}(E_t^\star)\right)
+ \right\rangle_{\mathcal F}.
+ \label{eq:factual_effect_loss}
+\end{equation}
+For $\mathcal R=(\mathcal V\cap\mathcal F)\setminus\mathcal N$, we also train the candidate-input path with detached utility weights:
+\begin{equation}
+ \mathcal L_{\mathrm{cand}}=\left\langle\sum_{i\in\mathcal I_t}
+ \operatorname{sg}(y_i)\ell_{\mathrm{sem}}(\widehat E_i,\operatorname{sg}(E_t^\star))
+ \right\rangle_{\mathcal R}.
+ \label{eq:candidate_regularizer}
+\end{equation}
+We use $\mathcal L_{\mathrm{effect}}=(\mathcal L_{\mathrm{fact}}+\mathcal L_{\mathrm{cand}})/2$ when $\mathcal R$ is nonempty, and $\mathcal L_{\mathrm{fact}}$ otherwise.
+The candidate term is a shared-query regularizer: predicting $E_t^\star$ for every candidate minimizes it alone for nonzero targets above the norm floor.
+Utility weights change each candidate's influence, not the shared target, and therefore do not provide the observed consequence of executing each alternative.
+The factual term anchors the shared head on demonstrated transitions; it does not by itself rule out candidate-insensitive predictions on retrieved actions.
+Appendix~\ref{app:effect_probes} therefore evaluates candidate sensitivity against independently executed effects, comparing $\widehat E_i$ with $r_t$ and $E_i$.
+
+\paragraph{Utility targets and retrieval corruptions.}
+Selected-proposal agreement defines the detached soft target for raw utility:
+\begin{equation}
+ y_t^g=\operatorname{sg}\!\left[\exp\!\left(-
+ \frac{d_A(\mu_{i^\star},A_t^\star)+\lambda_g f_t d_E(\widehat E_{i^\star},E_t^\star)}{\tau_g}
+ \right)\right],\qquad
+ \mathcal L_{\mathrm{gate}}=\left\langle\operatorname{BCE}(\alpha_t,y_t^g)\right\rangle_{\mathcal A}.
+ \label{eq:gate_loss}
+\end{equation}
+Here $\tau_g>0$ sets sharpness and $\lambda_g\geq0$ weights effect agreement, omitted when $f_t=0$.
+Null and forced-negative targets are zero; binary cross-entropy (BCE) includes all action-valid rows and is evaluated from logits for stability.
+The target measures imitation utility and evolves as the proposal and effect models are updated.
+
+For this shared-stage variant, training mixes normal retrieval, candidate dropout, forced null, and hard negatives selected by demonstrated action/effect disagreement.
+Forced negatives train ranking and rejection with $g_t=0$ on both generation inputs.
+For these negatives, adaptation and candidate-effect losses are masked; factual transitions continue to supervise requirement and effect prediction.
+
+\paragraph{Flow objectives and gradient routes.}
+For action flow, we draw $u\sim\mathcal U(0,1)$ and set $\sigma=5u/(1+4u)$.
+The scheduler weight $w(\sigma)$ is proportional to $\exp[-2(\sigma-1/2)^2]$ after subtracting its minimum on the 1,000-point training grid and normalizing the grid mean to one.
+At inference, Euler integration uses the same shifted grid at $u_k=1-k/N$ for $k=0,\ldots,N$, with $N=10$ except $N=8$ for Observe and Pick Up (Table~\ref{tab:app_run_settings}).
+Action-flow training applies this weight with the valid-action mask; a separate video-only pass computes $\mathcal L_{\mathrm{FM}}^v$ from observed-video targets with its corresponding schedule.
+The action pass obtains visual K/V from current-frame processing.
+We detach $z_t$ in both $x_\sigma$ and $v^\star$, and detach $g_t$ in conditioning while preserving gradients through the token representations.
+Thus action-flow gradients train permitted conditioning paths, auxiliary losses train retrospective decisions, and gate supervision also reaches its feature inputs.
+Retrieval and argmax choose discrete indices; selected continuous readouts remain trainable.
+
+We update Action DiT, retrospective modules, the native state projection, and rank-16 bottleneck adapters at video layers 9 and 19.
+The VAE, text encoder, $\Phi$, and remaining video-backbone parameters stay fixed.
+Table~\ref{tab:app_run_settings} specifies the evaluated loss weights and training settings.
+
+\subsection{Event Construction and Causal Recollection}
+\label{app:memory_details}
+\label{app:execution}
+
+\paragraph{Build intact action--effect exemplars.}
+Each repertoire event contains $H$ recorded commands and their boundary observations from a training demonstration.
+Window starts combine regular anchors, a tail-aligned window, interaction-change peaks, and independently retained gripper transitions.
+We normalize RMS changes in actions, robot state, and available visual features by their median and median absolute deviation (MAD), average the signals, and select local maxima with nearby-peak suppression.
+Only complete windows at the recorded control rate are retained, storing $(S_i^-,A_i,\Delta S_i)$, start state, timing, and provenance separately from retrieval keys.
+The bank stays fixed at evaluation; offline retrieval excludes the query episode and content-identical visual features.
+
+\paragraph{Retain observed interaction.}
+Recollection starts with the initial observed anchor.
+After each executed prefix, we form four change components $c_{t,k}$: any gripper transition, commanded-direction change, frozen-feature change, and VAE-latent change.
+Feature changes use
+$d_{\mathrm{rel}}(u,v)=\min\{1,\|u-v\|_2/(\|u\|_2+\|v\|_2+\epsilon_0)\}$ with $\epsilon_0=10^{-8}$ and zero for two negligible inputs.
+Direction change is $(1-\cos)/2$ between consecutive terminal/net arm displacements; the first prefix averages adjacent nonzero command-vector changes.
+Absolute-joint summaries use start-relative offsets, and relative controls use displacements.
+With nonnegative weights of positive total weight, $s_t^{\mathrm{write}}=\sum_kw_kc_{t,k}/\sum_kw_k$.
+
+We write an event when this score exceeds
+$\operatorname{median}(\mathcal Q)+1.4826\lambda_{\mathrm{MAD}}\operatorname{MAD}(\mathcal Q)$,
+clipped to configured bounds; warm-up uses the lower bound.
+The bounded queue $\mathcal Q$ contains earlier scores, and receives the current score only after the decision.
+This order makes offline prefix reconstruction and online retention use identical available evidence.
+
+\paragraph{Compress and read bounded recollection.}
+New events have unit mass and post-observation representatives.
+We keep the initial anchor separately and protect the latest event.
+At capacity, we merge the most similar eligible adjacent interior pair by cosine similarity of flattened features, choosing the earliest pair on ties.
+For representatives $f_a,f_b$ of masses $m_a,m_b$, the merged feature is $(m_af_a+m_bf_b)/(m_a+m_b)$ with combined mass, older pre-state, and newer post-state.
+Repertoire actions remain intact.
+Readout uses role/relative-age embeddings for initial, historical, latest, and executed-action records, plus separate validity bits for each gripper's opening and closing times.
+Table~\ref{tab:app_run_settings} records capacities, weights, and thresholds.
+
+\paragraph{Read, commit, and execute causally.}
+At replan $t$, we read earlier records and already-executed commands alongside current $o_t,q_t$.
+After inference, we commit the current observation with its preceding commands; newly generated commands enter history after execution, and the next observation supplies their feedback.
+We reuse frozen retrieval features and reset recollection each episode.
+Identical observed-and-executed prefixes therefore produce identical records under fixed settings: induction preserves the write evidence, earlier-score queue, and eligible merge pairs at every update.
+
+\subsection{Core Notation and Module Index}
+\label{app:symbols}
+
+Table~\ref{tab:notation_index} prioritizes the main method's recurring symbols and essential module interfaces.
+Candidate quantities refer to the current query $t$ unless indicated; hats mark learned representations, stars mark demonstration targets, and $i^\star$ is the selected index.
+Local proof and diagnostic variables are defined where used; numerical settings appear in Table~\ref{tab:app_run_settings}.
+
+\begingroup\small
+\setlength{\tabcolsep}{4pt}
+\setlength{\LTcapwidth}{\linewidth}
+\renewcommand{\arraystretch}{1.08}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.265\linewidth}>{\raggedright\arraybackslash}p{0.53\linewidth}>{\raggedright\arraybackslash}p{0.15\linewidth}@{}}
+\caption{\textbf{Core notation by computational role.} Definition references connect the main method to its detailed specification.}\label{tab:notation_index}\\
+\toprule
+Symbol or module & Meaning and role & Definition \\
+\midrule
+\endfirsthead
+\multicolumn{3}{@{}l}{Table~\thetable{} (continued)}\\
+\toprule
+Symbol or module & Meaning and role & Definition \\
+\midrule
+\endhead
+\multicolumn{3}{@{}l}{\textbf{Interaction, experience, and actions}}\\
+$t,o_t,q_t,\ell$ & Replan time, RGB observation, robot state, instruction. & \S\ref{sec:method} \\
+$\mathcal M_t,\mathcal B$ & Current-episode recollection; fixed cross-episode repertoire. & \S\ref{sec:memory} \\
+$H,h_{\mathrm{exec}},d_a$ & Predicted horizon, executed prefix, per-command action width. & \S\ref{sec:method} \\
+$e_i,S_i^-,\Delta S_i$ & Stored event, pre-state features, observed feature change. & Eq.~\eqref{eq:bank} \\
+$A_i,A_i^w,\mu_i$ & Stored, aligned, and adapted action chunks in $\mathbb R^{H\times d_a}$. & Eq.~\eqref{eq:adapter} \\
+$A_t,A_t^\star$ & Generated action chunk and demonstrated target. & \S\ref{sec:reuse}, \ref{sec:learning} \\
+\midrule
+\multicolumn{3}{@{}l}{\textbf{Semantic representations and learned interfaces}}\\
+$\Phi,d_s,\mathcal P_{\mathrm{eff}}$ & Frozen visual encoder, semantic width, fixed effect descriptor map. & Appendix~\ref{app:effect_repr} \\
+$W_t,\widehat S_t$ & Fused world tokens; learned semantic tokens aligned to $\Phi(o_t)$. & App.~\ref{app:effect_repr} \\
+$G_{\mathrm{tr}},P_{\mathrm{req}},R_t,r_t$ & Shared adapter and requirement projection; output tokens and effect-space forecast. & Eq.~\eqref{eq:required} \\
+$c_t,c_i^0,\mathcal W,f_A,\rho,s$ & Compatible action starts, alignment, residual adapter, bound, and scales. & Eq.~\eqref{eq:adapter} \\
+$f_E,\widehat E_i$ & Effect head and its prediction for adapted proposal $\mu_i$. & Eq.~\eqref{eq:effect} \\
+$E_i,E_t^\star,E_{t,i}^{\mathrm{obs}}$ & Historical effect, query-demonstration target, and independently executed candidate effect. & Eqs.~\eqref{eq:effect_target},\eqref{eq:effect_probe_target} \\
+\midrule
+\multicolumn{3}{@{}l}{\textbf{Selection and shared control of generation}}\\
+$\mathcal I_t,K,i^\star$ & Valid candidates, retrieval count, selected index. & \S\ref{sec:compatibility} \\
+$\kappa_i,\lambda_m,\lambda_c$ & Effect compatibility, magnitude weight, compatibility weight in selection. & Eqs.~\eqref{eq:kappa},\eqref{eq:selection} \\
+$\ell_i^{\mathrm{rank}},b_{t,i},\ell_{t,i}^{\mathrm{sel}}$ & Learned relevance, optional shared-policy event-order prior, combined score. & Eq.~\eqref{eq:selection} \\
+$f_g,\alpha_t,g_t$ & Utility head, raw utility, effective gate shared by both generation inputs. & App.~\ref{app:gate_details} \\
+$z_t,\varepsilon_t,\sigma_{\min}$ & Stochastic source, standard Gaussian draw, retained-noise floor. & Eq.~\eqref{eq:source} \\
+$R_t^{\mathrm{pred}},C_i$ & Selected-event transition read and projected action/effect context. & \S\ref{sec:reuse} \\
+$R_t^{\mathrm{act}},C_t^{\mathrm{act}}$ & Gated transition and action-context inputs. & Eq.~\eqref{eq:conditions} \\
+$P_{\mathrm{ctx}},\mathcal C_t$ & Affine context projection; full decoder-visible condition, including masks. & App.~\ref{app:effect_repr} \\
+$v_\theta,x_\sigma,\sigma$ & Action DiT velocity, intermediate action, flow time from source ($1$) to action ($0$). & \S\ref{sec:reuse} \\
+\midrule
+\multicolumn{3}{@{}l}{\textbf{Learning and supervision}}\\
+$d_A,d_E,\operatorname{sg}$ & Normalized action/effect squared distances; stop-gradient. & Eq.~\eqref{eq:distances}; \S\ref{sec:reuse} \\
+$\mathcal L_{\mathrm{FM}}^a,\mathcal L_{\mathrm{FM}}^v$ & Action-flow and video-flow objectives. & Eqs.~\eqref{eq:action_fm},\eqref{eq:loss} \\
+$\mathcal L_j,\lambda_j,\lambda_v$ & Six auxiliary losses and auxiliary/video weights in the joint objective. & Eq.~\eqref{eq:loss} \\
+\bottomrule
+\end{longtable}
+\endgroup

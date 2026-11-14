@@ -1,0 +1,265 @@
+\begingroup
+\raggedbottom
+
+\subsubsection{Candidate-Specific Effects and Full-Selector Quality}
+\label{app:rebuttal_selector}
+
+This study extends Table~\ref{tab:effect_probes} and Appendix~\ref{app:effect_probes} from effect accuracy to decision quality.
+The central question is whether $\widehat E_i$ distinguishes actions within the same candidate pool and improves the deployed selector, rather than only predicting a query's average future.
+The expanded evaluation uses a separate cohort and complements, rather than replaces, the main-text diagnostic.
+
+\paragraph{Shared queries, branches, and outcome labels.}
+The cohort comprises 20 held-out source episodes per task on Put Back Block (PBB), Press Button (PB), and Battery Try (BT), with ten prespecified replans per episode and the deployed $K=32$ candidate slots at each replan.
+Episodes used for fitting or hyperparameter/checkpoint selection are excluded.
+The query schedule is fixed before inspecting predictions: five replans come from approach/alignment stages and five from contact/completion stages of the relevant interaction, using simulator task predicates rather than model scores to identify stages.
+Episodes with fewer available queries are retained with their actual counts; they are not replaced according to outcomes.
+At each query, we cache the requirement, adapted proposals, rank scores, and cursor state once.
+We execute each proposal for $H=32$ commands from the same restored simulator, controller, task-progress, RNG, and factual-history state, following Appendix~\ref{app:effect_probes}; no Action DiT refinement is applied in this branch diagnostic.
+
+Applicability is a task-progress label, not a threshold on $\kappa_i$.
+For PBB, a branch must advance the correct grasp/return interaction toward the episode's original pad, without placing the block on a wrong pad.
+For PB, it must advance approach to the required button or register a permitted press without exceeding the remaining count.
+For BT, it must advance alignment/insertion of the battery currently required by task feedback, without repeating a feedback-rejected attempt.
+Before evaluation, each sampled stage is assigned one explicit predicate: reaching the task evaluator's contact/alignment region, acquiring the correct object, or completing the required placement/press/insertion.
+The mapping and geometric tolerances are frozen on development episodes; a branch is positive only if that predicate is reached without an invalid transition.
+No progress or an incorrect interaction gives $a_{t,i}=0$; an outcome that cannot be resolved from the simulator state is unknown, not automatically negative.
+Labels use privileged state only for evaluation, never as policy or selector inputs.
+
+\begin{table}[H]
+\centering\small
+\caption{\textbf{Branch-cohort accounting.}
+Full endpoints, early task termination, and missing endpoints partition attempted branches.
+Applicability counts are separate: an early terminal outcome can still have a known label.
+Coverage and choice accuracy use the same fully labelled query cohort.}
+\label{tab:rebuttal_coverage}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+Accounting item & PBB & PB & BT \\
+\midrule
+Source episodes / queries & 20 / 200 & 20 / 200 & 20 / 200 \\
+Attempted candidate branches & 6,400 & 6,400 & 6,400 \\
+Complete $H$-step endpoints & 6,304 & 6,272 & 6,208 \\
+Early task termination & 96 & 128 & 192 \\
+Missing endpoints / unknown labels & 0 / 0 & 0 / 0 & 0 / 0 \\
+Applicable / inapplicable labels & 1,152 / 5,248 & 1,024 / 5,376 & 896 / 5,504 \\
+Common fully labelled queries & 200 & 200 & 200 \\
+Queries with at least two full endpoints & 200 & 200 & 200 \\
+Queries with comparable effect pairs & 196 & 192 & 186 \\
+Queries with an applicable candidate & 100 & 80 & 70 \\
+Applicable-pool coverage (\%) & 50.0 & 40.0 & 35.0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Candidate-specific effect error.}
+For the shared complete-endpoint candidate set $\mathcal V_t$ at query $t$, center each reference $F_{t,i}\in\{E_i,r_t,\widehat E_i\}$ and its observed target within that same set:
+\begin{equation}
+ \widetilde F_{t,i}=F_{t,i}-\frac{1}{|\mathcal V_t|}\sum_{j\in\mathcal V_t}F_{t,j},\quad
+ \widetilde E^{\mathrm{obs}}_{t,i}=E^{\mathrm{obs}}_{t,i}
+ -\frac{1}{|\mathcal V_t|}\sum_{j\in\mathcal V_t}E^{\mathrm{obs}}_{t,j}.
+ \label{eq:rebuttal_centering}
+\end{equation}
+The centered error is $|\mathcal V_t|^{-1}\sum_{i\in\mathcal V_t}d_E(\widetilde F_{t,i},\widetilde E^{\mathrm{obs}}_{t,i})$, with $d_E$ from Eq.~\eqref{eq:distances}; queries with fewer than two complete endpoints are excluded from this metric and counted separately.
+Because the centered query-only prediction is zero, this diagnostic tests candidate differences rather than the common query component.
+Ordinary MSE and ordering agreement retain the definitions in Appendix~\ref{app:effect_probes}.
+Development-branch repeatability checks fix ordering tolerances before held-out evaluation.
+
+\begin{table}[H]
+\centering\small
+\caption{\textbf{Effect prediction within shared queries.}
+Centering removes each query's mean effect. Macro averages weight tasks equally; query-only ordering is exactly $1/2$ on comparable pairs by definition, not an empirical gain.}
+\label{tab:rebuttal_effects}
+\begin{tabular}{@{}llccc@{}}
+\toprule
+Task & Effect reference & MSE $\downarrow$ & Centered MSE $\downarrow$ & Ordering $\uparrow$ \\
+\midrule
+PBB & Historical $E_i$ & 0.050 & 0.036 & 0.430 \\
+ & Query-only $r_t$ & 0.039 & 0.035 & 0.500 \\
+ & Predicted $\widehat E_i$ & 0.028 & 0.021 & 0.670 \\
+PB & Historical $E_i$ & 0.058 & 0.039 & 0.410 \\
+ & Query-only $r_t$ & 0.043 & 0.039 & 0.500 \\
+ & Predicted $\widehat E_i$ & 0.033 & 0.024 & 0.640 \\
+BT & Historical $E_i$ & 0.063 & 0.044 & 0.380 \\
+ & Query-only $r_t$ & 0.048 & 0.043 & 0.500 \\
+ & Predicted $\widehat E_i$ & 0.037 & 0.029 & 0.600 \\
+\midrule
+Macro & Historical $E_i$ & 0.057 & 0.040 & 0.407 \\
+ & Query-only $r_t$ & 0.043 & 0.039 & 0.500 \\
+ & Predicted $\widehat E_i$ & 0.033 & 0.025 & 0.637 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Separate retrieval coverage from selection quality.}
+For selection, we use one common set $\mathcal Q$ of queries whose entire valid candidate pool has known applicability labels, including known early-terminal outcomes.
+Candidates are not removed because their predicted scores are poor or their $H$-step endpoints are unavailable.
+Queries with unknown labels remain in the accounting; we additionally report all-query lower/upper bounds by assigning unknown outcomes 0/1.
+Let $p^s_{t,i}$ be the selection probability for rule $s$, uniform over its maximum-score ties (absolute score tolerance $10^{-8}$), and let $\mathcal Q^+=\{t\in\mathcal Q:\max_i a_{t,i}=1\}$.
+Define per-query choice accuracy $c_t^s=\sum_i p^s_{t,i}a_{t,i}$, pool coverage $\Pr(t\in\mathcal Q^+)$, all-query accuracy $\mathbb E[c_t^s]$, and covered-pool accuracy $\mathbb E[c_t^s\mid t\in\mathcal Q^+]$.
+We use equal episode weight within each task, assigning equal weight to queries within episode; the conditional metric renormalizes those same query weights on $\mathcal Q^+$.
+Within each task, all-query accuracy equals coverage times conditional accuracy, separating retrieval coverage from candidate selection quality.
+
+The five rules are uniform random selection; historical compatibility $\kappa(E_i,r_t)$; predicted compatibility $\kappa(\widehat E_i,r_t)$; contextual selection $\ell_i^{\mathrm{rank}}+b_{t,i}$; and the full selector in Eq.~\eqref{eq:selection}.
+They share the actual candidate pool, adapted actions, $r_t$, rank scores, and continuity state; only the scoring rule changes, and no counterfactual selection updates the cached cursor.
+Removing $\kappa_i$ here is a \emph{fixed-checkpoint selector diagnostic}, not the separately configured no-comparison policy in Table~\ref{tab:ablation}.
+
+\begin{table}[H]
+\centering\footnotesize
+\setlength{\tabcolsep}{4pt}
+\caption{\textbf{Independent applicability of selected actions (\%).}
+Each cell is all-query / covered-pool accuracy. All rules use the same labelled pools; the macro conditional column averages the task-conditional rates, not a pooled ratio.}
+\label{tab:rebuttal_selection}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+Selection rule & PBB & PB & BT & Macro \\
+\midrule
+Uniform random & 18.0 / 36.0 & 16.0 / 40.0 & 14.0 / 40.0 & 16.0 / 38.7 \\
+Historical compatibility & 20.0 / 40.0 & 17.0 / 42.5 & 15.0 / 42.9 & 17.3 / 41.8 \\
+Predicted compatibility & 23.0 / 46.0 & 20.0 / 50.0 & 17.0 / 48.6 & 20.0 / 48.2 \\
+$\ell^{\mathrm{rank}}+b$ & 27.0 / 54.0 & 23.0 / 57.5 & 19.0 / 54.3 & 23.0 / 55.3 \\
+Full selector & 31.0 / 62.0 & 28.0 / 70.0 & 23.0 / 65.7 & 27.3 / 65.9 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Paired uncertainty and interpretation.}
+We resample source episodes within each task 10,000 times, keeping all queries, branches, and scoring rules of each sampled episode together.
+We report percentile 95\% intervals for paired differences and the equal-task mean, treating source episodes rather than candidate pairs as independent units.
+Table~\ref{tab:rebuttal_effect_deltas} reports the principal contrasts, with task-wise directions visible in the preceding tables.
+
+\begin{table}[H]
+\centering\small
+\caption{\textbf{Paired mechanism contrasts.}
+Brackets give episode-clustered bootstrap 95\% intervals.
+Centered-MSE contrasts are predicted minus reference; choice contrasts are percentage points.}
+\label{tab:rebuttal_effect_deltas}
+\begin{tabularx}{\linewidth}{@{}Xr@{}}
+\toprule
+Contrast & Estimate [95\% interval] \\
+\midrule
+Centered MSE: predicted minus query-only & $-0.014\ [-0.019,-0.009]$ \\
+Centered MSE: predicted minus historical & $-0.015\ [-0.020,-0.009]$ \\
+All-query choice: predicted minus historical compatibility & $+2.7\ [0.9,4.4]$ \\
+All-query choice: full selector minus $\ell^{\mathrm{rank}}+b$ & $+4.3\ [2.0,6.7]$ \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{Candidate discrimination and decision quality.}
+The predicted-versus-query-only centered-error difference is -0.014, while the full selector changes all-query choice accuracy by +4.3 percentage points relative to $\ell^{\mathrm{rank}}+b$ (Table~\ref{tab:rebuttal_effect_deltas}).
+These contrasts distinguish two claims: sensitivity to candidate-specific consequences, and a benefit of that sensitivity for choosing actions.
+A lower centered error together with a positive paired choice contrast supports both, whereas lower effect error alone did not establish better selection.
+All-query accuracy (27.3\%) is interpreted jointly with pool coverage (41.7\%) and covered-pool accuracy (65.9\%), separating unavailable experience from selection errors.
+These are pre-refinement diagnostics, not rollout success rates or evidence that every rejected proposal is useless after refinement.
+
+\subsubsection{Adaptive Utility Beyond Deterministic Admission Rules}
+\label{app:rebuttal_gate}
+
+This study complements Table~\ref{tab:ablation} and Figure~\ref{fig:experience_distraction} by asking whether learned utility regulates recalled experience in practice, beyond the structural zero-gate property tested in Appendix~\ref{app:gate_probes}.
+
+\paragraph{Record quality and gate values before refinement.}
+We evaluate normal retrieval and the same random/similar complete-event replacements as Appendix~\ref{app:distraction_protocol} on PBB and PB.
+For each condition, we prespecify ten replans from each of 20 held-out episodes per task and log the full learned-gate policy's selected proposal, raw $\alpha_t$, effective $g_t$, and all rule flags before executing the refined action.
+We restore each sampled state to execute the selected adapted proposal and label its applicability using the independent task predicates above.
+No training-negative/null flag is artificially enabled during evaluation.
+Empty pools have $g_t=0$ but no selected-candidate applicability label and are recorded separately, without assigning an arbitrary $\alpha_t$ or negative label.
+Unknown branch labels likewise remain in coverage counts.
+Empty-pool / unknown-label counts are 0/0 for normal, 0 for random, and 0 for similar retrieval.
+
+To separate learning from rules, define $v_t^{\mathrm{det}}=1$ when the selected proposal passes availability/provenance, temporal eligibility, and the hard repetition cutoff, \emph{before} the learned threshold $\alpha_{\min}$.
+Raw-utility summaries and learned rejection rates are conditioned on $v_t^{\mathrm{det}}=1$; effective-gate summaries include deterministic vetoes for every labelled selected proposal.
+This prevents a lower mean gate caused by hard rules from being attributed to learned discrimination.
+
+\begin{table}[H]
+\centering\footnotesize
+\setlength{\tabcolsep}{3pt}
+\caption{\textbf{Gate response to selected-proposal quality.}
+Medians [Q1, Q3] replace a distribution plot. $N/N_{\mathrm{det}}$ gives labelled/eligible counts.
+The final column is $\Pr(\alpha_t<\alpha_{\min}\mid v_t^{\mathrm{det}}=1,a)$ in percent, with the deployed threshold unchanged.
+Empty pools and unknown labels are reported separately.}
+\label{tab:rebuttal_gate_quality}
+\begin{tabular}{@{}llrccc@{}}
+\toprule
+Retrieval & Applicability & $N/N_{\mathrm{det}}$ & $\alpha_t\mid v^{\mathrm{det}}=1$ & $g_t$ & Rejected (\%) \\
+\midrule
+Normal & Applicable & 260 / 252 & .72 [.56, .84] & .55 [.38, .68] & 4.0 \\
+ & Inapplicable & 140 / 116 & .23 [.10, .39] & .04 [.00, .17] & 34.5 \\
+Random & Applicable & 220 / 208 & .70 [.54, .82] & .53 [.35, .66] & 4.8 \\
+ & Inapplicable & 180 / 140 & .19 [.08, .33] & .00 [.00, .13] & 46.4 \\
+Similar & Applicable & 200 / 188 & .68 [.52, .81] & .51 [.32, .65] & 5.3 \\
+ & Inapplicable & 200 / 148 & .14 [.05, .28] & .00 [.00, .08] & 54.1 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering\small
+\setlength{\tabcolsep}{4pt}
+\caption{\textbf{Why candidate influence becomes zero (\%).}
+First-veto attribution uses the displayed left-to-right order, so causes are mutually exclusive.
+All rates use the full logged-query cohort per condition; the complete overlapping flag vector is retained in the logs.
+Repetition's continuous attenuation is reflected in $g_t$, not counted as a hard veto.}
+\label{tab:rebuttal_veto}
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+Retrieval & Other eligibility & Continuity & Repetition & $\alpha<\alpha_{\min}$ & Active $g>0$ \\
+\midrule
+Normal & 1.0 & 4.0 & 3.0 & 12.5 & 79.5 \\
+Random & 2.0 & 6.0 & 5.0 & 18.8 & 68.2 \\
+Similar & 3.0 & 7.0 & 6.0 & 22.5 & 61.5 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The tables condition on the \emph{selected} proposal: a distractor-rich pool does not require a lower gate if selection still finds useful experience.
+Moreover, $\alpha_t$ is trained as imitation utility, not a calibrated probability that a raw proposal is applicable.
+
+\paragraph{A matched constant-utility control.}
+We train a control that substitutes a development-selected constant $\alpha_0$ for the learned utility in \emph{both} source and conditioning, while retaining identical deterministic eligibility, continuity, hard/soft repetition, retrieval, selector architecture, losses, and training budget.
+Candidate availability and eligibility checks, including the comparison to $\alpha_{\min}$, operate on the substituted value.
+We choose $\alpha_0$ from $\{0.25,0.50,0.75\}$ using short, equally budgeted development-only runs and the equal-task/equal-condition mean SR; ties choose the smaller value.
+This choice is frozen before full-budget training and held-out evaluation; the selected constant is $\alpha_0=\text{0.50}$.
+The control retains the utility head and its auxiliary supervision but disconnects its output from action generation, isolating use of adaptive utility rather than removal of a loss or module.
+Initialization, data ordering, optimizer schedules, NFE, action horizon/prefix, corruption schedules, and checkpoint-selection rules are matched.
+Each variant is trained under its own deployed gate rule with three paired training seeds (11, 22, 33).
+The retrieval/selector procedure is unchanged, but its fitted weights and visited states may differ across trained policies; only the fixed-query diagnostic above holds numerical scores and candidates identical.
+
+Each trained checkpoint is evaluated on 100 paired resets per task/condition, with identical donor-sampling and policy-noise schedules at reset and the existing task step limits.
+This gives 3,600 evaluation episodes across two variants, three seeds, two tasks, and three conditions, excluding development selection.
+Subsequent trajectories are allowed to diverge; no shared on-policy candidate sequence is assumed.
+We report mean $\pm$ sample SD across \emph{training seeds}, after averaging reset outcomes within seed.
+This control differs from the no-comparison model, and its training-seed variability differs from the five evaluation-run variability in Figure~\ref{fig:experience_distraction}.
+
+\begin{table}[H]
+\centering\small
+\setlength{\tabcolsep}{4pt}
+\caption{\textbf{Learned versus constant utility (\%).}
+Mean $\pm$ sample SD uses three training seeds; macro scores average both tasks within each seed before computing SD.
+Drop is normal minus similar-distraction SR, computed within seed.}
+\label{tab:rebuttal_constant_gate}
+\begin{tabular}{@{}llcccc@{}}
+\toprule
+Task & Utility & Normal & Random & Similar & Similar drop $\downarrow$ \\
+\midrule
+PBB & Learned & $99.3\pm0.6$ & $94.0\pm2.0$ & $89.0\pm1.0$ & $10.3\pm0.6$ \\
+ & Constant & $99.0\pm1.0$ & $89.7\pm1.5$ & $78.7\pm2.1$ & $20.3\pm1.5$ \\
+PB & Learned & $92.0\pm1.0$ & $86.3\pm1.5$ & $81.3\pm1.2$ & $10.7\pm1.5$ \\
+ & Constant & $91.3\pm1.5$ & $80.7\pm2.1$ & $69.7\pm2.1$ & $21.7\pm1.2$ \\
+\midrule
+Macro & Learned & $95.7\pm0.8$ & $90.2\pm1.4$ & $85.2\pm1.0$ & $10.5\pm1.0$ \\
+ & Constant & $95.2\pm1.0$ & $85.2\pm0.6$ & $74.2\pm0.6$ & $21.0\pm0.5$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For uncertainty, we retain paired reset outcomes within task and seed and report the three seed-level contrasts separately.
+A descriptive $t$ interval on paired seed differences uses $\bar d\pm t_{0.975,2}s_d/\sqrt3$; with only three seeds, this summary depends on a normality assumption and has limited precision.
+The similar-condition macro contrast is 11.0 points (three seed-level contrasts: 11.5,9.5,12.0; descriptive 95\% interval: [7.7,14.3]).
+The reduction in the normal-to-similar drop is 10.5 points (95\% interval: [8.3,12.7]).
+
+\paragraph{Adaptive strength versus structural withdrawal.}
+The matched control distinguishes the value of adaptive strength from the shared rules that disable candidate influence.
+Comparable normal-condition success together with a smaller distraction-induced drop supports a benefit beyond those unchanged rules.
+Higher raw utility for applicable proposals among deterministically eligible cases additionally localize that response to learning rather than veto frequency.
+The closed-loop result is essential: low raw-proposal applicability alone does not prove that refinement cannot make use of the recalled structure.
+The structural withdrawal guarantee alone does not establish a benefit of learned adaptive strength; that claim depends on the matched closed-loop comparison.

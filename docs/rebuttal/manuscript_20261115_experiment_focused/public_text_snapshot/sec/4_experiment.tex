@@ -1,0 +1,251 @@
+\section{Experiments}
+\label{sec:experiments}
+We evaluate episode evidence, recalled-action assessment, and adaptive influence through controlled comparisons, independent candidate execution, and complete-task outcomes.
+
+\subsection{Benchmarks and Evaluation Protocol}
+\label{sec:protocol}
+We evaluate 40 LIBERO tasks and nine RMBench tasks, using 50 and 100 rollouts per task, respectively~\citep{liu2023libero,chen2026rmbench}.
+RMBench contains five $M(1)$ tasks requiring one task-relevant past observation and four $M(n)$ tasks requiring multiple past observations.
+We use task-specialist models and configurations for RMBench, with 50 expert demonstrations per task and task-aware repertoire retrieval.
+Repertoires are training-only and fixed at evaluation; retrieval excludes the query episode.
+We report equal-task success means, with each failure retained in its task denominator. Appendix~\ref{app:protocols} specifies partitions, model selection, control definitions, and aggregation.
+
+\subsection{Benchmark Performance}
+\label{sec:benchmark_results}
+\paragraph{High success across LIBERO suites.}
+\method{} achieves 98.7\% average success, compared with WLA-0's 98.6\% (Table~\ref{tab:libero}).
+It also reaches 97.8\% on Long, 100.0\% on Object, and 98.6\% on Goal; common-backbone controls below isolate the memory contributions.
+\begin{table}[htbp]
+\vspace{-0.3cm}
+\centering
+\small
+\setlength{\tabcolsep}{9.0pt}
+\caption{\textbf{LIBERO success rates (\%).} Across comparative tables, bold/underlining indicate the best/second-best values for each metric and setting, including ties. References retain published protocols; WLA-0 uses standard inference. Details appear in Appendix~\ref{app:protocols}.}
+\label{tab:libero}
+\label{tab:main}
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+Method & Spatial $\uparrow$ & Object $\uparrow$ & Goal $\uparrow$ & Long $\uparrow$ & Avg. $\uparrow$ \\
+\midrule
+$\pi_0$~\citep{black2025pi0} & 96.8 & 98.8 & 95.8 & 85.2 & 94.1 \\
+$\pi_{0.5}$~\citep{intelligence2025pi05} & \underline{98.8} & 98.2 & 98.0 & 92.4 & 96.9 \\
+Motus~\citep{bi2025motus} & 96.8 & \underline{99.8} & 96.6 & 97.6 & 97.7 \\
+HiMem-WAM~\citep{sun2026himem} & 98.2 & \underline{99.8} & \underline{98.4} & 94.5 & 97.7 \\
+Fast-WAM~\citep{yuan2026fastwam} & 98.2 & \textbf{100.0} & 97.0 & 95.2 & 97.6 \\
+LingBot-VA~\citep{li2026lingbotva} & 98.5 & 99.6 & 97.2 & \textbf{98.5} & 98.5 \\
+WLA-0~\citep{yang2026wla} & \textbf{99.0} & \textbf{100.0} & 97.8 & 97.6 & \underline{98.6} \\
+\midrule
+\rowcolor{blue!7}
+\method{} & 98.4 & \textbf{100.0} & \textbf{98.6} & \underline{97.8} & \textbf{98.7} \\
+\bottomrule
+\end{tabular}
+\end{table}
+\paragraph{A pronounced advantage in repeated-interaction decisions.}
+On RMBench, \method{} reaches 87.3\% on $M(n)$ versus MemoryWAM's 81.5\%, with Battery Try improving from 41/100 to 64/100 and Press Button from 87/100 to 92/100 (Table~\ref{tab:rmbench}).
+Both tasks require earlier-attempt feedback or completed-interaction counts to assess familiar behavior.
+The overall nine-task score is 83.9\% versus 83.0\%; on $M(1)$, the scores are 81.2\% and 84.2\%.
+Rearrange Blocks accounts for 13 of the 15 summed task-points in the $M(1)$ gap. Appendix~\ref{app:reported_intervals} gives task-wise fixed-policy rollout intervals.
+\begin{table}[t]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{2.5pt}
+\renewcommand{\arraystretch}{1.08}
+\caption{\textbf{RMBench success rates (\%).} TMC: task memory complexity; VA: visual anchors. Dashes indicate unavailable results. Details are specified in Appendix~\ref{app:protocols}.}
+\label{tab:rmbench}
+\begin{tabularx}{\linewidth}{@{}Xc*{7}{c}>{\columncolor{blue!7}}c@{}}
+\toprule
+\multirow[c]{3}{=}{Task} & \multirow[c]{3}{*}{TMC} & \multicolumn{8}{c}{Success rate (\%) $\uparrow$} \\
+\cmidrule(lr){3-10}
+& & \multirow[c]{2}{*}{$\pi_{0.5}$} & Fast- & HiMem- & DIM- & EventVLA & Memory- & \multirow[c]{2}{*}{WLA-0} & \method{} \\
+& & & WAM & WAM & WAM & (VA) & WAM & & (Ours) \\
+\midrule
+Observe and Pick Up & $M(1)$ & 9 & 0 & \textbf{28} & 13 & 21 & \underline{27} & -- & 25 \\
+Rearrange Blocks & $M(1)$ & 13 & 0 & 33 & \underline{99} & 96 & \textbf{100} & -- & 87 \\
+Put Back Block & $M(1)$ & 11 & 0 & 32 & \underline{98} & 95 & \textbf{100} & -- & \textbf{100} \\
+Swap Blocks & $M(1)$ & 24 & 0 & 38 & 96 & 96 & \textbf{100} & -- & \underline{98} \\
+Swap T & $M(1)$ & 15 & 7 & 27 & \textbf{97} & 87 & 94 & -- & \underline{96} \\
+\textbf{Average} & $M(1)$ & 14.4 & 1.4 & 31.6 & 80.6 & 79.0 & \textbf{84.2} & -- & \underline{81.2} \\
+\midrule
+Battery Try & $M(n)$ & 16 & 20 & 28 & \underline{48} & 35 & 41 & 45 & \textbf{64} \\
+Blocks Ranking Try & $M(n)$ & 6 & 26 & 24 & 87 & 81 & \textbf{100} & 23 & \underline{97} \\
+Cover Blocks & $M(n)$ & 0 & 0 & 19 & 56 & \underline{97} & \textbf{98} & 84 & 96 \\
+Press Button & $M(n)$ & 0 & 0 & 8 & 34 & 3 & \underline{87} & 74 & \textbf{92} \\
+\textbf{Average} & $M(n)$ & 5.5 & 11.5 & 19.8 & 56.3 & 54.0 & \underline{81.5} & 56.5 & \textbf{87.3} \\
+\midrule
+\textbf{Total Average} & -- & 10.4 & 5.9 & 26.3 & 69.8 & 67.8 & \underline{83.0} & -- & \textbf{83.9} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+\subsection{Complementary Memory and Generative Reuse}
+\label{sec:ablations}
+\paragraph{Episode evidence and reusable behavior contribute together.}
+The common-backbone study uses shared data partitions and three training seeds (Table~\ref{tab:ablation}).
+On $M(n)$, combining both stores improves success by 28.1 points over recollection alone and 35.5 points over repertoire alone; LIBERO-Long increases from 96.6\% with recollection to 97.8\% with both.
+These comparisons support their complementary roles in history-dependent manipulation and action reuse.
+\begin{table}[t]
+\centering
+\small
+\setlength{\tabcolsep}{12pt}
+\renewcommand{\arraystretch}{1.08}
+\caption{\textbf{Component comparisons (\%).} The upper block varies store access; the lower block tests source initialization and explicit comparison. Rankings span both blocks; Appendix~\ref{app:ablation_defs} defines the inputs and generation pathways retained or changed in each of the six variants.}
+\label{tab:ablation}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+\multirow[c]{2}{*}{Variant} & \multicolumn{2}{c}{LIBERO} & \multicolumn{2}{c}{RMBench} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+& Avg. $\uparrow$ & Long $\uparrow$ & $M(1)$ $\uparrow$ & $M(n)$ $\uparrow$ \\
+\midrule
+Neither event store & 97.8 & 95.2 & 2.4 & 14.7 \\
+Situated recollection only & \underline{98.3} & 96.6 & 54.6 & 59.2 \\
+Sensorimotor repertoire only & 98.1 & 96.2 & 48.9 & 51.8 \\
+\rowcolor{blue!7}
+Full \method{} & \textbf{98.7} & \textbf{97.8} & \textbf{81.2} & \textbf{87.3} \\
+\midrule
+Gaussian source (context only) & 98.0 & \underline{97.2} & 76.8 & 79.5 \\
+Without explicit comparison $\kappa_i$ & 98.2 & 96.4 & \underline{77.6} & \underline{80.0} \\
+\bottomrule
+\end{tabular}
+\end{table}
+\paragraph{Assessment and initialization improve complete-task behavior.}
+With candidate conditioning retained, proposal-informed initialization improves $M(n)$ success by 7.8 points over the Gaussian-source control.
+Explicit consequence comparison adds 7.3 points while retaining adaptation, effect prediction, and their supervision.
+Both assessment and proposal-informed refinement therefore improve complete-task behavior in both RMBench memory groups (Appendix~\ref{app:ablation_defs}).
+
+\subsection{From Predicted Consequences to Better Decisions}
+\label{sec:candidate_results}
+We independently execute each adapted candidate for $H=32$ commands from a matched simulator/controller, task-progress, randomness, and factual-history state. Table~\ref{tab:effect_probes} evaluates proposal consequences before the action decoder refines the selected prior.
+
+\begin{table}[!ht]
+\centering\small
+\caption{\textbf{Candidate-effect assessment.} Rows share states, proposals, and independent labels. Query-only ordering and ties are analytical; Appendix~\ref{app:effect_probes} defines the metrics and shared branch protocol.}
+\label{tab:effect_probes}
+\begin{tabularx}{\linewidth}{@{}Xcccc@{}}
+\toprule
+Effect reference & MSE $\downarrow$ & Ordering $\uparrow$ & Tie rate & Applicable choice $\uparrow$ \\
+\midrule
+Historical $E_i$ & 0.055 & \underline{0.414} & {0.03\%} & {\underline{17.6\%}} \\
+Query-only $r_t$ & {\underline{0.043}} & $1/2$ (ties) & $100\%$ (ties) & {16.3\%} \\
+Predicted $\widehat E_i$ & {\textbf{0.032}} & {\textbf{0.642}} & {0.00\%} & {\textbf{19.0\%}} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+\paragraph{Candidate-specific evidence in shared query pools.}
+A separate PBB/PB/Battery Try cohort uses 20 held-out episodes/task, ten queries/episode, and 32 candidates/query. Centered effect MSE is 0.025 for prediction versus 0.039 for query-only and 0.040 for historical effects. Full selection reaches 27.3\% all-query and 65.9\% covered-pool applicability at 41.7\% mean coverage. Table~\ref{tab:mechanism_summary} isolates paired prediction and selection gains; Appendix~\ref{app:rebuttal_selector} defines the task-conditional aggregation.
+
+\begin{table}[!ht]
+\centering\small
+\caption{\textbf{Prediction and selection on shared candidate pools.} Paired contrasts with 95\% intervals from source-episode bootstrap resampling within each benchmark task.}
+\label{tab:mechanism_summary}
+\begin{tabularx}{\linewidth}{@{}Xl@{}}
+\toprule
+Contrast and metric & Difference [95\% interval] \\
+\midrule
+Predicted vs. query-only, centered effect MSE & $-0.014\ [-0.019,-0.009]$ \\
+Full selector vs. rank+continuity, all-query choice (pp) & $+4.3\ [2.0,6.7]$ \\
+\bottomrule
+\end{tabularx}
+\end{table}
+\label{sec:interpretation}
+
+Episode-clustered resampling preserves query/candidate dependence. Together with Table~\ref{tab:ablation}, these contrasts connect consequence assessment to selection and complete-task behavior.
+
+\subsection{Robustness and Adaptive Influence}
+\label{sec:experience_robustness}
+\paragraph{Assessing visually plausible but unsuitable experience.}
+On Put Back Block and Press Button, we target replacement of 50\% of retrieved slots with intact random or visually similar events; slots lacking donors retain the original event.
+Donors retain complete action/effect records; similar donors match visual pre-states but differ in stage or effect.
+Full \method{} retains 85.3\% SR under similar-event replacement versus 61.9\% without explicit comparison (Figure~\ref{fig:experience_distraction}).
+The success drop is 10.7 versus 30.5 points: explicit comparison reduces degradation by 19.8 points.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{fig/retrieval_robustness.pdf}
+\caption{\textbf{Consequence assessment preserves useful experience reuse.}
+Five-run means on PBB/PB, with 100 resets per task per run. Left: success under normal and intact-event replacement. Right: decrease from each policy's normal condition. Appendix~\ref{app:fullresults} reports task-level variability.}
+\label{fig:experience_distraction}
+\label{fig:retrospection_analysis}
+\end{figure}
+
+\paragraph{Learned utility adds value beyond fixed eligibility.}
+A constant-utility control retains retrieval, selector architecture, eligibility rules, auxiliary supervision, and training budget, replacing adaptive strength in both generation pathways.
+We select 0.50 from $\{0.25,0.50,0.75\}$ before held-out evaluation. Table~\ref{tab:adaptive_utility_main} shows an 11.0-point similar-event gain from learned influence (paired-seed 95\% interval: [7.7,14.3] points).
+Adaptive strength thus improves robustness beyond the shared eligibility rules.
+Separately, eligible applicable/inapplicable proposals yield raw-utility medians 0.68/0.14 and all-query effective-gate medians 0.51/0.00 under similar-event retrieval (Appendix~\ref{app:rebuttal_gate}).
+
+\begin{table}[H]
+\centering\small
+\caption{\textbf{Adaptive versus constant influence (\%).} PBB/PB task means, mean $\pm$ sample SD over three training seeds; 100 paired resets per task/condition/seed.}
+\label{tab:adaptive_utility_main}
+\begin{tabularx}{\linewidth}{@{}Xccc@{}}\toprule
+Utility & Normal & Random events & Similar events\\\midrule
+Constant, DEV-selected & $95.2\pm1.0$ & $85.2\pm0.6$ & $74.2\pm0.6$\\
+Learned adaptive & $95.7\pm0.8$ & $90.2\pm1.4$ & $85.2\pm1.0$\\\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Physical Destination and Order Memory}
+\label{sec:realworld}
+Banana-to-Box (B2B) and Duck-to-Box (D2B) vary object/box layouts and initial object poses; Return-to-Plate (R2P) requires two ordered transfers and return to the original unnamed plate after common staging; Same-Order-Retrieval (SOR) requires two placements and two retrievals in the completed placement order.
+We balance R2P's source plates 7/7/6 across resets and assign SOR final positions independently of chronology, with each order tested ten times.
+\begin{figure}[H]
+\centering
+\begin{minipage}[c]{0.66\linewidth}
+\centering
+\textbf{(a) Real-world Execution Sequences}\par\smallskip
+\includegraphics[width=\linewidth]{fig/real_world.pdf}
+\end{minipage}\hfill
+\begin{minipage}[c]{0.30\linewidth}
+\centering\footnotesize
+\textbf{(b) Successful trials / 20}\par\smallskip
+\setlength{\tabcolsep}{2.8pt}
+\renewcommand{\arraystretch}{1.12}
+\begin{tabularx}{\linewidth}{@{}Xcc>{\columncolor{blue!7}}c@{}}
+\toprule
+Task & $\pi_{0.5}$ & Fast-WAM & \method{} \\
+\midrule
+B2B & \underline{14} & 13 & \textbf{17} \\
+D2B & \underline{13} & 12 & \textbf{16} \\
+R2P & \underline{8} & 7 & \textbf{15} \\
+SOR & \underline{9} & 8 & \textbf{15} \\
+\bottomrule
+\end{tabularx}\par
+\end{minipage}
+\caption{\textbf{Physical evaluation of retrospective reuse.}
+(a) R2P and SOR execution with retrieved observations from events in other tasks.
+(b) Autonomous successes out of 20 for all four tasks; Appendix~\ref{app:realworld} presents the full seven-condition visualization and protocol.}
+\label{fig:realworld}
+\label{tab:realworld_results}
+\end{figure}
+
+We obtain 17,16,15,15 successes out of 20 on B2B,D2B,R2P,SOR, improving R2P/SOR by 35/30 points over the strongest baseline.
+One shared training-only repertoire contains 1,356 indexed events from 20 episodes, with five development episodes kept separate.
+Seven original/black-table sequences visualize physical, history-guided cross-task reuse (Appendix~\ref{app:realworld}).
+
+\subsection{Computational Cost and a Controlled Withdrawal Example}
+\label{sec:efficiency}
+We profile shared-stage batch-one BF16 inference on one H100 80GB using the same 100 recorded development inputs after 20 warmups, with $H=32$, four-command prefixes, ten flow evaluations, and $K=32$.
+Table~\ref{tab:cost_main} reports full action-ready calls: the WARM deployment adds 163.8 ms in median latency and 0.31 GiB in peak allocated GPU memory over the released FastWAM reference.
+Appendices~\ref{app:recorded_cost} and~\ref{app:matched_cost} detail component timings and the Full/Pooled profile.
+
+\begin{table}[H]
+\centering\small
+\caption{\textbf{Shared-stage recorded-input deployment cost.} Full action-ready latency and peak allocated GPU memory; model construction, disk decoding, and simulation are outside query timing.}
+\label{tab:cost_main}
+\begin{tabularx}{\linewidth}{@{}Xrrr@{}}\toprule
+Implementation & Median (ms) & p95 (ms) & Memory (GiB)\\\midrule
+FastWAM release & 366.3 & 381.8 & 23.31\\
+WARM & 530.1 & 565.2 & 23.62\\\bottomrule
+\end{tabularx}
+\end{table}
+
+At a fixed Battery Try state, we hold the model, factual context, and sampling noise constant (Figure~\ref{fig:original_q8_withdrawal}).
+Full preserves battery height, whereas candidate withdrawal causes a fall under the simulator-measured predicate.
+This controlled contrast demonstrates the recalled action's contribution to object stability over the same 32-command horizon (Appendix~\ref{app:original_q8_withdrawal}).
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{fig/battery_withdrawal.pdf}
+\caption{\textbf{Battery Try: Full (no drop) versus candidate withdrawal (drop).}
+A shared state, checkpoint, and Gaussian draw isolate proposal influence over 32 commands. Independently measured simulator heights distinguish the branches at the $0.70$ m fall threshold.}
+\label{fig:original_q8_withdrawal}
+\end{figure}

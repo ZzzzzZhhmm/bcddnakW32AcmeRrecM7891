@@ -1,0 +1,58 @@
+\section{Controlled Withdrawal and Rollout Uncertainty}
+\label{app:supplementary_fixed}
+\subsection{Battery Try: Same-State Candidate Withdrawal}
+\label{app:original_q8_withdrawal}
+We evaluate candidate influence at a fixed Battery Try state (replan 8) using the original-run task-specialist checkpoint at update 12,000.
+The Full action and source are first reproduced from the recorded factual parent. Candidate-null then uses the same checkpoint, observations, factual recollection, and Gaussian draw, setting the shared gate to zero in both the stochastic source and candidate-conditioning pathways.
+This recovers the Gaussian source and requirement-only conditioning; replacing the withdrawn candidate leaves the action unchanged. A final Full branch restores the original action and source, with model parameters and buffers unchanged.
+
+For each branch, we independently restore the simulator, controller, task progress, episode history, and random state, then execute the sealed 32-command chunk.
+The initial Full reproduces the original parent's endpoint and effect before candidate-null execution.
+Table~\ref{tab:original_q8_withdrawal} reports the simulator-measured minimum battery height and the fall predicate $z<0.70$ m.
+Full remains above the threshold, candidate-null falls below it, and the repeated Full reproduces its outcome exactly (Figure~\ref{fig:original_q8_withdrawal}).
+Matching the factual parent and noise isolates the local stability contribution of recalled experience.
+
+\begin{table}[htbp]
+\centering\small
+\caption{\textbf{Battery Try: matched withdrawal outcomes.} Each branch executes 32 native commands from one parent. Height, fall, and next-interaction completion retain their distinct criteria.}
+\label{tab:original_q8_withdrawal}
+\begin{tabularx}{\linewidth}{@{}Xccc@{}}\toprule
+Branch & Minimum height (m) & Fell below threshold & Strict completion\\\midrule
+Full & 0.759883 & No & 0\\
+Candidate-null & 0.311422 & Yes & 0\\
+Full repeat & 0.759883 & No & 0\\\bottomrule
+\end{tabularx}
+\end{table}
+
+This dependent, single-state intervention measures stability over the declared command horizon.
+All three branches have zero strict next-interaction completion at that horizon; stability, interaction completion, and full-task success therefore retain their respective measurement units.
+Complete-task evidence for proposal-informed initialization and consequence comparison is provided by Table~\ref{tab:ablation}, with control definitions in Appendix~\ref{app:ablation_defs}.
+
+\subsection{Rollout Uncertainty for the Original Reported Task Results}
+\label{app:reported_intervals}
+We quantify the precision of our original task-wise success rates using the reported trial counts. Section~\ref{sec:protocol} specifies 100 RMBench rollouts and 20 physical trials per task. RMBench success counts follow from the integer percentages in Table~\ref{tab:rmbench}; the physical counts are reported in Section~\ref{sec:realworld}. Table~\ref{tab:reported_intervals} gives marginal two-sided 95\% Wilson score intervals, conditional on each fixed trained policy and independent binary trials within a task. These are derived intervals for the original reported results, with no additional rollout or recovered per-trial log implied.
+
+\begin{table}[H]
+\centering\small
+\caption{\textbf{Original WARM task results with rollout uncertainty.} The first nine rows use the submitted task specialists; the last four use the original physical evaluation. We report marginal intervals at a nominal 95\% confidence level under the stated fixed-policy, independent-trial model; simultaneous coverage is not claimed.}
+\label{tab:reported_intervals}
+\begin{tabular}{lrrr}\toprule
+Task & Successes / trials & SR (\%) & 95\% Wilson interval (\%)\\\midrule
+Observe and Pick Up & 25/100 & 25.0 & [17.5, 34.3]\\
+Rearrange Blocks & 87/100 & 87.0 & [79.0, 92.2]\\
+Put Back Block & 100/100 & 100.0 & [96.3, 100.0]\\
+Swap Blocks & 98/100 & 98.0 & [93.0, 99.4]\\
+Swap T & 96/100 & 96.0 & [90.2, 98.4]\\
+Battery Try & 64/100 & 64.0 & [54.2, 72.7]\\
+Blocks Ranking Try & 97/100 & 97.0 & [91.5, 99.0]\\
+Cover Blocks & 96/100 & 96.0 & [90.2, 98.4]\\
+Press Button & 92/100 & 92.0 & [85.0, 95.9]\\
+B2B & 17/20 & 85.0 & [64.0, 94.8]\\
+D2B & 16/20 & 80.0 & [58.4, 91.9]\\
+R2P & 15/20 & 75.0 & [53.1, 88.8]\\
+SOR & 15/20 & 75.0 & [53.1, 88.8]\\
+\bottomrule\end{tabular}
+
+\end{table}
+
+These intervals describe finite-rollout uncertainty within each task. Uncertainty across independent training seeds and paired differences against a named baseline are separate quantities requiring their own observations. We therefore give each task separately, retaining all successes and failures, rather than assigning a pooled interval to heterogeneous tasks or treating these intervals as a significance test of the benchmark margins.

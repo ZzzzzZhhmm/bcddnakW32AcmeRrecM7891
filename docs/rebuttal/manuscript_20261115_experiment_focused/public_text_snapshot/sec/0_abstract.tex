@@ -1,0 +1,10 @@
+\begin{abstract}
+Local-context world--action models (WAMs) couple visual prediction with control but leave task-critical earlier interactions outside their decision context.
+Memory-augmented embodied policies extend access to history, yet retaining past information does not establish whether a recalled action remains appropriate.
+The central challenge is to use ongoing interaction as evidence for deciding which past behavior to reuse and how it should shape action generation.
+We introduce \method{} \textit{\textbf{(\textbf{W}orld--\textbf{A}ction--\textbf{R}etrospection \textbf{M}odel)}}, organized around \emph{event-grounded retrospection}: current context and \emph{situated recollection} ground inference of a candidate-independent transition requirement, while a cross-episode \emph{sensorimotor repertoire} supplies state--action--effect events.
+Adapted repertoire actions are assessed by comparing their predicted effects with this learned forecast; \emph{consequence-gated source transport} then jointly regulates proposal-informed stochastic initialization and candidate-derived conditioning, turning recalled behavior into a revisable prior for flow-based action generation.
+\method{} achieves 98.7\% success on LIBERO and 83.9\% on RMBench with task-specialist models, including 87.3\% on tasks requiring multiple past observations.
+Component comparisons show complementary benefits from recollection and repertoire; complete-event distraction tests show less degradation with explicit consequence comparison.
+These findings support using current evidence to govern both the selection of past behavior and its influence on action generation.
+\end{abstract}

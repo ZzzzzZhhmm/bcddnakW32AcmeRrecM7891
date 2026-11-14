@@ -1,0 +1,396 @@
+\section{Additional Results and Mechanism Evaluation}
+\label{app:additional_results}
+
+\subsection{Task-Level Robustness to Misleading Experience}
+\label{app:fullresults}
+
+Table~\ref{tab:app_distraction_tasks} resolves Figure~\ref{fig:experience_distraction} into its two tasks.
+Similar-event replacement reduces full \method{} by 10.8 points on Put Back Block and 10.6 on Press Button, while the no-comparison drops are 30.4 and 30.6 points.
+The resulting degradation advantages, 19.6 and 20.0 points, show the same robustness pattern across both tasks.
+Relative to the recollection-only reference, \method{} remains ahead by 15.8 and 17.4 points, while the no-comparison variant falls behind by 8.0 and 5.6 points.
+
+\begin{table}[H]
+\centering\small
+\caption{\textbf{Task-level experience-distraction results (\%).} Mean $\pm$ sample SD across five evaluation runs, with 100 rollouts per task/run. The recollection-only row is the normal-condition reference. Bold/underlined means are best/second-best within each retrieval condition.}
+\label{tab:app_distraction_tasks}
+\begin{tabular}{@{}llcc@{}}
+\toprule
+Method & Retrieved events & Put Back Block $\uparrow$ & Press Button $\uparrow$ \\
+\midrule
+\method{} & Normal & $\mathbf{100.0}\pm0.0$ & $\mathbf{92.0}\pm1.6$ \\
+ & Random distractors & $\mathbf{94.6}\pm3.4$ & $\mathbf{86.6}\pm4.8$ \\
+ & Similar distractors & $\mathbf{89.2}\pm4.5$ & $\mathbf{81.4}\pm5.4$ \\
+\midrule
+Without explicit comparison & Normal & $\underline{95.8}\pm2.2$ & $\underline{89.0}\pm2.5$ \\
+ & Random distractors & $\underline{82.6}\pm6.5$ & $\underline{75.8}\pm6.7$ \\
+ & Similar distractors & $\underline{65.4}\pm6.0$ & $\underline{58.4}\pm10.6$ \\
+\midrule
+Recollection only & Reference & $73.4\pm4.0$ & $64.0\pm8.7$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The two tasks require recollection of an original destination and repeated-interaction progress, respectively.
+Across both demands, explicit comparison helps preserve the benefit of recalled experience.
+We next examine the candidate-level evidence underlying this task-level comparison.
+
+\subsection{Candidate Assessment and Selective Admission}
+\label{app:mechanism_probes}
+
+Our evidence chain follows the decisions made by \method{}: predict a proposal's effect, assess its task relevance, and regulate its influence on generation.
+We use shared branch execution to evaluate effect accuracy and task-appropriate choice, then check joint withdrawal in the generation interface.
+
+
+\subsubsection{Effect Accuracy and Task-Appropriate Selection}
+\label{app:effect_probes}
+
+\paragraph{Shared execution and independent outcomes.}
+Our branch protocol fixes the checkpoint, source episodes, stages, and queries before scoring.
+For each adapted proposal $\mu_i$, execution starts from restored physical, controller, task-progress, random-generator, and observation/history states.
+Executing $H=32$ commands without replanning yields the target
+\begin{equation}
+ E^{\mathrm{obs}}_{t,i}=\mathcal P_{\mathrm{eff}}\!\left(
+ \Phi(o_t),\Phi(o^{\mu_i}_{t+H})-\Phi(o_t)\right).
+ \label{eq:effect_probe_target}
+\end{equation}
+Effect metrics use branches with complete $H$-step endpoints; applicability uses independently resolvable task outcomes, including early terminal outcomes when the task criterion is met.
+We compare the three effect references on the same valid endpoints and labels for each metric.
+We assign $a_{t,i}\in\{0,1\}$ by a predefined next-interaction success criterion or blinded outcome review, retaining unresolved labels as unknown.
+Outcome review supplies independent labels for both consequence prediction and candidate admission.
+
+\paragraph{Effect accuracy.}
+We compare $F_{t,i}\in\{E_i,r_t,\widehat E_i\}$ with $E^{\mathrm{obs}}_{t,i}$ on shared valid endpoints using the feature-width-normalized MSE $d_E$ in Eq.~\eqref{eq:distances}.
+The three references distinguish a stored historical effect, a candidate-independent requirement, and an action-conditioned prediction in the current world context.
+We average candidates within query, then queries within source episode, episodes within task, and tasks with equal weights.
+
+\paragraph{Ordering and applicable choice.}
+Let $s^F_{t,i}=\kappa(F_{t,i},r_t)$ and $s^{\mathrm{obs}}_{t,i}=\kappa(E^{\mathrm{obs}}_{t,i},r_t)$.
+The comparable set $\mathcal P_t$ contains candidate pairs with observed-score differences exceeding $\delta_{\mathrm{obs}}$.
+With $\operatorname{sgn}_\delta(x)=0$ for $|x|\leq\delta$ and $\operatorname{sign}(x)$ otherwise, ordering agreement is
+\begin{equation}
+ h^F_{t,ij}=\begin{cases}
+ 1/2,&\operatorname{sgn}_{\delta_{\mathrm{pred}}}(s^F_{t,i}-s^F_{t,j})=0,\\
+ 1,&\operatorname{sgn}_{\delta_{\mathrm{pred}}}(s^F_{t,i}-s^F_{t,j})
+       =\operatorname{sign}(s^{\mathrm{obs}}_{t,i}-s^{\mathrm{obs}}_{t,j}),\\
+ 0,&\text{otherwise}.
+ \end{cases}
+ \label{eq:tie_ordering}
+\end{equation}
+We average pairs within query, then queries, episodes, and tasks as above; tie rate is the fraction of comparable pairs with tied predicted scores.
+Queries without comparable pairs are excluded from ordering agreement.
+Development repeatability checks determine all tolerances before held-out evaluation.
+
+For the maximum-score tie set $\mathcal T_t^F$, applicable choice is
+$|\mathcal T_t^F|^{-1}\sum_{i\in\mathcal T_t^F}a_{t,i}$ when all its labels are known, matching uniform tie breaking.
+On comparable pairs, query-only scores yield $1/2$ ordering agreement and 100\% ties analytically; applicable choice equals the candidate-pool applicability rate, which requires outcome labels.
+These metrics connect requirement-aligned ordering to independently verified task progress.
+
+\input{sec/appendices/c_consequence_evidence}
+
+\subsubsection{Shared Withdrawal Under Candidate Replacement}
+\label{app:gate_probes}
+
+We test the candidate-null boundary of Proposition~\ref{prop:withdrawal} on 50 fixed development prefixes from five Press Button and five Put Back Block episodes.
+With current inputs, sampling randomness, and conditioning masks fixed, we replace retrieved candidates while forcing both the source and candidate-conditioning gates to zero.
+The resulting $32\times14$ action outputs are identical in all 50 comparisons (maximum absolute difference 0; \texttt{v8-step300}, BF16, batch one, 20 inference steps).
+This check verifies exact joint withdrawal of both candidate pathways under matched inputs.
+\subsection{Real-World Tasks and Evaluation Protocol}
+\label{app:realworld}
+
+Banana-to-Box (B2B) and Duck-to-Box (D2B) probe repertoire reuse under changed layouts and poses (Section~\ref{sec:realworld}).
+Return-to-Plate (R2P) and Same-Order-Retrieval (SOR) add episode-specific destination and order requirements for the same banana and rubber-duck objects, testing how recollection guides familiar interactions across task goals and scenes.
+We evaluate 20 autonomous trials per method/task with shared resets and a fixed repertoire; recollection resets between trials.
+
+\subsubsection{Platform, Data, and Shared Interface}
+\label{app:realworld_hardware}
+
+We use a single-arm AgileX PiPER-series manipulator with a parallel-jaw gripper.
+Fast-WAM provides a same-family world--action reference, and $\pi_{0.5}$ provides a VLA reference under a shared physical action interface.
+The comparison shares external (head) and wrist RGB views, proprioception, task instructions, training splits, reset schedules, and execution limits across methods.
+Table~\ref{tab:realworld_hardware} records the data and adaptation configuration.
+
+\paragraph{Recorded demonstrations and preprocessing.}
+The current real-robot dataset contains 25 teleoperated demonstrations,
+partitioned into 20 training and 5 development episodes.
+The train/development counts are 4/1 for Banana-to-Box,
+4/1 for Duck-to-Box, 8/2 for Return-to-Plate, and
+4/1 for Same-Order-Retrieval.
+The processed catalog contains 12,333 command-bearing frames:
+9,976 in training and 2,357 in development.
+The episode-level training/development split is distinct from the tabletop-variation evaluation in Figure~\ref{fig:realworld_c4_sequences}.
+The repertoire contains 1,356 events from the 20 training episodes only.
+Retrieval uses $K=32$ and a $768+4$-dimensional visual--task key.
+We account for demonstrations and autonomous policy trials separately.
+
+\begin{table}[H]
+\centering\small
+\caption{\textbf{Physical-data and adaptation configuration.}
+Data timing describes the demonstration stream; deployment actions use the interface specified below.}
+\label{tab:realworld_hardware}
+\begin{tabularx}{\linewidth}{@{}p{0.25\linewidth}X@{}}
+\toprule
+Component & Recorded setting \\
+\midrule
+Platform & PiPER-series single arm with parallel-jaw gripper. \\
+Observation & External/head and wrist RGB; declared $640\times480$ inputs, resized to $224\times224$ per view and joined into a $224\times448$ image. \\
+Proprioception & Seven dimensions: TCP position, rotation vector, and gripper width. \\
+Action target & Six absolute joint targets in radians and absolute gripper width in meters. \\
+Temporal interface & Nominal data rate 20\,Hz; prediction horizon $H=32$. \\
+Training / repertoire & 20 train / five development demonstrations; 1,356 training-only events; $K=32$. \\
+Adaptation configuration & BF16; per-device batch one, accumulation one; learning rate $10^{-4}$ with cosine decay; weight decay 0.01; gradient clipping 1.0. \\
+Randomness / budget & Training seed 42; corruption seed 3407; eight epochs configured. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{Consistent state and action semantics.}
+The joint-action conversion retains TCP-based proprioception and republishes joint targets as actions.
+Training normalization statistics and the event bank are rebuilt for this action representation.
+Although both vectors have seven dimensions, state and action retain their respective Cartesian and joint-control semantics.
+For absolute-joint alignment, the control-space starts $c_t,c_i^0$ refer to joint coordinates; TCP proprioception $q_t$ remains a distinct input to the learned adapters.
+The 20\,Hz value describes demonstration sampling; the joint targets are absolute commands rather than frame-to-frame differences.
+
+The adaptation entries specify the training settings; the nominal data frequency and epoch budget retain their configuration-level meaning.
+
+
+
+\begin{figure}[!t]
+\vspace{-0.4cm}
+\centering
+\includegraphics[width=0.96\linewidth]{fig/physical_scenarios.pdf}
+\caption{\textbf{Seven physical deployment sequences with retrieved cross-task events.}
+Within each task pair, the upper row shows left-to-right execution keyframes from the external/head camera with wrist-view insets; the lower \emph{Past recall} row shows observations retrieved from indexed events in other tasks.
+Original and Black identify the two tabletop appearances.
+Each pair exposes a familiar interaction recalled under a new task or scene.}
+\vspace{-0.4cm}
+\label{fig:realworld_c4_sequences}
+\end{figure}
+
+
+
+
+
+
+
+\paragraph{Shared repertoire and traceable reuse.}
+We build one repertoire from the 20 training episodes across all four tasks.
+Inspection of its event indices confirms 1,356 training events and excludes the five development episodes.
+Normalization uses the training partition.
+Task identity contributes to retrieval similarity (Appendix~\ref{app:gate_details}); source episode and event identifiers preserve action provenance.
+
+Each indexed event contains its source task, episode, action interval, and observation history.
+The retrieved cross-task observations in Figure~\ref{fig:realworld_c4_sequences} make repertoire reuse visible, while the physical tasks distinguish the episode-specific requirement supplied by recollection from the familiar behavior supplied by the repertoire.
+
+\subsubsection{Four Tasks and Success Criteria}
+\label{app:realworld_tasks}
+
+\paragraph{B2B and D2B: action reuse across layouts.}
+The robot grasps a banana or duck from the table and places it inside the box.
+Evaluation configurations vary object and box positions and the object's initial pose within the declared workspace.
+Methods share 20 reset configurations in randomized order.
+Success requires the correct object to be released fully inside the box within the episode limit, with a stable final placement and no corrective assistance.
+These tasks test whether familiar repertoire actions remain useful as grasp and placement geometry changes; the simulation component comparisons quantify the contribution of access to the repertoire.
+
+\paragraph{R2P: retain the original destination.}
+A banana initially occupies one of three visually identical plates; the robot moves it to a common table-center staging position and then returns it to its original plate.
+The instruction refers to the original plate without naming its location.
+The 20-reset schedule allocates the three starting plates as evenly as possible (7, 7, and 6 trials), independently of layout and method, and randomizes trial order.
+After staging, the three plates are empty and the banana occupies the same central region; successful completion requires both transfers in order and a stable release on the correct source plate.
+Trials without a return attempt fail the full-task criterion.
+Uniform random destination choice succeeds with probability $1/3$ before accounting for the two required transfers.
+
+\paragraph{SOR: retain the order of completed interactions.}
+The same banana and rubber duck used in B2B and D2B are placed one at a time into a common receiving area and then retrieved in the same order.
+Placement follows trial-varying one-step cues; retrieval refers to the order actually completed.
+The schedule uses each placement order in ten trials and assigns final object positions independently of order across the evaluation layouts.
+We design the retrieval phase so that transient placement cues have left the current input and final object arrangement is independent of chronology.
+Success requires both placements and both retrievals in the recorded order within the episode limit; the first order violation ends sequence success.
+Logging requested and completed placements separately makes the reference order explicit when an earlier action fails.
+
+\paragraph{Historical cues at the decision point.}
+R2P's original plate and SOR's placement order are established before the corresponding return or retrieval decisions.
+Staging removes the banana from its initial plate, and SOR's transient placement cues leave the current camera views before retrieval.
+The robot replans from current observations while retaining each policy's native episode history; the task criteria above score the resulting destination and order decisions.
+
+\subsubsection{Outcome Accounting and Reporting}
+\label{app:realworld_results}
+
+\begin{table}[!ht]
+\centering\small
+\caption{\textbf{Physical task structure and episode-specific decisions.}
+Success counts retain the original 20 autonomous trials per method/task; ordered phases are part of the full-task criterion.
+Task difficulty and the diversity of the training-only repertoire are distinct evaluation axes.}
+\label{tab:realworld_dependency}
+\begin{tabularx}{\linewidth}{@{}lXXc@{}}
+\toprule
+Task & Required manipulation sequence & Controlled variation or historical reference & WARM \\
+\midrule
+B2B / D2B & Pick up the named object, transport it, and release it stably inside the box. & Object/box layout and initial pose vary; objects are familiar. & 17/20; 16/20 \\
+R2P & Source plate $\rightarrow$ common staging area $\rightarrow$ original source plate. & Three identical source plates occur 7/7/6 times; the return instruction does not name the plate. & 15/20 \\
+SOR & Place two objects, then retrieve both in the completed placement order. & Both orders occur ten times; final object positions are assigned independently of chronology. & 15/20 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{Task difficulty and retrieval ambiguity.}
+R2P and SOR combine ordered manipulation with decisions whose reference is established earlier in the current episode.
+The repertoire supplies familiar interaction structure, while recollection carries the destination or order needed for the current task.
+These requirements make the physical study a test of history-dependent behavioral reuse, beyond successful grasping alone.
+The repertoire contains 1,356 events from 20 training demonstrations, with five separate development demonstrations; the 20 autonomous test trials per task are counted independently.
+A larger or more ambiguous repertoire tests a complementary property: whether consequence assessment remains useful when more retrieved experiences compete or the required skill is absent.
+The present physical results establish the stated task and scene variations within the compact repertoire, without treating its event count as independent demonstration diversity.
+
+Figure~\ref{fig:realworld}b reports autonomous successes out of 20 for each method and task under shared reset schedules.
+Success follows the task-specific criteria above; timeouts, wrong-object actions, dropped objects, order violations, and corrective interventions count as failures.
+The common denominator makes the four task comparisons directly interpretable, while the R2P destination and SOR order criteria distinguish history-dependent choices from physical execution.
+
+\paragraph{Deployment sequences and retrieved cross-task events.}
+Figure~\ref{fig:realworld_c4_sequences} extends the two examples in Figure~\ref{fig:realworld}a to seven physical conditions: B2B, D2B, R2P, and SOR on the original tabletop, plus D2B, R2P, and SOR on a black tabletop.
+These sequences provide qualitative views of the four tasks; Figure~\ref{fig:realworld}b reports the 20-trial totals at task level, without separate per-appearance rates.
+Each task row follows one deployment from the external/head view, with wrist-view insets; the adjacent \emph{Past recall} row shows observations indexed from retrieved events in other tasks.
+The pairs connect cross-task interaction histories to the policy's physical execution under the current goal and scene.
+
+
+\paragraph{Scene variation and repertoire reuse.}
+On the original tabletop, B2B and D2B progress from object pickup to stable placement in the box.
+The D2B sequence repeats that transfer on the black tabletop, where the background appearance and object--box arrangement change.
+Across these examples, retrieved events pair banana and duck interactions with different destinations, making reusable grasp-and-transport structure visible across goals.
+The deployments show \method{} carrying that familiar manipulation into the changed scenes while completing the current object-to-box goal.
+
+\paragraph{Recollection in history-dependent tasks.}
+In both R2P scenes, the banana leaves its initial plate, reaches the central staging area, and returns to the same plate.
+In both SOR scenes, the robot completes the placements and retrieves the objects in their earlier placement order.
+The object identities remain familiar across all four tasks, while the correct R2P destination and SOR retrieval order depend on the current episode's past.
+These visible choices connect recollection's episode-specific requirements to the repertoire's familiar manipulation behavior in physical execution.
+
+Together, the seven examples make the two roles of retrospection concrete: selected cross-task events supply reusable action structure, and recollection carries the destination or order established earlier in the current episode.
+The 20-trial comparison strengthens this visual evidence: \method{} succeeds on 15/20 R2P and SOR trials, while each baseline reaches at most 9/20.
+
+\subsection{Recorded-Observation Deployment Cost}
+\label{app:recorded_cost}
+
+We profile our shared-stage WARM checkpoint at update 3,000 and the released FastWAM checkpoint through their deployment implementations on one H100 80GB, with BF16 and batch size one.
+Both receive the same 100 recorded current observations from five Press Button development episodes (20 replanning prefixes each), with 20 additional warmup queries per implementation.
+We fix action horizon 32, execution prefix 4, and 10 flow evaluations.
+Future observations are discarded before inference; WARM's episode memory receives the recorded executed actions, and generated actions are never executed.
+This measures inference cost on a fixed observation cohort, rather than closed-loop success or a matched-training performance comparison. This additional profile is separate from the task-specialist accuracy protocol.
+
+\begin{table}[h]
+\centering\small
+\caption{\textbf{Recorded-observation deployment cost.} CUDA-synchronized latency over the full replanning path after warmup. Memory is the maximum PyTorch allocated/reserved GPU memory over 100 queries, excluding CPU bank storage and system RAM.}
+\label{tab:recorded_cost}
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+Implementation & Median (ms) & p95 (ms) & Allocated (GiB) & Reserved (GiB) \\
+\midrule
+FastWAM release & 366.3 & 381.8 & 23.31 & 23.58 \\
+WARM & 530.1 & 565.2 & 23.62 & 23.74 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The WARM bank contains 89,680 events, with exact CPU cosine retrieval and $K=32$; gathered candidates are transferred to the model device.
+Recent-event and action-summary capacities are 20 and 8, respectively, while their observed occupancies are 0--8 and 0--8.
+The recent-event buffer does not saturate in this cohort, so this is not a worst-case history-length measurement.
+The median latency ratio is 1.447 (WARM/FastWAM).
+
+
+\paragraph{Nested retrieval intervals.}
+We additionally reconcile the retained retrieval stopwatches with all 100 synchronized outer measurements, with identical recorded sample keys and the declared warmup excluded.
+Table~\ref{tab:retrieval_phase_cost} reports these inclusive intervals.
+The per-query outer time minus the complete retrieval interval defines the remaining replanning work; it includes observation processing, causal history, source construction, sampling, and telemetry, and does not isolate WARM's adaptation, consequence, or gate modules.
+Only means are additive across this nested retrieval/remainder partition.
+
+\begin{table}[htbp]
+\centering\small
+\caption{\textbf{Nested retrieval stopwatch accounting.} The same 100 recorded DEV prefixes and shared-stage update-3,000 checkpoint as Table~\ref{tab:recorded_cost}. Retrieval subintervals are included in complete retrieval, which is included in full replanning. These inclusive intervals describe the measured computation.}
+\label{tab:retrieval_phase_cost}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+Stopwatch interval & Mean (ms) & Median (ms) & p95 (ms) \\
+\midrule
+Full replanning & 524.27 & 530.06 & 565.22 \\
+Complete retrieval & 39.11 & 38.44 & 43.65 \\
+\quad Image preprocessing & 9.36 & 9.21 & 10.54 \\
+\quad Frozen DINO encoding & 6.03 & 5.95 & 6.61 \\
+\quad Exact CPU bank search & 22.09 & 21.34 & 25.96 \\
+\quad Candidate gather & 0.14 & 0.13 & 0.15 \\
+\quad Remaining retrieval work & 1.49 & 1.49 & 1.53 \\
+All other replanning work & 485.16 & 488.10 & 526.19 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Timing boundary and initialization.}
+We synchronize CUDA immediately before and after the whole deployed replanning call, including image/state preprocessing, retrieval and memory operations where present, generation, and queue publication.
+Disk decoding and simulator execution are excluded.
+Both implementations use a $[1,3,384,320]$ image composite with their native numerical preprocessing.
+WARM's call includes built-in policy telemetry; external evidence writing for the FastWAM reference is outside its timed call.
+The latency difference therefore compares the deployed implementations, including this instrumentation difference, and is not a module-level attribution.
+One-time policy construction, including strict artifact checks and loading on the AFS-backed deployment, takes 854.9\,s for WARM and 144.3\,s for FastWAM in this run; it is recorded separately from query latency.
+No other GPU compute process is observed in either run at five-second sampling; this observation is not a hardware-exclusivity guarantee.
+
+\paragraph{Scope.}
+The FastWAM row is a release-checkpoint compute reference, not a same-data fine-tuned accuracy baseline.
+This profile does not establish a success--cost trade-off, MemoryWAM's cost, robot control frequency, or the cost with a fully occupied 20-event recent memory.
+Those comparisons require their own matched experiments.
+
+
+
+
+\subsection{Matched-Model Recorded-Observation Cost}
+\label{app:matched_cost}
+
+We measure independently trained Full and Pooled models at fixed final update 3,000 (seed 3407), using the same base checkpoint, data sources, optimizer/scheduler and update budget.
+Pooled learns four memory tokens from all $K$ retrieved action, visual/effect, timing and context records alongside the same eight causal-history gist tokens.
+It removes explicit adaptation, consequence scoring and influence gating; the four associated retrieval/effect/adaptation/gate losses are zero, and other objectives remain.
+This compares complete methods with their supervision, not an isolated same-objective architecture ablation or a named-baseline reproduction.
+
+Both receive the same 100 observations from five Press Button development episodes (20 prefixes each), with 20 additional warmups per method.
+We use one H100 80GB, BF16, batch one, $H=32$, execution prefix four, NFE ten, $K=32$, and recent/summary capacities 20/8.
+Future observations are discarded; only recorded executed actions update history, and generated commands are never executed. The bank has 89,680 events.
+CUDA synchronization encloses the complete deployed replanning call, including preprocessing, retrieval, history, generation, telemetry and queue publication; disk decoding, model construction and simulation are excluded.
+
+\begin{table}[htbp]
+\centering\small
+\caption{\textbf{Matched-model full-replanning cost.} The same fixed observation schedule and budget, with separate warmups and prespecified Full-then-Pooled execution. Allocated/reserved memory is the measured peak PyTorch GPU memory, excluding CPU bank storage and system RAM.}
+\label{tab:matched_recorded_cost}
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+Method & Median (ms) & p95 (ms) & Allocated (GiB) & Reserved (GiB) \\
+\midrule
+Full & 473.4 & 500.3 & 23.62 & 23.74 \\
+Pooled & 476.5 & 501.1 & 23.61 & 23.75 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The Full/Pooled median ratio is 0.993: costs are close on this cohort, without establishing a statistical speedup, worst-case history cost or causal per-module attribution.
+One-time construction, including strict validation and AFS-backed loading, takes 439.0/420.4\,s for Full/Pooled and is excluded from query timings.
+These models and measurements are separate from the earlier WARM/released-FastWAM reference in Table~\ref{tab:recorded_cost}. They measure computation, not task success, and do not replace the submitted task-specialist accuracy protocol.
+
+
+\paragraph{Instrumented component intervals.}
+We separately observe the same Full model on these 100 prefixes after 20 warmups, using passive forward hooks and method observers.
+Each of the five regions in Table~\ref{tab:matched_module_intervals} is invoked once in all 100 measured queries.
+We record host wall and CUDA-stream event intervals; event resolution and evidence writing follow the outer query timings. Observers preserve method returns, parameters and the sampler.
+
+\begin{table}[htbp]
+\centering\small
+\caption{\textbf{Observed Full component intervals (ms).} Medians and p95 over 100 queries. Event adaptation includes effect prediction and action-context construction; source resolution includes these regions, candidate ranking, the confidence gate and source construction. The confidence-gate row excludes subsequent eligibility/blending operations. Parent/child intervals overlap; observer enqueue overhead and host gaps may contribute. These are not exclusive kernel sums or causal removal costs.}
+\label{tab:matched_module_intervals}
+\begin{tabularx}{\linewidth}{@{}Xrrrr@{}}
+\toprule
+Region & Host median & Host p95 & CUDA median & CUDA p95 \\
+\midrule
+Source resolution (inclusive) & 14.940 & 16.166 & 14.895 & 16.107 \\
+Event adapter (inclusive) & 3.170 & 3.327 & 3.133 & 3.290 \\
+Effect prediction & 0.600 & 0.644 & 0.565 & 0.610 \\
+Candidate reranker & 0.548 & 0.579 & 0.530 & 0.561 \\
+Confidence-gate forward & 0.723 & 0.771 & 0.692 & 0.739 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The instrumented outer median/p95 is 477.2/506.5\,ms, reported separately from Table~\ref{tab:matched_recorded_cost}; the runs do not isolate observer overhead.
+Nested intervals or quantiles must not be summed. These costs do not establish task-success contributions or natural skill-absent reliability.

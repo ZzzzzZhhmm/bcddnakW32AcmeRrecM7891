@@ -1,0 +1,23 @@
+\section{Related Work}
+\label{sec:related}
+
+\paragraph{World--action modeling.}
+Predictive models connect visual dynamics to control through several interfaces.
+Video-planning methods synthesize visual trajectories and translate them into actions~\citep{du2023unipi}, while predictive policies learn control from future-observation representations and inverse dynamics~\citep{tian2025seer,hu2025vpp}.
+Joint video--action generation couples both modalities within a generative model~\citep{zhu2025uwm,bi2025motus,kim2026cosmospolicy,ye2026dreamzero}, with native pretraining extending this coupling~\citep{zhang2026lingbotva2}.
+Efficient interfaces retain predictive training while omitting future-video generation~\citep{yuan2026fastwam}, or expose compact transition representations to action decoding~\citep{ma2026pilot}.
+These interfaces improve how prediction supports control. \method{} addresses the complementary reuse problem by explicitly comparing what a recalled action is predicted to change with the transition required now.
+
+\paragraph{History and experience for long-horizon control.}
+History can enter control as compressed state, selected evidence, or planning context.
+State-space diffusion policies compress the observation stream into recurrent context~\citep{guan2026dssp}; VLA policies combine perceptual and semantic histories at multiple scales~\citep{shi2025memoryvla,torne2026mem}.
+In WAMs, persistent representations, diverse-event selection, and hierarchical summaries extend access to earlier observations~\citep{yang2026memorywam,wang2026dimwam,sun2026himem}.
+Action-effect pretraining and prospective working states further align history with control~\citep{zhou2026actioneffect,guo2026chameleon}.
+MemER and Mem-0 use keyframes or completed interactions for planning~\citep{sridhar2025memer,chen2026rmbench}.
+These methods recover task context. \method{} uses episode-specific recollection to infer a candidate-independent requirement and assess the present applicability of repertoire actions.
+
+\paragraph{Action generation and experience-informed priors.}
+Action policies span autoregressive token prediction~\citep{kim2025openvla}, latent-variable action chunking~\citep{zhao2023act}, and continuous diffusion or flow generation~\citep{chi2023diffusionpolicy,black2025pi0}.
+ReCAP conditions on retrieved trajectories and learns residual action corrections, with predictive supervision in its WAM variant~\citep{park2026recap}.
+Informed-source flow policies initialize generation with recent actions, proprioceptive histories, or learned action priors~\citep{kang2026warmprior,jia2026a2a,machado2026lafm}.
+These approaches provide useful action priors. \method{} couples consequence assessment to a shared source-and-conditioning gate, so recalled behavior can be admitted, attenuated, or withdrawn.

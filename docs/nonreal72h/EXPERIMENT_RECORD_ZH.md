@@ -3912,3 +3912,16 @@ Battery Try图保留原始三帧像素，蓝/橙Full(no drop)/candidate-null(dro
 PDF 28d522eb8c8a41579b2c953ddd887e88ef0fa61b1edab6c57b83c438985132e0（43598219B），源码ZIP 9c4f20932caeee87019f5b2d99a40af843f860137451601c2dd91c73a9e38f00（35305078B）。完整pdflatex/BibTeX/后续三遍通过；ZIP独立解压、逐成员SHA和再次全编译通过，39页文本及108dpi像素逐页相同。最终0undefined/0overfull/0font fallback，ICLR样式/字号/边距与bibliography保持。所有主文段尾短行候选已处理；唯一扫描项为公式(4)编号、非prose；摘要末行91.6%。全页渲染/主文逐页/修改后附录直接视检、匿名、AI use statement、无pending/作者提醒检查通过。作者变更说明和全部QA在工程外author/CHANGELOG_ZH.md与DELIVERY_QA.json；Git仅追踪22份公开文本源及独立handoff，不加入PDF/图件/运行输出。
 
 本轮CCI/ACP/train/eval/冷存/自动任务启动均0，原暂停授权保持；未访问CCI或发布评论/上传正式论文。current_iteration及working_response_index更新为本稿，冻结首轮入口保存，all20_empirical_closure仍false，补证留待作者指定的下一轮。
+
+
+### 23.383 恢复原稿非实验章节、实验集中增量及完整十页主文验收（仅写作）
+
+按作者11月15日最新要求，独立建立revision/20261115_experiment_focused/paper，核心增量限定Experiment。对照33页最终投稿PDF（aa04f9519881983b9f6f408dcfb5b912c9290b883dbe31567f671136fa864594）及对应first_submission源文件，恢复Introduction、Related Work、Conclusion全部原叙述，规范化叙述token序列完全一致；摘要仅两处局部措辞，Method仅四处既有段落内的接口/门控/监督说明，全部非实验章节标题序列、显示公式和段落框架保留。此前rebuttal_aligned版、原稿与首轮冻结件均未覆盖；差异和五文件内容锁在工程外author目录。
+
+实验正文为7表/5图，保留原核心4表，另3表从已存在证据提炼配对机制、常量门控、recorded-input成本。主文重复门控中位数表去重，关键medians合并到既有utility段落，完整N/Ndet和分母定义仍在附录C.2.3。29张保留带label表的数值序列对前版完全一致，6个附录.tex和6个TNR图件逐字节相同，三份最新回复SHA未变。原稿specialist、独立cohort、三training-seed、五eval-run和shared-stage成本范围保持；没有新增SR或模拟数值。
+
+完整PDF40页，主文10页；Conclusion整段及最后一句完整在第10页，末行y=728.181pt，距正文边界约4.1pt，statements/References从11页开始。未改ICLR字号/边距/行距；非实验章节按保留原稿优先级保持原自然换行，不声称全部段尾满足60%。排版核查曾发现仅检查Conclusion标题不足以防止末句溢出；现已改为完整末句和bbox检查，并通过最终final2。早期布局候选保留在独立build中，不作为交付。
+
+交付PDF ef224b19c51c6eaa7e77aa0ceeb62abe7abec0bdcd6275b0e99d55226ef46820（43,610,171B），28成员LaTeX ZIP66b70cc23fd071ed7e94f6ed5a99458c40e7bbdb78721fdf11e7093271273057（35,306,088B）。完整pdfLaTeX/BibTeX/后三遍通过，ZIP独立解压全编译通过，40页文本和108dpi像素逐页相同，28文件三方SHA一致。最终0undefined/0overfull/0font fallback，主文逐页直接视检、全册渲染/附录contact sheet、匿名/AI披露/无作者提醒检查通过。20项/16组回复映射更新为实际label、源行和页码；作者范围说明及QA均在公开工程之外。
+
+本轮仅写作和本地编译验收，CCI/ACP/train/eval/冷存/定时任务启动0，暂停继续；未发布评论或上传论文，不以编辑覆盖关闭原实证缺口。Git仅增加22份文本源快照、独立handoff及本台账条目，36项既存删除保持不入暂存；完整工程、图件、PDF、ZIP与验证记录在Git外。

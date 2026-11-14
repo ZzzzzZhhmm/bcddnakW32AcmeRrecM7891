@@ -1,0 +1,56 @@
+\section{Introduction}
+\label{sec:intro}
+
+Successful long-horizon manipulation requires connecting what has already happened to what should happen next.
+World--action models (WAMs) couple visual prediction with action generation, bringing predictive representations of physical interaction into robot control~\citep{kim2026cosmospolicy,li2026lingbotva,bi2025motus}.
+Yet understanding how a scene can change does not determine which change the current task calls for, or which past behavior is worth reusing.
+
+Existing approaches address different parts of this connection.
+\emph{Local-context WAMs} act from current observations or short histories (Figure~\ref{fig:leadin}a), which can omit earlier interactions needed to disambiguate the next action~\citep{kaelbling1998pomdp,dai2026robomme,lei2026robomemarena}.
+\emph{Memory-augmented WAMs} retain historical context or derive memory-grounded plans (Figure~\ref{fig:leadin}b)~\citep{yang2026memorywam,wang2026dimwam,zhao2026mapwam}.
+Recent VLA policies also combine online visual history with retrieved experience prompts~\citep{zhou2026remembersmarter}.
+Access to either alone does not establish a recalled action's present applicability.
+\emph{Trajectory retrieval and informed flow sources} supply action exemplars and structured generation priors~\citep{park2026recap,kang2026warmprior,jia2026a2a,machado2026lafm}; a historically successful action, however, may repeat a completed interaction or produce an unwanted change.
+These approaches raise a common question: \textbf{\emph{how can a WAM infer the current task requirement, identify applicable past actions, and regulate their influence on generation?}}
+
+
+Our perspective echoes the \emph{Analects}' idea of \textit{gaining new insight by revisiting prior knowledge}~\citep[2.11]{confucius2002analects}.
+\emph{Recollection} retains observed changes and executed-action summaries from the current episode; a \emph{repertoire} preserves past behaviors and their observed effects across episodes.
+The former informs current task requirements; the latter offers reusable action structure rather than merely additional context.
+Familiar behavior alone cannot reveal what has already happened here, so its applicability must be reassessed against current evidence.
+Our insight is to use \emph{recollection as evidence for assessing the repertoire, and recalled behavior as a revisable action prior}.
+
+\begin{figure}[!t]
+  \centering
+  \includegraphics[width=1.00\linewidth]{fig/overview.pdf}
+  \caption{\textbf{From interaction evidence to selective action reuse.}
+(a,b) Illustrative WAM interfaces use local observations or retained history.
+(c) Recollection grounds the task requirement; the repertoire supplies action--effect proposals.
+Predicted consequence compatibility informs selection and a shared gate over source and conditioning.
+K/V denotes visual keys and values; dashed arrows indicate training-only prediction.
+\textbf{Right:} Benchmark results with published references (Tables~\ref{tab:libero}--\ref{tab:rmbench}) and distraction on Put Back Block and Press Button, averaged equally within each of five evaluation runs.}
+  \label{fig:leadin}
+\vspace{-0.3cm}
+\end{figure}
+\vspace{-0.3cm}
+
+We introduce \method{}, the \emph{World-Action-Retrospection Model}, a video--action architecture for \emph{event-grounded retrospection} (Figure~\ref{fig:leadin}c).
+Current world features and \emph{situated recollection} ground the task requirement; the \emph{sensorimotor repertoire} supplies cross-episode state--action--effect events as reusable proposals.
+We adapt and assess these proposals by predicted effect, then use \emph{consequence-gated source transport} to regulate their contribution to Action DiT initialization and conditioning.
+
+\emph{Consequence-aligned action recall} compares the required change with each recalled action's predicted effect.
+We infer a candidate-independent requirement from current context and recollection, and predict proposal effects from adapted actions, world features, and stored effect evidence.
+Compatibility complements history-aware ranking and guides selection and gating.
+
+\emph{Consequence-gated source transport} carries this assessment into generation.
+A shared gate jointly regulates proposal-informed stochastic initialization and candidate-derived conditioning, letting Action DiT refine useful action structure as a revisable prior.
+Closing the gate restores Gaussian initialization while preserving recollection-grounded task conditioning.
+This shared control admits, attenuates, or withdraws recalled behavior without iterative future-video generation.
+
+Our contributions are threefold:
+\begin{itemize}
+    \item We introduce event-grounded retrospection for WAMs, linking history-dependent task understanding to selective reuse of cross-episode action experience.
+    \item We develop consequence-aligned action recall and consequence-gated source transport: a candidate-independent requirement guides proposal assessment, while a shared gate controls initialization and conditioning for selective generative refinement.
+    \item \method{} achieves 98.7\% success on LIBERO~\citep{liu2023libero} and 83.9\% on RMBench~\citep{chen2026rmbench}, including 87.3\% on $M(n)$ tasks requiring multiple past observations.
+    Component results suggest complementary benefits of recollection and repertoire; complete-event distraction tests support explicit comparison with partial event replacement.
+\end{itemize}
