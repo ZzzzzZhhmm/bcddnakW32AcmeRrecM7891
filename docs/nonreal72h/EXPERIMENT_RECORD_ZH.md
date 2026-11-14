@@ -3857,3 +3857,14 @@ R9已观察模型/optimizer/scheduler/RNG及epoch6/b2528完整恢复、load: ste
 论文50页/主文10页和完整33项LaTeX ZIP直接复用同字节已验收实证v40：PDF a3a63311869fbe965df5b5afaa179dbf2912c8e8e36c96857ced627ca477c2d7，ZIP55220d496f0b331e4cc4bb04714ba3c259c142365ca75b14507cbe8ad49e9217；原完整工程编译/匿名/AI披露/引用/全页文本像素证明保持，0undefined/0overfull，45既有font fallback单独记录。不改PDF而伪称新编译。首轮first_round_ready=true不等于all_scientific_gaps_closed，37+6字段仍null、新SR0，原稿报告与新实测分别标注。未发布评论或上传正式PDF。
 
 11月14日官方Author Guidelines已读实页核对主文10页、讨论期多次修订及总评论数不限但单条有上限。OpenReview另一次可选只读检查PAGE_ATTACHMENT_TIMEOUT/codeDispatched=false，不能推断登录或review更新，原程序/错误/正常恢复finish保留、原用户tab保留；仍用11月13日14:30UTC验真的30原字段/20项。提交准备初版出现大小写References断言错误，发生在已验真复制后、未改PDF或发布；V2核对同页AI/ethics exempt section与大写REFERENCES后完成，不是科学/论文失败。
+
+
+### 23.378 作者暂停实验后，Bbqv 结论先行文本优化与诊断隔离
+
+11月14日作者明确暂停 CCI/ACP 实验和定时任务，转为回复/论文优化。本轮遵从 Git 外 EXPERIMENT_PAUSE_20261114_USER_REQUEST.json；未 SSH、未提交 ACP、未发起 train/eval/cold 或恢复调度。旧 current_iteration 的运行截面不覆盖新的暂停授权。
+
+按作者指定仅重写 Bbqv：tmp/rebuttal/responses/20261114_Bbqv_conclusion_first/Reviewer_Bbqv.md，2539词/10表，6组绑定6 weakness+4 question，正文SHA4a761461b980ee5d127fe6981c79f82287d0bd36deebe7e64112fd9e56f4652c。原稿主表、原有三任务候选研究、三训练种子常量门控对照、独立实现profile与真机原报告按原范围使用；补证排队、计划和未取得性能没有变成结果，未生成理想实测数值。M(n)按四任务整数计数349/400 vs326/400复算，失败51vs74，正文写约31%而非从四舍五入均值推导31.4%。各消融差、置信区间单位、不同profile与cohort已分开核对。
+
+作者本轮说明新测checkpoint并非另一台机器上的原评测完全版，先记录为待身份对应的作者陈述；不由此宣称旧观测错误。按模型/协议一致隔离新增效能诊断，包括不利结果和有利BT q8局部稳定性，不按正负挑选。AUTHOR_CHECKS_ZH.md列明真实未关闭的外部方法匹配复现、人口级修复频率、>50%污染及更广真机证据；CHECKPOINT_DIAGNOSTICS_AUTHOR_ONLY.md及archive_inputs保全原首轮文本和v40附录副本，SHA见CONTENT_VERIFICATION_V1.json。这些是材料/派生来源副本，不冒充重新取得的raw轨迹。
+
+冻结20261114_round1、原50页v40 PDF/LaTeX ZIP和首轮总ZIP保持原字节，其他reviewer未改。恢复指针writing_current_Bbqv.json；新增SR0，实验与自动任务继续暂停。
