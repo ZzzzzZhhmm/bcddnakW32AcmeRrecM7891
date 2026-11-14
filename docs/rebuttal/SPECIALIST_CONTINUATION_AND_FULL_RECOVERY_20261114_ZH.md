@@ -38,3 +38,12 @@ v40实证回复29表、17评论块、20项映射及两套完整论文工程保�
 独立66恢复V2/PID61956从07:53运行，路径 `storage/20261114_STEP66_FULL_STATE_v2`，新3600秒stream/native1800秒。新archive已逐字节复制并核对原prefix SHA `3b84abfacd206cc999771e868491c9e4ecf9efc0dd599f18db6f72a0a62c54df`，再生TAR必须prefix SHA相同才发送缺失尾部；完整TAR/raw两副本全SHA通过前不计恢复、冷存或容量。原V1不覆盖、不重启。
 
 独立66冷存V2/PID12732从07:54运行，原5400秒，只等上述V2；已断言原协调66为known failed skip/mutation0，不拥有256。它仍调用相同严格native helper，全部full-copy/source/stat/noFD/非parent/永久locator/intent条件成立后最多一次操作。未知结果先只读核销，旧PID56224、12732、61956、64140均不能重复启动。R7最新07:57日志1220，完整保存仍640；未完成12000或100对。
+
+
+## iter65：R8未收据中断与短段R9、已批准保留策略
+
+本轮运行恢复以实验台账23.372–23.375及current_iteration为准。R8在1350日志后失去进程，无退出收据；两次独立非活动检查通过，但退出码/原因保留unknown，未执行先前考虑的controlled stop。最后完整1280不变，以3493.744733秒上界保守扣账后prior30355.427737秒，不能把未知耗时改写成精确实际值。R9已09:57:21UTC在CCI仅一次准入1280→1780/500更新；独立完整1280 state审计和真实CPU游标到epoch9/b1552通过，source1055/11d、数据、seed、全局12k和固定100对不改。初始化不等于实际restore，后续读真实日志；原12480秒总单次bound/192GPUh/绝对截止保持。
+
+作者已明确批准后续新快照保留策略，授权原文及scope见CHECKPOINT_RETENTION_PROPOSAL_20261114_ZH.md与Git外ITER65_RETENTION_AUTHOR_APPROVAL_V1.json。最近两完整640/1280、活动父1280及原稿/CAS/raw/失败未知继续保留；本轮eligible0/删除0。新的R9只登记未来可能产生的1780，不能预先判定可删除。所有旧冷存/两完整副本保留，先做符合条件的后继验真/实际恢复，再处理更旧新操作性快照。
+
+无损自包含pilot已complete、两份均全SHA并恢复导出，原路径/locators未改；ACP实际列表访问恢复，不再按旧IAM截面重复索取登录。37+6实证仍null，无新SR，v40基线保持。优先在R9实际稳定恢复后备份非活动640，再准备用ACP并行的原production online合同及独立Full固定参考评测。

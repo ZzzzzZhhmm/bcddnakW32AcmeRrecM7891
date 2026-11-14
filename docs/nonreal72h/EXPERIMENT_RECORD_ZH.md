@@ -3817,3 +3817,28 @@ step256于08:39:20UTC完成两份完整standalone raw/TAR，9件38,515,456,964B�
 V1的1086件包括完整冻结source/base configs、job及实际运行config SHA；为明确补齐独立解析后的YAML，新增V2而不改原包。V2外层30件含R7 pooled_resume640.yaml（550c5dc5…）、R8 pooled_resume1280.yaml（4ad1809f…）原字节、R8冻结控制入口/准入/状态与日志截面、1280完整audit及66/256永久恢复元数据，并嵌入原完整1086件V1包（1055 source）。两端逐成员size/SHA验真：TAR69a7b81513e9d5361b2a96b1fcb5799875bd83ead77eb74995437baf5d416e13（8,325,120B），manifestd21744f0d7ff32fe398dc83319c613940c4a0fe4cf7a8df8a5b7195a0f41a75f。不能将外层30与内层1086相加混称独立实验数。
 
 09:08截面R8仍初始化，parent1280 full-state audit真实通过但load_state/cursor实际恢复尚未观察；last persisted1280/target2000，实际AFS约103GB；37+6及v40保持。包不含大weight/state，原件和完整恢复容器均按独立路径保护；没有新SR。
+
+
+### 23.372 无损自包含归档pilot完成，所有原件与恢复索引保持
+
+0GPU pilot63360于2026-11-14T09:13:09.902255UTC complete，1581.36秒，原7200秒bound未延长。固定PB2000/4000/6000历史冷存包58文件、89,955,012,703逻辑B，在两份各13,716,049,350B的独立自包含ZIP中分别逐文件重建并验全SHA；两容器SHA均8c922ec12dde066b39649f5634890eb88a0f57222612761f0a6a793a78132a58、各16349对象，无外部base，文件inode不同但同一本机物理C盘。实际导出原PB2000的12,144,215,606B checkpoint，SHA95f64d2c0b1ac513b6ef429134bdf508ee2dcaa257cf9684b69bead108e7032e。原raw/TAR/partial/metadata、原生locators全部保留，representation未promote，释放文件0；不能把去重潜力或恢复验证计为已释放容量、新训练或SR。终态与原plan/module身份保存在execution/20261114_iter65/ITER65_CONTAINER_PILOT_COMPLETE_SNAPSHOT_V1.json及storage/20261114_PB234_SELF_CONTAINED_PILOT_v1；不复活已终止pilot。
+
+### 23.373 R8退出收据缺失的非活动核销，运行时间不伪装成精确值
+
+原R8日志最后1350/12000，最后心跳09:34:27UTC，09:47首次人工查询无原controller/child/GPU进程。独立原生只读核销在09:48:56与09:50:01两次间隔65秒观测：三个原PID均不存在、没有引用R8 root的进程、GPU apps空、R8没有任何新checkpoint；原runner/log/config/source保持原字节。原runner仍写resuming_or_training且无exit receipt，终止原因记unknown_external_interruption，不推断为成功、固定故障原因或退出码；未发送signal。原1350日志不是持久状态，仍只承认完整1280。原15.25秒/update及预估超界1990.77秒的forecast保留，先前考虑的controlled stop没有执行。
+
+R8实际运行时间只能界定为2624.491515至3493.744733秒；按首次已证实非活动时间的上界3493.744733秒保守扣账，而非编造精确耗时。原26861.683004120365秒加此上界，后续campaign prior=30355.427737120364秒。192GPUh/11月17日23UTC截止和两个旧关闭阶段均不重置。新增的是1项操作性未知退出，不更改旧科学评测13 unknown或41对shared0–0分母。原P/ITER65_R8_INACTIVE_RECONCILIATION_V1.json及原R8整套原件永久保留。
+
+### 23.374 作者批准后续保留策略，R9唯一接续与证据包双端验真
+
+作者明确回复“采用提案（推荐）”，获批原文SHA98f09bb39a2ac915e45e2bba43226c722d1956a0184b525fd9d2f92931c24b2f及授权原话已Git外封存并同步AFS。按CHECKPOINT_RETENTION_PROPOSAL_20261114_ZH.md执行，无需再次询问相同范围授权。永久step2/66和3000/6000/9000/12000里程碑、最近两份完整状态、所有活动父状态、原稿/CAS/raw/失败与未知受保护。新注册root为legacy_pb_pooled_s3407_formal_20261114_v9；当前640/1280是最近两份、1280为活动父状态，明确eligible清单为空、不可逆删除0。后续只在后继完整state验真并实际恢复且继续更新后，对不在保护集、从未用于正式评测/机制或失败归因的新操作性payload逐文件登记和检查，再按已批准范围处理，不能递归删run或按loss/SR保留。
+
+新500更新操作段1280→1780已通过真实sampler/Accelerate1.12 CPU游标检查：epoch6/b2528至epoch9/b1552，边界1309/1496/1683；0模型更新，不是收益。R9重新独立全量审计父1280，tree9c35d933b0f4fcd2caf42b33e1f65a4b55bb7e546eca8fdb55e2828f47794a0e、weight3c7cef40c6acecd2de8844bd85c4def5d0672c4e546b766e7793e2726047ae59、scheduler/RNG齐全，source1055/manifest11d283fd…与shared recipe不改。09:57:21UTC在CCI仅一次实际准入，operator2664446/child2664449，jobd6eb9ea6…、config07416ea4…、plan96cbe431…；全局12k、数据顺序、seed3407、原paired100 roster de4dc7de…、1500命令和最终checkpoint不变。原11400+180+900=12480秒/3.5GPUh单次界限不变，不假定新allocation窗口。09:59截面正在初始化，实际1280 load_state尚未观察，不能用准入代替实际恢复；最新检查以current_iteration/live receipt为准。
+
+完整原始小材料1105件（包含1055源文件、R8未知退出原字节、R9控制/解析配置/准入和日志截面、独立1280 full-state审计、CPU游标、授权/registry）双端逐成员size/SHA通过。TAR e81dc5af4cf650930138c6aa873039a21410b8cd55d71e6e54e6a6c2a35841ab，7,915,520B；manifest06c244464024031177fcd281dab48725555528ee6481cc00df231d7d40b42e1f。AFS P/ITER65_OPERATIONAL_RAW_V1.tar，本机execution/20261114_iter65/OPERATIONAL_RAW_VERIFIED_V1；大weight/state仍原生，不能把小包当完整38.5GB恢复副本。
+
+### 23.375 ACP访问恢复与材料边界
+
+11月14日09:57实际重新导航并观察到authenticated任务列表与具体任务行，09:59:52再次核对通过；没有读取登录input值或凭据，正常finish保留原用户tab，0新创建/0unknown create。此前08:31 IAM是历史截面，不能再据其断言仍未登录或重复发登录请求。首屏只核对可见10项，不声称完整30页全量任务审计；progress订阅出现HTTP2错误，但实际列表可读，不把订阅失败当创建结果。后续独立Full参考评测和CPU合同资格可使用ACP，必须先冻结源码/资格及核销已有同名动作，GPU仍只用闲时。
+
+本轮均为运行恢复、完整性和存储操作；没有新增SR、最终12000或固定100对结果。原37实证字段及specialist6字段仍null，v40实证29表/17块/20项回复与完整论文/演练版本保持，原41对0–0、13unknown及不利机制结果未被替换。正文仍独立带表、作者第一人称、无pending/作者提醒；理想数值仅在独立演练版本，不进入实证。
