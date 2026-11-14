@@ -3775,3 +3775,27 @@ CPU已终止，不再启动相同资格。R7仍为唯一GPU训练/target1280，�
 独立0GPU tail rescue V2/PID61956于07:53:32开始，原V1失败、前缀和时限全部保留，新stream限3600秒/native1800秒。前缀已复制到新archive并两次全SHA匹配3b84abfacd206cc999771e868491c9e4ecf9efc0dd599f18db6f72a0a62c54df，原前缀stat不变。新原生只读重建同9件TAR，必须先验证完整再生prefix SHA才向本机发送任何尾部；最后还需全archive SHA、9成员SHA和独立raw第二副本。当前是native hashing/prefix verification，未称恢复成功/两副本/容量释放；TAR期望余量约0.495GB不当作实际传输收据。实际scope在storage/20261114_STEP66_FULL_STATE_v2和P/STEP66_TAIL_RESCUE_ITER63_V2，程序和计划在execution/20261114_iter63。
 
 独立66冷存协调V2/PID12732于07:54启动、原5400秒，只等新的V2完整备份，并先确认原协调66为已知跳过/mutation0；不接管256。原生冷存仍同一严格helpers/固定checkpoint身份，两副本再次全SHA、原生全SHA/stat/noFD/非当前parent和永久locator/intent都必须过后才可一次操作，未知动作不重试，不执行不可逆保留策略。07:57日志R7实际1220但最近完整仍640/target1280，AFS65.034GB，原37+6及v40保持，没有新SR。
+
+
+### 23.367 原specialist Pooled连续训练完成global1280；原件完整封存
+
+R7于2026-11-14T08:17:54.105273UTC complete/0，实际640→1280/640新增更新，10596.843477817秒。weight SHA256 3c7cef40c6acecd2de8844bd85c4def5d0672c4e546b766e7793e2726047ae59；原parent640/attestation/shared recipe与实际epoch6/b2528验证一致，完整weight、DeepSpeed model/optimizer、scheduler/RNG及游标均保留AFS。1055-file source11d前后精确，global12000/seed3407/batch128固定，原阶段累计26861.683004120365秒/192GPUh；仅实际终态计账，不复活旧144/0.75阶段或重置11月17日23UTC截止。此时独立full-state1280再次全SHA审计尚未执行，不把保存元数据/weight验真混称该完整审计已过。
+
+1086小原件包含完整1055 source、终态配置/日志/attestation、五件小state及原66恢复/冷存metadata，两端逐成员size/SHA验真：TAR aa12e3d750b5633f8a07779c63bb9a2b8293418d3f62b2822f4b36a043615554（7,792,640B），manifest e78cfddc284020e6f91d9687c7c9686d95380753b8c4259c39f287d88b51a3e6；AFS P/ITER64_STEP1280_RAW_V1.tar，本机execution/20261114_iter64/STEP1280_RAW_VERIFIED_V1。大weight/state未装入小包，原生持续保护。1280是运行端点，不是固定final12000，不产生新SR或正式100配对结果。
+
+### 23.368 原66失败保留；独立完整恢复和可逆冷存完成
+
+独立tail rescue V2于08:11:02.816UTC complete，两份完整standalone raw/TAR、9件38,515,456,960B全SHA通过；TAR SHA25638cd035740cd120845c67ceeb9c8e9779d10f794ed8b27fc02f5def91465e72f，weight5d4674ca…/state-tree4a9c9835…与原源一致。原38,020,628,480B前缀及9000秒失败收据完整保留，真实新增tail 494,858,240B；新原生先再生prefix SHA3b84abfa…匹配后才发送尾部，没有延长或覆盖原失败。
+
+独立66冷存协调V2/PID12732已complete，原生08:16:23.097UTC完成9件全SHA/stat、非当前parent和noFD检查后，先写永久locator/helper/pointers/intent，再释放3冗余热payload（逻辑38,515,399,733B）；六小metadata和全部内容保留在两完整本机副本。locator SHA8aa1a6c6d8e5df91bde7e65a700ddddf7c4662bd318ec55106b5a6e2eab2f974，P/checkpoint_cold_storage/step66_full_20261114_v1；原V1 cold coordinator对66仍known skip/mutation0，不能重启任一旧协调器。两份同物理C盘，不称独立故障域；不可逆checkpoint舍弃0。
+
+AFS在R7完整保存后实测仍低于下一段64GiB；唯一接续64140按原7200秒等step256完成备份/严格冷存及GPU空闲后才准备1280→2000，不重复创建。step256仍原5400/7200秒窗口，未完成不计容量。v40回复/两PDF/ZIP与37+6未测字段保持，41对旧shared0–0/13unknown及负结果保持；没有新正式SR。
+
+
+### 23.369 后续完整恢复容量评估与只读自包含容器pilot准备
+
+0GPU只读profile覆盖17历史weight及完整step2/256的真实已验block，逻辑283,482,579,038B、唯一payload108,613,623,387B，两份独立自包含容器payload估计217,227,246,774B，比两份普通payload减少349,737,911,302B，未计metadata、仅覆盖上述输入，不当作已释放容量。原base三大文件24个固定4MiB实际压缩/解压检查：100,663,296B→80,432,143B；0.799样本比不冒称完整归档大小。原文件/索引不动，没有科学SR。
+
+新增stdlib recovery_container.py保存完整文件recipes、对象SHA及TAR边界，raw与TAR/header/padding均原字节恢复，每容器无外部base依赖。7项真实软件完整性边界测试Windows0.134秒全部通过；最初纳秒时钟粒度导致的单项harness失败保留，改为确定耗尽deadline及任何输出前准入，不改训练。固定PB2000/4000/6000三已完成冷存包，58文件89,955,012,703B，plan7c34a005…、冻结module2d9c75a3…；本机0GPU/7200秒/120GiB，拟创建2完整独立容器、两次全文件SHA及实际12GB导出检查。当前为准备，未计容器成功或释放原件；所有旧raw/TAR/部分传输/metadata和native locator保留。不执行不可逆保留提案，见SELF_CONTAINED_RECOVERY_CONTAINER_PILOT_20261114_ZH.md。
+
+ACP08:31真实导航仍IAM auth，已finish保留用户tab，0创建/0unknown，原请求不重复。正式R7 complete1280与原66可恢复冷存终态保持；原R8接续只等真实容量和独立1280 full-state审计，37+6 null/v40不变。

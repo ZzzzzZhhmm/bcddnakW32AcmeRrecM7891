@@ -210,3 +210,8 @@ AFS实测65.47GB低于下一段门槛，0GPU完整恢复副本与可逆冷存按
 
 
 iter63 07:57覆盖：R7日志1220但完整仍640；66原9000秒copy known failed、38.02GB前缀及原件保留，priority已恢复4/4 reader。独立rescue66 V2/PID61956（3600秒stream/1800秒native）先复核再生prefix SHA再补尾；66原冷存56224已跳过/mutation0，V2独立冷存12732（5400秒）只等新两完整副本，不拥有256，不重试未知操作。每项仍full-SHA/stat/noFD/非parent/永久locator/intent，未完成不计容量、不减64GiB门槛，所有checkpoint内容永久保留。v40/37+6未测字段及固定12000/100对不变。
+
+
+## iter64终态与存储连续性
+
+R7已08:17:54 complete/0、global1280（640新增更新），weight3c7cef40…、epoch6/b2528/source11d保持，1086小原件两端验真TARaa12e3d7…；大state/weight原生保护，独立1280 full-state再审仍待R8准备器，不称12000或100对完成。累计26861.683004秒/192GPUh与截止不改。唯一接续64140原09:17 bound、一次准入，等实际容量与GPU空闲，不复制。66独立恢复2完整副本与保护后冷存均complete，旧失败保持；256完整备份08:39 complete，其冷存看实际receipt。0GPU无损独立容器pilot仅处理3个已完成历史冷存包、保留一切原路径/locator，7项软件完整性测试过，未生成科学结果，读SELF_CONTAINED_RECOVERY_CONTAINER_PILOT_20261114_ZH.md。v40与37+6字段继续不变。
