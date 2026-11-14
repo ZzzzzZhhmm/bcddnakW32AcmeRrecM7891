@@ -1,0 +1,181 @@
+\newtheorem{warmproposition}{Proposition}
+
+\section{\method{}: Consequence-Aligned Retrospection}
+\label{sec:method}
+
+\begin{figure}[!t]
+  \centering
+  \includegraphics[width=1.00\linewidth]{fig/architecture.pdf}
+  \caption{\textbf{From interaction evidence to generative action reuse.}
+  Recollection $\mathcal M_t$ grounds a transition requirement $r_t$; repertoire actions are adapted into proposals $\mu_i$ and assessed through predicted effects $\widehat E_i$.
+  A shared gate $g_t$ regulates initialization and conditioning; execution updates recollection. Dashed arrows denote training-only future-video prediction.}
+  \label{fig:architecture}
+\vspace{-0.2cm}
+\end{figure}
+
+\paragraph{Overview.}
+We organize \method{} around three decisions: infer what the current task requires, assess which past action can help, and regulate its influence on generation.
+At replan $t$, the policy observes RGB images $o_t$, robot state $q_t$, and instruction $\ell$, then generates $A_t=(a_t,\ldots,a_{t+H-1})\in\mathbb R^{H\times d_a}$, where $H$ is the prediction horizon and $d_a$ the action dimension, and executes its first $h_{\mathrm{exec}}\leq H$ commands.
+Our Fast-WAM-derived architecture~\citep{yuan2026fastwam} uses one current-frame video pass to supply retrospective features and visual keys/values to Action DiT~\citep{peebles2023dit}.
+Situated recollection $\mathcal M_t$ supplies episode evidence and repertoire $\mathcal B$ supplies cross-episode actions; Appendix~\ref{app:symbols} indexes symbols, tensor dimensions, and module outputs.
+
+\subsection{Event-Grounded Recollection and Repertoire}
+\label{sec:setting}
+\label{sec:memory}
+
+\paragraph{Retain evidence from this episode.}
+We retain the initial observation, selected interaction records, and summaries of executed action prefixes in situated recollection $\mathcal M_t$.
+Visual change, gripper transitions, and commanded-direction changes trigger retention; the initial and latest records are protected, while redundant interior records are merged when capacity is reached.
+Training reconstructs the same past-only trace before each action chunk, grounding requirement inference in observed interaction; Appendix~\ref{app:memory_details} gives the retention, compression, and readout rules.
+
+\paragraph{Preserve reusable actions with their effects.}
+We build the sensorimotor repertoire $\mathcal B$ from complete $H$-step windows in training demonstrations.
+With frozen encoder $\Phi$ and window start $s_i$, an event retains pre-state features $S_i^-$, executed actions $A_i$, and observed visual feature change $\Delta S_i$:
+\begin{equation}
+ e_i=(S_i^-,A_i,\Delta S_i;k_i,\eta_i),\qquad
+ S_i^-=\Phi(o_{s_i}),\quad
+ \Delta S_i=\Phi(o_{s_i+H})-S_i^- .
+ \label{eq:bank}
+\end{equation}
+Here $k_i$ is the retrieval key and $\eta_i$ records an action-space start reference, timing, and provenance.
+A fixed pooling map yields the observed-effect descriptor $E_i=\mathcal P_{\mathrm{eff}}(S_i^-,\Delta S_i)\in\mathbb R^{d_s}$, where $d_s$ is the semantic feature width (Appendix~\ref{app:effect_repr}).
+At evaluation, $\mathcal B$ remains fixed; offline retrieval excludes the query episode, separating requirement evidence from retrieved behavior.
+
+\subsection{Recollection-Grounded Transition Inference}
+\label{sec:requirement}
+
+We first convert current evidence into a common reference for action reuse.
+A semantic bridge fuses current-frame Video DiT features into world tokens $W_t$ and compact semantic tokens $\widehat S_t$ aligned to $\Phi(o_t)$.
+Our \emph{Transition Adapter} $G_{\mathrm{tr}}$ reads these features with $q_t$, $\ell$, and $\mathcal M_t$; after pooling, $P_{\mathrm{req}}$ maps its requirement tokens $R_t$ to the effect-space vector $r_t$ used to assess all retrieved action proposals:
+\begin{equation}
+ R_t=G_{\mathrm{tr}}(W_t,\widehat S_t,q_t,\ell,\mathcal M_t;\varnothing),
+ \qquad r_t=P_{\mathrm{req}}\!\left(\operatorname{mean}(R_t)\right).
+ \label{eq:required}
+\end{equation}
+The masked retrieved-event input $\varnothing$ makes this read independent of the current candidate set.
+During training, the requirement is supervised by the effect of the demonstrated interaction:
+\begin{equation}
+ E_t^\star=\mathcal P_{\mathrm{eff}}\!\left(\Phi(o_t),\Phi(o_{t+H})-\Phi(o_t)\right).
+ \label{eq:effect_target}
+\end{equation}
+The resulting \emph{required transition} is a task-conditioned forecast of what should change. At deployment, the same $r_t$ serves as the candidate-independent criterion for proposal assessment.
+
+\subsection{Consequence-Aligned Action Recall}
+\label{sec:compatibility}
+
+\paragraph{Retrieve and adapt action proposals.}
+We retrieve a valid candidate set $\mathcal I_t$ by cosine top-$K$ search over $\mathcal B$ with frozen visual features and closed-set task identity (Appendix~\ref{app:gate_details}).
+For each event, current and stored action-coordinate starts $c_t,c_i^0$ determine valid alignment $\mathcal W$; event timing $\tau_i$ then enters the learned \textit{Action Adapter} $f_A$, which applies a bounded task-conditioned residual correction to produce the adapted proposal $\mu_i$ for subsequent consequence assessment:
+\begin{equation}
+ A_i^w=\mathcal W(A_i,c_t,c_i^0),\qquad
+ \mu_i=A_i^w+\rho s\odot\tanh f_A(A_i^w,\tau_i,W_t,R_t,q_t,\ell).
+ \label{eq:adapter}
+\end{equation}
+The fixed scales $s\in\mathbb R_{>0}^{d_a}$ and bound $\rho>0$ enforce $|\mu_{i,h,d}-A^w_{i,h,d}|\leq\rho s_d$.
+The bounded correction preserves recorded action structure before consequence assessment and refinement.
+
+\paragraph{Estimate and compare effects.}
+Our \emph{effect head} $f_E$ predicts the current-context effect of each adapted proposal from its action statistics, stored effect evidence, and pooled world features:
+\begin{equation}
+ \widehat E_i=f_E\!\left(\operatorname{stats}(\mu_i),E_i,\operatorname{pool}(W_t)\right).
+ \label{eq:effect}
+\end{equation}
+Here $\operatorname{stats}$ summarizes mean, terminal command, and temporal variation, and $\operatorname{pool}$ aggregates world tokens.
+Historical effect $E_i$ anchors the estimate, while $\mu_i$ and $W_t$ adapt it to the current interaction.
+We score proposal--requirement agreement in direction and magnitude by
+\begin{equation}
+ \kappa_i=\cos(\widehat E_i,r_t)-\lambda_m
+ \left|\log(\|\widehat E_i\|_2+\epsilon)-\log(\|r_t\|_2+\epsilon)\right|.
+ \label{eq:kappa}
+\end{equation}
+Here $\lambda_m\geq0$ weights magnitude mismatch, and $\epsilon>0$ stabilizes logarithms and cosine normalization (Appendix~\ref{app:gate_details}).
+The score compares each proposal with the current episode's required effect.
+
+\paragraph{Select a proposal in context.}
+The reranker supplies contextual relevance $\ell_i^{\mathrm{rank}}$, and recollection informs the requirement used in $\kappa_i$.
+The shared-policy runtime additionally supplies an event-order prior $b_{t,i}$; the specialist model uses $b_{t,i}=0$ (Appendix~\ref{app:implementation_variants}).
+The combined selection rule is
+\begin{equation}
+ \ell_{t,i}^{\mathrm{sel}}=\ell_i^{\mathrm{rank}}+\lambda_c\kappa_i+b_{t,i},\qquad
+ i^\star=\arg\max_{i\in\mathcal I_t}\ell_{t,i}^{\mathrm{sel}}.
+ \label{eq:selection}
+\end{equation}
+The coefficient $\lambda_c\geq0$ weights explicit compatibility.
+The selected proposal $\mu_{i^\star}$ then passes to the influence gate, while empty retrieval uses the candidate-null zero-gate path.
+
+\subsection{Consequence-Gated Source Transport}
+\label{sec:reuse}
+
+\paragraph{Control the proposal's contribution.}
+Our gate $f_g$ maps selection evidence, consequence compatibility, and adaptation size to raw utility $\alpha_t\in(0,1)$.
+Candidate eligibility gives the effective gate $g_t\in[0,1]$ shared by both generation pathways; the shared-policy variant also uses repetition evidence (Appendix~\ref{app:gate_details}).
+We train raw utility from demonstrated-action/effect agreement to regulate the selected proposal.
+Actions, proposals, and noise below use normalized control coordinates; generated actions are mapped back to native commands for execution.
+Given selected proposal $\mu_{i^\star}$ and action-shaped noise $\varepsilon_t\sim\mathcal N(0,I)$, the effective gate defines Action DiT's proposal-informed stochastic source, which initializes the complete action chunk refined by the decoder:
+\begin{equation}
+ z_t=g_t(\mu_{i^\star}+\sigma_{\min}\varepsilon_t)+(1-g_t)\varepsilon_t,
+ \qquad 0<\sigma_{\min}\leq1.
+ \label{eq:source}
+\end{equation}
+For fixed proposal and gate, $z_t$ has mean $g_t\mu_{i^\star}$ and noise scale $1-g_t+g_t\sigma_{\min}$.
+Thus $g_t$ jointly controls the recalled-action prior and the randomness available for generative refinement.
+
+\paragraph{Apply the same gate to conditioning.}
+A second read of $G_{\mathrm{tr}}$ incorporates the selected event into candidate-aware transition tokens $R_t^{\mathrm{pred}}$; adaptation and effect features form action-context tokens $C_{i^\star}$.
+The same effective gate modulates both candidate-dependent conditioning paths:
+\begin{equation}
+ R_t^{\mathrm{act}}=R_t+\operatorname{sg}(g_t)(R_t^{\mathrm{pred}}-R_t),\qquad
+ C_t^{\mathrm{act}}=\operatorname{sg}(g_t)C_{i^\star}.
+ \label{eq:conditions}
+\end{equation}
+The stop-gradient $\operatorname{sg}$ preserves forward values during training.
+Together they augment native context and visual K/V to form decoder condition $\mathcal C_t$, fixed throughout the current replan.
+
+\paragraph{Generate with a revisable action prior.}
+Action DiT integrates $v_\theta(x_\sigma,\sigma;\mathcal C_t)$ from $x_1=z_t$ to $A_t=x_0$ along decreasing flow time $\sigma$.
+The shared gate gives source and conditioning a common withdrawal point while preserving recollection-grounded task evidence.
+
+\begin{warmproposition}[Joint withdrawal of recalled experience]
+\label{prop:withdrawal}
+For one replan, fix factual inputs, model parameters, conditioning masks, solver schedule, and sampling randomness.
+Fixing $g_t=0$ makes every solver iterate and the generated action invariant to replacement of the retrieved candidates.
+\end{warmproposition}
+Appendix~\ref{app:influence_proof} extends the exact zero-gate result: under fixed-branch regularity conditions, $\|A_t(g)-A_t(0)\|\leq gK_t$ bounds partial influence as the gate approaches the candidate-null path.
+
+\subsection{Learning and Causal Execution}
+\label{sec:learning}
+
+\paragraph{Learn refinement from the chosen source.}
+Each demonstrated action $A_t^\star$ is paired with its query-conditioned source $z_t$.
+Conditional flow matching~\citep{lipman2023flowmatching,liu2023rectifiedflow} defines the interpolation and target velocity for these experience-conditioned endpoints:
+\begin{equation}
+ x_\sigma=(1-\sigma)A_t^\star+\sigma\operatorname{sg}(z_t),\qquad
+ v^\star=\operatorname{sg}(z_t)-A_t^\star.
+ \label{eq:flow}
+\end{equation}
+Using valid-action distance $d_A$ and scheduler weight $w(\sigma)$, the action-flow objective is
+\begin{equation}
+ \mathcal L_{\mathrm{FM}}^a=\mathbb E_{t,\varepsilon,\sigma}
+ \left[w(\sigma)d_A\!\left(v_\theta(x_\sigma,\sigma;\mathcal C_t),v^\star\right)\right].
+ \label{eq:action_fm}
+\end{equation}
+Inference uses the same source construction; Proposition~\ref{prop:conditional_flow} (Appendix~\ref{app:flow_proof}) gives the population-optimal regression field for these experience-conditioned source--demonstration pairs.
+
+\paragraph{Supervise the decisions that shape generation.}
+Auxiliary objectives align the semantic bridge and supervise requirement and effect prediction, ranking, adaptation, and raw utility.
+In RMBench specialists, each retrieved event uses its own recorded effect target; the query transition supervises requirement inference, and demonstration agreement guides ranking, adaptation, and utility.
+Independent execution of adapted candidates validates current-state consequence assessment (Section~\ref{sec:candidate_results}).
+Together with video-flow loss $\mathcal L_{\mathrm{FM}}^v$, these terms define our joint action--video training objective
+\begin{equation}
+ \mathcal L=\mathcal L_{\mathrm{FM}}^a+\lambda_v\mathcal L_{\mathrm{FM}}^v+
+ \sum_{j\in\mathcal J}\lambda_j\mathcal L_j,\qquad
+ \mathcal J=\{\mathrm{bridge},\mathrm{req},\mathrm{effect},\mathrm{rank},\mathrm{gate},\mathrm{adapt}\}.
+ \label{eq:loss}
+\end{equation}
+The nonnegative coefficients $\lambda_v,\lambda_j$ balance these terms. Detaching $z_t$ fixes flow endpoints within an update while conditioning retains permitted gradients; demonstrated futures enter through an isolated video-only pass.
+Appendix~\ref{app:learning_details} specifies auxiliary targets, corruptions, and gradient routes.
+
+\paragraph{Reassess after real interaction.}
+After executing the first $h_{\mathrm{exec}}$ commands, their summaries and observed feedback update $\mathcal M_t$ for the next replan.
+With parameters and $\mathcal B$ fixed at evaluation, each new observation refreshes the required transition, proposal assessment, and gate.
+Realized interaction thus becomes fresh evidence for weighting recalled experience at the next replan.

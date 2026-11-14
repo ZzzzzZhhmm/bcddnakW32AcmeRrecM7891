@@ -3899,3 +3899,16 @@ MemoryWAM LIBERO/部署成本、完整specialist成功—成本、更广独立�
 原review/首轮rkWY/v40来源及片段Git外按字节/manifest保存；namespace高gate、invalid和unknown旧原件未变，原报告门控中位数不是对同一固定态的替代数据。位移曲线、独立示范多样性、整库语义缺技能与自然gate完整配对NI仍未关闭；无模拟填数。writing_current_rkWY.json为当前入口，跨回复索引现覆盖三位20原项/16组/27表，前两位正文hash未变。论文同步队列16组，all_scientific_gaps_closed仍false，不冒充新正式投稿包或全量论文验收。
 
 本轮新SR0、CCI/ACP操作0，实验/定时任务仍暂停，未发布OpenReview或上传文稿。
+
+
+### 23.382 三位回复同步论文、TNR图件及完整工程独立编译验收（仅写作）
+
+按作者11月15日要求，在Git外 revision/20261115_rebuttal_aligned/paper 从已核验v40完整LaTeX工程独立修订。主文10页（原稿9+1）、总39页、References从11页开始；主文8表/5图，全项目6图件，源码ZIP28文件。三份最新question-aligned回复SHA保持75a92649…/649ff459…/3f686127…；20原意见按16组绑定到实际label/页码/源文件位置，RESPONSE_TO_PAPER_SYNC_QUEUE全部完成编辑同步，不等于实证缺口关闭。
+
+正文按episode evidence—candidate consequences—generative influence组织，去除重复动机/泛化动作分类与正文局限，保留原方法核心公式和观点；新增三张主文表由原附录常量门控、独立提案适用性/门控、H100 recorded-input cost提炼。26张保留既有定量表数值序列未变；汇总表utility行仅去重，11.0[7.7,14.3]转入直接门控比较及段落。原稿准确率、三任务候选cohort、两任务闭环干扰、三训练种子控制和各profile保持各自统计单位/模型身份。conditional candidate-null episode推论已整合A，保留时序/停止、factual更新与随机性条件。没有模拟填数或新增实测。
+
+Battery Try图保留原始三帧像素，蓝/橙Full(no drop)/candidate-null(drop)并列，用实际最低高度0.759883/0.311422m、阈值0.70m、32命令明确局部稳定性。附录D仍保留strict completion三分支均0，不写成完整任务修复。鲁棒性图重排，overview/architecture统一Times New Roman并清理重复标签；六图可见字体均TNR，元数据匿名化并对照片/矢量内容保护，来源与裁剪校验在author目录。原33页PDF、冻结首轮PDF/ZIP、数据、失败/未知、checkpoint均未改。与回复无关的开发诊断和原生运行计时文本完整移到独立作者档案，未按正负改写或销毁证据。
+
+PDF 28d522eb8c8a41579b2c953ddd887e88ef0fa61b1edab6c57b83c438985132e0（43598219B），源码ZIP 9c4f20932caeee87019f5b2d99a40af843f860137451601c2dd91c73a9e38f00（35305078B）。完整pdflatex/BibTeX/后续三遍通过；ZIP独立解压、逐成员SHA和再次全编译通过，39页文本及108dpi像素逐页相同。最终0undefined/0overfull/0font fallback，ICLR样式/字号/边距与bibliography保持。所有主文段尾短行候选已处理；唯一扫描项为公式(4)编号、非prose；摘要末行91.6%。全页渲染/主文逐页/修改后附录直接视检、匿名、AI use statement、无pending/作者提醒检查通过。作者变更说明和全部QA在工程外author/CHANGELOG_ZH.md与DELIVERY_QA.json；Git仅追踪22份公开文本源及独立handoff，不加入PDF/图件/运行输出。
+
+本轮CCI/ACP/train/eval/冷存/自动任务启动均0，原暂停授权保持；未访问CCI或发布评论/上传正式论文。current_iteration及working_response_index更新为本稿，冻结首轮入口保存，all20_empirical_closure仍false，补证留待作者指定的下一轮。

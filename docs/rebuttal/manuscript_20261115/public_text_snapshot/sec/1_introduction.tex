@@ -1,0 +1,32 @@
+\section{Introduction}
+\label{sec:intro}
+Successful long-horizon manipulation connects what has already happened to what should happen next.
+World--action models (WAMs) couple visual prediction and action generation, bringing predictive representations of interaction into robot control~\citep{kim2026cosmospolicy,li2026lingbotva,bi2025motus}.
+Their use of experience raises a complementary decision problem: which earlier interactions identify the current requirement, and which familiar actions remain useful for satisfying it?
+
+Local-context WAMs act from current observations or short histories (Figure~\ref{fig:leadin}a), whereas memory-augmented policies retain earlier context or derive memory-grounded plans (Figure~\ref{fig:leadin}b)~\citep{kaelbling1998pomdp,dai2026robomme,lei2026robomemarena,yang2026memorywam,wang2026dimwam,zhao2026mapwam}.
+VLA policies also combine online visual history and retrieved experience prompts~\citep{zhou2026remembersmarter}, while trajectory retrieval and informed flow sources supply action exemplars and structured generation priors~\citep{park2026recap,kang2026warmprior,jia2026a2a,machado2026lafm}.
+A recalled insertion, return, or button press must still be interpreted against the current episode: previous feedback may have changed the next target, established a destination, or completed the requested count.
+We therefore ask: \textbf{how can current interaction evidence govern both the selection of past behavior and its influence on subsequent closed-loop action generation?}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{fig/overview.pdf}
+\caption{\textbf{From interaction evidence to selective action reuse.}
+(a,b) Local observations and history supply decision context. (c) Recollection grounds the requirement; repertoire actions are assessed by predicted effects and jointly gated in initialization and conditioning. Dashed arrows: training-only prediction; K/V: visual keys and values. Right: benchmark and distraction results (Section~\ref{sec:experiments}).}
+\label{fig:leadin}
+\end{figure}
+
+Our central distinction is between \emph{recollection} and \emph{repertoire}.
+Recollection retains observations and executed-action summaries specific to the ongoing episode; the repertoire preserves reusable actions together with their observed effects from earlier episodes.
+In \method{}, our video--action architecture for \emph{event-grounded retrospection} (Figure~\ref{fig:leadin}c), consequence-aligned recall adapts repertoire actions and compares their predicted effects with the recollection-grounded requirement.
+One gate then controls their influence on both stochastic initialization and conditioning.
+The action decoder refines this revisable prior using current observations; execution refreshes the evidence for the next decision.
+
+\Needspace{8\baselineskip}
+Our contributions are threefold:
+\begin{itemize}
+\item We formulate event-grounded retrospection, separating episode-specific evidence from reusable action experience to support history-conditioned behavior reuse.
+\item We develop consequence-aligned recall and a shared source-and-conditioning gate, with an exact joint-withdrawal property linking selective admission to generative refinement.
+\item We validate the design through memory-source controls, independent candidate execution, paired selector contrasts, adaptive-utility comparisons, and physical destination/order tasks.
+\end{itemize}

@@ -1,0 +1,26 @@
+\section{Scope, Limitations, and Future Work}
+\label{app:scope}
+\paragraph{Evaluation coverage.}
+We study familiar-object tabletop manipulation under the declared histories, goals, layouts, and appearance variations.
+Task-specialist RMBench scores establish reuse in known-task settings; source-demonstration diversity, indexed-window count, and task-memory demands remain distinct evaluation axes.
+Unified policies on unseen tasks, broader embodiments, and larger independent repertoires offer directions for extending this coverage.
+
+\paragraph{Supervision and current-state consequences.}
+Specialists use recorded event effects as targets, while the separate shared-query regularizer weights candidates against a common demonstrated target.
+Because recorded effects also enter the predictor, reconstruction alone does not establish counterfactual identification.
+Independently executed candidates provide the current-state evaluation, with prediction, proposal applicability, and complete-task success reported as distinct outcomes.
+
+\paragraph{Withdrawal and missing skills.}
+Proposition~\ref{prop:withdrawal} establishes candidate independence at prescribed zero gate; its episode extension requires the timing, stopping, factual-state-update, and randomness conditions in Appendix~\ref{app:candidate_null_episode_equivalence}.
+These properties concern the same trained policy's candidate-null path.
+They do not certify natural detection of a missing skill in a nonempty bank, or non-inferiority to a separately trained retrieval-free policy.
+
+\paragraph{Statistical and computational scope.}
+Wilson intervals, episode-clustered contrasts, and training-seed variability address different statistical units.
+The three-seed descriptive $t$ interval assumes normality and accompanies individual seed differences.
+Compute profiles concern the stated implementations, checkpoints, instrumentation, and history occupancy; they establish neither worst-case control latency nor MemoryWAM deployment cost.
+
+\paragraph{Geometric adaptation.}
+Start-state alignment operates in compatible robot-control coordinates, rather than providing object-frame or camera-frame invariance.
+The adapter bounds residual changes in normalized proposal coordinates; the decoder and replanning refine execution using current observations and history.
+Matched displacement interventions can further characterize the relationship between spatial variation, repertoire diversity, and complete-task success.

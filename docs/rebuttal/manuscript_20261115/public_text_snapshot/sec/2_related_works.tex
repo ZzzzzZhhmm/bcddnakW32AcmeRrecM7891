@@ -1,0 +1,19 @@
+\section{Related Work}
+\label{sec:related}
+
+\paragraph{World--action modeling.}
+Video planning translates synthesized visual trajectories into actions~\citep{du2023unipi}; predictive policies use future-observation representations and inverse dynamics~\citep{tian2025seer,hu2025vpp}.
+Joint video--action models couple both modalities~\citep{zhu2025uwm,bi2025motus,kim2026cosmospolicy,ye2026dreamzero}, including during native pretraining~\citep{zhang2026lingbotva2}.
+Efficient interfaces retain predictive training with current-frame inference~\citep{yuan2026fastwam}, or expose compact transition representations to action decoding~\citep{ma2026pilot}.
+We compare predicted effects of recalled actions with an episode-grounded transition requirement.
+
+\paragraph{History and experience for long-horizon control.}
+State-space policies compress observations into recurrent context~\citep{guan2026dssp}; VLA policies combine perceptual and semantic histories~\citep{shi2025memoryvla,torne2026mem}.
+WAMs retain persistent representations, diverse events, and hierarchical summaries~\citep{yang2026memorywam,wang2026dimwam,sun2026himem}.
+Action-effect pretraining and prospective states align history with control~\citep{zhou2026actioneffect,guo2026chameleon}, while MemER and Mem-0 use keyframes or completed interactions for planning~\citep{sridhar2025memer,chen2026rmbench}.
+We infer a candidate-independent transition requirement from current-episode evidence.
+
+\paragraph{Action generation and experience-informed priors.}
+ReCAP conditions on retrieved trajectories and learns residual action corrections, with predictive supervision in its WAM variant~\citep{park2026recap}.
+Informed-source flow policies initialize generation with recent actions, proprioceptive histories, or learned action priors~\citep{kang2026warmprior,jia2026a2a,machado2026lafm}.
+\method{} uses consequence evidence to gate source initialization and candidate conditioning jointly.
