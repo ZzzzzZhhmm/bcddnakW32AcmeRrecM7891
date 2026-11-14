@@ -3648,3 +3648,14 @@ CHECKPOINT_RETENTION_PROPOSAL_20261114_ZH.md仅为后续新生成快照的保留
 V5/PID58520于2026-11-14T01:33:33.034124UTC complete，2480.922秒、本机0GPU。BRT2000、CB6000、CB4000、CB2000均两完整本机raw/TAR全SHA通过，再依次执行原生完整SHA/stat/无FD及永久locator/helper先于unlink的guard；最后CB2000真实原生收据已返回，不是未知删除。18份今日日志范围的原低步权重共218,595,880,908逻辑字节（另两份此前PB8000/10000不重复计入），不是共享AFS净增量。V3/V4/V5均终态，不重启旧协调器。最后四份proof/原生收据SHA及完整raw/TAR尺寸再次交叉核对，原全payload SHA验真收据保持，未重复扫描数百GB。
 
 本轮恢复保护的原specialist全部12000/14000、shared3k、CAS/raw/unknown与新正式step2/66不变。后续新快照保留策略仍只是提案，无不可逆删除授权。真实当前容量、GPU、R4的唯一准入/lease/runner，读取最新ITER58_NATIVE_FINAL_LIVE_V1及current_iteration，不能由旧root进程仍可SSH推定新四小时窗口。
+
+
+### 23.353 纠正SSH辅助进程作为CCI资源时钟的错误前提
+
+01:56:15UTC只读核查明确：此前root bash2623968的子进程2624503实际是sleep12h，并非CCI分配起点或四小时倒计时。该SSH bootstrap的启动时间不能作为平台资源窗口。此前R4等待新entrypoint的门槛据此不成立，造成额外等待；不能继续将这项推断当硬件事实。原生ITER59_ENTRYPOINT_METADATA_KEYS_READONLY_V1保留实际sleep参数与进程身份（未打印任何环境值）；只读自Pod时间查询在标准域名/平台配置10.96.0.1端点均不可用，没有绕过TLS或扩大查询对象，平台剩余寿命仍未知。
+
+01:57:40UTC核实唯一watcher62756命令及admission_calls0后明确停止。随后原生read-only再确认R4无OPERATOR_ADMISSION、ACTIVE_LEASE或runner；其注册、source/config全部保留，不能称执行失败或重复启动。下一R5从同一完整step66接续到256，不改12k、数据、seed、优化器、名义batch或source1055 manifest11d283fd…。
+
+新增纯标准库cci_runtime_budget只约束实际可控制的单次训练5400秒+退出180+CPU验真900=6480秒，小于作者单次4小时限额；不假设当前时刻开启新资源窗口，不把SSH PID时间当分配clock。若确有带完整观察SHA的认证平台allocation deadline，按真实剩余时间拒绝；未知则明确记录未知并允许有界checkpointed调用，保留外部抢占/中断风险与全部失败收据。容量64GiB、512MiB运行保护、唯一运行、已知前驱、完整state验证、新192GPUh cap及11月17日23UTC截止均不变。
+
+0GPU原生回归于02:00:51UTC完成10 passed，2.467秒；source SHA67f23e904f642a72569bd10c4e71b0ba63374b57421627e1a5b978be639d432e，test SHA39ce61e524cab7f258f46b1ca218c1c62bc6fcde92dc3395ec181db83e21e7a4。覆盖未知寿命不造clock、明确平台短deadline拒绝、SSH观察拒作allocation证据、完整退出/验真预算和单位/时区约束。本机缺pytest的前置失败保留，未临时安装或改模型。新helper只影响operator准入，不改原Full或新Pooled数学；模型source及正式已完成global66不变。回复/论文v40、37+6null和所有负结果保持，无新SR。
