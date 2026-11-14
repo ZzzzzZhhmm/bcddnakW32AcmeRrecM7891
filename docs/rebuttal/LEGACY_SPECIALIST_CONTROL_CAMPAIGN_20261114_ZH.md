@@ -112,3 +112,17 @@ R5 legacy_pb_pooled_s3407_formal_20261114_v5于2026-11-14T02:08:07.284731UTC在C
 02:26:08UTC本机隐藏0GPU backup PID64268开始完整step2 weight+DeepSpeed state备份。原生先全SHA复核weight566c6170…和state-tree a3f3d594…，再直接stream TAR到本机，额外AFS大型临时文件0；随后需逐成员验真并独立展开完整raw恢复树，只有两份全SHA都通过才记完成。当前状态native_hashing_or_streaming、记录时流入9471039488B，不能宣称两副本或释放容量。原weight/state、全部12000/14000/3k/CAS/raw/unknown不修改，不创建cold locator，不删除或迁出任何新checkpoint；未来保留策略仍无批准。
 
 ACP02:52:14UTC实际重新导航后仍落signin IAM，未读input值/未存登录表单，0创建/0未知；正常finish closed0/forcedCleanupfalse，原请求不重复。v40实证/演练回复、两完整PDF/ZIP全部未改，37原字段+新study六字段继续null；工程进展不放行为效果、repair或SR。元数据打包的一次本机PowerShell转义/随后missing-file调用失败发生在读取执行前，模型训练未受影响，已改为UTF8脚本文件方式并成功保存快照；不计为新policy失败或GPU实验。
+
+
+## 已完成256与实际接续640
+
+### 23.357 R5已完成global256，完整state审计与一次R6实际准入
+
+R5于2026-11-14T03:16:30.524961+00:00 complete/0，4102.885685593秒，实际新增190更新/global256，source前后精确。weight SHA43f685febae321e8235df119ce540bcf270539a7b11b6d84ed99eca11a7e4a52；随后原生0GPU完整state审计通过，tree SHAd299e25bde9584032a5226c8ebf35d23f548a45b4431991c44984282b250e600，global256/epoch1/batch1104/scheduler256、RNG齐全，符合事前CPU跨epoch预期。源文件、配置、日志、训练收据及小型resume metadata合计1090成员，本机与AFS逐成员size/SHA全部精确：TAR275ecae1c3d5073859177241b456b756d1e9487b863bdbbe2ad332ffe9f54364（7,772,160B），manifest7f0f2fc6e455c58b8b3b2248f8691e0812545cc7f4834a1b0f1195500f95db0b。原生P/ITER59_FORMAL_STEP256_RAW_V1.tar；此包不包含38.5GB大型weight/model/optimizer，三项在AFS原路径保护，不能误称已完整本机备份。
+
+唯一follow-up于03:16:51UTC读到已知父终态后只调用一次，完成完整state审计、source/config/recipe/Hydra预检与64GiB准入后，实际启动R6；本机PID6452已退出0，mutation_calls1，禁止重启或再次提交R6。R6位于legacy_pb_pooled_s3407_formal_20261114_v6，2026-11-14T03:21:44.525106+00:00启动，parent256→target640/新增384更新，job SHAaac46793a022aa7b65c2ee7a23d4e2a919ea458b171362918acfa246bea8b24a，source1055/manifest11d283fd…和shared recipe不变，parent weight/tree严格绑定上项真实SHA。9000+180+900=10080秒、预约3GPUh、名义batch128、全局12000及原192GPUh/11月17日23UTC截止保持，不假设新平台窗口；启动仍不等于已完成640或已验证下一次实际load_state。
+
+新campaign完成段累计9588.786877196秒（正式8348.322698072秒+reset工程1240.464179125秒），R6只记录当前reservation，待其实际终态再累加elapsed；旧144与0.75关闭阶段不改。完整已保存训练进度256仍不是最终12k对照或新SR，37原字段与新研究六结果继续null。另一次本机sealer生成命令转义失败在执行前被阻止，改用独立UTF8 builder后封存成功；没有新GPU调用、未改正在运行的模型或数据。
+
+
+后续03:52:25UTC只读核查：R6日志明确显示parent256真实load_state、dataloader cursor恢复与run_target640/384新增更新，并已执行到日志step290（03:49UTC；日志进度不是持久checkpoint）。H100实际计算进程2648971、49,480MiB；source1055逐文件不变。最新完整已保存checkpoint仍256，目标640尚未完成；AFS可用79,476,994,048B。见Git外execution/20261114_iter59/ITER59_CAMPAIGN_PHASE_LIVE_V5.json。
