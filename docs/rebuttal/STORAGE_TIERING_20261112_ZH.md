@@ -125,3 +125,19 @@ BT6000两完整副本于22:50:42UTC验真，独立TAR SHA71e60fbc0a30045ccce9693
 原specialist Pooled首个正式两更新段已完整保存step2 weight及model/optimizer/RNG/scheduler/cursor，当前weight与state不迁出。AFS随后约40.25GB，下一段仍要求64GiB准入。23:26:33UTC启动独立本机隐藏0GPU协调器V3/PID38268，冻结范围只为BT4000、BT2000、BRT8000，目录 `20261114_ADDITIONAL_SPECIALISTS_v3/current.json`。源码模板SHA、子进程及每目标状态持久保存；采用非交互SSH、保活、原生完整SHA/stat/无FD和永久恢复指针流程，全部12000/14000、shared3k、CAS/raw及新当前step2均保护。
 
 V3是新的三个已命名非当前权重，不是重启已结束V1/V2。首个BT4000读备份已实际开始；排队/复制中不宣称三项完成或已释放36GB。有任何失败保留partial；原生guard一旦调用结果不明必须先核销，不自动重试。current PID消失也不等于完成，按原生locator/receipt与两完整本机proof逐项确认。standby的全局GPU训练不得因等待容量而悄悄重置预算、scheduler或fixed roster。
+
+
+## iter58恢复现场：V3/V4完成、V5只处理最后四份原低步权重
+
+容量恢复与正文证据边界
+
+截至01:14:22UTC，今日日志口径16份原非当前checkpoint已完成两完整本机raw/TAR、原生全SHA/stat/无FD、永久locator/helper后可恢复冷存：此前七份加BT4000/2000、BRT8000/6000/4000/2000、CB10000/8000/6000。逻辑194,307,449,696B并非净free；当时AFS104,258,478,080B。V3、V4已完整终止，当前V5/PID58520继续CB4000/CB2000，无失败/未知自动重试。原specialist全部12000/14000（含BRT12000）、shared3k、CAS/raw/unknown和新step2/66完整state保留。
+
+CHECKPOINT_RETENTION_PROPOSAL_20261114_ZH.md仅为后续新生成快照的保留策略提案，尚无批准，不执行不可逆删除；原稿资产不在范围。v40两完整LaTeX/PDF/ZIP及回复未修改、不重复编译。实证29表、演练42表、17块/20意见保持；37原实证字段及新specialist研究六字段仍null。新增训练/初始reset工程资格不填成SR，不以构造理想数代替测量，不发布OpenReview或上传正式PDF。
+
+
+### 23.352 V5完整终止，18份旧低步权重恢复索引闭合
+
+V5/PID58520于2026-11-14T01:33:33.034124UTC complete，2480.922秒、本机0GPU。BRT2000、CB6000、CB4000、CB2000均两完整本机raw/TAR全SHA通过，再依次执行原生完整SHA/stat/无FD及永久locator/helper先于unlink的guard；最后CB2000真实原生收据已返回，不是未知删除。18份今日日志范围的原低步权重共218,595,880,908逻辑字节（另两份此前PB8000/10000不重复计入），不是共享AFS净增量。V3/V4/V5均终态，不重启旧协调器。最后四份proof/原生收据SHA及完整raw/TAR尺寸再次交叉核对，原全payload SHA验真收据保持，未重复扫描数百GB。
+
+本轮恢复保护的原specialist全部12000/14000、shared3k、CAS/raw/unknown与新正式step2/66不变。后续新快照保留策略仍只是提案，无不可逆删除授权。真实当前容量、GPU、R4的唯一准入/lease/runner，读取最新ITER58_NATIVE_FINAL_LIVE_V1及current_iteration，不能由旧root进程仍可SSH推定新四小时窗口。

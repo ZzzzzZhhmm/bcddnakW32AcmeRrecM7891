@@ -3608,3 +3608,43 @@ R2保存后GPU为空、AFS约40.25GB，不能在低于64GiB时创建下一正式
 独立0GPU审计于23:31:06.217603UTC complete/0、251.917607秒，重新全SHA核验12,138,204,611B weight与training.json，并按原formal lineage算法完整读取全部DeepSpeed state。state tree SHAa3f3d594a7876240b7354f44d55497427576a03e50e513406d51e07c141485c4，所有state file stat前后不变，global2/epoch0/batch32、scheduler last_epoch2，Python/NumPy/Torch CPU/CUDA RNG键齐全。没有执行未来实际load_state，没有GPU更新/环境命令/新SR；不是完成12k。
 
 1089个R2实际冻结source/config/log/receipt和小型resume metadata（含真实scheduler/RNG/trainer cursor）双端逐成员完整验证，TAR8c82292f3b9fb58c9a16b15b8511c86fe64f5885ffdb177aa106356a9b9fbafd（7,915,520B），manifest3fc4c47768d27351450ea12be4cb5795a8cba0c920a150154afe8d1984f72def。三个大型weight/model/optimizer payload仍原生AFS保护，weight全SHA及完整state-tree SHA单独绑定；此小包不包含这些大payload，不能说全部39GB双端备份完成。当前GPU0，原生审计也已终止；仍活动的是本机0GPU存储V3，后续容量按其真实guard收据和实时AFS核查。回复/论文保持v40同SHA，37实证槽仍null，不用这两步训练直接推断效能或填数。
+
+
+### 23.348 正式step2→66实际续跑完成与全恢复状态核验
+
+同一新原specialist campaign的R3（legacy_pb_pooled_s3407_formal_20261114_v3）于2026-11-13T23:59:13UTC启动，11月14日00:40:46.555653UTC complete/0，实际2493.209521595秒，新增64次更新、global66。日志00:19:27明确完成optimizer/scheduler/RNG/sampler恢复，继承epoch0/batch32；source1055文件manifest 11d283fd34a4e46ca71ea9242dcb2aa3f569a33bfe33f3e4dd15e8093709907d前后精确。共同base、全局12000/warmup600、数据、seed3407及名义effective batch128保持，原4卡和新1卡执行差异不隐藏。
+
+当前step_000066.pt SHA5d4674ca350cb000eb99eb8742e568a9ed24adec53ee9241e20bab97e7e2620b，12,138,204,611B。00:56:27UTC独立0GPU审计complete/0，全部state前后stat不变，global66/epoch0/batch1056、scheduler66及Python/NumPy/Torch CPU/CUDA RNG齐全；完整state-tree SHA4a9c9835efbbe7f7e57f89db77ca503434fd2c14805f676e6b78f5812e9daf22。父step2树a3f3d594…及weight566c6170…严格绑定，step2与66所有大型payload继续保护。
+
+1088个完整冻结source、config、日志、收据及小型恢复metadata在AFS和本机逐成员size/SHA全部通过：TARff94d46f247dfa68b66cc2fb9c1e845605dfd73785d19a8dcd97f8b7fd08cdb9，manifest e7d59a9b071d00ac715be322e6be17081ce63992b35b635edc80f2334cb97dd9。原生P/ITER58_FORMAL_STEP66_RAW_V1.tar；本机execution/20261114_iter58同名。三个大型weight/model/optimizer不在7.73MB包中，仍在AFS原路径，并由完整weight/tree SHA绑定。R1/R2/R3正式累计4245.437012479秒；不能称完成12k或产生新SR。
+
+### 23.349 固定四场景初始重置：原失败保留与A–A–B–A通过
+
+按已冻结100个PB种子的前四个case0…3，不替换seed，独立进行四组A0/A1/B/A2初始重置，B固定为下一个case modulo4。未加载learned model，0policy query、0native command、未做expert admission或指令生成。第一版未设置已知图形进程环境，16角色均未得到初始观测，complete/0仅表示错误核销完成，不能称通过。第二版恢复匹配580.95.05的进程局部Vulkan/EGL库后，因缺multiprocessing主模块guard，CuRobo spawn重入并竞争operator.json；该operator不可信，已知-15终止、339.157803秒，连同首版33.611074秒共372.784130秒，原0.25GPUh phase关闭，不重置。
+
+第三版只增加main/freeze_support guard，保留同样case/seed、模拟器及图形配置。独立新0.25GPUh工程phase于00:58登记，01:12:43UTC exit0，实际保守计867.680049秒；16角色全部完整，4/4组A重复观测、任务变量、articulation qpos/qvel身份完全一致，B均改变身份。模拟器source前后精确；它只支持这四个初始场景reset可复现，不是完整100case policy/动态state恢复资格，不是SR、repair或memory收益。两次失败和全部raw/log/config一并保存，40成员TARf36d8c4fbc4815c2059d55a60ad0ab5a370965edbc8899374f22365b26bf741f，两端逐成员验真，原生P/ITER58_RESET_ALL_ATTEMPTS_RAW_V1.tar。
+
+新campaign连同上述reset工程实际保守计5485.901191603秒/约1.523861GPUh，192GPUh上限及2026-11-17T23:00UTC截止不变；旧144/0.75阶段继续关闭，两个0.25工程phase独立记账，无复活或回拨。
+
+### 23.350 step66→256注册、跨epoch游标与CCI窗口保护
+
+下一R4仅改变output_dir、resume、run_steps=190，target256而全局scheduler仍12000；1055 source SHA不变，共享recipe d7ea9a8471ca54b226d280e0da72ef704330ce1dfe56d0bc933268b7ba4b1580。CPU配置/Hydra及真实ResumableTaskEventBalancedSampler+Accelerate1.12控制流资格通过：23913样本、micro8，从66/epoch0/batch1056到256将跨epoch0的2990 microbatches/global187，最终epoch1/batch1104。末尾不足完整microbatch accumulation的更新不称精确128样本；128为名义有效batch，不改变原训练程序。
+
+R4于01:15:59UTC注册、未启动，job6e8d8b87b72e6112f467a899aed71534a4d667ec8c676f82118899f31ba4f816，configc5717be3edc181d58e06c7116e8452bbd7f415d0cfdc3c471c6ee3aac80bc2b0；控制器SHA44fd5fd5699b28bde336a78fe3c6fec9471d0ce20927f26cf8836c80c84c4c41、验证器befcfb6240ecdf1dfa3c92b1b65706e18b7c3ab814f047cf8757df7f2d69f7cc。预约2GPUh，训练5400秒+退出180+CPU验真900，实际仍计elapsed。
+
+原生root bash2623968与主sshd2624502同namespace，start分别21:34:17/21:34:31UTC；它们作为保守四小时窗口代理，不把host PID1或新脚本启动当新资源起点。当前窗口不足完整下一段，准入明确resource_window_waiting_no_launch，0新GPU进程/0lease。独立本机只读协调器R4_FRESH_WINDOW_WATCH_V1最多45分钟等待真实新entrypoint/sshd与足够6480+120秒余量、64GiB及GPU空闲；只有ready后允许一次准入调用，回执丢失为unknown且禁止自动重试。读其current.json恢复，不重复启动R4。
+
+ACP01:06:47UTC实际重新导航后落signin IAM，AUTHENTICATION_REQUIRED；仅保存状态、不读登录表单或任何input值，0新ACP/0未知创建。首次导航的HTTP200/空rows是重定向前中间态，不构成认证恢复。Tabbit正常finish、closed0、forcedCleanupfalse，用户登录页保留；原登录请求不重复。
+
+### 23.351 容量恢复与正文证据边界
+
+截至01:14:22UTC，今日日志口径16份原非当前checkpoint已完成两完整本机raw/TAR、原生全SHA/stat/无FD、永久locator/helper后可恢复冷存：此前七份加BT4000/2000、BRT8000/6000/4000/2000、CB10000/8000/6000。逻辑194,307,449,696B并非净free；当时AFS104,258,478,080B。V3、V4已完整终止，当前V5/PID58520继续CB4000/CB2000，无失败/未知自动重试。原specialist全部12000/14000（含BRT12000）、shared3k、CAS/raw/unknown和新step2/66完整state保留。
+
+CHECKPOINT_RETENTION_PROPOSAL_20261114_ZH.md仅为后续新生成快照的保留策略提案，尚无批准，不执行不可逆删除；原稿资产不在范围。v40两完整LaTeX/PDF/ZIP及回复未修改、不重复编译。实证29表、演练42表、17块/20意见保持；37原实证字段及新specialist研究六字段仍null。新增训练/初始reset工程资格不填成SR，不以构造理想数代替测量，不发布OpenReview或上传正式PDF。
+
+
+### 23.352 V5完整终止，18份旧低步权重恢复索引闭合
+
+V5/PID58520于2026-11-14T01:33:33.034124UTC complete，2480.922秒、本机0GPU。BRT2000、CB6000、CB4000、CB2000均两完整本机raw/TAR全SHA通过，再依次执行原生完整SHA/stat/无FD及永久locator/helper先于unlink的guard；最后CB2000真实原生收据已返回，不是未知删除。18份今日日志范围的原低步权重共218,595,880,908逻辑字节（另两份此前PB8000/10000不重复计入），不是共享AFS净增量。V3/V4/V5均终态，不重启旧协调器。最后四份proof/原生收据SHA及完整raw/TAR尺寸再次交叉核对，原全payload SHA验真收据保持，未重复扫描数百GB。
+
+本轮恢复保护的原specialist全部12000/14000、shared3k、CAS/raw/unknown与新正式step2/66不变。后续新快照保留策略仍只是提案，无不可逆删除授权。真实当前容量、GPU、R4的唯一准入/lease/runner，读取最新ITER58_NATIVE_FINAL_LIVE_V1及current_iteration，不能由旧root进程仍可SSH推定新四小时窗口。
