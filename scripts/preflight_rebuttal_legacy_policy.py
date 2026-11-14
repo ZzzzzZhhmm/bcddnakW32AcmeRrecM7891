@@ -1,11 +1,23 @@
-"""Qualify a new legacy pooled control on sealed factual inputs, without rollout.
+"""Qualify a legacy pooled control on sealed factual inputs, without rollout.
 
 Run only from an immutable assembly of the audited original v3 source plus the
 new research factory. A finite action is an engineering check, never a success
-rate. The existing trained Full/Pooled checkpoints are not loaded as this model.
+rate. An optional saved legacy training prefix must match an explicit identity;
+it is never substituted for the fixed final checkpoint in a formal comparison.
 """
 from pathlib import Path
 import argparse,dataclasses,datetime,hashlib,json,os,time,traceback
+
+
+def _restore_declared_warm_checkpoint(model,checkpoint,expected_sha256):
+    """Use the strict public WARM entrypoint, then verify its granted identity.
+
+    WarmSourceFastWAM owns full-state strictness and capability invalidation;
+    its public API intentionally accepts no switches that could weaken them.
+    """
+    model.load_checkpoint(checkpoint)
+    if getattr(model,'_warm_loaded_checkpoint_sha256',None)!=expected_sha256:
+        raise ValueError('The public WARM loader did not grant the declared checkpoint identity')
 
 
 def main():
@@ -17,6 +29,10 @@ def main():
     p.add_argument('--output',type=Path,required=True)
     p.add_argument('--sample',action='store_true')
     p.add_argument('--resume-qualification-from',type=Path)
+    p.add_argument('--checkpoint',type=Path)
+    p.add_argument('--expected-checkpoint-sha256')
+    p.add_argument('--expected-checkpoint-update',type=int)
+    p.add_argument('--fixed-training-sample',type=Path)
     a=p.parse_args();a.output.mkdir(exist_ok=False,parents=True)
     start=time.monotonic();utc=lambda:datetime.datetime.now(datetime.timezone.utc).isoformat()
     def sha(path):
@@ -24,13 +40,23 @@ def main():
         with Path(path).open('rb') as f:
             for b in iter(lambda:f.read(8*1024*1024),b''):h.update(b)
         return h.hexdigest()
-    state=dict(status='starting',started_utc=utc(),scope='New untrained control:actual input and production sampler qualification only',
+    state=dict(status='starting',started_utc=utc(),scope='Legacy control:actual input, optional saved-prefix loading and production sampler qualification only',
                optimizer_updates=0,task_rollout_commands=0,success_rate_eligible=False,actual_policy_generations=0,policy_generation_attempts=0,new_GPU_hours=0)
     def write(name,value):
         path=a.output/name;temp=path.with_suffix(path.suffix+'.partial');temp.write_text(json.dumps(value,indent=2,allow_nan=False));temp.replace(path)
     def update(status):state.update(status=status,heartbeat_utc=utc());write('operator.json',state)
     update('checking_factual_inputs')
     try:
+        if a.checkpoint is None:
+            if a.expected_checkpoint_sha256 is not None or a.expected_checkpoint_update is not None:
+                raise ValueError('A checkpoint identity requires an explicit saved checkpoint')
+        else:
+            if (not isinstance(a.expected_checkpoint_sha256,str) or len(a.expected_checkpoint_sha256)!=64
+                or any(c not in '0123456789abcdef' for c in a.expected_checkpoint_sha256)
+                or type(a.expected_checkpoint_update) is not int or a.expected_checkpoint_update<=0):
+                raise ValueError('A saved prefix requires its exact SHA256 and positive optimizer update')
+            if a.resume_qualification_from is not None:
+                raise ValueError('A saved-prefix model cannot reuse an untrained sampler output')
         if os.environ.get('CUDA_VISIBLE_DEVICES')!='':raise ValueError('This intake is explicitly CPU-only')
         if not a.model_root.is_dir():raise ValueError('The confirmed local model root must exist')
         os.environ.update(HF_HUB_OFFLINE='1',HF_DATASETS_OFFLINE='1',TRANSFORMERS_OFFLINE='1',
@@ -64,7 +90,16 @@ def main():
         text_file=cache_root/(hashlib.sha256(prompt.encode('utf-8')).hexdigest()+f'.t5_len{original["tokenizer_max_len"]}.wan22ti2v5b.pt')
         text=torch.load(text_file,map_location='cpu',weights_only=True)
         paths=[a.recipe,context_file,input_file,history_file,witness_file,a.infer_kwargs,text_file]
+        if a.checkpoint is not None:paths.extend([a.checkpoint,a.checkpoint.with_suffix('.training.json')])
+        if a.fixed_training_sample is not None:paths.append(a.fixed_training_sample)
         before={str(f):dict(bytes=f.stat().st_size,mtime_ns=f.stat().st_mtime_ns,sha256=sha(f)) for f in paths}
+        if a.checkpoint is not None:
+            if before[str(a.checkpoint)]['sha256']!=a.expected_checkpoint_sha256:
+                raise ValueError('Saved-prefix checkpoint bytes differ from the declared identity')
+            attestation=json.loads(a.checkpoint.with_suffix('.training.json').read_text())
+            if (attestation['checkpoint_sha256']!=a.expected_checkpoint_sha256
+                or attestation['actual_global_step']!=a.expected_checkpoint_update):
+                raise ValueError('Saved-prefix training attestation differs')
         write('input_identities_before.json',before)
         previous=a.resume_qualification_from
         if previous is not None:
@@ -89,21 +124,43 @@ def main():
         model=create_legacy_pooled_memory_prior(**params,model_dtype=torch.bfloat16,device='cpu')
         assert not torch.cuda.is_initialized()
         model._validate_retrospection_state(model._retrospection_state())
+        if a.checkpoint is not None:
+            update('strictly_loading_saved_legacy_prefix_on_CPU')
+            _restore_declared_warm_checkpoint(model,a.checkpoint,a.expected_checkpoint_sha256)
+            loaded=torch.load(a.checkpoint,map_location='cpu',weights_only=True,mmap=True)
+            model._validate_retrospection_state(loaded['warm_retrospection'])
+            exact=[]
+            for name,expected in loaded['warm_retrospection_modules'].items():
+                actual=getattr(model,name).state_dict()
+                assert set(actual)==set(expected),name
+                assert all(torch.equal(actual[k],value.to(dtype=actual[k].dtype)) for k,value in expected.items()),name
+                exact.append(name)
+            del loaded
+            state.update(saved_prefix_checkpoint_loaded=True,loaded_optimizer_update=a.expected_checkpoint_update,
+                loaded_checkpoint_sha256=a.expected_checkpoint_sha256,loaded_retrospection_modules_exact=sorted(exact),
+                formal_final_checkpoint_qualification=False)
         write('construction.json',dict(model_class=type(model).__name__,checkpoint_state=model._retrospection_state(),
             parameters=sum(v.numel() for v in model.parameters()),pool_parameters=sum(v.numel() for v in model.retrospective_event_adapter.parameters()),
             common_base_checkpoint=original['base_checkpoint_path'],Full_specialist_checkpoint_loaded=False,
-            existing_shared_Pooled_checkpoint_loaded=False,CUDA_initialized=False))
-        torch.save(dict(schema='warm.engineering.untrained-legacy-control-compact.v1',is_trained=False,
-            checkpoint_state=model._retrospection_state(),modules={name:getattr(model,name).state_dict() for name in [
-                'semantic_bridge','retrospective_gist','retrospective_event_adapter','episode_action_projection','gist_to_text','action_context_to_text']}),
-            a.output/'untrained_compact_modules.pt')
+            existing_shared_Pooled_checkpoint_loaded=False,CUDA_initialized=False,
+            saved_prefix_checkpoint_loaded=a.checkpoint is not None,loaded_optimizer_update=a.expected_checkpoint_update))
+        if a.checkpoint is None:
+            torch.save(dict(schema='warm.engineering.untrained-legacy-control-compact.v1',is_trained=False,
+                checkpoint_state=model._retrospection_state(),modules={name:getattr(model,name).state_dict() for name in [
+                    'semantic_bridge','retrospective_gist','retrospective_event_adapter','episode_action_projection','gist_to_text','action_context_to_text']}),
+                a.output/'untrained_compact_modules.pt')
         if previous is None:
             update('reading_fixed_original_training_index_zero')
-            register_work_dir(a.output/'work')
-            dataset,_=build_datasets(recipe.data,build_validation=False)
-            model.validate_training_dataset(dataset)
-            sample=dataset[0]
-            batch={k:v[None] if torch.is_tensor(v) else v for k,v in sample.items()}
+            if a.fixed_training_sample is None:
+                register_work_dir(a.output/'work')
+                dataset,_=build_datasets(recipe.data,build_validation=False)
+                model.validate_training_dataset(dataset)
+                sample=dataset[0]
+                batch={k:v[None] if torch.is_tensor(v) else v for k,v in sample.items()}
+            else:
+                batch=torch.load(a.fixed_training_sample,map_location='cpu',weights_only=True)
+                if int(batch['idx'].reshape(-1)[0])!=0 or batch['idx'].numel()!=1:
+                    raise ValueError('Only the previously recorded original training index zero is admitted')
             train_ctx=model._training_source_context(batch)
             write('actual_training_context.json',dict(fixed_index=0,
                 fields={f.name:dict(shape=list(getattr(train_ctx,f.name).shape),dtype=str(getattr(train_ctx,f.name).dtype)) for f in dataclasses.fields(train_ctx) if torch.is_tensor(getattr(train_ctx,f.name))},
@@ -186,14 +243,15 @@ def main():
             grads=[x.grad for x in adapter.parameters()]
             assert all(g is not None and torch.isfinite(g).all() for g in grads)
             assert all(differentiable[key].grad is not None and differentiable[key].grad.abs().sum()>0 for key in ['gist_tokens','proprio','query_context'])
-            write('actual_sampler_qualification.json',dict(untrained_control=True,actual_policy_generations=state['actual_policy_generations'],
+            write('actual_sampler_qualification.json',dict(untrained_control=a.checkpoint is None,actual_policy_generations=state['actual_policy_generations'],
                 upstream_actual_policy_generations=1 if previous is not None else 0,upstream_results=str(previous) if previous is not None else None,
                 full_sampler_output_finite=True,action_shape=[32,14],source_shape=[1,32,14],fixed_source_weight=.25,
                 actual_raw_gist_shape=list(raw_gists[0].shape),actual_proprio_shape=list(pool_inputs[0]['proprio'].shape),
                 original_Gaussian_exact=True,source_Full_null_Full_repeat_exact=True,
                 common_eight_history_tokens_retained=True,null_candidate_tokens_zero=True,
                 actual_input_pool_gradients_finite=True,history_proprio_query_gradients_nonzero=True,synthetic_history_or_proprio=False,
-                task_rollout_commands=0,training_step_qualified=False,trained_control_available=False,success_rate_eligible=False))
+                task_rollout_commands=0,training_step_qualified=False,trained_control_available=a.checkpoint is not None,
+                loaded_training_prefix_update=a.expected_checkpoint_update,formal_final_checkpoint_qualification=False,success_rate_eligible=False))
         after={str(f):dict(bytes=f.stat().st_size,mtime_ns=f.stat().st_mtime_ns,sha256=sha(f)) for f in paths}
         assert before==after and not torch.cuda.is_initialized()
         write('input_identities_after.json',after);state.update(status='complete',exit_code=0,original_inputs_unchanged=True)

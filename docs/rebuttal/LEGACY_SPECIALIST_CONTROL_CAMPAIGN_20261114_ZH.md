@@ -170,3 +170,19 @@ parent640 full-state audit于05:20:31UTC complete/0、257.211185秒；tree SHA0b
 R6完整小原件+原始1055 source、parent640全审、R7冻结注册/初始化观测、checkpoint角色metadata资格及可恢复冷存索引/收据共1104成员，原生和本机逐成员size/SHA验真：TAR bc55c73586e42cae630f6f9574f1880f2172c1c5de19cf68e42750b5ea95f476（8017920B），manifest 7cf71619d362f705d926fe95d15f35b003f14dc420421ec561396304a93c38a9；原生P/ITER61_STEP640_RAW_V1.tar，本机execution/20261114_iter61/STEP640_RAW_VERIFIED_V1。该小包不含任何38.5GB完整模型/optimizer payload，不能与永久完整备份混淆。
 
 本机0GPU step66完整只读备份于05:22:23UTC启动，PID1756/SSH55692，native full hash后直接stream到本机，不产生额外AFS大型临时文件；新采集bound9000秒，当前未完成、不计容量，原生checkpoint66不改动。读取storage/20261114_STEP66_FULL_STATE_v1/current.json；不要重复启动。完整step2恢复路径另记docs/rebuttal/FULL_CHECKPOINT_COLD_RECOVERY_20261114_ZH.md。37原字段+新study6字段仍null，v40回复/论文/ZIP未改，角色metadata2+2与游标CPU通过均不作为效果、修复或SR数据。
+
+
+## iter62独立CPU完整checkpoint资格
+
+
+### 23.362 R7真实恢复并更新、CPU完整模型加载资格与一次已知工程修复
+
+本轮05:56只读日志已确认R7真实恢复parent640的模型/optimizer/scheduler/RNG和epoch3/b1264游标，随后step650/660/…/710产生实际更新；后续06:22观测持续运行，最近完整checkpoint仍640，target1280未完成，不能把日志步当新持久checkpoint。R7 job e371f49e…/model source1055/11d283fd…/192GPUh及绝对截止保持。未重复创建任何GPU任务。
+
+新增0GPU独立CPU资格，固定已保存的新Pooled640 checkpoint b32a3bdc…、同一原Press Button q8封存输入/历史/Gaussian，以及已核实的原index0记录（episode270/frame0）。目标是完整7b模型严格加载和一次生产sampler，不执行任何native命令，不用于正式12k/100-pair的效果或效率结论。活动训练source保持不变；CPU source在原1055冻结文件上只替换资格CLI并增加测试，共1056文件/manifest4f34a6e0…。准入要求cgroup可用80GiB，CPU自身RSS上限72GiB、虚拟地址96GiB、运行余量16GiB，4 CPU线程/nice10/5400秒bound，AFS4GiB准入/512MiB运行；CUDA_VISIBLE_DEVICES为空。
+
+CPU V1于06:13:15唯一准入，模型实际构造后于06:19:23 failed/1、0 policy generations，原因为资格caller把FastWAM底层的strict switches传给了WarmSourceFastWAM的窄公共接口。原公共入口本就强制完整strict_model_state/proprio/legacy rejection/metadata预检和加载前后SHA，并仅在全部成功后授予checkpoint identity；因此修正资格caller为原生model.load_checkpoint(path)，再验证其授予的SHA和九类模块逐项值，而不修改或绕过模型/公共loader。原错误、0生成、配置和全部1056 source完整保留：1064成员TAR c77d2032513bc56b3d3a36e0c100a59b7445df9fd3970e3760fdfa1c741af8e3（7546880B），manifest ca4280d8addf1424cde90755397d912ffd262aa760250bdad5e15065cccc869c，原生P/ITER62_PARALLEL_RAW_V1.tar及本机CPU_V1_RAW_VERIFIED_V1逐成员验真。此为caller工程错误，不计为新policy任务失败或模型效果证据。
+
+另一次先后顺序错误：prepare返回“仍运行”时，曾提前执行native测试（实际发现0条）和准入（读取尚不存在的job.json即失败，尚未写intent/启动模型）。0测试不计通过，错误单独保存；随后等待prepare明确exit0才逐项测试、准入。修正后新增严格公共接口回归：未授予声明SHA必须拒绝、原loader失败原样保留、路径型公共API可正常调用；合计6项本机/原生Linux均通过（0.629s/1.161s）。这些边界测试不声称完整模型已经加载。
+
+已知V1终态核销后，CPU V2在同checkpoint/输入/协议上，仅改上述caller和3个新回归，manifest75dbfbad…/1056，job ba39677aa1b0e45e7f8b8d8ed971ee67c4868bb1c1df7009a37cd537df14541f，于06:30:53UTC实际准入，operator PID2654495、0GPU、cgroup可用123976818688B。完整加载和sampler仍须读该V2真实终态，不复活V1、不混入其0生成原件。未使用工程一步权重作为初始化，未改变任何训练/eval样本、阈值或最终12k选步。step66原只读备份继续以原9000秒bound运行，不扩展或重置；若发生已知部分流失败，保留原件并从同9-member manifest校验prefix后准备独立尾段续传，不覆盖失败收据或重复未知调用。ACP06:19:22实际新导航仍IAM auth，原请求不重复。v40和37+6未测字段不变，无新SR。
